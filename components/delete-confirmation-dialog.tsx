@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import {
   Dialog,
@@ -7,21 +7,24 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+
 
 interface DeleteConfirmationDialogProps {
-  isOpen: boolean
-  onClose: () => void
-  onConfirm: () => void
-  itemType: string
+  currClient : any
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  itemType: string;
 }
 
 export function DeleteConfirmationDialog({
+  currClient,
   isOpen,
   onClose,
   onConfirm,
-  itemType
+  itemType,
 }: DeleteConfirmationDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -29,18 +32,19 @@ export function DeleteConfirmationDialog({
         <DialogHeader>
           <DialogTitle>Confirmer la suppression</DialogTitle>
           <DialogDescription>
-            Êtes-vous sûr de vouloir supprimer cet(te) {itemType} ? Cette action ne peut pas être annulée.
+            Êtes-vous sûr de vouloir supprimer <b> {currClient.name.toUpperCase()} </b> ? Cette action
+            ne peut pas être annulée.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="gap-2 sm:gap-0">
           <Button variant="outline" onClick={onClose}>
             Annuler
           </Button>
-          <Button 
-            variant="destructive" 
+          <Button
+            variant="destructive"
             onClick={() => {
-              onConfirm()
-              onClose()
+              onConfirm();
+              // onClose();
             }}
           >
             Supprimer
@@ -48,6 +52,5 @@ export function DeleteConfirmationDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
-

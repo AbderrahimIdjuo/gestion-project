@@ -1,0 +1,223 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import toast, { Toaster } from "react-hot-toast";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { Search, Plus, Pen, Trash2, ShoppingBag } from "lucide-react";
+import { ClientFormDialog } from "@/components/client-form-dialog";
+import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
+import { ModifyClientDialog } from "@/components/modify-client-dialog";
+import axios from "axios";
+
+export default function ClientsPage() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currClient, setcurrClient] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [clientList, setClientList] = useState([]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const itemsPerPage = 10;
+
+  const filteredClients = clientList.filter(
+    (client) =>
+      client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      client.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      client.phone.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filteredClients.length / itemsPerPage);
+  const currentClients = filteredClients.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const getClients = async () => {
+    const result = await axios.get("/api/clients");
+    const { Clients } = result.data;
+    setClientList(Clients);
+    console.log("clients from clients/page : ", clientList);
+  };
+
+  const deleteClient = async () => {
+    try {
+      const result = await axios.delete(`/api/clients/${currClient.id}`);
+      toast(
+        <span>
+          le client <b>{currClient?.name.toUpperCase()}</b> a été supprimé avec
+          succès!
+        </span>,
+        {
+          icon: "🗑️",
+        }
+      );
+
+      getClients();
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
+  useEffect(() => {
+    getClients();
+  }, []);
+
+  return (
+    <>
+      <Toaster position="top-center" />
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold">Clients</h1>
+        </div>
+
+        <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-6">
+          <div className="relative w-full sm:w-96">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Rechercher des clients..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 w-full rounded-full bg-gray-50 focus-visible:ring-purple-500 focus-visible:ring-offset-0"
+            />
+          </div>
+          <ClientFormDialog getClients={getClients}>
+            <Button className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 hover:scale-105 text-white font-semibold transition-all duration-300 transform">
+              <Plus className="mr-2 h-4 w-4" />
+              Nouveau Client
+            </Button>
+          </ClientFormDialog>
+        </div>
+
+        <div className="border rounded-lg">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nom</TableHead>
+                <TableHead>Téléphone</TableHead>
+                <TableHead>Adresse</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {currentClients.length > 0 ? (
+                currentClients?.map((client) => (
+                  <TableRow key={client.id}>
+                    <TableCell className="font-medium">
+                      {client.name.toUpperCase()}
+                    </TableCell>
+                    <TableCell>{client.phone}</TableCell>
+                    <TableCell>{client.address}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <ModifyClientDialog
+                          currClient={currClient}
+                          getClients={getClients}
+                        >
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
+                            onClick={() => {
+                              setcurrClient(client);
+                            }}
+                          >
+                            <Pen className="h-4 w-4" />
+                            <span className="sr-only">Modifier</span>
+                          </Button>
+                        </ModifyClientDialog>
+                        <Button
+                          name="delete btn"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
+                          onClick={() => {
+                            setIsDialogOpen(true);
+                            setcurrClient(client);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">Supprimer</span>
+                        </Button>
+
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 rounded-full hover:bg-green-100 hover:text-green-600"
+                          onClick={() => {}}
+                        >
+                          <ShoppingBag className="h-4 w-4" />
+                          <span className="sr-only">Nouvelle commande</span>
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableCell colSpan={4} align="center">
+                  Aucun client trouvé
+                </TableCell>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {filteredClients.length > 0 ? (
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                />
+              </PaginationItem>
+              {Array.from({ length: totalPages }, (_, i) => (
+                <PaginationItem key={i + 1}>
+                  <PaginationLink
+                    onClick={() => setCurrentPage(i + 1)}
+                    isActive={currentPage === i + 1}
+                  >
+                    {i + 1}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(totalPages, p + 1))
+                  }
+                  disabled={currentPage === totalPages}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        ) : null}
+      </div>
+      <DeleteConfirmationDialog
+        currClient={currClient}
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        onConfirm={() => {
+          deleteClient();
+          setIsDialogOpen(false);
+          getClients();
+        }}
+        itemType="client"
+      ></DeleteConfirmationDialog>
+    </>
+  );
+}
