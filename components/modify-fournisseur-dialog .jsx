@@ -17,14 +17,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useForm } from "react-hook-form";
 
-export function ClientFormDialog({ children, getClients }) {
+export function ModifyFournisseurDialog({ children, currFournisseur , getFournisseurs }) { 
   const { register, reset, handleSubmit } = useForm();
   const [open, setOpen] = useState(false);
 
   const onSubmit = async (data) => {
+    const Data = {...data , id : currFournisseur.id }
     toast.promise(
       (async () => {
-        const response = await axios.post("/api/clients", data);
+        const response = await axios.put("/api/fournisseurs", Data);
         if (response.status === 409) {
           console.log("response.status === 409");
         }
@@ -32,13 +33,14 @@ export function ClientFormDialog({ children, getClients }) {
           throw new Error("Failed to add client");
         }
         console.log("Client ajouté avec succès");
-        getClients();
         reset();
+        getFournisseurs()
+        setOpen(false)
       })(),
       {
-        loading: "Ajout de client...",
-        success: "Client ajouté avec succès!",
-        error: "Échec de l'ajout du client",
+        loading: "Modification en cours...",
+        success: "Fournisseur modifier avec succès!",
+        error: "Échec de la modification!",
       }
     );
   };
@@ -49,10 +51,10 @@ export function ClientFormDialog({ children, getClients }) {
         <DialogTrigger asChild>{children}</DialogTrigger>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Ajouter un nouveau client</DialogTitle>
+            <DialogTitle>Modifier un fournisseur</DialogTitle>
             <DialogDescription>
-              Remplissez les informations du nouveau client ici. Cliquez sur
-              enregistrer lorsque vous avez terminé.
+              Modifier les informations du fournisseur ici. Cliquez sur
+              modifer lorsque vous avez terminé.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit(onSubmit)}>
@@ -64,6 +66,7 @@ export function ClientFormDialog({ children, getClients }) {
                 <Input
                   id="nom"
                   {...register("nom")}
+                  defaultValue={currFournisseur.nom?.toUpperCase()}
                   className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
                 />
               </div>
@@ -75,6 +78,7 @@ export function ClientFormDialog({ children, getClients }) {
                   id="email"
                   type="email"
                   {...register("email")}
+                  defaultValue={currFournisseur.email}
                   className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
                 />
               </div>
@@ -86,6 +90,7 @@ export function ClientFormDialog({ children, getClients }) {
                   id="telephone"
                   type="tel"
                   {...register("telephone")}
+                  defaultValue={currFournisseur.telephone}
                   className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
                 />
               </div>
@@ -96,6 +101,7 @@ export function ClientFormDialog({ children, getClients }) {
                 <Input
                   id="adresse"
                   {...register("adresse")}
+                  defaultValue={currFournisseur.adresse}
                   className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
                 />
               </div>
@@ -105,7 +111,7 @@ export function ClientFormDialog({ children, getClients }) {
                 type="submit"
                 className="bg-[#4ade80] hover:bg-[#22c55e] text-white"
               >
-                Enregistrer
+                Modifier
               </Button>
             </DialogFooter>
           </form>

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import toast, { Toaster } from "react-hot-toast";
+import toast,{Toaster} from "react-hot-toast";
 import {
   Table,
   TableBody,
@@ -32,11 +32,11 @@ export default function ClientsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [clientList, setClientList] = useState([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const itemsPerPage = 10;
+  const itemsPerPage = 2;
 
   const filteredClients = clientList.filter(
     (client) =>
-      client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      client.nom.toLowerCase().includes(searchQuery.toLowerCase()) ||
       client.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
       client.phone.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -59,7 +59,7 @@ export default function ClientsPage() {
       const result = await axios.delete(`/api/clients/${currClient.id}`);
       toast(
         <span>
-          le client <b>{currClient?.name.toUpperCase()}</b> a été supprimé avec
+          Le client <b>{currClient?.nom.toUpperCase()}</b> a été supprimé avec
           succès!
         </span>,
         {
@@ -74,12 +74,16 @@ export default function ClientsPage() {
   };
 
   useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery])
+
+  useEffect(() => {
     getClients();
   }, []);
 
   return (
     <>
-      <Toaster position="top-center" />
+    <Toaster position="top-center" />     
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Clients</h1>
@@ -118,10 +122,10 @@ export default function ClientsPage() {
                 currentClients?.map((client) => (
                   <TableRow key={client.id}>
                     <TableCell className="font-medium">
-                      {client.name.toUpperCase()}
+                      {client.nom.toUpperCase()}
                     </TableCell>
-                    <TableCell>{client.phone}</TableCell>
-                    <TableCell>{client.address}</TableCell>
+                    <TableCell>{client.telephone}</TableCell>
+                    <TableCell>{client.adresse}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <ModifyClientDialog
@@ -208,7 +212,7 @@ export default function ClientsPage() {
         ) : null}
       </div>
       <DeleteConfirmationDialog
-        currClient={currClient}
+        record={currClient}
         isOpen={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
         onConfirm={() => {

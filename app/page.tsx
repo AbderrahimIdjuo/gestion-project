@@ -6,6 +6,8 @@ import { PerformanceChart } from "@/components/performance-chart"
 
 export default function DashboardPage() {
   return (
+    <>
+    
     <div className="h-full flex flex-col space-y-4">
       <h1 className="text-3xl font-bold">Tableau de bord</h1>
       
@@ -97,6 +99,7 @@ export default function DashboardPage() {
         <PerformanceChart />
       </div>
     </div>
+    </>
   )
 }
 

@@ -11,29 +11,20 @@ import {
 import { Button } from "@/components/ui/button";
 
 
-interface DeleteConfirmationDialogProps {
-  currClient : any
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-  itemType: string;
-}
-
 export function DeleteConfirmationDialog({
-  currClient,
+  record,
   isOpen,
   onClose,
   onConfirm,
-  itemType,
-}: DeleteConfirmationDialogProps) {
+}) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Confirmer la suppression</DialogTitle>
           <DialogDescription>
-            Êtes-vous sûr de vouloir supprimer <b> {currClient.name.toUpperCase()} </b> ? Cette action
-            ne peut pas être annulée.
+            Êtes-vous sûr de vouloir supprimer <b> {record?.nom}  </b> ?
+            Cette action ne peut pas être annulée.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="gap-2 sm:gap-0">

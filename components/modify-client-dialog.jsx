@@ -17,12 +17,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useForm } from "react-hook-form";
 
-export function ModifyClientDialog({ children, currClient , getClients }) { 
+export function ModifyClientDialog({ children, currClient, getClients }) {
   const { register, reset, handleSubmit } = useForm();
   const [open, setOpen] = useState(false);
 
   const onSubmit = async (data) => {
-    const Data = {...data , id : currClient.id }
+    const Data = { ...data, id: currClient.id };
     toast.promise(
       (async () => {
         const response = await axios.put("/api/clients", Data);
@@ -34,13 +34,13 @@ export function ModifyClientDialog({ children, currClient , getClients }) {
         }
         console.log("Client ajouté avec succès");
         reset();
-        getClients()
-        setOpen(false)
+        getClients();
+        setOpen(false);
       })(),
       {
-        loading: "Ajout de client...",
-        success: "Client ajouté avec succès!",
-        error: "Échec de l'ajout du client",
+        loading: "Modification en cours...",
+        success: "Client modifier avec succès!",
+        error: "Échec de la modification!",
       }
     );
   };
@@ -53,8 +53,8 @@ export function ModifyClientDialog({ children, currClient , getClients }) {
           <DialogHeader>
             <DialogTitle>Modifier un client</DialogTitle>
             <DialogDescription>
-              Modifier les informations du client ici. Cliquez sur
-              modifer lorsque vous avez terminé.
+              Modifier les informations du client ici. Cliquez sur modifer
+              lorsque vous avez terminé.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit(onSubmit)}>
@@ -65,8 +65,8 @@ export function ModifyClientDialog({ children, currClient , getClients }) {
                 </Label>
                 <Input
                   id="nom"
-                  {...register("name")}
-                  defaultValue={currClient.name?.toUpperCase()}
+                  {...register("nom")}
+                  defaultValue={currClient.nom?.toUpperCase()}
                   className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
                 />
               </div>
@@ -89,8 +89,8 @@ export function ModifyClientDialog({ children, currClient , getClients }) {
                 <Input
                   id="telephone"
                   type="tel"
-                  {...register("phone")}
-                  defaultValue={currClient.phone}
+                  {...register("telephone")}
+                  defaultValue={currClient.telephone}
                   className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
                 />
               </div>
@@ -100,8 +100,8 @@ export function ModifyClientDialog({ children, currClient , getClients }) {
                 </Label>
                 <Input
                   id="adresse"
-                  {...register("address")}
-                  defaultValue={currClient.address}
+                  {...register("adresse")}
+                  defaultValue={currClient.adresse}
                   className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
                 />
               </div>

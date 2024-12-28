@@ -13,32 +13,38 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import toast from "react-hot-toast";
+import axios from "axios";
+import { useForm } from "react-hook-form";
 
-interface FournisseurFormDialogProps {
-  children: React.ReactNode
-}
 
-export function FournisseurFormDialog({ children }: FournisseurFormDialogProps) {
+export function FournisseurFormDialog({ children , getFournisseurs }) {
   const [open, setOpen] = useState(false)
-  const [formData, setFormData] = useState({
-    nom: "",
-    email: "",
-    telephone: "",
-    adresse: "",
-  })
+  const { register, reset, handleSubmit } = useForm();
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
+  const onSubmit = async (data) => {
+    toast.promise(
+      (async () => {
+        const response = await axios.post("/api/fournisseurs", data);
+        if (response.status === 409) {
+          console.log("response.status === 409");
+        }
+        if (!response) {
+          throw new Error("Failed to add client");
+        }
+        console.log("Fournisseur ajouté avec succès");
+        getFournisseurs();
+        reset();
+      })(),
+      {
+        loading: "Ajout de fournisseur...",
+        success: "Fournisseur ajouté avec succès!",
+        error: "Échec de l'ajout du fournisseur",
+      }
+    );
+  };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log("Nouveau fournisseur:", formData)
-    // Here you would typically send the data to your backend
-    setOpen(false)
-    setFormData({ nom: "", email: "", telephone: "", adresse: "" })
-  }
+
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -52,7 +58,7 @@ export function FournisseurFormDialog({ children }: FournisseurFormDialogProps) 
             Remplissez les informations du nouveau fournisseur ici. Cliquez sur enregistrer lorsque vous avez terminé.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit(onSubmit)}>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="nom" className="text-right">
@@ -61,8 +67,7 @@ export function FournisseurFormDialog({ children }: FournisseurFormDialogProps) 
               <Input
                 id="nom"
                 name="nom"
-                value={formData.nom}
-                onChange={handleInputChange}
+                {...register("nom")}
                 className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
               />
             </div>
@@ -74,8 +79,7 @@ export function FournisseurFormDialog({ children }: FournisseurFormDialogProps) 
                 id="email"
                 name="email"
                 type="email"
-                value={formData.email}
-                onChange={handleInputChange}
+                {...register("email")}
                 className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
               />
             </div>
@@ -87,8 +91,7 @@ export function FournisseurFormDialog({ children }: FournisseurFormDialogProps) 
                 id="telephone"
                 name="telephone"
                 type="tel"
-                value={formData.telephone}
-                onChange={handleInputChange}
+                {...register("telephone")}
                 className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
               />
             </div>
@@ -99,8 +102,7 @@ export function FournisseurFormDialog({ children }: FournisseurFormDialogProps) 
               <Input
                 id="adresse"
                 name="adresse"
-                value={formData.adresse}
-                onChange={handleInputChange}
+                {...register("adresse")}
                 className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
               />
             </div>

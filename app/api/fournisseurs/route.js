@@ -5,7 +5,7 @@ export async function POST(req) {
   try {
     const resopns = await req.json();
     const { nom , email, telephone, adresse } = resopns;
-    const result = await prisma.clients.create({
+    const result = await prisma.fournisseurs.create({
       data: {
         nom,
         email,
@@ -13,7 +13,6 @@ export async function POST(req) {
         adresse,
       },
     });
-
     return NextResponse.json({ result });
   } catch (error) {
     if (error.code === "P2002") {
@@ -36,7 +35,7 @@ export async function PUT(req) {
   try {
     const resopns = await req.json();
     const {id, nom, email, telephone, adresse } = resopns;
-    const result = await prisma.clients.update({
+    const result = await prisma.fournisseurs.update({
       where : {id},
       data: {
         nom,
@@ -65,12 +64,12 @@ export async function PUT(req) {
 }
 
 export async function GET(req) {
-  const Clients = await prisma.clients.findMany({
+  const Fournisseurs = await prisma.fournisseurs.findMany({
     orderBy: {
       updatedAt: "desc",
     },
   });
-  return NextResponse.json({ Clients });
+  return NextResponse.json({ Fournisseurs });
 }
 
 

@@ -3,6 +3,10 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import axios from 'axios'
+import toast, {Toaster} from "react-hot-toast";
+import {ModifyFournisseurDialog} from '@/components/modify-fournisseur-dialog '
+import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import {
   Table,
   TableBody,
@@ -19,7 +23,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination'
-import { Search, Plus } from 'lucide-react'
+import { Search, Plus , Pen, Trash2, } from 'lucide-react'
 import { FournisseurFormDialog } from '@/components/fournisseur-form-dialog'
 import {
   Sheet,
@@ -31,29 +35,22 @@ import {
 } from "@/components/ui/sheet"
 import { Label } from "@/components/ui/label"
 
-// Mock data
-const fournisseurs = Array.from({ length: 50 }, (_, i) => ({
-  id: i + 1,
-  nom: `Fournisseur ${i + 1}`,
-  email: `fournisseur${i + 1}@example.com`,
-  telephone: `+1234567${i.toString().padStart(4, '0')}`,
-  adresse: `${i + 1} Rue Fournisseur, Ville`,
-}))
 
 export default function FournisseursPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
-  const [filters, setFilters] = useState({
-    nom: '',
-    email: '',
-    telephone: '',
-  })
+  const [currFournisseur, setCurrFournisseur] = useState("");
+  const [fournisseurList, setFournisseurList] = useState([]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
   const itemsPerPage = 10
 
-  const filteredFournisseurs = fournisseurs.filter(fournisseur =>
+  const filteredFournisseurs = fournisseurList.filter(fournisseur =>
     (searchQuery === '' || 
      fournisseur.nom.toLowerCase().includes(searchQuery.toLowerCase()) ||
-     fournisseur.email.toLowerCase().includes(searchQuery.toLowerCase()))
+     fournisseur.telephone.toLowerCase().includes(searchQuery.toLowerCase())||
+     fournisseur.email.toLowerCase().includes(searchQuery.toLowerCase())||
+     fournisseur.adresse.toLowerCase().includes(searchQuery.toLowerCase()))
   )
 
   const totalPages = Math.ceil(filteredFournisseurs.length / itemsPerPage)
@@ -62,11 +59,43 @@ export default function FournisseursPage() {
     currentPage * itemsPerPage
   )
 
+  const getFournisseurs = async () => {
+    const result = await axios.get("/api/fournisseurs");
+    const { Fournisseurs } = result.data;
+    setFournisseurList(Fournisseurs);
+    console.log("Fournisseurs from Fournisseurs/page : ", Fournisseurs);
+  };
+
   useEffect(() => {
     setCurrentPage(1)
-  }, [filters, searchQuery])
+  }, [searchQuery])
+
+  useEffect(() => {
+    getFournisseurs();
+  }, []);
+
+  const deleteFournisseur = async () => {
+    try {
+      const result = await axios.delete(`/api/fournisseurs/${currFournisseur.id}`);
+      toast(
+        <span>
+          Le fournisseur <b>{currFournisseur?.nom.toUpperCase()}</b> a été supprimé avec
+          succès!
+        </span>,
+        {
+          icon: "🗑️",
+        }
+      );
+
+      getFournisseurs();
+    } catch (e) {
+      console.log(e);
+    }
+  };
 
   return (
+    <>
+    <Toaster position="top-center" />
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Fournisseurs</h1>
@@ -83,7 +112,7 @@ export default function FournisseursPage() {
           />
         </div>
         <div className="flex space-x-2">
-          <FournisseurFormDialog>
+          <FournisseurFormDialog getFournisseurs={getFournisseurs} >
             <Button className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 hover:scale-105 text-white font-semibold transition-all duration-300 transform">
               <Plus className="mr-2 h-4 w-4" />
               Nouveau Fournisseur
@@ -100,6 +129,7 @@ export default function FournisseursPage() {
               <TableHead>Email</TableHead>
               <TableHead>Téléphone</TableHead>
               <TableHead>Adresse</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -109,6 +139,39 @@ export default function FournisseursPage() {
                 <TableCell>{fournisseur.email}</TableCell>
                 <TableCell>{fournisseur.telephone}</TableCell>
                 <TableCell>{fournisseur.adresse}</TableCell>
+                <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <ModifyFournisseurDialog
+                          currFournisseur={currFournisseur}
+                          getFournisseurs={getFournisseurs}
+                        >
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
+                            onClick={() => {
+                              setCurrFournisseur(fournisseur)
+                            }}
+                          >
+                            <Pen className="h-4 w-4" />
+                            <span className="sr-only">Modifier</span>
+                          </Button>
+                        </ModifyFournisseurDialog>
+                        <Button
+                          name="delete btn"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
+                          onClick={() => {
+                            setIsDialogOpen(true)
+                            setCurrFournisseur(fournisseur)
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">Supprimer</span>
+                        </Button>
+                      </div>
+                    </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -142,6 +205,18 @@ export default function FournisseursPage() {
         </PaginationContent>
       </Pagination>
     </div>
+          <DeleteConfirmationDialog
+          record={currFournisseur}
+          isOpen={isDialogOpen}
+          onClose={() => setIsDialogOpen(false)}
+          onConfirm={() => {
+            deleteFournisseur();
+            setIsDialogOpen(false);
+            getFournisseurs();
+          }}
+          itemType="client"
+        ></DeleteConfirmationDialog>
+        </>
   )
 }
 

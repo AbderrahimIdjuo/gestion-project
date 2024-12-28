@@ -21,6 +21,6 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "components/client-form-dialog.jsx", "app/clients/page.jsx"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "components/client-form-dialog.jsx", "app/clients/page.jsx", "app/fournisseurs/page.jsx", "components/fournisseur-form-dialog.jsx", "components/delete-confirmation-dialog.jsx"],
   "exclude": ["node_modules"]
 }
