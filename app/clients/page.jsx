@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import toast,{Toaster} from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
+
 import {
   Table,
   TableBody,
@@ -23,6 +24,7 @@ import {
 import { Search, Plus, Pen, Trash2, ShoppingBag } from "lucide-react";
 import { ClientFormDialog } from "@/components/client-form-dialog";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
+import { ClientInfoDialog } from "@/components/client-info-dialog";
 import { ModifyClientDialog } from "@/components/modify-client-dialog";
 import axios from "axios";
 
@@ -32,13 +34,13 @@ export default function ClientsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [clientList, setClientList] = useState([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const itemsPerPage = 2;
+  const itemsPerPage = 10;
 
   const filteredClients = clientList.filter(
     (client) =>
       client.nom.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      client.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      client.phone.toLowerCase().includes(searchQuery.toLowerCase())
+      client.address?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      client.phone?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const totalPages = Math.ceil(filteredClients.length / itemsPerPage);
@@ -74,8 +76,8 @@ export default function ClientsPage() {
   };
 
   useEffect(() => {
-    setCurrentPage(1)
-  }, [searchQuery])
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   useEffect(() => {
     getClients();
@@ -83,7 +85,7 @@ export default function ClientsPage() {
 
   return (
     <>
-    <Toaster position="top-center" />     
+      <Toaster position="top-center" />
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Clients</h1>
@@ -114,6 +116,7 @@ export default function ClientsPage() {
                 <TableHead>Nom</TableHead>
                 <TableHead>Téléphone</TableHead>
                 <TableHead>Adresse</TableHead>
+                <TableHead>Email</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -121,11 +124,14 @@ export default function ClientsPage() {
               {currentClients.length > 0 ? (
                 currentClients?.map((client) => (
                   <TableRow key={client.id}>
-                    <TableCell className="font-medium">
-                      {client.nom.toUpperCase()}
-                    </TableCell>
+                    <ClientInfoDialog client={client}>
+                      <TableCell className="font-medium cursor-pointer hover:text-purple-600">
+                        {client.nom.toUpperCase()}
+                      </TableCell>
+                    </ClientInfoDialog>
                     <TableCell>{client.telephone}</TableCell>
                     <TableCell>{client.adresse}</TableCell>
+                    <TableCell>{client.email}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <ModifyClientDialog
@@ -212,7 +218,7 @@ export default function ClientsPage() {
         ) : null}
       </div>
       <DeleteConfirmationDialog
-        record={currClient}
+        recordName={currClient?.nom}
         isOpen={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
         onConfirm={() => {

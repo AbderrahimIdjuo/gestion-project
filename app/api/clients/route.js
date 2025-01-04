@@ -4,7 +4,7 @@ import prisma from "../../../lib/prisma";
 export async function POST(req) {
   try {
     const resopns = await req.json();
-    const { nom , email, telephone, adresse } = resopns;
+    const { nom, email, telephone, adresse } = resopns;
     const result = await prisma.clients.create({
       data: {
         nom,
@@ -16,7 +16,7 @@ export async function POST(req) {
 
     return NextResponse.json({ result });
   } catch (error) {
-    if (error.code === "P2002") {
+    if (error.code === "SQLITE_CONSTRAINT") {
       return NextResponse.json(
         {
           message:
@@ -35,9 +35,9 @@ export async function POST(req) {
 export async function PUT(req) {
   try {
     const resopns = await req.json();
-    const {id, nom, email, telephone, adresse } = resopns;
+    const { id, nom, email, telephone, adresse } = resopns;
     const result = await prisma.clients.update({
-      where : {id},
+      where: { id },
       data: {
         nom,
         email,
@@ -72,6 +72,3 @@ export async function GET(req) {
   });
   return NextResponse.json({ Clients });
 }
-
-
-

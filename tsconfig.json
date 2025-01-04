@@ -21,6 +21,22 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "components/client-form-dialog.jsx", "app/clients/page.jsx", "app/fournisseurs/page.jsx", "components/fournisseur-form-dialog.jsx", "components/delete-confirmation-dialog.jsx"],
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "components/client-form-dialog.jsx",
+    "app/clients/page.jsx",
+    "app/fournisseurs/page.jsx",
+    "components/fournisseur-form-dialog.jsx",
+    "components/delete-confirmation-dialog.jsx",
+    "components/sidebar.jsx",
+    "app/ventes/devis/nouveau/page.jsx",
+    "app/ventes/commandes/nouveau/page.jsx",
+    "app/ventes/commandes/page.jsx",
+    "app/produits/page.jsx",
+    "components/product-form-dialog.jsx"
+  ],
   "exclude": ["node_modules"]
 }

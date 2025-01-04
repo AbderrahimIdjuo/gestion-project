@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { useRouter } from 'next/navigation'
 import {
   Table,
   TableBody,
@@ -20,7 +21,6 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination'
 import { Plus, Search, Pen, Trash2, Info, Filter } from 'lucide-react'
-import { DevisFormDialog } from '@/components/devis-form-dialog'
 import {
   Select,
   SelectContent,
@@ -38,6 +38,8 @@ import {
 } from "@/components/ui/sheet"
 import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
+
+
 
 // Mock data
 const devis = Array.from({ length: 50 }, (_, i) => ({
@@ -74,7 +76,7 @@ export default function DevisPage() {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   )
-
+  const router = useRouter()
   useEffect(() => {
     setCurrentPage(1)
   }, [filters, searchQuery])
@@ -223,12 +225,13 @@ export default function DevisPage() {
               </div>
             </SheetContent>
           </Sheet>
-          <DevisFormDialog>
-            <Button className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 hover:scale-105 text-white font-semibold transition-all duration-300 transform">
+        
+            <Button onClick={() => router.push('/ventes/devis/nouveau')}
+          className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 hover:scale-105 text-white font-semibold transition-all duration-300 transform">
               <Plus className="mr-2 h-4 w-4" />
               Nouveau Devis
             </Button>
-          </DevisFormDialog>
+          
         </div>
       </div>
 

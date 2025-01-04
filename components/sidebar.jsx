@@ -1,39 +1,64 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, Users, Package, Receipt, Truck, ShoppingCart, FileText, ChevronDown, ChevronRight } from 'lucide-react'
+import { LayoutDashboard, Users, Package, Receipt, Truck, ShoppingCart, FileText, ChevronDown, ChevronRight, Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
+import { ClientFormDialog } from '@/components/client-form-dialog'
+import { FournisseurFormDialog } from '@/components/fournisseur-form-dialog'
+import { FactureFormDialog } from '@/components/facture-form-dialog'
+import { ProductFormDialog } from '@/components/product-form-dialog'
+
 
 const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/' },
-  { icon: Users, label: 'Clients', href: '/clients' },
+  { 
+    icon: Users, 
+    label: 'Clients', 
+    href: '/clients',
+    action: 'add',
+    dialog: ClientFormDialog
+  },
   { 
     icon: Package, 
-    label: 'Stock', 
-    href: '/stock',
+    label: 'Produits', 
+    href: '/produits',
+    action: 'add',
+    dialog: ProductFormDialog
+  },
+  {
+    icon: ShoppingCart,
+    label: 'Ventes',
+    //href: '/ventes',
     subItems: [
-      { label: 'Produits', href: '/stock/produits' },
-      { label: 'Achat', href: '/stock/achat' },
-      { label: 'Vente', href: '/stock/vente' },
-      { label: "Retour d'achat", href: '/stock/retour-achat' },
-      { label: 'Retour de vente', href: '/stock/retour-vente' },
+      { label: 'Devis', href: '/ventes/devis' },
+      { label: 'Commandes', href: '/ventes/commandes' },
+      { label: 'Crédit de clients', href: '/ventes/credit-clients' },
     ]
   },
-  { icon: Receipt, label: 'Factures', href: '/factures' },
-  { icon: Truck, label: 'Fournisseurs', href: '/fournisseurs' },
-  { icon: ShoppingCart, label: 'Commandes', href: '/commandes' },
-  { icon: FileText, label: 'Devis', href: '/devis' },
+  {
+    icon: Truck,
+    label: 'Achats',
+    href: '/achats',
+    subItems: [
+      { label: 'Fournisseurs', href: '/achats/fournisseurs', action: 'add', dialog: FournisseurFormDialog },
+      { label: 'Dépenses', href: '/achats/depenses' },
+      { label: 'Dépenses récurrentes', href: '/achats/depenses-recurrentes' },
+      { label: 'Factures', href: '/achats/factures', action: 'add', dialog: FactureFormDialog },
+      { label: 'Crédit fournisseurs', href: '/achats/credit-fournisseurs' },
+    ]
+  },
 ]
 
 export function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const [isExpanded, setIsExpanded] = useState(false)
-  const [openMenus, setOpenMenus] = useState<string[]>(['stock'])
+  const [openMenus, setOpenMenus] = useState(['produits', 'achats', 'ventes'])
 
-  const toggleMenu = (href: string) => {
+  const toggleMenu = (href) => {
     setOpenMenus(current => 
       current.includes(href) 
         ? current.filter(item => item !== href)
@@ -41,15 +66,35 @@ export function Sidebar() {
     )
   }
 
-  const isActive = (href: string) => {
+  const isActive = (href) => {
     if (href === '/') {
       return pathname === href
     }
     return pathname.startsWith(href)
   }
 
-  const isSubActive = (href: string) => {
+  const isSubActive = (href) => {
     return pathname === href
+  }
+
+  const renderAddButton = (item) => {
+    if (item.action === 'add' && isExpanded) {
+      const DialogComponent = item.dialog
+      return (
+        <DialogComponent>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="ml-auto h-8 w-8 rounded-full hover:bg-purple-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Plus className="h-4 w-4" />
+            <span className="sr-only">Ajouter {item.label.toLowerCase()}</span>
+          </Button>
+        </DialogComponent>
+      )
+    }
+    return null
   }
 
   return (
@@ -62,13 +107,13 @@ export function Sidebar() {
     >
       <nav className="h-full overflow-y-auto">
         <ul className="space-y-1 p-2">
-          {menuItems.map((item) => {
+          {menuItems.map((item , index) => {
             const isMenuActive = isActive(item.href)
             const isOpen = openMenus.includes(item.href)
             const Icon = item.icon
             
             return (
-              <li key={item.href}>
+              <li key={index}>
                 <div
                   className={cn(
                     "flex items-center px-3 py-2 rounded-full transition-all duration-300 ease-in-out cursor-pointer",
@@ -104,6 +149,7 @@ export function Sidebar() {
                       )}
                     </div>
                   )}
+                  {renderAddButton(item)}
                 </div>
                 
                 {isExpanded && item.subItems && isOpen && (
@@ -112,11 +158,11 @@ export function Sidebar() {
                       const isSubItemActive = isSubActive(subItem.href)
                       
                       return (
-                        <li key={subItem.href}>
+                        <li key={subItem.href} className="flex items-center justify-between">
                           <Link
                             href={subItem.href}
                             className={cn(
-                              "block px-3 py-2 rounded-full transition-colors",
+                              "block px-3 py-2 rounded-full transition-colors flex-grow",
                               isSubItemActive 
                                 ? 'bg-purple-100 text-purple-600' 
                                 : 'text-muted-foreground hover:bg-muted'
@@ -124,6 +170,7 @@ export function Sidebar() {
                           >
                             {subItem.label}
                           </Link>
+                          {renderAddButton(subItem)}
                         </li>
                       )
                     })}

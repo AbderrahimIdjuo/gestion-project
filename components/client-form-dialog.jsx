@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import toast from "react-hot-toast";
-import axios from "axios";
 import {
   Dialog,
   DialogContent,
@@ -17,23 +15,36 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useForm } from "react-hook-form";
 
+
+
 export function ClientFormDialog({ children, getClients }) {
-  const { register, reset, handleSubmit } = useForm();
+  const { register, reset, handleSubmit ,setError ,  formState: { errors } } = useForm();
   const [open, setOpen] = useState(false);
+ 
 
   const onSubmit = async (data) => {
     toast.promise(
       (async () => {
-        const response = await axios.post("/api/clients", data);
-        if (response.status === 409) {
-          console.log("response.status === 409");
+        try {
+          const response = await axios.post("/api/clients", data);
+          
+          if (response.status === 200) { // Assuming 201 is the success status code
+            console.log("Client ajouté avec succès");
+            getClients();
+            reset();
+          } else {
+            throw new Error("Unexpected response status");
+          }
+        } catch (error) {
+          if (error.response && error.response.status === 409) {
+            // Handle specific error (phone already registered)
+            setError("telephone", {
+              message: "Ce numéro de téléphone est déjà enregistré",
+            });
+          } else {
+            throw new Error("Failed to add client");
+          }
         }
-        if (!response) {
-          throw new Error("Failed to add client");
-        }
-        console.log("Client ajouté avec succès");
-        getClients();
-        reset();
       })(),
       {
         loading: "Ajout de client...",
@@ -42,6 +53,9 @@ export function ClientFormDialog({ children, getClients }) {
       }
     );
   };
+  
+  
+  
 
   return (
     <>
@@ -58,46 +72,69 @@ export function ClientFormDialog({ children, getClients }) {
           <form onSubmit={handleSubmit(onSubmit)}>
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="nom" className="text-right">
-                  Nom
-                </Label>
+              <Label htmlFor="nom" className="text-right">
+                Nom
+              </Label>
+              <div className="col-span-3">
                 <Input
                   id="nom"
-                  {...register("nom")}
+                  name="nom"
+                  {...register("nom", { required: "Nom obligatoir" })}
                   className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
                 />
+                {errors.nom && <p className="text-red-500 text-sm mt-1">{errors.nom.message}</p>}
               </div>
+              </div>
+
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="email" className="text-right">
                   Email
                 </Label>
+                <div className="col-span-3">
                 <Input
                   id="email"
                   type="email"
                   {...register("email")}
                   className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
                 />
+                {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
+                </div>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="telephone" className="text-right">
                   Téléphone
                 </Label>
+                <div className="col-span-3">
                 <Input
                   id="telephone"
                   type="tel"
-                  {...register("telephone")}
+                  {...register("telephone",{
+                    required : "Numéro de télé obligatoire",
+                  minLength:{
+                    value : 10,
+                    message : "Le numéro de télé doit contenir 10 chiffres"
+                  },
+                  maxLength:{
+                    value : 10,
+                    message : "Le numéro de télé doit contenir 10 chiffres"
+                  }
+                  })}
                   className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
                 />
+                {errors.telephone && <p className="text-red-500 text-sm mt-1">{errors.telephone.message}</p>}
+                </div>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="adresse" className="text-right">
                   Adresse
                 </Label>
+
                 <Input
                   id="adresse"
                   {...register("adresse")}
                   className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
                 />
+
               </div>
             </div>
             <DialogFooter>

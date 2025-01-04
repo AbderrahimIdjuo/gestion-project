@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 
 
 export function DeleteConfirmationDialog({
-  record,
+  recordName,
   isOpen,
   onClose,
   onConfirm,
@@ -23,7 +23,7 @@ export function DeleteConfirmationDialog({
         <DialogHeader>
           <DialogTitle>Confirmer la suppression</DialogTitle>
           <DialogDescription>
-            Êtes-vous sûr de vouloir supprimer <b> {record?.nom}  </b> ?
+            Êtes-vous sûr de vouloir supprimer <b> {recordName}  </b> ?
             Cette action ne peut pas être annulée.
           </DialogDescription>
         </DialogHeader>
