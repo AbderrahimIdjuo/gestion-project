@@ -25,15 +25,6 @@ import {
 } from "@/components/ui/pagination";
 import { Search, Plus, Pen, Trash2 } from "lucide-react";
 import { FournisseurFormDialog } from "@/components/fournisseur-form-dialog";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import { Label } from "@/components/ui/label";
 
 export default function FournisseursPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -76,7 +67,7 @@ export default function FournisseursPage() {
 
   const deleteFournisseur = async () => {
     try {
-      const result = await axios.delete(
+      await axios.delete(
         `/api/fournisseurs/${currFournisseur.id}`
       );
       toast(

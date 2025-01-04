@@ -28,10 +28,7 @@ import { useForm } from "react-hook-form";
 export function ModifyProductDialog({ children, currProduct, getProducts }) {
   const {
     register,
-    reset,
     handleSubmit,
-    setError,
-    formState: { errors },
   } = useForm();
   const [open, setOpen] = useState(false);
   const [categorie, setCategorie] = useState();
@@ -40,7 +37,7 @@ export function ModifyProductDialog({ children, currProduct, getProducts }) {
   const onSubmit = async (data) => {
     console.log(data);
 
-    const Data = { ...data, statu, categorie , id : currProduct.id };
+    const Data = { ...data, statu, categorie, id: currProduct.id };
 
     toast.promise(
       (async () => {
@@ -75,8 +72,8 @@ export function ModifyProductDialog({ children, currProduct, getProducts }) {
         <DialogHeader>
           <DialogTitle>Modifier un produit</DialogTitle>
           <DialogDescription>
-            Modifier les informations du produit. Cliquez sur
-            modifier lorsque vous avez terminé.
+            Modifier les informations du produit. Cliquez sur modifier lorsque
+            vous avez terminé.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -115,7 +112,7 @@ export function ModifyProductDialog({ children, currProduct, getProducts }) {
             </div>
             <div className="relative grid grid-cols-4 items-center gap-4">
               <Label htmlFor="prixAchat" className="text-right">
-                Prix d'achat
+                Prix d&apos;achat
               </Label>
               <Input
                 id="prixAchat"

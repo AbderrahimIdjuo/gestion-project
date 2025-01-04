@@ -58,7 +58,7 @@ export default function ClientsPage() {
 
   const deleteClient = async () => {
     try {
-      const result = await axios.delete(`/api/clients/${currClient.id}`);
+      await axios.delete(`/api/clients/${currClient.id}`);
       toast(
         <span>
           Le client <b>{currClient?.nom.toUpperCase()}</b> a été supprimé avec
@@ -81,7 +81,7 @@ export default function ClientsPage() {
 
   useEffect(() => {
     getClients();
-  }, []);
+  }, [getClients]);
 
   return (
     <>

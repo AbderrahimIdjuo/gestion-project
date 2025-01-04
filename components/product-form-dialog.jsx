@@ -25,14 +25,8 @@ import {
 import axios from "axios";
 import { useForm } from "react-hook-form";
 
-export function ProductFormDialog({ children  , getProducts}) {
-  const {
-    register,
-    reset,
-    handleSubmit,
-    setError,
-    formState: { errors },
-  } = useForm();
+export function ProductFormDialog({ children, getProducts }) {
+  const { register, reset, handleSubmit } = useForm();
   const [open, setOpen] = useState(false);
   const [categorie, setCategorie] = useState();
   const [statu, setStatu] = useState();
@@ -56,7 +50,7 @@ export function ProductFormDialog({ children  , getProducts}) {
         reset();
         setStatu("");
         setCategorie("");
-        getProducts()
+        getProducts();
       })(),
       {
         loading: "Ajout de produit...",
@@ -118,7 +112,7 @@ export function ProductFormDialog({ children  , getProducts}) {
             </div>
             <div className="relative grid grid-cols-4 items-center gap-4">
               <Label htmlFor="prixAchat" className="text-right">
-                Prix d'achat
+                Prix d&apos;achat
               </Label>
               <Input
                 id="prixAchat"
@@ -153,7 +147,7 @@ export function ProductFormDialog({ children  , getProducts}) {
                 name="status"
                 onValueChange={(value) => setStatu(value)}
               >
-                <SelectTrigger className="col-span-3 border-purple-200 bg-white focus:ring-purple-500" >
+                <SelectTrigger className="col-span-3 border-purple-200 bg-white focus:ring-purple-500">
                   <SelectValue placeholder="Sélectionnez un statut" />
                 </SelectTrigger>
                 <SelectContent>

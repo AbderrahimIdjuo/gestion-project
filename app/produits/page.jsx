@@ -55,7 +55,6 @@ export default function ProduitsPage() {
     stock: [0, 1000],
   });
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [productToDelete, setProductToDelete] = useState(null);
   const [products, setProducts] = useState(null);
   const [currProduct, setCurrProduct] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -94,7 +93,7 @@ export default function ProduitsPage() {
 
   const deleteProduct = async () => {
     try {
-      const result = await axios.delete(`/api/produits/${currProduct.id}`);
+    await axios.delete(`/api/produits/${currProduct.id}`);
       toast(
         <span>
           Le produit <b>{currProduct?.designation.toUpperCase()}</b> a été
@@ -130,21 +129,7 @@ export default function ProduitsPage() {
     }
   };
 
-  const handleEdit = (id) => {
-    console.log("Edit product:", id);
-  };
 
-  const handleDelete = (id) => {
-    setProductToDelete(id);
-    setDeleteDialogOpen(true);
-  };
-
-  const confirmDelete = () => {
-    if (productToDelete) {
-      console.log("Deleting product:", productToDelete);
-      // Actual delete logic here
-    }
-  };
 
   const handleDetails = (id) => {
     console.log("View details for product:", id);
@@ -245,7 +230,7 @@ export default function ProduitsPage() {
                       htmlFor="prixAchat"
                       className="text-right text-black"
                     >
-                      Prix d'achat
+                      Prix d&apos;achat
                     </Label>
                     <div className="col-span-3">
                       <Slider
@@ -328,7 +313,7 @@ export default function ProduitsPage() {
               <TableRow>
                 <TableHead>Désignation</TableHead>
                 <TableHead>Catégorie</TableHead>
-                <TableHead>Prix d'achat</TableHead>
+                <TableHead>Prix d&apos;achat</TableHead>
                 <TableHead>Prix de vente</TableHead>
                 <TableHead>Statut</TableHead>
                 <TableHead>Stock</TableHead>

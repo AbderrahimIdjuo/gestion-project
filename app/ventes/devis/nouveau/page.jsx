@@ -153,7 +153,7 @@ export default function NouveauDevisPage() {
                 <TableRow>
                   <TableHead className="w-[40%]">Produits</TableHead>
                   <TableHead>Quantité</TableHead>
-                  <TableHead>Prix d'unité</TableHead>
+                  <TableHead>Prix d&apos;unité</TableHead>
                   <TableHead>Montant</TableHead>
                   <TableHead></TableHead>
                 </TableRow>

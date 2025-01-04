@@ -64,7 +64,7 @@ export async function PUT(req) {
   }
 }
 
-export async function GET(req) {
+export async function GET() {
   const Clients = await prisma.clients.findMany({
     orderBy: {
       updatedAt: "desc",

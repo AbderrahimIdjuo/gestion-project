@@ -15,7 +15,7 @@ export default function DashboardPage() {
         <Card className="bg-gradient-to-tr from-fuchsia-500 via-purple-500 to-violet-500 shadow-lg shadow-purple-500/50 border-0 col-span-full lg:col-span-1 order-first">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pt-4">
             <CardTitle className="text-sm font-medium text-white">
-              Chiffre d'Affaires
+              Chiffre d&apos;Affaires
             </CardTitle>
             <TrendingUp className="h-6 w-6 text-purple-200" />
           </CardHeader>

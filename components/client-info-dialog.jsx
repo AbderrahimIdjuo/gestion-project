@@ -1,34 +1,24 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Card, CardContent , CardHeader} from "@/components/ui/card"
-import { Mail, Phone, MapPin } from 'lucide-react'
-
-
+import { useState } from "react";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Mail, Phone, MapPin } from "lucide-react";
 
 export function ClientInfoDialog({ client, children }) {
-  const [open, setOpen] = useState(false)
-
-  const getInitials = (name) => {
-    return name
-      .split(' ')
-      .map(word => word[0])
-      .join('')
-      .toUpperCase()
-  }
+  const [open, setOpen] = useState(false);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {children}
-      </DialogTrigger>
+      <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-[600px] overflow-hidden p-0">
         <Card className="border-0">
           <CardHeader className="p-0">
-          <div className="relative bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 h-28">
+            <div className="relative bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 h-28">
               {/* Decorative wave element */}
-              <h1 className="pt-6 pl-3 text-3xl text-center font-bold text-white">{client.nom.toUpperCase()}</h1>
+              <h1 className="pt-6 pl-3 text-3xl text-center font-bold text-white">
+                {client.nom.toUpperCase()}
+              </h1>
               <div className="absolute bottom-0 left-0 right-0">
                 <svg
                   viewBox="0 0 1440 120"
@@ -41,7 +31,7 @@ export function ClientInfoDialog({ client, children }) {
               </div>
             </div>
           </CardHeader>
-          <CardContent className="p-0">           
+          <CardContent className="p-0">
             <div className="px-6 pb-6 mt-6">
               {/* <div className="flex flex-col items-center text-center mb-6">
                 <h1 className="mt-4 text-2xl font-bold text-white">{client.nom.toUpperCase()}</h1>
@@ -66,6 +56,5 @@ export function ClientInfoDialog({ client, children }) {
         </Card>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
-

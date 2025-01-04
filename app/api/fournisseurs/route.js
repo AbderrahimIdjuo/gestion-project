@@ -63,7 +63,7 @@ export async function PUT(req) {
   }
 }
 
-export async function GET(req) {
+export async function GET() {
   const Fournisseurs = await prisma.fournisseurs.findMany({
     orderBy: {
       updatedAt: "desc",

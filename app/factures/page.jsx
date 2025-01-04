@@ -1,8 +1,8 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -10,7 +10,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
+} from "@/components/ui/table";
 import {
   Pagination,
   PaginationContent,
@@ -18,15 +18,15 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from '@/components/ui/pagination'
-import { Plus, Search, Pen, Trash2, Info, Filter } from 'lucide-react'
+} from "@/components/ui/pagination";
+import { Plus, Search, Pen, Trash2, Info, Filter } from "lucide-react";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
 import {
   Sheet,
   SheetContent,
@@ -34,74 +34,81 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@/components/ui/sheet"
-import { Label } from "@/components/ui/label"
-import { Slider } from "@/components/ui/slider"
+} from "@/components/ui/sheet";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 
 // Mock data
 const factures = Array.from({ length: 50 }, (_, i) => ({
-  id: `FAC-${(i + 1).toString().padStart(4, '0')}`,
+  id: `FAC-${(i + 1).toString().padStart(4, "0")}`,
   client: `Client ${i + 1}`,
-  date: new Date(2024, 0, i + 1).toLocaleDateString('fr-FR'),
+  date: new Date(2024, 0, i + 1).toLocaleDateString("fr-FR"),
   montant: Math.floor(Math.random() * 10000) + 100,
-  statut: ['Payée', 'En attente', 'En retard'][i % 3],
-  echeance: new Date(2024, 1, i + 1).toLocaleDateString('fr-FR'),
-}))
+  statut: ["Payée", "En attente", "En retard"][i % 3],
+  echeance: new Date(2024, 1, i + 1).toLocaleDateString("fr-FR"),
+}));
 
 export default function FacturesPage() {
-  const [searchQuery, setSearchQuery] = useState('')
-  const [currentPage, setCurrentPage] = useState(1)
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState({
-    client: 'all',
-    dateStart: '',
-    dateEnd: '',
+    client: "all",
+    dateStart: "",
+    dateEnd: "",
     montant: [0, 10000],
-    statut: 'all',
-  })
-  const itemsPerPage = 10
+    statut: "all",
+  });
+  const itemsPerPage = 10;
 
-  const filteredFactures = factures.filter(facture =>
-    (searchQuery === '' || facture.id.toLowerCase().includes(searchQuery.toLowerCase()) || facture.client.toLowerCase().includes(searchQuery.toLowerCase())) &&
-    (filters.client === 'all' || facture.client === filters.client) &&
-    (filters.statut === 'all' || facture.statut === filters.statut) &&
-    (facture.montant >= filters.montant[0] && facture.montant <= filters.montant[1]) &&
-    (!filters.dateStart || !filters.dateEnd || (new Date(facture.date) >= new Date(filters.dateStart) && new Date(facture.date) <= new Date(filters.dateEnd)))
-  )
+  const filteredFactures = factures.filter(
+    (facture) =>
+      (searchQuery === "" ||
+        facture.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        facture.client.toLowerCase().includes(searchQuery.toLowerCase())) &&
+      (filters.client === "all" || facture.client === filters.client) &&
+      (filters.statut === "all" || facture.statut === filters.statut) &&
+      facture.montant >= filters.montant[0] &&
+      facture.montant <= filters.montant[1] &&
+      (!filters.dateStart ||
+        !filters.dateEnd ||
+        (new Date(facture.date) >= new Date(filters.dateStart) &&
+          new Date(facture.date) <= new Date(filters.dateEnd)))
+  );
 
-  const totalPages = Math.ceil(filteredFactures.length / itemsPerPage)
+  const totalPages = Math.ceil(filteredFactures.length / itemsPerPage);
   const currentFactures = filteredFactures.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
-  )
+  );
 
   useEffect(() => {
-    setCurrentPage(1)
-  }, [filters, searchQuery])
+    setCurrentPage(1);
+  }, [filters, searchQuery]);
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status) => {
     switch (status) {
-      case 'Payée':
-        return 'bg-emerald-500'
-      case 'En attente':
-        return 'bg-blue-500'
-      case 'En retard':
-        return 'bg-amber-500'
+      case "Payée":
+        return "bg-emerald-500";
+      case "En attente":
+        return "bg-blue-500";
+      case "En retard":
+        return "bg-amber-500";
       default:
-        return 'bg-gray-500'
+        return "bg-gray-500";
     }
-  }
+  };
 
-  const handleEdit = (id: string) => {
-    console.log('Edit facture:', id)
-  }
+  const handleEdit = (id) => {
+    console.log("Edit facture:", id);
+  };
 
-  const handleDelete = (id: string) => {
-    console.log('Delete facture:', id)
-  }
+  const handleDelete = (id) => {
+    console.log("Delete facture:", id);
+  };
 
-  const handleInfo = (id: string) => {
-    console.log('View info for facture:', id)
-  }
+  const handleInfo = (id) => {
+    console.log("View info for facture:", id);
+  };
 
   return (
     <div className="space-y-6">
@@ -122,7 +129,10 @@ export default function FacturesPage() {
         <div className="flex space-x-2">
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="outline" className="border-purple-500 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900">
+              <Button
+                variant="outline"
+                className="border-purple-500 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900"
+              >
                 <Filter className="mr-2 h-4 w-4" />
                 Filtres
               </Button>
@@ -141,16 +151,22 @@ export default function FacturesPage() {
                   </Label>
                   <Select
                     value={filters.client}
-                    onValueChange={(value) => setFilters({ ...filters, client: value })}
+                    onValueChange={(value) =>
+                      setFilters({ ...filters, client: value })
+                    }
                   >
                     <SelectTrigger className="col-span-3 border-purple-200 bg-white focus:ring-purple-500">
                       <SelectValue placeholder="Tous les clients" />
                     </SelectTrigger>
                     <SelectContent className="bg-white">
                       <SelectItem value="all">Tous les clients</SelectItem>
-                      {Array.from(new Set(factures.map(f => f.client))).map(client => (
-                        <SelectItem key={client} value={client}>{client}</SelectItem>
-                      ))}
+                      {Array.from(new Set(factures.map((f) => f.client))).map(
+                        (client) => (
+                          <SelectItem key={client} value={client}>
+                            {client}
+                          </SelectItem>
+                        )
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -162,7 +178,9 @@ export default function FacturesPage() {
                     id="dateStart"
                     type="date"
                     value={filters.dateStart}
-                    onChange={(e) => setFilters({ ...filters, dateStart: e.target.value })}
+                    onChange={(e) =>
+                      setFilters({ ...filters, dateStart: e.target.value })
+                    }
                     className="col-span-3 border-purple-200 bg-white focus:ring-purple-500"
                   />
                 </div>
@@ -174,7 +192,9 @@ export default function FacturesPage() {
                     id="dateEnd"
                     type="date"
                     value={filters.dateEnd}
-                    onChange={(e) => setFilters({ ...filters, dateEnd: e.target.value })}
+                    onChange={(e) =>
+                      setFilters({ ...filters, dateEnd: e.target.value })
+                    }
                     className="col-span-3 border-purple-200 bg-white focus:ring-purple-500"
                   />
                 </div>
@@ -188,7 +208,9 @@ export default function FacturesPage() {
                       max={10000}
                       step={100}
                       value={filters.montant}
-                      onValueChange={(value) => setFilters({ ...filters, montant: value })}
+                      onValueChange={(value) =>
+                        setFilters({ ...filters, montant: value })
+                      }
                       className="w-full [&_[role=slider]]:bg-purple-500 [&_[role=slider]]:border-purple-500 [&_[role=slider]]:focus:ring-purple-500 [&_[role=track]]:bg-purple-100 [&_[role=range]]:bg-purple-300"
                     />
                     <div className="flex justify-between mt-2">
@@ -203,7 +225,9 @@ export default function FacturesPage() {
                   </Label>
                   <Select
                     value={filters.statut}
-                    onValueChange={(value) => setFilters({ ...filters, statut: value })}
+                    onValueChange={(value) =>
+                      setFilters({ ...filters, statut: value })
+                    }
                   >
                     <SelectTrigger className="col-span-3 border-purple-200 bg-white focus:ring-purple-500">
                       <SelectValue placeholder="Tous les statuts" />
@@ -248,7 +272,11 @@ export default function FacturesPage() {
                 <TableCell>{facture.montant.toFixed(2)} €</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
-                    <span className={`h-2 w-2 rounded-full ${getStatusColor(facture.statut)}`} />
+                    <span
+                      className={`h-2 w-2 rounded-full ${getStatusColor(
+                        facture.statut
+                      )}`}
+                    />
                     <span className="text-sm text-muted-foreground">
                       {facture.statut}
                     </span>
@@ -295,8 +323,8 @@ export default function FacturesPage() {
       <Pagination>
         <PaginationContent>
           <PaginationItem>
-            <PaginationPrevious 
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            <PaginationPrevious
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={currentPage === 1}
             />
           </PaginationItem>
@@ -312,13 +340,12 @@ export default function FacturesPage() {
           ))}
           <PaginationItem>
             <PaginationNext
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
             />
           </PaginationItem>
         </PaginationContent>
       </Pagination>
     </div>
-  )
+  );
 }
-

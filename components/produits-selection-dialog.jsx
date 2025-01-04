@@ -1,88 +1,86 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Search, X, Check, Plus, Minus } from 'lucide-react'
-import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Search, Check, Plus, Minus } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 // Mock data for articles with MAD currency
 const articles = [
-  { id: 1, nom: "chausseur", prix: 250.00 },
-  { id: 2, nom: "chemise", prix: 200.00 },
-  { id: 3, nom: "pantalon 1", prix: 120.00 },
-  { id: 4, nom: "veste", prix: 300.00 },
-  { id: 5, nom: "cravate", prix: 80.00 },
-]
+  { id: 1, nom: "chausseur", prix: 250.0 },
+  { id: 2, nom: "chemise", prix: 200.0 },
+  { id: 3, nom: "pantalon 1", prix: 120.0 },
+  { id: 4, nom: "veste", prix: 300.0 },
+  { id: 5, nom: "cravate", prix: 80.0 },
+];
 
 export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [selectedArticles, setSelectedArticles] = useState({})
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedArticles, setSelectedArticles] = useState({});
 
-  const filteredArticles = articles.filter(article =>
+  const filteredArticles = articles.filter((article) =>
     article.nom.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  );
 
   const handleToggleArticle = (article) => {
-    setSelectedArticles(prev => {
-      const newSelected = { ...prev }
+    setSelectedArticles((prev) => {
+      const newSelected = { ...prev };
       if (newSelected[article.id]) {
-        delete newSelected[article.id]
+        delete newSelected[article.id];
       } else {
         newSelected[article.id] = {
           ...article,
-          quantity: 1
-        }
+          quantity: 1,
+        };
       }
-      return newSelected
-    })
-  }
+      return newSelected;
+    });
+  };
 
-  const handleQuantityChange = (articleId, delta) => {
-    setSelectedArticles(prev => {
-      const currentQty = prev[articleId]?.quantity || 0
-      const newQty = Math.max(0, currentQty + delta)
-      
-      if (newQty === 0) {
-        const { [articleId]: _, ...rest } = prev
-        return rest
-      }
-      
-      return {
-        ...prev,
-        [articleId]: {
-          ...prev[articleId],
-          quantity: newQty
-        }
-      }
-    })
-  }
+  // const handleQuantityChange = (articleId, delta) => {
+  //   setSelectedArticles((prev) => {
+  //     const currentQty = prev[articleId]?.quantity || 0;
+  //     const newQty = Math.max(0, currentQty + delta);
+
+  //     if (newQty === 0) {
+  //       const { [articleId]: _, ...rest } = prev;
+  //       return rest;
+  //     }
+
+  //     return {
+  //       ...prev,
+  //       [articleId]: {
+  //         ...prev[articleId],
+  //         quantity: newQty,
+  //       },
+  //     };
+  //   });
+  // };
 
   const handleAddItems = () => {
     const articlesToAdd = Object.values(selectedArticles)
-      .filter(article => article.quantity > 0)
+      .filter((article) => article.quantity > 0)
       .map(({ id, nom, prix, quantity }) => ({
         id,
         details: nom,
         rate: prix,
-        quantity
-      }))
-    
-    onArticlesAdd(articlesToAdd)
-    setSelectedArticles({})
-    onOpenChange(false)
-  }
+        quantity,
+      }));
 
-  const totalQuantity = Object.values(selectedArticles)
-    .reduce((sum, item) => sum + (item.quantity || 0), 0)
+    onArticlesAdd(articlesToAdd);
+    setSelectedArticles({});
+    onOpenChange(false);
+  };
 
-  const selectedCount = Object.keys(selectedArticles).length
+  const totalQuantity = Object.values(selectedArticles).reduce(
+    (sum, item) => sum + (item.quantity || 0),
+    0
+  );
+
+  const selectedCount = Object.keys(selectedArticles).length;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -110,19 +108,26 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
                   key={article.id}
                   className={cn(
                     "flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors",
-                    selectedArticles[article.id] ? "bg-purple-100 border border-purple-300" : "hover:bg-gray-50"
+                    selectedArticles[article.id]
+                      ? "bg-purple-100 border border-purple-300"
+                      : "hover:bg-gray-50"
                   )}
                   onClick={() => handleToggleArticle(article)}
                 >
                   <div className="space-y-1">
                     <p className="text-sm font-medium">{article.nom}</p>
                     <p className="text-sm text-muted-foreground">
-                      Prix d'unité: {article.prix.toFixed(2)} MAD
+                      Prix d&apos;unité: {article.prix.toFixed(2)} MAD
                     </p>
                   </div>
-                  <div className={cn("h-5 w-5 rounded-full hover:bg-green-500 border flex items-center justify-center transition-colors",
-                    selectedArticles[article.id] ? "bg-green-500 " : "hover:bg-gray-50"
-                  )}>
+                  <div
+                    className={cn(
+                      "h-5 w-5 rounded-full hover:bg-green-500 border flex items-center justify-center transition-colors",
+                      selectedArticles[article.id]
+                        ? "bg-green-500 "
+                        : "hover:bg-gray-50"
+                    )}
+                  >
                     {selectedArticles[article.id] && (
                       <Check className="h-3 w-3  text-purple-100" />
                     )}
@@ -134,12 +139,12 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
 
           {/* Right side - Selected items */}
           <div className="p-4">
-          <div className="flex items-center gap-2 mb-4">
-                <h3 className="font-medium">produits selectioner</h3>
-                <Badge variant="secondary" className="rounded-full">
-                  {selectedCount}
-                </Badge>
-              </div>
+            <div className="flex items-center gap-2 mb-4">
+              <h3 className="font-medium">produits selectioner</h3>
+              <Badge variant="secondary" className="rounded-full">
+                {selectedCount}
+              </Badge>
+            </div>
 
             <div className="space-y-3">
               {Object.values(selectedArticles).map((article) => (
@@ -177,7 +182,7 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Annuler
           </Button>
-          <Button 
+          <Button
             onClick={handleAddItems}
             disabled={totalQuantity === 0}
             className="bg-purple-500 hover:bg-purple-600 text-white"
@@ -187,6 +192,5 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
-

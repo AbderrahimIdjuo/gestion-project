@@ -1,7 +1,6 @@
-"use client"
+"use client";
 
-import { subDays, format } from "date-fns"
-import { fr } from "date-fns/locale"
+import { subDays, format } from "date-fns";
 import {
   Line,
   LineChart,
@@ -9,29 +8,35 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-} from "recharts"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+} from "recharts";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Generate mock data for the current month and last month
 const generateData = () => {
-  const data = []
-  const today = new Date()
-  
+  const data = [];
+  const today = new Date();
+
   for (let i = 6; i >= 0; i--) {
-    const date = subDays(today, i)
+    const date = subDays(today, i);
     data.push({
-      date: format(date, 'dd'),
+      date: format(date, "dd"),
       thisMonth: Math.floor(Math.random() * 10) + 2,
       lastMonth: Math.floor(Math.random() * 10) + 2,
-    })
+    });
   }
-  return data
-}
+  return data;
+};
 
-const data = generateData()
+const data = generateData();
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload }) => {
   if (active && payload && payload.length) {
     return (
       <div className="rounded-lg border bg-[#0f1729] p-2 shadow-sm">
@@ -40,27 +45,23 @@ const CustomTooltip = ({ active, payload, label }: any) => {
             <span className="text-[0.70rem] uppercase text-gray-400">
               This month
             </span>
-            <span className="font-bold text-gray-100">
-              {payload[0].value}h
-            </span>
+            <span className="font-bold text-gray-100">{payload[0].value}h</span>
           </div>
           <div className="flex flex-col">
             <span className="text-[0.70rem] uppercase text-gray-400">
               Last month
             </span>
-            <span className="font-bold text-gray-100">
-              {payload[1].value}h
-            </span>
+            <span className="font-bold text-gray-100">{payload[1].value}h</span>
           </div>
         </div>
         <div className="mt-2 text-xs font-medium text-gray-400">
           {format(new Date(), "dd MMM yyyy")}
         </div>
       </div>
-    )
+    );
   }
-  return null
-}
+  return null;
+};
 
 export function PerformanceChart() {
   return (
@@ -99,7 +100,7 @@ export function PerformanceChart() {
             />
             <Tooltip
               content={<CustomTooltip />}
-              cursor={{ stroke: '#888888', strokeDasharray: '4 4' }}
+              cursor={{ stroke: "#888888", strokeDasharray: "4 4" }}
             />
             <Line
               type="monotone"
@@ -121,6 +122,5 @@ export function PerformanceChart() {
         </ResponsiveContainer>
       </CardContent>
     </Card>
-  )
+  );
 }
-

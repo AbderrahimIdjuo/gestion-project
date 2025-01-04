@@ -19,6 +19,7 @@ export async function POST(req) {
 
     return NextResponse.json({ result });
   } catch (error) {
+    console.error("Error updating product:", error);
     return NextResponse.json(
       { message: "An unexpected error occurred." },
       { status: 500 }
@@ -46,6 +47,7 @@ export async function PUT(req) {
 
     return NextResponse.json({ result });
   } catch (error) {
+    console.error("Error updating product:", error);
     return NextResponse.json(
       { message: "An unexpected error occurred." },
       { status: 500 }
@@ -53,7 +55,7 @@ export async function PUT(req) {
   }
 }
 
-export async function GET(req) {
+export async function GET() {
   const produits = await prisma.produits.findMany({
     orderBy: {
       updatedAt: "desc",
