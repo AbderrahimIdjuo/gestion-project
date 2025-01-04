@@ -11,14 +11,8 @@ import {
   ShoppingCart,
   ChevronDown,
   ChevronRight,
-  Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { ClientFormDialog } from "@/components/client-form-dialog";
-import { FournisseurFormDialog } from "@/components/fournisseur-form-dialog";
-import { FactureFormDialog } from "@/components/facture-form-dialog";
-import { ProductFormDialog } from "@/components/product-form-dialog";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/" },
@@ -26,20 +20,16 @@ const menuItems = [
     icon: Users,
     label: "Clients",
     href: "/clients",
-    action: "add",
-    dialog: ClientFormDialog,
   },
   {
     icon: Package,
     label: "Produits",
     href: "/produits",
-    action: "add",
-    dialog: ProductFormDialog,
   },
   {
     icon: ShoppingCart,
     label: "Ventes",
-    //href: '/ventes',
+    href: "/ventes",
     subItems: [
       { label: "Devis", href: "/ventes/devis" },
       { label: "Commandes", href: "/ventes/commandes" },
@@ -54,16 +44,12 @@ const menuItems = [
       {
         label: "Fournisseurs",
         href: "/achats/fournisseurs",
-        action: "add",
-        dialog: FournisseurFormDialog,
       },
       { label: "Dépenses", href: "/achats/depenses" },
       { label: "Dépenses récurrentes", href: "/achats/depenses-recurrentes" },
       {
         label: "Factures",
         href: "/achats/factures",
-        action: "add",
-        dialog: FactureFormDialog,
       },
       { label: "Crédit fournisseurs", href: "/achats/credit-fournisseurs" },
     ],
@@ -93,26 +79,6 @@ export function Sidebar() {
 
   const isSubActive = (href) => {
     return pathname === href;
-  };
-
-  const renderAddButton = (item) => {
-    if (item.action === "add" && isExpanded) {
-      const DialogComponent = item.dialog;
-      return (
-        <DialogComponent>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="ml-auto h-8 w-8 rounded-full hover:bg-purple-200"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Plus className="h-4 w-4" />
-            <span className="sr-only">Ajouter {item.label.toLowerCase()}</span>
-          </Button>
-        </DialogComponent>
-      );
-    }
-    return null;
   };
 
   return (
@@ -194,7 +160,6 @@ export function Sidebar() {
                       )}
                     </div>
                   )}
-                  {renderAddButton(item)}
                 </div>
 
                 {isExpanded && item.subItems && isOpen && (
@@ -218,7 +183,6 @@ export function Sidebar() {
                           >
                             {subItem.label}
                           </Link>
-                          {renderAddButton(subItem)}
                         </li>
                       );
                     })}

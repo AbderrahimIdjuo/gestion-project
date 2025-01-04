@@ -12,14 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
+import CustomPagination from "@/components/customUi/customPagination";
 import { Plus, Search, Pen, Trash2, Info, Filter } from "lucide-react";
 import { ProductFormDialog } from "@/components/product-form-dialog";
 import {
@@ -93,7 +86,7 @@ export default function ProduitsPage() {
 
   const deleteProduct = async () => {
     try {
-    await axios.delete(`/api/produits/${currProduct.id}`);
+      await axios.delete(`/api/produits/${currProduct.id}`);
       toast(
         <span>
           Le produit <b>{currProduct?.designation.toUpperCase()}</b> a été
@@ -128,8 +121,6 @@ export default function ProduitsPage() {
         return "bg-gray-500";
     }
   };
-
-
 
   const handleDetails = (id) => {
     console.log("View details for product:", id);
@@ -220,7 +211,7 @@ export default function ProduitsPage() {
                       <SelectContent className="bg-white">
                         <SelectItem value="all">Tous les statuts</SelectItem>
                         <SelectItem value="En stock">En stock</SelectItem>
-                        <SelectItem value="Rupture">Rupture</SelectItem>
+                        <SelectItem value="En rupture">En rupture</SelectItem>
                         <SelectItem value="Commander">Commander</SelectItem>
                       </SelectContent>
                     </Select>
@@ -429,34 +420,11 @@ export default function ProduitsPage() {
           </Table>
         </div>
         {filteredProducts?.length > 0 ? (
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                />
-              </PaginationItem>
-              {Array.from({ length: totalPages }, (_, i) => (
-                <PaginationItem key={i + 1}>
-                  <PaginationLink
-                    onClick={() => setCurrentPage(i + 1)}
-                    isActive={currentPage === i + 1}
-                  >
-                    {i + 1}
-                  </PaginationLink>
-                </PaginationItem>
-              ))}
-              <PaginationItem>
-                <PaginationNext
-                  onClick={() =>
-                    setCurrentPage((p) => Math.min(totalPages, p + 1))
-                  }
-                  disabled={currentPage === totalPages}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
+          <CustomPagination
+            currentPage={currentPage}
+            setCurrentPage={setCurrentPage}
+            totalPages={totalPages}
+          />
         ) : (
           ""
         )}

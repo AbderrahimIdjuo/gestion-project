@@ -15,14 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
+import CustomPagination from "@/components/myUi/customPagination";
 import { Search, Plus, Pen, Trash2 } from "lucide-react";
 import { FournisseurFormDialog } from "@/components/fournisseur-form-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -209,35 +202,14 @@ export default function FournisseursPage() {
           </Table>
         </div>
         {filteredFournisseurs?.length > 0 ? (
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                />
-              </PaginationItem>
-              {Array.from({ length: totalPages }, (_, i) => (
-                <PaginationItem key={i + 1}>
-                  <PaginationLink
-                    onClick={() => setCurrentPage(i + 1)}
-                    isActive={currentPage === i + 1}
-                  >
-                    {i + 1}
-                  </PaginationLink>
-                </PaginationItem>
-              ))}
-              <PaginationItem>
-                <PaginationNext
-                  onClick={() =>
-                    setCurrentPage((p) => Math.min(totalPages, p + 1))
-                  }
-                  disabled={currentPage === totalPages}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        ) : null}
+          <CustomPagination
+            currentPage={currentPage}
+            setCurrentPage={setCurrentPage}
+            totalPages={totalPages}
+          />
+        ) : (
+          ""
+        )}
       </div>
       <DeleteConfirmationDialog
         recordName={currFournisseur?.nom}

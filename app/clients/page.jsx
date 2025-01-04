@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import toast, { Toaster } from "react-hot-toast";
-
+import CustomPagination from "@/components/myUi/customPagination";
 import {
   Table,
   TableBody,
@@ -13,14 +13,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
 import { Search, Plus, Pen, Trash2, ShoppingBag } from "lucide-react";
 import { ClientFormDialog } from "@/components/client-form-dialog";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
@@ -152,7 +144,6 @@ export default function ClientsPage() {
                     <TableCell className="!py-2" key={index} align="right">
                       <Skeleton className="h-4 w-[100px]" />
                     </TableCell>
-
                   </TableRow>
                 ))
               ) : currentClients.length > 0 ? (
@@ -221,38 +212,13 @@ export default function ClientsPage() {
         </div>
 
         {filteredClients.length > 0 ? (
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                />
-              </PaginationItem>
-              {Array.from({ length: totalPages }, (_, i) => (
-                <PaginationItem key={i + 1}>
-                  <PaginationLink
-                    onClick={() => setCurrentPage(i + 1)}
-                    isActive={currentPage === i + 1}
-                  >
-                    {i + 1}
-                  </PaginationLink>
-                </PaginationItem>
-              ))}
-              <PaginationItem>
-                <PaginationNext
-                  onClick={() =>
-                    setCurrentPage((p) => Math.min(totalPages, p + 1))
-                  }
-                  disabled={currentPage === totalPages}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
+          <CustomPagination
+            currentPage={currentPage}
+            setCurrentPage={setCurrentPage}
+            totalPages={totalPages}
+          />
         ) : (
-          <TableCell colSpan={7} align="center">
-            Aucun client trouvé
-          </TableCell>
+          ""
         )}
       </div>
       <DeleteConfirmationDialog
