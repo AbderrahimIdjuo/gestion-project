@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/pagination";
 import { Search, Plus, Pen, Trash2 } from "lucide-react";
 import { FournisseurFormDialog } from "@/components/fournisseur-form-dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function FournisseursPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -32,6 +33,7 @@ export default function FournisseursPage() {
   const [currFournisseur, setCurrFournisseur] = useState("");
   const [fournisseurList, setFournisseurList] = useState([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const itemsPerPage = 10;
 
@@ -54,7 +56,7 @@ export default function FournisseursPage() {
     const result = await axios.get("/api/fournisseurs");
     const { Fournisseurs } = result.data;
     setFournisseurList(Fournisseurs);
-    console.log("Fournisseurs from Fournisseurs/page : ", Fournisseurs);
+    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -67,9 +69,7 @@ export default function FournisseursPage() {
 
   const deleteFournisseur = async () => {
     try {
-      await axios.delete(
-        `/api/fournisseurs/${currFournisseur.id}`
-      );
+      await axios.delete(`/api/fournisseurs/${currFournisseur.id}`);
       toast(
         <span>
           Le fournisseur <b>{currFournisseur?.nom.toUpperCase()}</b> a été
@@ -126,81 +126,118 @@ export default function FournisseursPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {currentFournisseurs.map((fournisseur) => (
-                <TableRow key={fournisseur.id}>
-                  <TableCell className="font-medium">
-                    {fournisseur.nom}
-                  </TableCell>
-                  <TableCell>{fournisseur.email}</TableCell>
-                  <TableCell>{fournisseur.telephone}</TableCell>
-                  <TableCell>{fournisseur.adresse}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <ModifyFournisseurDialog
-                        currFournisseur={currFournisseur}
-                        getFournisseurs={getFournisseurs}
-                      >
+              {isLoading ? (
+                [...Array(10)].map((_, index) => (
+                  <TableRow
+                    className="h-[2rem] MuiTableRow-root"
+                    hover
+                    role="checkbox"
+                    tabIndex={-1}
+                    key={index}
+                  >
+                    <TableCell
+                      className="!py-2 text-sm md:text-base"
+                      key={index}
+                      align="left"
+                    >
+                      <Skeleton className="h-4 w-[150px]" />
+                    </TableCell>
+                    <TableCell className="!py-2" key={index} align="left">
+                      <Skeleton className="h-4 w-[150px]" />
+                    </TableCell>
+                    <TableCell className="!py-2" key={index} align="left">
+                      <Skeleton className="h-4 w-[150px]" />
+                    </TableCell>
+                    <TableCell className="!py-2" key={index} align="left">
+                      <Skeleton className="h-4 w-[150px]" />
+                    </TableCell>
+                    <TableCell className="!py-2" key={index} align="right">
+                      <Skeleton className="h-4 w-[100px]" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : currentFournisseurs?.length > 0 ? (
+                currentFournisseurs.map((fournisseur) => (
+                  <TableRow key={fournisseur.id}>
+                    <TableCell className="font-medium">
+                      {fournisseur.nom}
+                    </TableCell>
+                    <TableCell>{fournisseur.email}</TableCell>
+                    <TableCell>{fournisseur.telephone}</TableCell>
+                    <TableCell>{fournisseur.adresse}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <ModifyFournisseurDialog
+                          currFournisseur={currFournisseur}
+                          getFournisseurs={getFournisseurs}
+                        >
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
+                            onClick={() => {
+                              setCurrFournisseur(fournisseur);
+                            }}
+                          >
+                            <Pen className="h-4 w-4" />
+                            <span className="sr-only">Modifier</span>
+                          </Button>
+                        </ModifyFournisseurDialog>
                         <Button
+                          name="delete btn"
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
+                          className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
                           onClick={() => {
+                            setIsDialogOpen(true);
                             setCurrFournisseur(fournisseur);
                           }}
                         >
-                          <Pen className="h-4 w-4" />
-                          <span className="sr-only">Modifier</span>
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">Supprimer</span>
                         </Button>
-                      </ModifyFournisseurDialog>
-                      <Button
-                        name="delete btn"
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
-                        onClick={() => {
-                          setIsDialogOpen(true);
-                          setCurrFournisseur(fournisseur);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        <span className="sr-only">Supprimer</span>
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableCell colSpan={7} align="center">
+                  Aucun fournisseur trouvé
+                </TableCell>
+              )}
             </TableBody>
           </Table>
         </div>
-
-        <Pagination>
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-              />
-            </PaginationItem>
-            {Array.from({ length: totalPages }, (_, i) => (
-              <PaginationItem key={i + 1}>
-                <PaginationLink
-                  onClick={() => setCurrentPage(i + 1)}
-                  isActive={currentPage === i + 1}
-                >
-                  {i + 1}
-                </PaginationLink>
+        {filteredFournisseurs?.length > 0 ? (
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                />
               </PaginationItem>
-            ))}
-            <PaginationItem>
-              <PaginationNext
-                onClick={() =>
-                  setCurrentPage((p) => Math.min(totalPages, p + 1))
-                }
-                disabled={currentPage === totalPages}
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
+              {Array.from({ length: totalPages }, (_, i) => (
+                <PaginationItem key={i + 1}>
+                  <PaginationLink
+                    onClick={() => setCurrentPage(i + 1)}
+                    isActive={currentPage === i + 1}
+                  >
+                    {i + 1}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(totalPages, p + 1))
+                  }
+                  disabled={currentPage === totalPages}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        ) : null}
       </div>
       <DeleteConfirmationDialog
         recordName={currFournisseur?.nom}

@@ -27,6 +27,7 @@ import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialo
 import { ClientInfoDialog } from "@/components/client-info-dialog";
 import { ModifyClientDialog } from "@/components/modify-client-dialog";
 import axios from "axios";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ClientsPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -34,6 +35,8 @@ export default function ClientsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [clientList, setClientList] = useState([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
   const itemsPerPage = 10;
 
   const filteredClients = clientList.filter(
@@ -53,7 +56,7 @@ export default function ClientsPage() {
     const result = await axios.get("/api/clients");
     const { Clients } = result.data;
     setClientList(Clients);
-    console.log("clients from clients/page : ", clientList);
+    setIsLoading(false);
   };
 
   const deleteClient = async () => {
@@ -81,7 +84,7 @@ export default function ClientsPage() {
 
   useEffect(() => {
     getClients();
-  }, [getClients]);
+  }, []);
 
   return (
     <>
@@ -121,7 +124,38 @@ export default function ClientsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {currentClients.length > 0 ? (
+              {isLoading ? (
+                [...Array(10)].map((_, index) => (
+                  <TableRow
+                    className="h-[2rem] MuiTableRow-root"
+                    hover
+                    role="checkbox"
+                    tabIndex={-1}
+                    key={index}
+                  >
+                    <TableCell
+                      className="!py-2 text-sm md:text-base"
+                      key={index}
+                      align="left"
+                    >
+                      <Skeleton className="h-4 w-[150px]" />
+                    </TableCell>
+                    <TableCell className="!py-2" key={index} align="left">
+                      <Skeleton className="h-4 w-[150px]" />
+                    </TableCell>
+                    <TableCell className="!py-2" key={index} align="left">
+                      <Skeleton className="h-4 w-[150px]" />
+                    </TableCell>
+                    <TableCell className="!py-2" key={index} align="left">
+                      <Skeleton className="h-4 w-[150px]" />
+                    </TableCell>
+                    <TableCell className="!py-2" key={index} align="right">
+                      <Skeleton className="h-4 w-[100px]" />
+                    </TableCell>
+
+                  </TableRow>
+                ))
+              ) : currentClients.length > 0 ? (
                 currentClients?.map((client) => (
                   <TableRow key={client.id}>
                     <ClientInfoDialog client={client}>
@@ -215,7 +249,11 @@ export default function ClientsPage() {
               </PaginationItem>
             </PaginationContent>
           </Pagination>
-        ) : null}
+        ) : (
+          <TableCell colSpan={7} align="center">
+            Aucun client trouvé
+          </TableCell>
+        )}
       </div>
       <DeleteConfirmationDialog
         recordName={currClient?.nom}

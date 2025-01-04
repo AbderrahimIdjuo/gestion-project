@@ -14,7 +14,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useForm } from "react-hook-form";
-
+import toast from "react-hot-toast";
+import axios from "axios";
 
 
 export function ClientFormDialog({ children, getClients }) {
@@ -22,12 +23,14 @@ export function ClientFormDialog({ children, getClients }) {
   const [open, setOpen] = useState(false);
  
 
-  const onSubmit = async (data) => {
+  const onSubmit = async (data) => {   
     toast.promise(
       (async () => {
         try {
           const response = await axios.post("/api/clients", data);
-          
+          console.log("Client ajouté avec succès");
+          getClients();
+          reset();          
           if (response.status === 200) { // Assuming 201 is the success status code
             console.log("Client ajouté avec succès");
             getClients();

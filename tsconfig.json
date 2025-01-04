@@ -28,7 +28,7 @@
     ".next/types/**/*.ts",
     "components/client-form-dialog.jsx",
     "app/clients/page.jsx",
-    "app/fournisseurs/page.jsx",
+    "app/achats/fournisseurs/page.jsx",
     "components/fournisseur-form-dialog.jsx",
     "components/delete-confirmation-dialog.jsx",
     "components/sidebar.jsx",
