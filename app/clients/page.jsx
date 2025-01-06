@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import toast, { Toaster } from "react-hot-toast";
-import CustomPagination from "@/components/myUi/customPagination";
+import CustomPagination from "@/components/customUi/customPagination"
 import {
   Table,
   TableBody,

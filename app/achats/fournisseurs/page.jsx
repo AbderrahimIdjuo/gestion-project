@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import CustomPagination from "@/components/myUi/customPagination";
+import CustomPagination from "@/components/customUi/customPagination";
 import { Search, Plus, Pen, Trash2 } from "lucide-react";
 import { FournisseurFormDialog } from "@/components/fournisseur-form-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
