@@ -34,6 +34,7 @@ model Produits {
   prixVente    Float
   statut       String   // Use Enum if you have predefined statuses
   stock        Int
+  description  String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
@@ -59,14 +60,29 @@ model Commandes {
   updatedAt DateTime @updatedAt
 }
 
+model Articls {
+  id          String   @id @default(uuid())
+  deviId      String   
+  devi        Devis @relation(fields: [deviId], references: [id] , onDelete: Cascade)
+  designation String
+  montant     Float
+  quantite    Int
+  prixUnite   Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 model Devis {
   id         String   @id @default(uuid())
   numero     String   @unique
   clientId   String   // Foreign key to Clients table
   client     Clients  @relation(fields: [clientId], references: [id])
-  montant    Float
   statut     String   // Use the existing Status enum
-  validite   DateTime
+  sousTotal  Float
+  fraisLivraison Float
+  reduction  Int
+  total    Float
+  articls    Articls[] 
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
