@@ -338,13 +338,13 @@ export default function ProduitsPage() {
                       <Skeleton className="h-4 w-[150px]" />
                     </TableCell>
                     <TableCell className="!py-2" key={index} align="left">
-                      <Skeleton className="h-4 w-[100px]" />
+                      <Skeleton className="h-4 w-[90px]" />
                     </TableCell>
                     <TableCell className="!py-2" key={index} align="left">
-                      <Skeleton className="h-4 w-[100px]" />
+                      <Skeleton className="h-4 w-[90px]" />
                     </TableCell>
-                    <TableCell className="!py-2" key={index} align="left">
-                      <Skeleton className="h-4 w-[100px]" />
+                    <TableCell className="!py-2" key={index} align="right">
+                      <Skeleton className="h-4 w-[150px]" />
                     </TableCell>
                   </TableRow>
                 ))

@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Search, Pen, Trash2, Info, Filter } from "lucide-react";
+import { Plus, Search, Pen, Trash2, FileText, Filter } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -33,16 +33,18 @@ import { Slider } from "@/components/ui/slider";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 import CustomPagination from "@/components/customUi/customPagination";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function DevisPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [devisList, setDevisList] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [filters, setFilters] = useState({
     client: "all",
     dateStart: "",
     dateEnd: "",
-    montant: [0, 10000],
+    montant: [0, 100000],
     statut: "all",
   });
   const itemsPerPage = 10;
@@ -73,7 +75,7 @@ export default function DevisPage() {
     const result = await axios.get("/api/devis");
     const { devis } = result.data;
     setDevisList(devis);
-    console.log("devis list : ", devis);
+    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -99,10 +101,6 @@ export default function DevisPage() {
     }
   };
 
-  const handleEdit = (id) => {
-    console.log("Edit devis:", id);
-  };
-
   const deleteDevi = async (id, numero) => {
     console.log("delete item");
 
@@ -122,10 +120,6 @@ export default function DevisPage() {
     } catch (e) {
       console.log(e);
     }
-  };
-
-  const handleInfo = (id) => {
-    console.log("View info for devis:", id);
   };
 
   return (
@@ -253,91 +247,105 @@ export default function DevisPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {currentDevis?.map((devis) => (
-                <TableRow key={devis.id}>
-                  <TableCell>{devis.createdAt.split("T")[0]}</TableCell>
-                  <TableCell className="font-medium">{devis.numero}</TableCell>
-                  <TableCell>{devis.client.nom.toUpperCase()}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`h-2 w-2 rounded-full ${getStatusColor(
-                          devis.statut
-                        )}`}
-                      />
-                      <span className="text-sm text-muted-foreground">
-                        {devis.statut}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell>{devis.total} DH</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
-                        onClick={() => handleEdit(devis.id)}
-                      >
-                        <Pen className="h-4 w-4" />
-                        <span className="sr-only">Modifier</span>
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
-                        onClick={() => {
-                          deleteDevi(devis.id, devis.numero);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        <span className="sr-only">Supprimer</span>
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 rounded-full hover:bg-blue-100 hover:text-blue-600"
-                        onClick={() => handleInfo(devis.id)}
-                      >
-                        <Info className="h-4 w-4" />
-                        <span className="sr-only">Informations</span>
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {isLoading ? (
+                [...Array(10)].map((_, index) => (
+                  <TableRow
+                    className="h-[2rem] MuiTableRow-root"
+                    hover
+                    role="checkbox"
+                    tabIndex={-1}
+                    key={index}
+                  >
+                    <TableCell
+                      className="!py-2 text-sm md:text-base"
+                      key={index}
+                      align="left"
+                    >
+                      <Skeleton className="h-4 w-[150px]" />
+                    </TableCell>
+                    <TableCell className="!py-2" key={index} align="left">
+                      <Skeleton className="h-4 w-[150px]" />
+                    </TableCell>
+                    <TableCell className="!py-2" key={index} align="left">
+                      <Skeleton className="h-4 w-[150px]" />
+                    </TableCell>
+                    <TableCell className="!py-2" key={index} align="left">
+                      <Skeleton className="h-4 w-[150px]" />
+                    </TableCell>
+                    <TableCell className="!py-2" key={index} align="left">
+                      <Skeleton className="h-4 w-[100px]" />
+                    </TableCell>
+                    <TableCell className="!py-2" key={index} align="right">
+                      <Skeleton className="h-4 w-[100px]" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : currentDevis?.length > 0 ? (
+                currentDevis?.map((devis) => (
+                  <TableRow key={devis.id}>
+                    <TableCell>{devis.createdAt.split("T")[0]}</TableCell>
+                    <TableCell className="font-medium">
+                      {devis.numero}
+                    </TableCell>
+                    <TableCell>{devis.client.nom.toUpperCase()}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`h-2 w-2 rounded-full ${getStatusColor(
+                            devis.statut
+                          )}`}
+                        />
+                        <span className="text-sm text-muted-foreground">
+                          {devis.statut}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>{devis.total} DH</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
+                          onClick={() => router.push(`/ventes/devis/${devis.id}/update`)}
+                        >
+                          <Pen className="h-4 w-4" />
+                          <span className="sr-only">Modifier</span>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
+                          onClick={() => {
+                            deleteDevi(devis.id, devis.numero);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">Supprimer</span>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 rounded-full hover:bg-green-100 hover:text-green-600"
+                          onClick={() =>
+                            router.push(`/ventes/devis/${devis.id}/pdf`)
+                          }
+                        >
+                          <FileText className="h-4 w-4" />
+                          <span className="sr-only">Imprimer</span>
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableCell colSpan={7} align="center">
+                  Aucun produit trouvé
+                </TableCell>
+              )}
             </TableBody>
           </Table>
         </div>
-
-        {/* <Pagination>
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-              />
-            </PaginationItem>
-            {Array.from({ length: totalPages }, (_, i) => (
-              <PaginationItem key={i + 1}>
-                <PaginationLink
-                  onClick={() => setCurrentPage(i + 1)}
-                  isActive={currentPage === i + 1}
-                >
-                  {i + 1}
-                </PaginationLink>
-              </PaginationItem>
-            ))}
-            <PaginationItem>
-              <PaginationNext
-                onClick={() =>
-                  setCurrentPage((p) => Math.min(totalPages, p + 1))
-                }
-                disabled={currentPage === totalPages}
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination> */}
 
         {currentDevis?.length > 0 ? (
           <CustomPagination

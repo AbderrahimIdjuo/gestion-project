@@ -76,3 +76,116 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+@media print {
+  @page {
+    margin: 2cm;
+    size: A4;
+  }
+  body * {
+    visibility: hidden;
+  }
+  #print-area,
+  #print-area * {
+    visibility: visible;
+  }
+  #print-area {
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+
+  body {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Hide navigation elements */
+  nav,
+  .sidebar,
+  .navbar,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Reset main content layout */
+  main {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Container adjustments */
+  .container {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Ensure colors print correctly */
+  .text-purple-600 {
+    color: #7c3aed !important;
+  }
+
+  .border-purple-500 {
+    border-color: #8b5cf6 !important;
+  }
+
+  /* Table styles */
+  /* table {
+    border-collapse: collapse;
+    width: 100% !important;
+  }
+
+  th,
+  td {
+    border: 1px solid #e5e7eb !important;
+    padding: 0.5rem !important;
+  } */
+
+  /* Background colors */
+  .bg-gray-50 {
+    background-color: #f9fafb !important;
+  }
+
+  /* Font adjustments */
+  body {
+    font-size: 12pt;
+    line-height: 1.3;
+  }
+
+  h1 {
+    font-size: 24pt;
+    margin-bottom: 1rem;
+  }
+
+  @media print {
+    table {
+      page-break-inside: auto; /* Allow the table to break across pages */
+      width: 100%;
+    }
+
+    thead {
+      display: table-row-group; /* Ensure the header appears on each page */
+    }
+
+    tbody {
+      border: 0;
+      display: table-row-group; /* Ensure body rows behave as expected */
+    }
+
+    tfoot {
+      border-bottom: 0;
+      display: table-row-group; /* Ensures the footer appears only once */
+    }
+
+    tr {
+      page-break-inside: avoid; /* Prevent splitting of rows across pages */
+    }
+
+    td,
+    th {
+      word-wrap: break-word; /* Handle long text gracefully */
+    }
+  }
+}

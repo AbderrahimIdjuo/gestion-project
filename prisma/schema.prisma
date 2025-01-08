@@ -73,18 +73,20 @@ model Articls {
 }
 
 model Devis {
-  id         String   @id @default(uuid())
-  numero     String   @unique
-  clientId   String   // Foreign key to Clients table
-  client     Clients  @relation(fields: [clientId], references: [id])
-  statut     String   // Use the existing Status enum
-  sousTotal  Float
+  id             String   @id @default(uuid())
+  numero         String   @unique
+  clientId       String   // Foreign key to Clients table
+  client         Clients  @relation(fields: [clientId], references: [id])
+  statut         String   // Use the existing Status enum
+  sousTotal      Float
   fraisLivraison Float
-  reduction  Int
-  total    Float
-  articls    Articls[] 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  reduction      Int
+  total          Float
+  note           String?
+  typeReduction  String @default("%")
+  articls        Articls[] 
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 

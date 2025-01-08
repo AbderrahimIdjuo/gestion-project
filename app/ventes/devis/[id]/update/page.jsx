@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
-import { customAlphabet } from "nanoid";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -27,13 +26,12 @@ import { Plus, Trash2, MoveLeftIcon } from "lucide-react";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 
-export default function NouveauDevisPage() {
+export default function UpdateDevisPage({ params }) {
   const [clientList, setClientList] = useState([]);
   const [searchClientQuery, setSearchClientQuery] = useState("");
   const [client, setClient] = useState("");
-  const [items, setItems] = useState([
-    { id: 1, details: "", quantity: 1, rate: 0 },
-  ]);
+  const [items, setItems] = useState();
+  const [devi, setDevi] = useState();
 
   const [formData, setFormData] = useState({
     customerName: "",
@@ -45,6 +43,7 @@ export default function NouveauDevisPage() {
     discountType: "%",
     customerNotes: "",
   });
+
   const status = [
     { lable: "En attente", color: "bg-amber-400" },
     { lable: "Accepté", color: "bg-green-500" },
@@ -52,6 +51,27 @@ export default function NouveauDevisPage() {
   ];
 
   const router = useRouter();
+  const getDevisById = async () => {
+    const result = await axios.get(`/api/devis/${params.id}`);
+    const { devi } = result.data;
+    setDevi(devi);
+    setItems(devi.articls);
+    setClient(devi.client);
+    setFormData((prev) => ({
+      ...prev,
+      customerName: devi?.client.nom,
+      shippingCharges: devi?.fraisLivraison,
+      discount: devi?.reduction,
+      statut: devi?.statut,
+      discountType: devi?.typeReduction,
+      customerNotes: devi?.note,
+    }));
+    console.log("Articls : ", devi.articls);
+    console.log("devi : ", devi);
+  };
+  useEffect(() => {
+    getDevisById();
+  }, [params.id]);
 
   const getClients = async () => {
     const result = await axios.get("/api/clients");
@@ -67,23 +87,14 @@ export default function NouveauDevisPage() {
     getClients();
   }, []);
 
-  const generateDevisNumber = () => {
-    const digits = "1234567890";
-    const nanoidCustom = customAlphabet(digits, 8);
-
-    const customId = nanoidCustom();
-
-    return `DEV-${customId}`;
-  };
-
   const onSubmit = async () => {
     const data = {
-      numero: generateDevisNumber(),
+      id: devi?.id,
+      numero: devi?.numero,
       clientId: client.id,
       articls: items,
       statut: formData.statut,
       sousTotal: calculateSubTotal(),
-      notesClient: formData.customerNotes,
       fraisLivraison: Math.max(0, formData.shippingCharges),
       reduction: Math.max(0, formData.discount),
       total: calculateTotal(),
@@ -96,21 +107,22 @@ export default function NouveauDevisPage() {
     toast.promise(
       (async () => {
         try {
-          const response = await axios.post("/api/devis", data);
+          const response = await axios.put("/api/devis", data);
           console.log("Devi ajouté avec succès");
-          setFormData((prev) => ({
-            ...prev,
-            customerName: "",
-            salesperson: "",
-            shippingCharges: 0,
-            discount: 0,
-            statut: "En attente",
-            discountType: "%",
-            customerNotes: "",
-          }));
-          setItems([{ id: 1, details: "", quantity: 1, rate: 0 }]);
+          // setFormData((prev) => ({
+          //   ...prev,
+          //   customerName: "",
+          //   salesperson: "",
+          //   shippingCharges: 0,
+          //   discount: 0,
+          //   statut: "En attente",
+          //   discountType: "%",
+          //   customerNotes: "",
+          // }));
+          // setItems([{ id: 1, designation: "", quantite: 1, prixUnite: 0 }]);
+          router.push("/ventes/devis");
           if (response.status === 200) {
-            console.log("Devi ajouté avec succès");
+            console.log("Devi modifier avec succès");
           } else {
             throw new Error("Unexpected response status");
           }
@@ -120,8 +132,8 @@ export default function NouveauDevisPage() {
       })(),
       {
         loading: "Ajout du devi ...",
-        success: "Devi ajouté avec succès!",
-        error: "Échec de l'ajout du devi",
+        success: "Devi modifier avec succès!",
+        error: "Échec de la modification du devi",
       }
     );
   };
@@ -144,8 +156,8 @@ export default function NouveauDevisPage() {
       ...prev,
       {
         id: prev.length + 1,
-        details: "",
-        quantity: 1,
+        designation: "",
+        quantite: 1,
         rate: 0,
       },
     ]);
@@ -156,8 +168,8 @@ export default function NouveauDevisPage() {
   };
 
   const calculateSubTotal = () => {
-    return items.reduce((sum, item) => {
-      const amount = item.quantity * item.rate;
+    return items?.reduce((sum, item) => {
+      const amount = item.quantite * item.prixUnite;
       return sum + amount;
     }, 0);
   };
@@ -186,7 +198,7 @@ export default function NouveauDevisPage() {
             >
               <MoveLeftIcon />
             </Button>
-            <h1 className="text-3xl font-bold">Nouveau Devis</h1>
+            <h1 className="text-3xl font-bold">Modifier Devis</h1>
           </div>
         </div>
         <Card>
@@ -297,16 +309,16 @@ export default function NouveauDevisPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {items.map((item) => (
+                  {items?.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell>
                         <Input
                           className="focus:!ring-purple-500"
-                          value={item.details}
+                          value={item.designation}
                           onChange={(e) => {
                             handleItemChange(
                               item.id,
-                              "details",
+                              "designation",
                               e.target.value
                             );
                           }}
@@ -318,11 +330,11 @@ export default function NouveauDevisPage() {
                           type="number"
                           min={1}
                           className="focus:!ring-purple-500 w-20"
-                          value={item.quantity}
+                          value={item.quantite}
                           onChange={(e) =>
                             handleItemChange(
                               item.id,
-                              "quantity",
+                              "quantite",
                               Number(e.target.value)
                             )
                           }
@@ -330,11 +342,11 @@ export default function NouveauDevisPage() {
                       </TableCell>
                       <TableCell>
                         <Input
-                          value={item.rate}
+                          value={item.prixUnite}
                           onChange={(e) =>
                             handleItemChange(
                               item.id,
-                              "rate",
+                              "prixUnite",
                               Number(e.target.value)
                             )
                           }
@@ -342,7 +354,7 @@ export default function NouveauDevisPage() {
                         />
                       </TableCell>
                       <TableCell>
-                        {(item.quantity * item.rate).toFixed(2)} MAD
+                        {(item.quantite * item.prixUnite).toFixed(2)} MAD
                       </TableCell>
                       <TableCell>
                         <Button
@@ -385,7 +397,7 @@ export default function NouveauDevisPage() {
               <div className="space-y-4">
                 <div className="flex justify-between py-2 border-b">
                   <span>Sous-total</span>
-                  <span>{calculateSubTotal().toFixed(2)} MAD</span>
+                  <span>{calculateSubTotal()?.toFixed(2)} MAD</span>
                 </div>
 
                 <div className="space-y-2">

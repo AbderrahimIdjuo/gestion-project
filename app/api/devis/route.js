@@ -13,6 +13,8 @@ export async function POST(req) {
       fraisLivraison,
       reduction,
       total,
+      typeReduction,
+      note,
     } = resopns;
     const result = await prisma.devis.create({
       data: {
@@ -23,6 +25,8 @@ export async function POST(req) {
         fraisLivraison: parseFloat(fraisLivraison),
         reduction: parseInt(reduction),
         total: parseFloat(total),
+        typeReduction,
+        note,
         articls: {
           create: articls.map((articl) => ({
             designation: articl.details,
@@ -54,14 +58,54 @@ export async function POST(req) {
 export async function PUT(req) {
   try {
     const resopns = await req.json();
-    const { id, nom, email, telephone, adresse } = resopns;
+    const {
+      id,
+      numero,
+      clientId,
+      articls,
+      statut,
+      sousTotal,
+      fraisLivraison,
+      reduction,
+      total,
+      typeReduction,
+      note,
+    } = resopns;
+
+    const existingArticls = articls.filter((articl) => typeof(articl.id) === 'string');
+    const newArticls = articls.filter((articl) => typeof(articl.id) === 'number');
+    console.log("existingArticls", existingArticls);
+    console.log("newArticls", newArticls);
+
     const result = await prisma.devis.update({
       where: { id },
       data: {
-        nom,
-        email,
-        telephone,
-        adresse,
+        numero,
+        clientId,
+        statut,
+        sousTotal: parseFloat(sousTotal),
+        fraisLivraison: parseFloat(fraisLivraison),
+        reduction: parseInt(reduction),
+        total: parseFloat(total),
+        typeReduction,
+        note,
+        articls: {
+          update: existingArticls.map((articl) => ({
+            where: { id: articl.id },
+            data: {
+              designation: articl.designation,
+              quantite: parseInt(articl.quantite),
+              prixUnite: parseFloat(articl.prixUnite),
+              montant: articl.quantite * articl.prixUnite,
+            },
+          })),
+          create: newArticls.map((articl) => ({
+            designation: articl.designation,
+            quantite: parseInt(articl.quantite),
+            prixUnite: parseFloat(articl.prixUnite),
+            montant: articl.quantite * articl.prixUnite,
+          })),
+        },
       },
     });
 
