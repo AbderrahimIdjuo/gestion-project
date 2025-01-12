@@ -1,25 +1,28 @@
 "use client";
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import toast from "react-hot-toast";
 import axios from "axios";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useForm } from "react-hook-form";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { SaveButton } from "./customUi/styledButton";
 
-export function ModifyClientDialog({ children, currClient, getClients }) {
-  const { register, reset, handleSubmit } = useForm();
-  const [open, setOpen] = useState(false);
+
+
+export function ModifyClientDialog({ currClient, getClients}) {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm();
 
   const onSubmit = async (data) => {
     const Data = { ...data, id: currClient.id };
@@ -33,9 +36,7 @@ export function ModifyClientDialog({ children, currClient, getClients }) {
           throw new Error("Failed to add client");
         }
         console.log("Client ajouté avec succès");
-        reset();
         getClients();
-        setOpen(false);
       })(),
       {
         loading: "Modification en cours...",
@@ -46,77 +47,104 @@ export function ModifyClientDialog({ children, currClient, getClients }) {
   };
 
   return (
-    <>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>{children}</DialogTrigger>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Modifier un client</DialogTitle>
-            <DialogDescription>
-              Modifier les informations du client ici. Cliquez sur modifer
-              lorsque vous avez terminé.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="nom" className="text-right">
-                  Nom
-                </Label>
+    <Card className="w-full grid gap-2 h-full px-2">
+      <CardHeader className="flex-col justify-start">
+        <CardTitle className="my-3">Modifier un client</CardTitle>
+        <CardDescription className="my-5">
+          Modifier les informations du client ici. Cliquez sur enregistrer
+          lorsque vous avez terminé.
+        </CardDescription>
+        <Separator className=" mb-5 w-[95%]" />
+      </CardHeader>
+
+      <CardContent className="w-full">
+        <form
+          className="w-full h-[80%] grid gap-4"
+          onSubmit={handleSubmit(onSubmit)}
+        >
+          <div className="w-full grid gap-6 ">
+            <div className="w-full grid grid-cols-1">
+              <Label htmlFor="nom" className="text-left mb-2">
+                Nom
+              </Label>
+              <div className="w-full">
                 <Input
                   id="nom"
                   {...register("nom")}
-                  defaultValue={currClient.nom?.toUpperCase()}
+                  defaultValue={currClient?.nom?.toUpperCase()}
                   className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
                 />
+                {errors.nom && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.nom.message}
+                  </p>
+                )}
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="email" className="text-right">
-                  Email
-                </Label>
+            </div>
+
+            <div className="w- full grid grid-cols-1">
+              <Label htmlFor="email" className="text-left mb-2">
+                Email
+              </Label>
+              <div className="col-span-1">
                 <Input
                   id="email"
                   type="email"
                   {...register("email")}
-                  defaultValue={currClient.email}
+                  defaultValue={currClient?.email}
                   className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
                 />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="telephone" className="text-right">
-                  Téléphone
-                </Label>
-                <Input
-                  id="telephone"
-                  type="tel"
-                  {...register("telephone")}
-                  defaultValue={currClient.telephone}
-                  className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="adresse" className="text-right">
-                  Adresse
-                </Label>
-                <Input
-                  id="adresse"
-                  {...register("adresse")}
-                  defaultValue={currClient.adresse}
-                  className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
-                />
+                {errors.email && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.email.message}
+                  </p>
+                )}
               </div>
             </div>
-            <DialogFooter>
-              <Button
-                type="submit"
-                className="bg-[#4ade80] hover:bg-[#22c55e] text-white"
-              >
-                Modifier
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </>
+            <div className="w- full grid grid-cols-1">
+              <Label htmlFor="telephone" className="text-left mb-2">
+                Téléphone
+              </Label>
+              <div>
+                <Input
+                  defaultValue={currClient?.telephone}
+                  id="telephone"
+                  type="tel"
+                  {...register("telephone", {
+                    required: "Numéro de télé obligatoire",
+                    minLength: {
+                      value: 10,
+                      message: "Le numéro de télé doit contenir 10 chiffres",
+                    },
+                    maxLength: {
+                      value: 10,
+                      message: "Le numéro de télé doit contenir 10 chiffres",
+                    },
+                  })}
+                  className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
+                />
+                {errors.telephone && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.telephone.message}
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="w- full grid grid-cols-1">
+              <Label htmlFor="adresse" className="text-left mb-2">
+                Adresse
+              </Label>
+              <Input
+                id="adresse"
+                {...register("adresse")}
+                defaultValue={currClient?.adresse}
+                className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
+              />
+            </div>
+            <SaveButton type="submit" title="Enregistrer" />
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

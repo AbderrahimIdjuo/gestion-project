@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
+import CustomTooltip from "@/components/customUi/customTooltip";
 import {
   Table,
   TableBody,
@@ -12,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Search, Pen, Trash2, FileText, Filter } from "lucide-react";
+import { Plus, Search, Pen, Trash2, Filter } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -115,7 +116,6 @@ export default function DevisPage() {
           icon: "🗑️",
         }
       );
-
       getDevis();
     } catch (e) {
       console.log(e);
@@ -282,7 +282,11 @@ export default function DevisPage() {
                 ))
               ) : currentDevis?.length > 0 ? (
                 currentDevis?.map((devis) => (
-                  <TableRow key={devis.id}>
+                  <TableRow className="cursor-pointer hover:bg-zinc-100" key={devis.id}
+                  onClick={()=>{
+                    window.open(`/ventes/devis/${devis.id}/pdf`, "_blank");
+                  }}
+                  >
                     <TableCell>{devis.createdAt.split("T")[0]}</TableCell>
                     <TableCell className="font-medium">
                       {devis.numero}
@@ -303,44 +307,39 @@ export default function DevisPage() {
                     <TableCell>{devis.total} DH</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
-                          onClick={() => router.push(`/ventes/devis/${devis.id}/update`)}
-                        >
-                          <Pen className="h-4 w-4" />
-                          <span className="sr-only">Modifier</span>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
-                          onClick={() => {
-                            deleteDevi(devis.id, devis.numero);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          <span className="sr-only">Supprimer</span>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 rounded-full hover:bg-green-100 hover:text-green-600"
-                          onClick={() =>
-                            router.push(`/ventes/devis/${devis.id}/pdf`)
-                          }
-                        >
-                          <FileText className="h-4 w-4" />
-                          <span className="sr-only">Imprimer</span>
-                        </Button>
+                        <CustomTooltip message="Modifier">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
+                            onClick={() =>
+                              router.push(`/ventes/devis/${devis.id}/update`)
+                            }
+                          >
+                            <Pen className="h-4 w-4" />
+                            <span className="sr-only">Modifier</span>
+                          </Button>
+                        </CustomTooltip>
+                        <CustomTooltip message="Supprimer">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
+                            onClick={() => {
+                              deleteDevi(devis.id, devis.numero);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            <span className="sr-only">Supprimer</span>
+                          </Button>
+                        </CustomTooltip>
                       </div>
                     </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableCell colSpan={7} align="center">
-                  Aucun produit trouvé
+                  Aucun devi trouvé
                 </TableCell>
               )}
             </TableBody>

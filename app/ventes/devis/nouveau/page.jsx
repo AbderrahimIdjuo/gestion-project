@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect , useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,6 +26,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Trash2, MoveLeftIcon } from "lucide-react";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 export default function NouveauDevisPage() {
   const [clientList, setClientList] = useState([]);
@@ -46,10 +47,11 @@ export default function NouveauDevisPage() {
     customerNotes: "",
   });
   const status = [
-    { lable: "En attente", color: "bg-amber-400" },
-    { lable: "Accepté", color: "bg-green-500" },
-    { lable: "Refusé", color: "bg-red-500" },
+    { lable: "En attente", color: "amber-400" },
+    { lable: "Accepté", color: "green-500" },
+    { lable: "Refusé", color: "red-500" },
   ];
+
 
   const router = useRouter();
 
@@ -59,9 +61,15 @@ export default function NouveauDevisPage() {
     setClientList(Clients);
   };
 
-  const filteredClients = clientList.filter((client) =>
-    client.nom.toLowerCase().startsWith(searchClientQuery.toLowerCase())
-  );
+  // const filteredClients = clientList.filter((client) =>
+  //   client.nom.toLowerCase().includes(searchClientQuery.toLowerCase())
+  // );
+
+  const filteredClients = useMemo(() => {
+    return clientList.filter((client) =>
+      client.nom.toLowerCase().includes(searchClientQuery.toLowerCase())
+    );
+  }, [clientList, searchClientQuery]);
 
   useEffect(() => {
     getClients();
@@ -90,8 +98,6 @@ export default function NouveauDevisPage() {
       typeReduction: formData.discountType,
       note: formData.customerNotes,
     };
-
-    console.log("#Data# : ", data);
 
     toast.promise(
       (async () => {
@@ -125,6 +131,8 @@ export default function NouveauDevisPage() {
       }
     );
   };
+
+
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -227,7 +235,7 @@ export default function NouveauDevisPage() {
                       <div className="p-2">
                         <Input
                           type="text"
-                          placeholder="Rechercher un client"
+                          placeholder="Rechercher un client ..."
                           value={searchClientQuery}
                           onChange={(e) => setSearchClientQuery(e.target.value)}
                           className="pl-9 w-full rounded-lg bg-zinc-100 focus:bg-white focus-visible:ring-purple-500 focus-visible:ring-offset-0"
@@ -235,7 +243,7 @@ export default function NouveauDevisPage() {
                       </div>
 
                       {/* Filtered client list */}
-                      <div className="max-h-60 overflow-y-auto">
+                      <ScrollArea className="h-56 w-48  w-full">
                         {filteredClients.length > 0 ? (
                           filteredClients.map((client) => (
                             <SelectItem key={client.id} value={client.nom}>
@@ -247,7 +255,7 @@ export default function NouveauDevisPage() {
                             Aucun client trouvé
                           </div>
                         )}
-                      </div>
+                      </ScrollArea>
                     </SelectContent>
                   </Select>
                 </div>

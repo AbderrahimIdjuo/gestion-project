@@ -34,6 +34,7 @@ export function ProductFormDialog({ children, getProducts }) {
   const onSubmit = async (data) => {
   
   const Data = { ...data, statu, categorie };
+console.log('produit data : ', Data);
 
     toast.promise(
       (async () => {

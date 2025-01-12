@@ -184,6 +184,7 @@ export function ModifyProductDialog({ children, currProduct, getProducts }) {
               </Label>
               <Textarea
                 {...register("description")}
+                defaultValue={currProduct?.description}
                 className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-purple-500"
               />
             </div>
@@ -193,7 +194,7 @@ export function ModifyProductDialog({ children, currProduct, getProducts }) {
               type="submit"
               className="bg-[#4ade80] hover:bg-[#22c55e] text-white"
             >
-              Modifier
+              Enregistrer
             </Button>
           </DialogFooter>
         </form>

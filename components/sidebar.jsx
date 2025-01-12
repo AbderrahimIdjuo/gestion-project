@@ -100,7 +100,7 @@ export function Sidebar() {
               <li key={index}>
                 <div
                   className={cn(
-                    "flex items-center px-3 py-2 rounded-full transition-all duration-300 ease-in-out cursor-pointer",
+                    "flex items-center px-3 py-2 rounded-xl transition-all duration-300 ease-in-out cursor-pointer",
                     isMenuActive
                       ? "bg-purple-100 text-purple-600"
                       : "text-muted-foreground hover:bg-muted"
@@ -116,13 +116,13 @@ export function Sidebar() {
                   <div className="flex items-center gap-3 min-w-[2rem]">
                     <div
                       className={cn(
-                        "w-8 h-8 flex items-center justify-center rounded-full transition-colors duration-300 ease-in-out",
+                        "w-8 h-8 flex items-center justify-center rounded-xl transition-colors duration-300 ease-in-out",
                         isMenuActive ? "bg-purple-100" : ""
                       )}
                     >
                       <Icon
                         className={cn(
-                          "h-4 w-4 shrink-0",
+                          "h-5 w-5 shrink-0",
                           isMenuActive ? "text-purple-600" : ""
                         )}
                       />
@@ -143,6 +143,7 @@ export function Sidebar() {
                         isExpanded ? "opacity-100" : "opacity-0"
                       }`}
                     >
+                      
                       {isOpen ? (
                         <ChevronDown
                           className={cn(
@@ -163,7 +164,7 @@ export function Sidebar() {
                 </div>
 
                 {isExpanded && item.subItems && isOpen && (
-                  <ul className="ml-12 mt-1 space-y-1">
+                  <ul className="ml-1 w-full mt-1 space-y-1">
                     {item.subItems.map((subItem) => {
                       const isSubItemActive = isSubActive(subItem.href);
 
@@ -175,7 +176,7 @@ export function Sidebar() {
                           <Link
                             href={subItem.href}
                             className={cn(
-                              "block px-3 py-2 rounded-full transition-colors flex-grow",
+                              "block px-3 py-2 rounded-xl transition-colors flex-grow",
                               isSubItemActive
                                 ? "bg-purple-100 text-purple-600"
                                 : "text-muted-foreground hover:bg-muted"

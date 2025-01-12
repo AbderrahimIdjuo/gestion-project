@@ -32,6 +32,7 @@ export default function UpdateDevisPage({ params }) {
   const [client, setClient] = useState("");
   const [items, setItems] = useState();
   const [devi, setDevi] = useState();
+  const [deletedArticls, setDeletedArticls] = useState([]);
 
   const [formData, setFormData] = useState({
     customerName: "",
@@ -45,9 +46,9 @@ export default function UpdateDevisPage({ params }) {
   });
 
   const status = [
-    { lable: "En attente", color: "bg-amber-400" },
-    { lable: "Accepté", color: "bg-green-500" },
-    { lable: "Refusé", color: "bg-red-500" },
+    { lable: "En attente", color: "amber-400" },
+    { lable: "Accepté", color: "green-500" },
+    { lable: "Refusé", color: "red-500" },
   ];
 
   const router = useRouter();
@@ -88,6 +89,7 @@ export default function UpdateDevisPage({ params }) {
   }, []);
 
   const onSubmit = async () => {
+
     const data = {
       id: devi?.id,
       numero: devi?.numero,
@@ -102,11 +104,14 @@ export default function UpdateDevisPage({ params }) {
       note: formData.customerNotes,
     };
 
-    console.log("#Data# : ", data);
-
     toast.promise(
       (async () => {
         try {
+          if(deletedArticls.length >0){
+            await axios.delete("/api/devis", {
+              data: { ids: deletedArticls },
+            });
+          }
           const response = await axios.put("/api/devis", data);
           console.log("Devi ajouté avec succès");
           // setFormData((prev) => ({
@@ -165,6 +170,7 @@ export default function UpdateDevisPage({ params }) {
 
   const removeItem = (id) => {
     setItems((prev) => prev.filter((item) => item.id !== id));
+    setDeletedArticls((prev) => [...prev, id]);
   };
 
   const calculateSubTotal = () => {

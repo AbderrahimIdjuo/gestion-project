@@ -12,7 +12,7 @@ export default function DashboardPage() {
       <h1 className="text-3xl font-bold">Tableau de bord</h1>
       
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-gradient-to-tr from-fuchsia-500 via-purple-500 to-violet-500 shadow-lg shadow-purple-500/50 border-0 col-span-full lg:col-span-1 order-first">
+        <Card className="bg-gradient-to-tr from-fuchsia-500 via-purple-500 to-violet-500 overflow-hidden shadow-md border-0 col-span-full lg:col-span-1 order-first">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pt-4">
             <CardTitle className="text-sm font-medium text-white">
               Chiffre d&apos;Affaires
@@ -30,7 +30,7 @@ export default function DashboardPage() {
             </div>
           </CardContent>
         </Card>
-        <Card className="relative bg-white overflow-hidden">
+        <Card className="relative bg-white overflow-hidden shadow-md">
           <div className="absolute inset-0 bg-gradient-to-tr from-fuchsia-500 via-purple-500 to-violet-500 p-[2px]">
             <div className="absolute inset-0 bg-white"></div>
           </div>
@@ -51,7 +51,7 @@ export default function DashboardPage() {
             </div>
           </CardContent>
         </Card>
-        <Card className="relative bg-white overflow-hidden">
+        <Card className="relative bg-white overflow-hidden shadow-md" >
           <div className="absolute inset-0 bg-gradient-to-tr from-fuchsia-500 via-purple-500 to-violet-500 p-[2px]">
             <div className="absolute inset-0 bg-white"></div>
           </div>
@@ -72,7 +72,7 @@ export default function DashboardPage() {
             </div>
           </CardContent>
         </Card>
-        <Card className="relative bg-white overflow-hidden">
+        <Card className="relative bg-white overflow-hidden shadow-md">
           <div className="absolute inset-0 bg-gradient-to-tr from-fuchsia-500 via-purple-500 to-violet-500 p-[2px]">
             <div className="absolute inset-0 bg-white"></div>
           </div>
@@ -95,7 +95,7 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      <div className="grid gap-4 grid-cols-1">
+      <div className="grid gap-4 grid-cols-1 shadow-md">
         <PerformanceChart />
       </div>
     </div>

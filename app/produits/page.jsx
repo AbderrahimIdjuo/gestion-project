@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import toast, { Toaster } from "react-hot-toast";
+import CustomTooltip from "@/components/customUi/customTooltip";
 import {
   Table,
   TableBody,
@@ -82,6 +83,7 @@ export default function ProduitsPage() {
     const { produits } = result.data;
     setProducts(produits);
     setIsLoading(false);
+    console.log("liste de produits :", produits);
   };
 
   const deleteProduct = async () => {
@@ -308,6 +310,7 @@ export default function ProduitsPage() {
                 <TableHead>Prix de vente</TableHead>
                 <TableHead>Statut</TableHead>
                 <TableHead>Stock</TableHead>
+                <TableHead>Description</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -343,6 +346,9 @@ export default function ProduitsPage() {
                     <TableCell className="!py-2" key={index} align="left">
                       <Skeleton className="h-4 w-[90px]" />
                     </TableCell>
+                    <TableCell className="!py-2" key={index} align="left">
+                      <Skeleton className="h-4 w-[90px]" />
+                    </TableCell>
                     <TableCell className="!py-2" key={index} align="right">
                       <Skeleton className="h-4 w-[150px]" />
                     </TableCell>
@@ -370,43 +376,56 @@ export default function ProduitsPage() {
                       </div>
                     </TableCell>
                     <TableCell>{product.stock}</TableCell>
+                    <TableCell>
+                      <CustomTooltip message={product.description}>
+                        <span className="cursor-default">
+                          {product.description.slice(0, 10)}...
+                        </span>
+                      </CustomTooltip>
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <ModifyProductDialog
                           getProducts={getProducts}
                           currProduct={currProduct}
                         >
+                          <CustomTooltip message="Modifier">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
+                              onClick={() => setCurrProduct(product)}
+                            >
+                              <Pen className="h-4 w-4" />
+                              <span className="sr-only">Modifier</span>
+                            </Button>
+                          </CustomTooltip>
+                        </ModifyProductDialog>
+                        <CustomTooltip message="Supprimer">
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
-                            onClick={() => setCurrProduct(product)}
+                            className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
+                            onClick={() => {
+                              setDeleteDialogOpen(true);
+                              setCurrProduct(product);
+                            }}
                           >
-                            <Pen className="h-4 w-4" />
-                            <span className="sr-only">Modifier</span>
+                            <Trash2 className="h-4 w-4" />
+                            <span className="sr-only">Supprimer</span>
                           </Button>
-                        </ModifyProductDialog>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
-                          onClick={() => {
-                            setDeleteDialogOpen(true);
-                            setCurrProduct(product);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          <span className="sr-only">Supprimer</span>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 rounded-full hover:bg-blue-100 hover:text-blue-600"
-                          onClick={() => handleDetails(product.id)}
-                        >
-                          <Info className="h-4 w-4" />
-                          <span className="sr-only">Détails</span>
-                        </Button>
+                        </CustomTooltip>
+                        <CustomTooltip message="Détails">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full hover:bg-blue-100 hover:text-blue-600"
+                            onClick={() => handleDetails(product.id)}
+                          >
+                            <Info className="h-4 w-4" />
+                            <span className="sr-only">Détails</span>
+                          </Button>
+                        </CustomTooltip>
                       </div>
                     </TableCell>
                   </TableRow>

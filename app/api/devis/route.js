@@ -72,8 +72,12 @@ export async function PUT(req) {
       note,
     } = resopns;
 
-    const existingArticls = articls.filter((articl) => typeof(articl.id) === 'string');
-    const newArticls = articls.filter((articl) => typeof(articl.id) === 'number');
+    const existingArticls = articls.filter(
+      (articl) => typeof articl.id === "string"
+    );
+    const newArticls = articls.filter(
+      (articl) => typeof articl.id === "number"
+    );
     console.log("existingArticls", existingArticls);
     console.log("newArticls", newArticls);
 
@@ -138,3 +142,32 @@ export async function GET() {
   });
   return NextResponse.json({ devis });
 }
+
+
+export async function DELETE(req) {
+  try {
+    // Parse the JSON body
+    const { ids } = await req.json();
+
+    // Validate the input
+    if (!ids || !Array.isArray(ids)) {
+      return NextResponse.json({ error: "Invalid or missing IDs" }, { status: 400 });
+    }
+
+    // Perform the deletion
+    const result = await prisma.articls.deleteMany({
+      where: {
+        id: {
+          in: ids,
+        },
+      },
+    });
+
+    // Return success response
+    return NextResponse.json({ message: `${result.count} records deleted.` });
+  } catch (error) {
+    console.error("Error deleting records:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+

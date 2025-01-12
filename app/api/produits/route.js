@@ -4,7 +4,7 @@ import prisma from "../../../lib/prisma";
 export async function POST(req) {
   try {
     const resopns = await req.json();
-    const { designation, categorie, prixAchat, prixVente, statu, stock } =
+    const { designation, categorie, prixAchat, prixVente, statu, stock , description } =
       resopns;
     const result = await prisma.produits.create({
       data: {
@@ -14,6 +14,7 @@ export async function POST(req) {
         prixVente: parseFloat(prixVente),
         statut: statu,
         stock: parseInt(stock, 10),
+        description
       },
     });
 
@@ -30,7 +31,7 @@ export async function POST(req) {
 export async function PUT(req) {
   try {
     const resopns = await req.json();
-    const { id, designation, categorie, prixAchat, prixVente, statu, stock } =
+    const { id, designation, categorie, prixAchat, prixVente, statu, stock ,description } =
       resopns;
 
     const result = await prisma.produits.update({
@@ -42,6 +43,7 @@ export async function PUT(req) {
         prixVente: parseFloat(prixVente),
         statut: statu,
         stock: parseInt(stock, 10),
+        description
       },
     });
 
