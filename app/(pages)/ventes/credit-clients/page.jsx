@@ -20,7 +20,6 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Plus, Search, Pen, Trash2, Info, Filter } from "lucide-react";
-import { CommandeFormDialog } from "@/components/commande-form-dialog";
 import {
   Select,
   SelectContent,
@@ -246,12 +245,12 @@ export default function CommandesPage() {
               </div>
             </SheetContent>
           </Sheet>
-          <CommandeFormDialog>
+
             <Button className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 hover:scale-105 text-white font-semibold transition-all duration-300 transform">
               <Plus className="mr-2 h-4 w-4" />
               Nouvelle Commande
             </Button>
-          </CommandeFormDialog>
+
         </div>
       </div>
 

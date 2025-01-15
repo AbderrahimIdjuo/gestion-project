@@ -1,28 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Search, Check, Plus, Minus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-
-// Mock data for articles with MAD currency
-const articles = [
-  { id: 1, nom: "chausseur", prix: 250.0 },
-  { id: 2, nom: "chemise", prix: 200.0 },
-  { id: 3, nom: "pantalon 1", prix: 120.0 },
-  { id: 4, nom: "veste", prix: 300.0 },
-  { id: 5, nom: "cravate", prix: 80.0 },
-];
+import axios from "axios";
 
 export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedArticles, setSelectedArticles] = useState({});
+  const [products, setProducts] = useState(null);
 
-  const filteredArticles = articles.filter((article) =>
-    article.nom.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredArticles = products?.filter((article) =>
+    article.designation.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleToggleArticle = (article) => {
@@ -39,34 +39,58 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
       return newSelected;
     });
   };
+  const getProducts = async () => {
+    const result = await axios.get("/api/produits");
+    const { produits } = result.data;
+    setProducts(produits);
+    // setIsLoading(false);
+    console.log("liste de produits :", produits);
+  };
 
-  // const handleQuantityChange = (articleId, delta) => {
-  //   setSelectedArticles((prev) => {
-  //     const currentQty = prev[articleId]?.quantity || 0;
-  //     const newQty = Math.max(0, currentQty + delta);
+  useEffect(() => {
+    getProducts();
+  }, []);
 
-  //     if (newQty === 0) {
-  //       const { [articleId]: _, ...rest } = prev;
-  //       return rest;
-  //     }
+  const handleQuantityChange = (articleId, delta) => {
+    setSelectedArticles((prev) => {
+      console.log("quantity", prev[articleId]?.quantity);
 
-  //     return {
-  //       ...prev,
-  //       [articleId]: {
-  //         ...prev[articleId],
-  //         quantity: newQty,
-  //       },
-  //     };
-  //   });
-  // };
+      const currentQty = prev[articleId]?.quantity || 0;
+      const newQty = Math.max(0, currentQty + delta);
 
+      if (newQty === 0) {
+        const { [articleId]: _, ...rest } = prev;
+        return rest;
+      }
+
+      return {
+        ...prev,
+        [articleId]: {
+          ...prev[articleId],
+          quantity: newQty,
+        },
+      };
+    });
+  };
+  const handleInputChange = (e, articleId) => {
+    const { value } = e.target;
+    setSelectedArticles((prev) => {
+      return {
+        ...prev,
+        [articleId]: {
+          ...prev[articleId],
+          quantity: parseInt(value, 10),
+        },
+      };
+    });
+  };
   const handleAddItems = () => {
     const articlesToAdd = Object.values(selectedArticles)
       .filter((article) => article.quantity > 0)
-      .map(({ id, nom, prix, quantity }) => ({
+      .map(({ id, designation, prixVente, quantity }) => ({
         id,
-        details: nom,
-        rate: prix,
+        details: designation,
+        rate: prixVente,
         quantity,
       }));
 
@@ -85,25 +109,27 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[900px] p-0 gap-0">
-        <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-lg font-semibold">Ajouter les prouduits</h2>
-        </div>
-
+        <DialogHeader>
+          <DialogTitle className="flex items-center justify-between p-4 text-lg font-semibold border-b">
+            Ajouter les prouduits
+          </DialogTitle>
+          <DialogDescription></DialogDescription>
+        </DialogHeader>
         <div className="grid grid-cols-2 gap-0 h-[500px]">
           {/* Left side - Item list */}
           <div className="border-r p-4">
             <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground " />
               <Input
                 placeholder="Chercher un produit..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 w-full"
+                className="pl-9 w-full text-left rounded-r-md focus:!ring-purple-500"
               />
             </div>
 
             <div className="space-y-2">
-              {filteredArticles.map((article) => (
+              {filteredArticles?.map((article) => (
                 <div
                   key={article.id}
                   className={cn(
@@ -115,9 +141,9 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
                   onClick={() => handleToggleArticle(article)}
                 >
                   <div className="space-y-1">
-                    <p className="text-sm font-medium">{article.nom}</p>
+                    <p className="text-sm font-medium">{article.designation}</p>
                     <p className="text-sm text-muted-foreground">
-                      Prix d&apos;unité: {article.prix.toFixed(2)} MAD
+                      Prix d&apos;unité: {article.prixVente.toFixed(2)} MAD
                     </p>
                   </div>
                   <div
@@ -152,7 +178,7 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
                   key={article.id}
                   className="flex items-center justify-between p-3 border rounded-lg"
                 >
-                  <span className="font-medium">{article.nom}</span>
+                  <span className="font-medium">{article.designation}</span>
                   <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
@@ -162,7 +188,14 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
                     >
                       <Minus className="h-3 w-3" />
                     </Button>
-                    <span className="w-8 text-center">{article.quantity}</span>
+                    <Input
+                      id="quantity"
+                      name="quantity"
+                      value={article.quantity}
+                      onChange={(e) => handleInputChange(e, article.id)}
+                      className="w-20 text-center focus:!ring-purple-500"
+                    />
+                    {/* <span className="w-8 text-center">{article.quantity}</span> */}
                     <Button
                       variant="outline"
                       size="icon"
@@ -179,13 +212,17 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
         </div>
 
         <DialogFooter className="p-4 border-t">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button
+            className="rounded-full"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
             Annuler
           </Button>
           <Button
             onClick={handleAddItems}
             disabled={totalQuantity === 0}
-            className="bg-purple-500 hover:bg-purple-600 text-white"
+            className="bg-purple-500 hover:bg-purple-600 text-white rounded-full"
           >
             Ajouter
           </Button>

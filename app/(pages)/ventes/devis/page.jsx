@@ -145,7 +145,7 @@ export default function DevisPage() {
               <SheetTrigger asChild>
                 <Button
                   variant="outline"
-                  className="border-purple-500 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900"
+                  className="border-purple-500 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900 rounded-full"
                 >
                   <Filter className="mr-2 h-4 w-4" />
                   Filtres

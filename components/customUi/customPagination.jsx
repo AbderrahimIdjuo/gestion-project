@@ -9,9 +9,6 @@ import {
 } from "@/components/ui/pagination";
 
 function CustomPagination({ currentPage, setCurrentPage, totalPages }) {
-  console.log("currentPage", currentPage);
-  console.log("totalPages", totalPages);
-
   return (
     <Pagination>
       <PaginationContent>
@@ -23,10 +20,11 @@ function CustomPagination({ currentPage, setCurrentPage, totalPages }) {
           />
         </PaginationItem>
         {Array.from({ length: totalPages }, (_, i) => (
-          <PaginationItem key={i + 1} className="cursor-pointer">
+          <PaginationItem key={i + 1} className="cursor-pointer ">
             <PaginationLink
               onClick={() => setCurrentPage(i + 1)}
               isActive={currentPage === i + 1}
+              className="!rounded-full"
             >
               {i + 1}
             </PaginationLink>

@@ -27,16 +27,16 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     "components/client-form-dialog.jsx",
-    "app/clients/page.jsx",
-    "app/achats/fournisseurs/page.jsx",
+    "app/(pages)/clients/page.jsx",
+    "app/(pages)/achats/fournisseurs/page.jsx",
     "components/fournisseur-form-dialog.jsx",
     "components/delete-confirmation-dialog.jsx",
     "components/sidebar.jsx",
-    "app/ventes/devis/nouveau/page.jsx",
-    "app/ventes/commandes/nouveau/page.jsx",
-    "app/ventes/commandes/page.jsx",
-    "app/produits/page.jsx",
+    "app/(pages)/ventes/devis/nouveau/page.jsx",
+    "app/(pages)/ventes/commandes/nouveau/page.jsx",
+    "app/(pages)/ventes/commandes/page.jsx",
+    "app/(pages)/produits/page.jsx",
     "components/product-form-dialog.jsx"
-, "app/factures/page.jsx", "app/ventes/credit-clients/page.jsx", "app/ventes/devis/page.jsx", "components/performance-chart.jsx"  ],
+, "app/(pages)/factures/page.jsx", "app/(pages)/ventes/credit-clients/page.jsx", "app/(pages)/ventes/devis/page.jsx", "components/performance-chart.jsx"  ],
   "exclude": ["node_modules"]
 }

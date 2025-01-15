@@ -91,7 +91,7 @@ export default function NouveauDevisPage() {
       articls: items,
       statut: formData.statut,
       sousTotal: calculateSubTotal(),
-      notesClient: formData.customerNotes,
+      //notesClient: formData.customerNotes,
       fraisLivraison: Math.max(0, formData.shippingCharges),
       reduction: Math.max(0, formData.discount),
       total: calculateTotal(),
