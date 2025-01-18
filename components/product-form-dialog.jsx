@@ -32,21 +32,23 @@ export function ProductFormDialog({ children, getProducts }) {
   const [statu, setStatu] = useState();
 
   const onSubmit = async (data) => {
-  
-  const Data = { ...data, statu, categorie };
-console.log('produit data : ', Data);
+    const Data = { ...data, statu, categorie };
+    console.log("produit data : ", Data);
 
     toast.promise(
       (async () => {
-        const response = await axios.post("/api/produits", Data);
-        if (response.status === 409) {
-          console.log("response.status === 409");
-        }
-        if (!response) {
-          throw new Error("Failed to add produit");
+        const response = await fetch("/api/produits", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(Data),
+        });
+        if (!response.ok) {
+          throw new Error("Failed to add commande");
         }
         console.log("Produits ajouté avec succès");
-        // clear the form
+        // reset the form
         reset();
         setStatu("");
         setCategorie("");

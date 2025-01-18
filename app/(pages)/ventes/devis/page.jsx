@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
 import CustomTooltip from "@/components/customUi/customTooltip";
+import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import {
   Table,
   TableBody,
@@ -13,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Search, Pen, Trash2, Filter } from "lucide-react";
+import { Plus, Search, Pen, Trash2, Filter , Printer} from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -39,8 +40,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function DevisPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [currentDevi, setCurrentDevi] = useState();
   const [devisList, setDevisList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [filters, setFilters] = useState({
     client: "all",
     dateStart: "",
@@ -225,7 +228,7 @@ export default function DevisPage() {
 
             <Button
               onClick={() => router.push("/ventes/devis/nouveau")}
-              className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 hover:scale-105 text-white font-semibold transition-all duration-300 transform"
+              className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 hover:scale-105 text-white font-semibold transition-all duration-300 transform rounded-full"
             >
               <Plus className="mr-2 h-4 w-4" />
               Nouveau Devis
@@ -251,42 +254,42 @@ export default function DevisPage() {
                 [...Array(10)].map((_, index) => (
                   <TableRow
                     className="h-[2rem] MuiTableRow-root"
-                    hover
+                    
                     role="checkbox"
                     tabIndex={-1}
                     key={index}
                   >
                     <TableCell
                       className="!py-2 text-sm md:text-base"
-                      key={index}
+                      
                       align="left"
                     >
                       <Skeleton className="h-4 w-[150px]" />
                     </TableCell>
-                    <TableCell className="!py-2" key={index} align="left">
+                    <TableCell className="!py-2"  align="left">
                       <Skeleton className="h-4 w-[150px]" />
                     </TableCell>
-                    <TableCell className="!py-2" key={index} align="left">
+                    <TableCell className="!py-2"  align="left">
                       <Skeleton className="h-4 w-[150px]" />
                     </TableCell>
-                    <TableCell className="!py-2" key={index} align="left">
+                    <TableCell className="!py-2"  align="left">
                       <Skeleton className="h-4 w-[150px]" />
                     </TableCell>
-                    <TableCell className="!py-2" key={index} align="left">
+                    <TableCell className="!py-2"  align="left">
                       <Skeleton className="h-4 w-[100px]" />
                     </TableCell>
-                    <TableCell className="!py-2" key={index} align="right">
-                      <Skeleton className="h-4 w-[100px]" />
-                    </TableCell>
+                    <TableCell className="!py-2" >
+                          <div className="flex gap-2 justify-end">
+                            <Skeleton className="h-7 w-7 rounded-full" />
+                            <Skeleton className="h-7 w-7 rounded-full" />
+                            <Skeleton className="h-7 w-7 rounded-full" />
+                          </div>
+                        </TableCell>
                   </TableRow>
                 ))
               ) : currentDevis?.length > 0 ? (
                 currentDevis?.map((devis) => (
-                  <TableRow className="cursor-pointer hover:bg-zinc-100" key={devis.id}
-                  onClick={()=>{
-                    window.open(`/ventes/devis/${devis.id}/pdf`, "_blank");
-                  }}
-                  >
+                  <TableRow key={devis.id}>
                     <TableCell>{devis.createdAt.split("T")[0]}</TableCell>
                     <TableCell className="font-medium">
                       {devis.numero}
@@ -326,12 +329,24 @@ export default function DevisPage() {
                             size="icon"
                             className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
                             onClick={() => {
-                              deleteDevi(devis.id, devis.numero);
+                              setDeleteDialogOpen(true)
+                              setCurrentDevi(devis)
                             }}
                           >
                             <Trash2 className="h-4 w-4" />
                             <span className="sr-only">Supprimer</span>
                           </Button>
+                        </CustomTooltip>
+                        <CustomTooltip message="Imprimer">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 rounded-full hover:bg-green-100 hover:text-green-600"
+                          onClick={() => window.open(`/ventes/devis/${devis.id}/pdf`, "_blank")}
+                        >
+                          <Printer className="h-4 w-4" />
+                          <span className="sr-only">Imprimer</span>
+                        </Button>
                         </CustomTooltip>
                       </div>
                     </TableCell>
@@ -356,6 +371,16 @@ export default function DevisPage() {
           ""
         )}
       </div>
+              <DeleteConfirmationDialog
+                recordName={currentDevi?.numero}
+                isOpen={deleteDialogOpen}
+                onClose={() => setDeleteDialogOpen(false)}
+                onConfirm={() => {
+                  setDeleteDialogOpen(false);
+                  deleteDevi(currentDevi.id, currentDevi.numero);
+                }}
+                itemType="devi"
+              />
     </>
   );
 }

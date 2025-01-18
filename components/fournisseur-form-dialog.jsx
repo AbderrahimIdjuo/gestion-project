@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -10,27 +10,28 @@ import {
   DialogTitle,
   DialogFooter,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import toast from "react-hot-toast";
-import axios from "axios";
 import { useForm } from "react-hook-form";
 
-
-export function FournisseurFormDialog({ children , getFournisseurs }) {
-  const [open, setOpen] = useState(false)
+export function FournisseurFormDialog({ children, getFournisseurs }) {
+  const [open, setOpen] = useState(false);
   const { register, reset, handleSubmit } = useForm();
 
   const onSubmit = async (data) => {
     toast.promise(
       (async () => {
-        const response = await axios.post("/api/fournisseurs", data);
-        if (response.status === 409) {
-          console.log("response.status === 409");
-        }
-        if (!response) {
-          throw new Error("Failed to add client");
+        const response = await fetch("/api/fournisseurs", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+        });
+        if (!response.ok) {
+          throw new Error("Failed to add commande");
         }
         console.log("Fournisseur ajouté avec succès");
         getFournisseurs();
@@ -44,18 +45,15 @@ export function FournisseurFormDialog({ children , getFournisseurs }) {
     );
   };
 
-
-
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {children}
-      </DialogTrigger>
+      <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Ajouter un nouveau fournisseur</DialogTitle>
           <DialogDescription>
-            Remplissez les informations du nouveau fournisseur ici. Cliquez sur enregistrer lorsque vous avez terminé.
+            Remplissez les informations du nouveau fournisseur ici. Cliquez sur
+            enregistrer lorsque vous avez terminé.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -108,11 +106,15 @@ export function FournisseurFormDialog({ children , getFournisseurs }) {
             </div>
           </div>
           <DialogFooter>
-            <Button type="submit" className="bg-[#4ade80] hover:bg-[#22c55e] text-white">Enregistrer</Button>
+            <Button
+              type="submit"
+              className="bg-[#4ade80] hover:bg-[#22c55e] text-white"
+            >
+              Enregistrer
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
-

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
 import { Textarea } from "@/components/ui/textarea";
+import { LoadingDots } from "@/components/loading-dots";
 import {
   Select,
   SelectContent,
@@ -46,7 +47,7 @@ export default function UpdateDevisPage({ params }) {
   });
 
   const status = [
-    { lable: "En attente", color: "amber-400" },
+    { lable: "En attente", color: "amber-500" },
     { lable: "Accepté", color: "green-500" },
     { lable: "Refusé", color: "red-500" },
   ];
@@ -205,6 +206,7 @@ export default function UpdateDevisPage({ params }) {
               <MoveLeftIcon />
             </Button>
             <h1 className="text-3xl font-bold">Modifier Devis</h1>
+            {isLoading && <LoadingDots size={7}/>}
           </div>
         </div>
         <Card>
@@ -257,7 +259,7 @@ export default function UpdateDevisPage({ params }) {
                         {filteredClients.length > 0 ? (
                           filteredClients.map((client) => (
                             <SelectItem key={client.id} value={client.nom}>
-                              {client.nom}
+                               {client.nom.toUpperCase()}
                             </SelectItem>
                           ))
                         ) : (
@@ -380,7 +382,7 @@ export default function UpdateDevisPage({ params }) {
               <Button
                 variant="outline"
                 onClick={addNewItem}
-                className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 hover:scale-105 text-white hover:!text-white font-semibold transition-all duration-300 transform"
+                className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 rounded-full hover:scale-105 text-white hover:!text-white font-semibold transition-all duration-300 transform"
               >
                 <Plus className="h-4 w-4" />
                 Ajouter un article
@@ -467,12 +469,12 @@ export default function UpdateDevisPage({ params }) {
         </Card>
         <div className="flex justify-end items-center">
           <div className="space-x-2">
-            <Button variant="outline">Annuler</Button>
+            <Button className="rounded-full" onClick={() => router.push("/ventes/devis")} variant="outline">Annuler</Button>
             <Button
               onClick={() => {
                 onSubmit();
               }}
-              className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 hover:scale-105 text-white hover:!text-white font-semibold transition-all duration-300 transform"
+              className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 hover:scale-105 text-white hover:!text-white font-semibold transition-all duration-300 transform rounded-full"
             >
               Enregistrer
             </Button>

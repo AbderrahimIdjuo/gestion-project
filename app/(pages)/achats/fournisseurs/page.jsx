@@ -123,7 +123,6 @@ export default function FournisseursPage() {
                 [...Array(10)].map((_, index) => (
                   <TableRow
                     className="h-[2rem] MuiTableRow-root"
-                    hover
                     role="checkbox"
                     tabIndex={-1}
                     key={index}

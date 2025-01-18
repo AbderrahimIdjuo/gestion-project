@@ -12,12 +12,12 @@ export async function DELETE(_, { params }) {
 
 export async function GET(_, { params }) {
   const id = params.id;
-  const devi = await prisma.commandes.findUnique({
+  const commande = await prisma.commandes.findUnique({
     where: { id },
     include: {
       client: true,
-      articls: true,
+      commandeProduits: true,
     },
   });
-  return NextResponse.json({ devi });
+  return NextResponse.json({ commande });
 }

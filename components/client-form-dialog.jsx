@@ -11,7 +11,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
-import axios from "axios";
 import { SaveButton } from "./customUi/styledButton";
 import { Separator } from "@/components/ui/separator";
 
@@ -29,8 +28,16 @@ export function ClientFormDialog({ getClients }) {
     toast.promise(
       (async () => {
         try {
-          const response = await axios.post("/api/clients", data);
-          console.log("Client ajouté avec succès");
+          const response = await fetch("/api/clients", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+          });
+          if (!response.ok) {
+            throw new Error("Failed to add commande");
+          }
           getClients();
           reset();
           if (response.status === 200) {

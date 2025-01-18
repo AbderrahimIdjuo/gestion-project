@@ -11,16 +11,17 @@ import { Phone, MapPin } from "lucide-react";
 import LoadingDeviPdf from "@/components/loading-devi-pdf";
 
 export default function DevisPDFPage({ params }) {
-  const [devi, setDevi] = useState();
+  const [commande, setCommande] = useState();
 
-  const getDevisById = async () => {
-    const result = await axios.get(`/api/devis/${params.id}`);
-    const { devi } = result.data;
-    setDevi(devi);
-    
+  const getCommandeById = async () => {
+    const result = await axios.get(`/api/commandes/${params.id}`);
+    const { commande } = result.data;
+    console.log("commande", commande);
+
+    setCommande(commande);
   };
   useEffect(() => {
-    getDevisById();
+    getCommandeById();
   }, [params.id]);
 
   const handlePrint = () => {
@@ -29,7 +30,7 @@ export default function DevisPDFPage({ params }) {
 
   return (
     <>
-      {devi ? (
+      {commande ? (
         <div className="container mx-auto p-8 max-w-4xl bg-white min-h-screen print:p-0 print:max-w-none">
           {/* Document Content */}
           <div id="print-area" className="space-y-6">
@@ -44,11 +45,11 @@ export default function DevisPDFPage({ params }) {
                   minute: "2-digit",
                 })}
               </div>
-              <div>Statut : {devi?.statut}</div>
+              <div>Statut : {commande?.statut}</div>
             </div>
             <div className="border-b border-purple-500 pb-4">
               <h1 className="text-3xl font-bold text-purple-600">
-                DEVIS N° : {devi?.numero}
+                COMMANDE N° : {commande?.numero}
               </h1>
             </div>
             {/* Title */}
@@ -74,14 +75,14 @@ export default function DevisPDFPage({ params }) {
               {/* Client Info */}
               <div className="space-y-1">
                 <h2 className="font-bold text-xl text-gray-900">Client</h2>
-                <p>{devi?.client.nom.toUpperCase()}</p>
+                <p>{commande?.client.nom.toUpperCase()}</p>
                 <div className="flex items-center gap-2 ">
                   <MapPin className="h-4 w-4" />
-                  <p>{devi?.client.adresse}</p>
+                  <p>{commande?.client.adresse}</p>
                 </div>
                 <div className="flex items-center gap-2 ">
                   <Phone className="h-4 w-4" />
-                  <p>{devi?.client.telephone}</p>
+                  <p>{commande?.client.telephone}</p>
                 </div>
               </div>
             </div>
@@ -90,18 +91,16 @@ export default function DevisPDFPage({ params }) {
             <div className="space-y-1">
               <p>
                 <span className="font-medium">Date de création:</span>{" "}
-                {devi?.createdAt.split("T")[0]}{" "}
+                {commande?.createdAt.split("T")[0]}{" "}
               </p>
               <p>
-                <span className="font-medium">Référence du devis:</span>{" "}
-                {devi?.createdAt}
+                <span className="font-medium">
+                  Date limite de livraison :
+                </span>{" "}
+                {commande?.echeance}
               </p>
               <p>
-                <span className="font-medium">Date de validité du devis:</span>{" "}
-                20/6/2025
-              </p>
-              <p>
-                <span className="font-medium">Émis par:</span> John Doe
+                <span className="font-medium">Émis par:</span> Commerçant 1
               </p>
             </div>
 
@@ -123,8 +122,8 @@ export default function DevisPDFPage({ params }) {
                   </TableRow>
                 </thead>
                 <tbody>
-                  {devi?.articls.map((articl) => (
-                    <TableRow key={articl.id} >
+                  {commande?.commandeProduits.map((articl) => (
+                    <TableRow key={articl.id}>
                       <TableCell className=" p-2 text-left">
                         {articl.designation}{" "}
                       </TableCell>
@@ -146,7 +145,7 @@ export default function DevisPDFPage({ params }) {
                       Frais de transport :
                     </TableCell>
                     <TableCell className="border-l border-b p-2 text-right">
-                      {devi?.fraisLivraison} DH
+                      {commande?.fraisLivraison} DH
                     </TableCell>
                   </TableRow>
                   <TableRow>
@@ -154,10 +153,26 @@ export default function DevisPDFPage({ params }) {
                       Sous-total :
                     </TableCell>
                     <TableCell className="border-l border-b p-2 text-right">
-                      {devi?.sousTotal} DH
+                      {commande?.sousTotal} DH
                     </TableCell>
                   </TableRow>
-                  {devi?.reduction > 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={3} className="border-b p-2 text-right">
+                      Avance :
+                    </TableCell>
+                    <TableCell className="border-l border-b p-2 text-right">
+                      {commande?.avance} DH
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell colSpan={3} className="border-b p-2 text-right">
+                      Total :
+                    </TableCell>
+                    <TableCell className="border-l border-b p-2 text-right">
+                      {commande?.total} DH
+                    </TableCell>
+                  </TableRow>
+                  {commande?.reduction > 0 ? (
                     <TableRow>
                       <TableCell
                         colSpan={3}
@@ -166,7 +181,7 @@ export default function DevisPDFPage({ params }) {
                         Réduction :
                       </TableCell>
                       <TableCell className="border-l border-b p-2 text-right">
-                        {devi?.reduction} {devi?.typeReduction}
+                        {commande?.reduction} {commande?.typeReduction}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -177,10 +192,10 @@ export default function DevisPDFPage({ params }) {
                       colSpan={3}
                       className="text-xl text-gray-900 p-2 text-right"
                     >
-                      Total :
+                      Reste a payer :
                     </TableCell>
                     <TableCell className="border-l p-2 text-xl text-gray-900 text-right">
-                      {devi?.total} DH
+                      {(commande?.total - commande?.avance).toFixed(2)} DH
                     </TableCell>
                   </TableRow>
                 </tfoot>

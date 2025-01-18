@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { AddButton } from "@/components/customUi/styledButton";
 import { Textarea } from "@/components/ui/textarea";
 import toast, { Toaster } from "react-hot-toast";
+import { LoadingDots } from "@/components/loading-dots";
 import {
   Select,
   SelectContent,
@@ -23,7 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
-import { Trash2, MoveLeft , Loader2 , CornerUpLeftIcon } from "lucide-react";
+import { Trash2, MoveLeft } from "lucide-react";
 import { ArticleSelectionDialog } from "@/components/produits-selection-dialog";
 import { useRouter } from "next/navigation";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -41,20 +42,21 @@ import {
 } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 
-export default function NouvelleCommandePage() {
+export default function UpdateCommandePage({ params }) {
   const [items, setItems] = useState([]);
   const [devisList, setDevisList] = useState([]);
   const [devi, setDevi] = useState();
+  const [commande, setCommande] = useState();
   const [searchDeviQuery, setSearchDeviQuery] = useState("");
   const [date, setDate] = useState();
   const [clientList, setClientList] = useState([]);
   const [client, setClient] = useState("");
-  const [switchValue, setSwitchValue] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchClientQuery, setSearchClientQuery] = useState("");
 
   const [formData, setFormData] = useState({
     customerName: "",
-    deviNum: "",
+    numero: "",
     clientId: "",
     produits: [],
     orderNumber: "",
@@ -74,12 +76,33 @@ export default function NouvelleCommandePage() {
   const [isArticleDialogOpen, setIsArticleDialogOpen] = useState(false);
   const router = useRouter();
 
-  const formattedDate = (date) => {
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0"); // months are 0-indexed
-    const year = date.getFullYear();
-    return `${year}-${month}-${day}`;
+  const getCommandeById = async () => {
+    const result = await axios.get(`/api/commandes/${params.id}`);
+    const { commande } = result.data;
+    setCommande(commande);
+    setItems(commande.commandeProduits);
+    setClient(commande.client);
+    setFormData((prev) => ({
+      ...prev,
+      numero: commande?.numero,
+      customerName: commande?.client.nom,
+      shippingCharges: commande?.fraisLivraison,
+      discount: commande?.reduction,
+      statut: commande?.statut,
+      discountType: commande?.typeReduction,
+      note: commande?.note,
+      avance: commande?.avance,
+      produits: commande?.commandeProduits,
+    }));
+    setDate(commande?.echeance);
+    setIsLoading(false);
+    console.log("commandeProduits : ", commande.commandeProduits);
+    console.log("commande : ", commande);
   };
+  useEffect(() => {
+    getCommandeById();
+  }, [params.id]);
+
   const generateDevisNumber = () => {
     if (devi) {
       return `CMD-${devi?.numero.slice(4, 13)}`;
@@ -108,18 +131,18 @@ export default function NouvelleCommandePage() {
         shippingCharges: devi?.fraisLivraison,
         discount: devi?.reduction,
         discountType: devi?.typeReduction,
-
       }));
     }
   }, [devi]);
 
   const onSubmit = () => {
     const data = {
+      id:commande.id,
       clientId: generateClientId(),
       //deviNum: formData.deviNum,
       produits: items,
       numero: generateDevisNumber(),
-      echeance: formattedDate(date),
+      echeance: date,
       statut: formData.statut,
       fraisLivraison: parseFloat(formData.shippingCharges),
       reduction: parseInt(formData.discount),
@@ -132,8 +155,8 @@ export default function NouvelleCommandePage() {
     console.log(data);
     toast.promise(
       (async () => {
-        const response = await fetch("/api/commandes", {
-          method: "POST",
+        const response = await fetch(`/api/commandes`, {
+          method: "PUT",
           headers: {
             "Content-Type": "application/json",
           },
@@ -161,11 +184,11 @@ export default function NouvelleCommandePage() {
         setDevi("");
         setItems([]);
 
-        console.log("Commande ajouté avec succès");
+        console.log("Commande modifier avec succès");
       })(),
       {
         loading: "Ajout du commande ...",
-        success: "Commande ajouté avec succès!",
+        success: "Commande modifier avec succès!",
         error: "Échec de l'ajout du commande",
       }
     );
@@ -200,7 +223,7 @@ export default function NouvelleCommandePage() {
 
   const calculateSubTotal = () => {
     return items.reduce((sum, item) => {
-      const amount = item.quantite * item.prixUnite
+      const amount = item.quantite * item.prixUnite;
       return sum + amount;
     }, 0);
   };
@@ -263,152 +286,51 @@ export default function NouvelleCommandePage() {
   return (
     <>
       <Toaster position="top-center" />
+
       <div className="container mx-auto py-6 space-y-6 max-w-5xl">
         <div className="flex justify-between items-center">
           <div className="flex gap-3 items-center">
             <Button
+              className="rounded-lg !p-0"
               size="icon"
               variant="ghost"
               onClick={() => router.push("/ventes/commandes")}
-            >              
+            >
               <MoveLeft />
             </Button>
-            <h1 className="text-3xl font-bold">Nouvelle Commande</h1>
+            <h1 className="text-3xl font-bold mr-2">Modifier une commande</h1>
+            {isLoading && <LoadingDots size={7}/>}
           </div>
+         
         </div>
 
         <Card>
           <CardContent className="p-6 space-y-6">
             {/* Header Section */}
-            <div className="flex items-center space-x-2">
-              <Switch
-                checked={switchValue}
-                onCheckedChange={() => {
-                  setSwitchValue(!switchValue);
-                  console.log(switchValue);
-                }}
-                id="airplane-mode"
-              />
-              <Label htmlFor="airplane-mode">
-                Liée la commande à un client
-              </Label>
-            </div>
             <div className="grid grid-cols-4 items-center gap-6">
-              {switchValue ? (
-                <div className="col-span-2">
-                  <Label htmlFor="customerName">Client*</Label>
-                  <Select
-                    value={formData.customerName}
-                    onValueChange={(value) => {
-                      // Find the selected client based on the name
-                      const selectedClient = clientList.find(
-                        (client) => client.nom === value
-                      );
-
-                      setClient(selectedClient);
-
-                      handleInputChange({
-                        target: { name: "customerName", value },
-                      });
-
-                      // Update clientId
-                      handleInputChange({
-                        target: {
-                          name: "clientId",
-                          value: selectedClient?.id || "",
-                        },
-                      });
-                    }}
-                  >
-                    <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500 mt-2">
-                      <SelectValue placeholder="Sélectionner un client" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {/* Search input */}
-                      <div className="p-2">
-                        <Input
-                          type="text"
-                          placeholder="Rechercher un client ..."
-                          value={searchClientQuery}
-                          onChange={(e) => setSearchClientQuery(e.target.value)}
-                          className="pl-9 w-full rounded-lg bg-zinc-100 focus:bg-white focus-visible:ring-purple-500 focus-visible:ring-offset-0"
-                        />
-                      </div>
-
-                      {/* Filtered client list */}
-                      <ScrollArea className="h-56 w-48  w-full">
-                        {filteredClients.length > 0 ? (
-                          filteredClients.map((client) => (
-                            <SelectItem key={client.id} value={client.nom}>
-                              {client.nom.toUpperCase()}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <div className="p-2 ml-2 text-sm text-zinc-500">
-                            Aucun client trouvé
-                          </div>
-                        )}
-                      </ScrollArea>
-                    </SelectContent>
-                  </Select>
-                </div>
-              ) : (
-                <div className="col-span-2">
-                  <Label htmlFor="deviNum">Numero de devi*</Label>
-                  <Select
-                    value={formData.deviNum}
-                    onValueChange={(value) => {
-                      // Find the selected client based on the name
-                      const selectedDevi = devisList.find(
-                        (devi) => devi.numero === value
-                      );
-
-                      setDevi(selectedDevi);
-                      setFormData((prev) => ({
-                        ...prev,
-                        customerName: selectedDevi.client.nom,
-                      }));
-
-                      handleInputChange({
-                        target: { name: "deviNum", value },
-                      });
-                    }}
-                  >
-                    <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500 mt-2">
-                      <SelectValue placeholder="Sélectionner un devi" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {/* Search input */}
-                      <div className="p-2">
-                        <Input
-                          type="text"
-                          placeholder="Rechercher un devi ..."
-                          value={searchDeviQuery}
-                          onChange={(e) => setSearchDeviQuery(e.target.value)}
-                          className="relative pl-9 w-full rounded-lg bg-zinc-100 focus:bg-white focus-visible:ring-purple-500 focus-visible:ring-offset-0"
-                        />
-                      </div>
-
-                      {/* Filtered client list */}
-                      <ScrollArea className="h-56 w-48  w-full">
-                        {filteredDevis.length > 0 ? (
-                          filteredDevis.map((devi) => (
-                            <SelectItem key={devi.id} value={devi.numero}>
-                              {devi.numero}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <div className="p-2 ml-2 text-sm text-zinc-500">
-                            Aucun devi trouvé
-                          </div>
-                        )}
-                      </ScrollArea>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
               <div className="col-span-2">
+                <Label htmlFor="statut" className="text-right text-black">
+                  Numéro de commande
+                </Label>
+                <Input
+                  className="font-bold mt-2"
+                  value={formData.numero}
+                  disabled
+                />
+              </div>
+              <div className="col-span-2">
+                <Label htmlFor="statut" className="text-right text-black">
+                  Client
+                </Label>
+                <Input
+                  className="font-bold mt-2"
+                  value={formData.customerName}
+                  disabled
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-6">
+              <div className="col-span-1">
                 <Label htmlFor="statut" className="text-right text-black">
                   Statut
                 </Label>
@@ -438,31 +360,6 @@ export default function NouvelleCommandePage() {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-            <div className="flex flex-rows gap-3 justify-between">
-              <div className="col-span-1 space-y-1">
-                {devi && (
-                  <>
-                    <Label htmlFor="client">Client : </Label>
-                    <span className="mt-3 font-bold">
-                      {devi.client.nom.toUpperCase()}
-                    </span>
-                  </>
-                )}
-              </div>
-              <div className="col-span-2">
-                {devi && (
-                  <>
-                    <Label htmlFor="orderNumber">Numéro de commande : </Label>
-                    <span className="mt-3 font-bold">{`CMD-${devi?.numero.slice(
-                      4,
-                      13
-                    )}`}</span>
-                  </>
-                )}
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-6">
               <div className="space-y-1">
                 <Label htmlFor="client">Date limite de livraison : </Label>
                 <Popover>
@@ -476,7 +373,7 @@ export default function NouvelleCommandePage() {
                     >
                       <CalendarIcon />
                       {date ? (
-                        format(date, "PPP", { locale: fr })
+                        format(date, "PPP", { locale: fr }) 
                       ) : (
                         <span>Choisis une date</span>
                       )}
@@ -557,25 +454,18 @@ export default function NouvelleCommandePage() {
                         <TableCell>
                           <Input
                             value={item.prixUnite}
-                            onChange={(e) =>{
-                              console.log('item.prixUnite',item.prixUnite);
-                              
-                                   handleItemChange(
+                            onChange={(e) =>
+                              handleItemChange(
                                 item.id,
                                 "prixUnite",
                                 Number(e.target.value)
                               )
                             }
-                         
-                            }
                             className="focus:!ring-purple-500 w-24"
                           />
                         </TableCell>
                         <TableCell>
-                          {(
-                            item.quantite *
-                            item.prixUnite
-                          ).toFixed(2)}{" "}
+                          {(item.quantite * item.prixUnite).toFixed(2)}
                           DH
                         </TableCell>
                         <TableCell>
@@ -684,7 +574,7 @@ export default function NouvelleCommandePage() {
         </Card>
         <div className="flex justify-end items-center">
           <div className="space-x-2">
-            <Button  onClick={() => router.push("/ventes/commandes")} className="rounded-full" variant="outline">
+            <Button onClick={() => router.push("/ventes/commandes")} className="rounded-full" variant="outline">
               Annuler
             </Button>
             <Button

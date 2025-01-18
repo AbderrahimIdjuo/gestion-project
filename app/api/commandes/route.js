@@ -16,7 +16,7 @@ export async function POST(req) {
       typeReduction,
       note,
       avance,
-      echeance
+      echeance,
     } = resopns;
     const result = await prisma.commandes.create({
       data: {
@@ -33,10 +33,10 @@ export async function POST(req) {
         avance,
         commandeProduits: {
           create: produits.map((produit) => ({
-            designation: produit.details || "Unknown Product",
-            quantite: parseInt(produit.quantity, 10) || 0,
-            prixUnite: parseFloat(produit.rate) || 0,
-            montant: parseFloat(produit.quantity * produit.rate) || 0,
+            designation: produit.designation || "Unknown Product",
+            quantite: parseInt(produit.quantite, 10) || 0,
+            prixUnite: parseFloat(produit.prixUnite) || 0,
+            montant: parseFloat(produit.quantite * produit.prixUnite) || 0,
           })),
         },
       },
@@ -59,7 +59,7 @@ export async function PUT(req) {
       id,
       numero,
       clientId,
-      articls,
+      produits,
       statut,
       sousTotal,
       fraisLivraison,
@@ -67,18 +67,24 @@ export async function PUT(req) {
       total,
       typeReduction,
       note,
+      avance,
+      echeance,
     } = resopns;
 
-    const existingArticls = articls.filter(
-      (articl) => typeof articl.id === "string"
-    );
-    const newArticls = articls.filter(
-      (articl) => typeof articl.id === "number"
-    );
-    console.log("existingArticls", existingArticls);
-    console.log("newArticls", newArticls);
+    const existingIds = produits.map((produit) => produit.id);
+    console.log("existingIds", existingIds);
 
-    const result = await prisma.devis.update({
+    // Step 1: Delete products not in the new produits array
+    await prisma.commandesProduits.deleteMany({
+      where: {
+        commandeId: id, // Ensure this matches your schema for linking `commandeProduits` to `commandes`
+        id: {
+          notIn: existingIds, // Delete records not in the incoming produits array
+        },
+      },
+    });
+
+    const result = await prisma.commandes.update({
       where: { id },
       data: {
         numero,
@@ -89,22 +95,24 @@ export async function PUT(req) {
         reduction: reduction,
         total: total,
         typeReduction,
+        avance,
+        echeance,
         note,
-        articls: {
-          update: existingArticls.map((articl) => ({
-            where: { id: articl.id },
-            data: {
+        commandeProduits: {
+          upsert: produits.map((articl) => ({
+            where: { id: articl.id }, // Default to 0 or another placeholder for new products
+            update: {
               designation: articl.designation,
               quantite: parseInt(articl.quantite),
               prixUnite: parseFloat(articl.prixUnite),
               montant: articl.quantite * articl.prixUnite,
             },
-          })),
-          create: newArticls.map((articl) => ({
-            designation: articl.designation,
-            quantite: parseInt(articl.quantite),
-            prixUnite: parseFloat(articl.prixUnite),
-            montant: articl.quantite * articl.prixUnite,
+            create: {
+              designation: articl.designation,
+              quantite: parseInt(articl.quantite),
+              prixUnite: parseFloat(articl.prixUnite),
+              montant: articl.quantite * articl.prixUnite,
+            },
           })),
         },
       },
@@ -112,15 +120,8 @@ export async function PUT(req) {
 
     return NextResponse.json({ result });
   } catch (error) {
-    if (error.code === "P2002") {
-      return NextResponse.json(
-        {
-          message:
-            "Duplicate field error: A record with this value already exists.",
-        },
-        { status: 409 }
-      );
-    }
+    console.log(error);
+
     return NextResponse.json(
       { message: "An unexpected error occurred." },
       { status: 500 }

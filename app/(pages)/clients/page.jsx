@@ -117,8 +117,8 @@ export default function ClientsPage() {
             className={`${
               isAddingClient || isUpdatingClient
                 ? "bg-red-500 hover:bg-red-600"
-                : "bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600"
-            } text-white font-semibold transition-all duration-300 transform hover:scale-105`}
+                : "bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 "
+            } text-white font-semibold transition-all duration-300 transform hover:scale-105 rounded-full`}
           >
             {isAddingClient || isUpdatingClient ? (
               <>
@@ -143,7 +143,7 @@ export default function ClientsPage() {
         >
           <div className="col-span-2">
             <div
-              className={`grid gap-3 p-3 border mb-3 rounded-lg ${
+              className={`grid gap-3 border mb-3 rounded-lg ${
                 isAddingClient || isUpdatingClient ? "hidden" : ""
               } `}
             >
@@ -163,14 +163,12 @@ export default function ClientsPage() {
                     [...Array(10)].map((_, index) => (
                       <TableRow
                         className="h-[2rem] MuiTableRow-root"
-                        hover
                         role="checkbox"
                         tabIndex={-1}
                         key={index}
                       >
                         <TableCell
                           className="!py-2 text-sm md:text-base"
-                          key={index}
                           align="left"
                         >
                           <div className="flex gap-2 items-center">
@@ -178,17 +176,20 @@ export default function ClientsPage() {
                             <Skeleton className="h-4 w-[150px]" />
                           </div>
                         </TableCell>
-                        <TableCell className="!py-2" key={index} align="left">
+                        <TableCell className="!py-2" align="left">
                           <Skeleton className="h-4 w-[150px]" />
                         </TableCell>
-                        <TableCell className="!py-2" key={index} align="left">
+                        <TableCell className="!py-2" align="left">
                           <Skeleton className="h-4 w-[150px]" />
                         </TableCell>
-                        <TableCell className="!py-2" key={index} align="left">
+                        <TableCell className="!py-2" align="left">
                           <Skeleton className="h-4 w-[150px]" />
                         </TableCell>
-                        <TableCell className="!py-2" key={index} align="right">
-                          <Skeleton className="h-4 w-[100px]" />
+                        <TableCell className="!py-2" >
+                          <div className="flex gap-2 justify-end">
+                            <Skeleton className="h-7 w-7 rounded-full" />
+                            <Skeleton className="h-7 w-7 rounded-full" />
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))
@@ -249,16 +250,6 @@ export default function ClientsPage() {
                               <Trash2 className="h-4 w-4" />
                               <span className="sr-only">Supprimer</span>
                             </Button>
-
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 rounded-full hover:bg-green-100 hover:text-green-600"
-                              onClick={() => {}}
-                            >
-                              <ShoppingBag className="h-4 w-4" />
-                              <span className="sr-only">Nouvelle commande</span>
-                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -274,7 +265,7 @@ export default function ClientsPage() {
 
             {/* the half table with the name and Action columns */}
             <ScrollArea
-              className={`h-[35rem] w-full  grid gap-3 p-3 border mb-3 rounded-lg ${
+              className={`h-[35rem] w-full  grid gap-3  border mb-3 rounded-lg ${
                 !isAddingClient && !isUpdatingClient ? "hidden" : ""
               } `}
             >
@@ -291,14 +282,12 @@ export default function ClientsPage() {
                       [...Array(10)].map((_, index) => (
                         <TableRow
                           className="h-[2rem] MuiTableRow-root"
-                          hover
                           role="checkbox"
                           tabIndex={-1}
                           key={index}
                         >
                           <TableCell
                             className="!py-2 text-sm md:text-base"
-                            key={index}
                             align="left"
                           >
                             <div className="flex gap-2 items-center">
@@ -306,11 +295,7 @@ export default function ClientsPage() {
                               <Skeleton className="h-4 w-[150px]" />
                             </div>
                           </TableCell>
-                          <TableCell
-                            className="!py-2"
-                            key={index}
-                            align="right"
-                          >
+                          <TableCell className="!py-2" align="right">
                             <Skeleton className="h-4 w-[100px]" />
                           </TableCell>
                         </TableRow>
@@ -368,18 +353,6 @@ export default function ClientsPage() {
                               >
                                 <Trash2 className="h-4 w-4" />
                                 <span className="sr-only">Supprimer</span>
-                              </Button>
-
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 rounded-full hover:bg-green-100 hover:text-green-600"
-                                onClick={() => {}}
-                              >
-                                <ShoppingBag className="h-4 w-4" />
-                                <span className="sr-only">
-                                  Nouvelle commande
-                                </span>
                               </Button>
                             </div>
                           </TableCell>

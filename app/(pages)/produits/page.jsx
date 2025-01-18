@@ -82,8 +82,7 @@ export default function ProduitsPage() {
     const result = await axios.get("/api/produits");
     const { produits } = result.data;
     setProducts(produits);
-    setIsLoading(false);
-    console.log("liste de produits :", produits);
+    setIsLoading(false)
   };
 
   const deleteProduct = async () => {
@@ -151,7 +150,7 @@ export default function ProduitsPage() {
               <SheetTrigger asChild>
                 <Button
                   variant="outline"
-                  className="border-purple-500 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900"
+                  className="border-purple-500 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900 rounded-full"
                 >
                   <Filter className="mr-2 h-4 w-4" />
                   Filtres
@@ -292,7 +291,7 @@ export default function ProduitsPage() {
             </Sheet>
 
             <ProductFormDialog getProducts={getProducts}>
-              <Button className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 hover:scale-105 text-white font-semibold transition-all duration-300 transform">
+              <Button className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 hover:scale-105 text-white font-semibold transition-all duration-300 transform rounded-full">
                 <Plus className="mr-2 h-4 w-4" />
                 Nouveau Produit
               </Button>
@@ -319,38 +318,40 @@ export default function ProduitsPage() {
                 [...Array(10)].map((_, index) => (
                   <TableRow
                     className="h-[2rem] MuiTableRow-root"
-                    hover
                     role="checkbox"
                     tabIndex={-1}
                     key={index}
                   >
                     <TableCell
                       className="!py-2 text-sm md:text-base"
-                      key={index}
                       align="left"
                     >
                       <Skeleton className="h-4 w-[150px]" />
                     </TableCell>
-                    <TableCell className="!py-2" key={index} align="left">
+                    <TableCell className="!py-2" align="left">
                       <Skeleton className="h-4 w-[150px]" />
                     </TableCell>
-                    <TableCell className="!py-2" key={index} align="left">
+                    <TableCell className="!py-2" align="left">
                       <Skeleton className="h-4 w-[150px]" />
                     </TableCell>
-                    <TableCell className="!py-2" key={index} align="left">
+                    <TableCell className="!py-2" align="left">
                       <Skeleton className="h-4 w-[150px]" />
                     </TableCell>
-                    <TableCell className="!py-2" key={index} align="left">
+                    <TableCell className="!py-2" align="left">
                       <Skeleton className="h-4 w-[90px]" />
                     </TableCell>
-                    <TableCell className="!py-2" key={index} align="left">
+                    <TableCell className="!py-2" align="left">
                       <Skeleton className="h-4 w-[90px]" />
                     </TableCell>
-                    <TableCell className="!py-2" key={index} align="left">
+                    <TableCell className="!py-2" align="left">
                       <Skeleton className="h-4 w-[90px]" />
                     </TableCell>
-                    <TableCell className="!py-2" key={index} align="right">
-                      <Skeleton className="h-4 w-[150px]" />
+                    <TableCell className="!py-2">
+                      <div className="flex gap-2 justify-end">
+                        <Skeleton className="h-7 w-7 rounded-full" />
+                        <Skeleton className="h-7 w-7 rounded-full" />
+                        <Skeleton className="h-7 w-7 rounded-full" />
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -378,9 +379,11 @@ export default function ProduitsPage() {
                     <TableCell>{product.stock}</TableCell>
                     <TableCell>
                       <CustomTooltip message={product.description}>
-                        <span className="cursor-default">
-                          {product.description.slice(0, 10)}...
-                        </span>
+                        {product.description && (
+                          <span className="cursor-default">
+                            {product.description.slice(0, 10)}...
+                          </span>
+                        )}
                       </CustomTooltip>
                     </TableCell>
                     <TableCell className="text-right">
@@ -389,43 +392,39 @@ export default function ProduitsPage() {
                           getProducts={getProducts}
                           currProduct={currProduct}
                         >
-                          <CustomTooltip message="Modifier">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
-                              onClick={() => setCurrProduct(product)}
-                            >
-                              <Pen className="h-4 w-4" />
-                              <span className="sr-only">Modifier</span>
-                            </Button>
-                          </CustomTooltip>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
+                            onClick={() => setCurrProduct(product)}
+                          >
+                            <Pen className="h-4 w-4" />
+                            <span className="sr-only">Modifier</span>
+                          </Button>
                         </ModifyProductDialog>
-                        <CustomTooltip message="Supprimer">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
-                            onClick={() => {
-                              setDeleteDialogOpen(true);
-                              setCurrProduct(product);
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            <span className="sr-only">Supprimer</span>
-                          </Button>
-                        </CustomTooltip>
-                        <CustomTooltip message="Détails">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-full hover:bg-blue-100 hover:text-blue-600"
-                            onClick={() => handleDetails(product.id)}
-                          >
-                            <Info className="h-4 w-4" />
-                            <span className="sr-only">Détails</span>
-                          </Button>
-                        </CustomTooltip>
+
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
+                          onClick={() => {
+                            setDeleteDialogOpen(true);
+                            setCurrProduct(product);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">Supprimer</span>
+                        </Button>
+
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 rounded-full hover:bg-blue-100 hover:text-blue-600"
+                          onClick={() => handleDetails(product.id)}
+                        >
+                          <Info className="h-4 w-4" />
+                          <span className="sr-only">Détails</span>
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>

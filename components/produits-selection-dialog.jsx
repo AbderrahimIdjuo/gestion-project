@@ -15,6 +15,7 @@ import { Search, Check, Plus, Minus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import axios from "axios";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -33,7 +34,7 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
       } else {
         newSelected[article.id] = {
           ...article,
-          quantity: 1,
+          quantite: 1,
         };
       }
       return newSelected;
@@ -44,7 +45,6 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
     const { produits } = result.data;
     setProducts(produits);
     // setIsLoading(false);
-    console.log("liste de produits :", produits);
   };
 
   useEffect(() => {
@@ -53,9 +53,8 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
 
   const handleQuantityChange = (articleId, delta) => {
     setSelectedArticles((prev) => {
-      console.log("quantity", prev[articleId]?.quantity);
 
-      const currentQty = prev[articleId]?.quantity || 0;
+      const currentQty = prev[articleId]?.quantite || 0;
       const newQty = Math.max(0, currentQty + delta);
 
       if (newQty === 0) {
@@ -67,7 +66,7 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
         ...prev,
         [articleId]: {
           ...prev[articleId],
-          quantity: newQty,
+          quantite: newQty,
         },
       };
     });
@@ -79,19 +78,19 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
         ...prev,
         [articleId]: {
           ...prev[articleId],
-          quantity: parseInt(value, 10),
+          quantite: parseInt(value, 10),
         },
       };
     });
   };
   const handleAddItems = () => {
     const articlesToAdd = Object.values(selectedArticles)
-      .filter((article) => article.quantity > 0)
-      .map(({ id, designation, prixVente, quantity }) => ({
+      .filter((article) => article.quantite > 0)
+      .map(({ id, designation, prixVente ,prixUnite, quantite }) => ({
         id,
-        details: designation,
-        rate: prixVente,
-        quantity,
+        designation: designation,
+        prixUnite: prixUnite || prixVente,
+        quantite,
       }));
 
     onArticlesAdd(articlesToAdd);
@@ -100,7 +99,7 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
   };
 
   const totalQuantity = Object.values(selectedArticles).reduce(
-    (sum, item) => sum + (item.quantity || 0),
+    (sum, item) => sum + (item.quantite || 0),
     0
   );
 
@@ -115,9 +114,10 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
           </DialogTitle>
           <DialogDescription></DialogDescription>
         </DialogHeader>
+    
         <div className="grid grid-cols-2 gap-0 h-[500px]">
           {/* Left side - Item list */}
-          <div className="border-r p-4">
+          <div className="h-[500px] border-r p-4">
             <div className="relative mb-4">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground " />
               <Input
@@ -127,13 +127,13 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
                 className="pl-9 w-full text-left rounded-r-md focus:!ring-purple-500"
               />
             </div>
-
-            <div className="space-y-2">
+            <div className="h-[500px] space-y-2">
+            <ScrollArea className="h-[84%] w-48  w-full">
               {filteredArticles?.map((article) => (
                 <div
                   key={article.id}
                   className={cn(
-                    "flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors",
+                    "flex items-center justify-between p-3 my-1 rounded-lg cursor-pointer transition-colors w-[95%]",
                     selectedArticles[article.id]
                       ? "bg-purple-100 border border-purple-300"
                       : "hover:bg-gray-50"
@@ -160,23 +160,24 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
                   </div>
                 </div>
               ))}
+            </ScrollArea>
             </div>
           </div>
 
           {/* Right side - Selected items */}
-          <div className="p-4">
+          <div className="h-[70%] p-4">
             <div className="flex items-center gap-2 mb-4">
               <h3 className="font-medium">produits selectioner</h3>
               <Badge variant="secondary" className="rounded-full">
                 {selectedCount}
               </Badge>
             </div>
-
+            <ScrollArea className="h-[100%] w-full">
             <div className="space-y-3">
               {Object.values(selectedArticles).map((article) => (
                 <div
                   key={article.id}
-                  className="flex items-center justify-between p-3 border rounded-lg"
+                  className="flex items-center justify-between p-3 border rounded-lg w-[95%]"
                 >
                   <span className="font-medium">{article.designation}</span>
                   <div className="flex items-center gap-2">
@@ -189,9 +190,9 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
                       <Minus className="h-3 w-3" />
                     </Button>
                     <Input
-                      id="quantity"
-                      name="quantity"
-                      value={article.quantity}
+                      id="quantite"
+                      name="quantite"
+                      value={article.quantite}
                       onChange={(e) => handleInputChange(e, article.id)}
                       className="w-20 text-center focus:!ring-purple-500"
                     />
@@ -208,9 +209,10 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
                 </div>
               ))}
             </div>
+            </ScrollArea>
           </div>
         </div>
-
+       
         <DialogFooter className="p-4 border-t">
           <Button
             className="rounded-full"
