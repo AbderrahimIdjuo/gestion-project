@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Search, Pen, Trash2, Filter , Printer} from "lucide-react";
+import { Plus, Search, Pen, Trash2, Filter , Printer , CalendarIcon} from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -31,28 +31,50 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 import CustomPagination from "@/components/customUi/customPagination";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { PriceRangeSlider } from "@/components/customUi/customSlider";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 export default function DevisPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [currentDevi, setCurrentDevi] = useState();
+  const [date, setDate] = useState();
   const [devisList, setDevisList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [maxMontant, setMaxMontant] = useState();
   const [filters, setFilters] = useState({
     client: "all",
     dateStart: "",
     dateEnd: "",
-    montant: [0, 100000],
+    montant: [0, maxMontant],
     statut: "all",
   });
-  const itemsPerPage = 10;
+ 
 
+  const itemsPerPage = 10;
+  useEffect(() => {
+    setFilters({ ...filters, montant: [0, maxMontant] });
+  }, [maxMontant]);
+  const totalList = devisList?.map((devi) => devi.total);
+  useEffect(() => {
+    if (totalList?.length > 0) {
+      const maxPrice = Math.max(...totalList);
+      setMaxMontant(maxPrice);
+    }
+  }, [totalList]);
   const filteredDevis = devisList?.filter(
     (devis) =>
       (searchQuery === "" ||
@@ -62,10 +84,8 @@ export default function DevisPage() {
       (filters.statut === "all" || devis.statut === filters.statut) &&
       devis.total >= filters.montant[0] &&
       devis.total <= filters.montant[1] &&
-      (!filters.dateStart ||
-        !filters.dateEnd ||
-        (new Date(devis.date) >= new Date(filters.dateStart) &&
-          new Date(devis.date) <= new Date(filters.dateEnd)))
+  
+      (!date || new Date(devis.createdAt) >= new Date(date))
   );
 
   const totalPages = Math.ceil(filteredDevis.length / itemsPerPage);
@@ -124,6 +144,13 @@ export default function DevisPage() {
       console.log(e);
     }
   };
+  const status = [
+    { value: "all", lable: "Tous les statut", color: "" },
+    { value: "En attente", lable: "En attente", color: "amber-500" },
+    { value: "Accepté", lable: "Accepté", color: "green-500" },
+    { value: "Refusé", lable: "Refusé", color: "red-500" },
+    { value: "Expiré", lable: "Expiré", color: "gray-500" },
+  ];
 
   return (
     <>
@@ -162,7 +189,7 @@ export default function DevisPage() {
                   </SheetDescription>
                 </SheetHeader>
                 <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
+                  {/* <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="statut" className="text-right text-black">
                       Statut
                     </Label>
@@ -183,8 +210,67 @@ export default function DevisPage() {
                         <SelectItem value="Expiré">Expiré</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div> */}
+                  <div className="grid grid-cols-4 items-center gap-4 my-2">
+                    <Label htmlFor="statut" className="text-right text-black">
+                      Statut
+                    </Label>
+                    <Select
+                      value={filters.statut}
+                      name="statut"
+                      onValueChange={(value) =>
+                        setFilters({ ...filters, statut: value })
+                      }
+                    >
+                      <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
+                        <SelectValue placeholder="Séléctionner un statut" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {status.map((statut, index) => (
+                          <SelectItem key={index} value={statut.value}>
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`h-2 w-2 rounded-full bg-${statut.color}`}
+                              />
+                              {statut.lable}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
+                  <div className="grid grid-cols-4 items-center gap-4 my-2">
+                    <Label htmlFor="client" className="text-right text-black">
+                      Date :
+                    </Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "col-span-3 w-full justify-start text-left font-normal hover:text-purple-600 hover:bg-white hover:border-2 hover:border-purple-500",
+                            !date && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon />
+                          {date ? (
+                            format(date, "PPP", { locale: fr })
+                          ) : (
+                            <span>Choisis une date</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={date}
+                          onSelect={setDate}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  {/* <div className="grid grid-cols-4 items-center gap-4">
                     <Label
                       htmlFor="dateStart"
                       className="text-right text-black"
@@ -200,21 +286,41 @@ export default function DevisPage() {
                       }
                       className="col-span-3 !border-purple-200 bg-white focus:!ring-purple-500"
                     />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
+                  </div> */}
+                  {/* <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="montant" className="text-right text-black">
                       Montant total
                     </Label>
                     <div className="col-span-3">
                       <Slider
                         min={0}
-                        max={10000}
+                        max={maxMontant}
                         step={100}
                         value={filters.montant}
                         onValueChange={(value) =>
                           setFilters({ ...filters, montant: value })
                         }
                         className="w-full [&_[role=slider]]:bg-purple-500 [&_[role=slider]]:border-purple-500 [&_[role=slider]]:focus:ring-purple-500 [&_[role=track]]:bg-purple-100 [&_[role=range]]:bg-purple-300"
+                      />
+                      <div className="flex justify-between mt-2">
+                        <span>{filters.montant[0]} DH</span>
+                        <span>{filters.montant[1]} DH</span>
+                      </div>
+                    </div>
+                  </div> */}
+                  <div className="grid grid-cols-4 items-center gap-4 my-2">
+                    <Label htmlFor="montant" className="text-right text-black">
+                      Montant total :
+                    </Label>
+                    <div className="col-span-3">
+                      <PriceRangeSlider
+                        min={0}
+                        max={maxMontant}
+                        step={100}
+                        value={filters.montant} // Ensure montant is an array, e.g., [min, max]
+                        onValueChange={
+                          (value) => setFilters({ ...filters, montant: value }) // value will be [min, max]
+                        }
                       />
                       <div className="flex justify-between mt-2">
                         <span>{filters.montant[0]} DH</span>

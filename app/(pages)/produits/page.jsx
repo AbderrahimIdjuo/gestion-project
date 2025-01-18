@@ -37,21 +37,29 @@ import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialo
 import { ModifyProductDialog } from "@/components/modify-product-dialog";
 import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PriceRangeSlider } from "@/components/customUi/customSlider";
+
 
 export default function ProduitsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [max, setMax] = useState({
+    prixAchat : "",
+    prixVente : 0,
+    stock : 0,
+  });
   const [filters, setFilters] = useState({
     categorie: "all",
     status: "all",
-    prixAchat: [0, 10000],
-    prixVente: [0, 10000],
-    stock: [0, 1000],
+    prixAchat: [0, max.prixAchat],
+    prixVente: [0, max.prixVente],
+    stock: [0, max.stock],
   });
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [products, setProducts] = useState(null);
   const [currProduct, setCurrProduct] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+
 
   const itemsPerPage = 10;
 
@@ -77,11 +85,26 @@ export default function ProduitsPage() {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+  
+  useEffect(() => {
+    setFilters({ ...filters, 
+      prixAchat: [0, max.prixAchat],
+      prixVente: [0, max.prixVente],
+      stock: [0, max.stock],
+     });
+  }, [max]);
 
   const getProducts = async () => {
     const result = await axios.get("/api/produits");
     const { produits } = result.data;
     setProducts(produits);
+    const prixAchatList = produits.map((produit) => produit.prixAchat); 
+    const prixVenteList = produits.map((produit) => produit.prixVente);
+    const stockList = produits.map((produit) => produit.stock);
+    setMax({...max , 
+      prixAchat : Math.max(...prixAchatList), 
+      prixVente : Math.max(...prixVenteList), 
+      stock : Math.max(...stockList)});
     setIsLoading(false)
   };
 
@@ -126,6 +149,12 @@ export default function ProduitsPage() {
   const handleDetails = (id) => {
     console.log("View details for product:", id);
   };
+  const status = [
+    { value: "all", lable: "Tous les statut", color: "" },
+    { value: "En stock", lable: "En stock", color: "green-500" },
+    { value: "En rupture", lable: "En rupture", color: "red-500" },
+    { value: "Commander", lable: "Commander", color: "amber-500" },
+  ];
 
   return (
     <>
@@ -196,44 +225,47 @@ export default function ProduitsPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="status" className="text-right text-black">
+                  <div className="grid grid-cols-4 items-center gap-4 my-2">
+                    <Label htmlFor="statut" className="text-right text-black">
                       Statut
                     </Label>
                     <Select
                       value={filters.status}
+                      name="statut"
                       onValueChange={(value) =>
                         setFilters({ ...filters, status: value })
                       }
                     >
-                      <SelectTrigger className="col-span-3 border-purple-200 bg-white focus:ring-purple-500">
-                        <SelectValue placeholder="Tous les statuts" />
+                      <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
+                        <SelectValue placeholder="Séléctionner un statut" />
                       </SelectTrigger>
-                      <SelectContent className="bg-white">
-                        <SelectItem value="all">Tous les statuts</SelectItem>
-                        <SelectItem value="En stock">En stock</SelectItem>
-                        <SelectItem value="En rupture">En rupture</SelectItem>
-                        <SelectItem value="Commander">Commander</SelectItem>
+                      <SelectContent>
+                        {status.map((statut, index) => (
+                          <SelectItem key={index} value={statut.value}>
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`h-2 w-2 rounded-full bg-${statut.color}`}
+                              />
+                              {statut.lable}
+                            </div>
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label
-                      htmlFor="prixAchat"
-                      className="text-right text-black"
-                    >
-                      Prix d&apos;achat
+                  </div>        
+                  <div className="grid grid-cols-4 items-center gap-4 my-2">
+                    <Label htmlFor="montant" className="text-right text-black">
+                    Prix d&apos;achat :
                     </Label>
                     <div className="col-span-3">
-                      <Slider
+                      <PriceRangeSlider
                         min={0}
-                        max={1000}
-                        step={10}
-                        value={filters.prixAchat}
-                        onValueChange={(value) =>
-                          setFilters({ ...filters, prixAchat: value })
+                        max={max.prixAchat}
+                        step={100}
+                        value={filters.prixAchat} 
+                        onValueChange={
+                          (value) => setFilters({ ...filters, prixAchat: value }) 
                         }
-                        className="w-full [&_[role=slider]]:bg-purple-500 [&_[role=slider]]:border-purple-500 [&_[role=slider]]:focus:ring-purple-500 [&_[role=track]]:bg-purple-100 [&_[role=range]]:bg-purple-300"
                       />
                       <div className="flex justify-between mt-2">
                         <span>{filters.prixAchat[0]} DH</span>
@@ -241,23 +273,19 @@ export default function ProduitsPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label
-                      htmlFor="prixVente"
-                      className="text-right text-black"
-                    >
-                      Prix de vente
+                  <div className="grid grid-cols-4 items-center gap-4 my-2">
+                    <Label htmlFor="montant" className="text-right text-black">
+                    Prix de vente :
                     </Label>
                     <div className="col-span-3">
-                      <Slider
+                      <PriceRangeSlider
                         min={0}
-                        max={1500}
-                        step={10}
-                        value={filters.prixVente}
-                        onValueChange={(value) =>
-                          setFilters({ ...filters, prixVente: value })
+                        max={max.prixVente}
+                        step={100}
+                        value={filters.prixVente} 
+                        onValueChange={
+                          (value) => setFilters({ ...filters, prixVente: value }) 
                         }
-                        className="w-full [&_[role=slider]]:bg-purple-500 [&_[role=slider]]:border-purple-500 [&_[role=slider]]:focus:ring-purple-500 [&_[role=track]]:bg-purple-100 [&_[role=range]]:bg-purple-300"
                       />
                       <div className="flex justify-between mt-2">
                         <span>{filters.prixVente[0]} DH</span>
@@ -265,24 +293,23 @@ export default function ProduitsPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="stock" className="text-right text-black">
-                      Stock
+                  <div className="grid grid-cols-4 items-center gap-4 my-2">
+                    <Label htmlFor="montant" className="text-right text-black">
+                    Stock :
                     </Label>
                     <div className="col-span-3">
-                      <Slider
+                      <PriceRangeSlider
                         min={0}
-                        max={100}
-                        step={1}
-                        value={filters.stock}
-                        onValueChange={(value) =>
-                          setFilters({ ...filters, stock: value })
+                        max={max.stock}
+                        step={10}
+                        value={filters.stock} 
+                        onValueChange={
+                          (value) => setFilters({ ...filters, stock: value }) 
                         }
-                        className="w-full [&_[role=slider]]:bg-purple-500 [&_[role=slider]]:border-purple-500 [&_[role=slider]]:focus:ring-purple-500 [&_[role=track]]:bg-purple-100 [&_[role=range]]:bg-purple-300"
                       />
                       <div className="flex justify-between mt-2">
-                        <span>{filters.stock[0]}</span>
-                        <span>{filters.stock[1]}</span>
+                        <span>{filters.stock[0]} </span>
+                        <span>{filters.stock[1]} </span>
                       </div>
                     </div>
                   </div>

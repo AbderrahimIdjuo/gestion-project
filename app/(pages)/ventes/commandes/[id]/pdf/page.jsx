@@ -8,7 +8,7 @@ import { useState } from "react";
 import { Table, TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { Phone, MapPin } from "lucide-react";
 
-import LoadingDeviPdf from "@/components/loading-devi-pdf";
+import LoadingCommandePdf from "@/components/loading-commande-pdf";
 
 export default function DevisPDFPage({ params }) {
   const [commande, setCommande] = useState();
@@ -216,7 +216,7 @@ export default function DevisPDFPage({ params }) {
           </div>
         </div>
       ) : (
-        <LoadingDeviPdf />
+        <LoadingCommandePdf />
       )}
     </>
   );
