@@ -23,9 +23,24 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Trash2, MoveLeftIcon } from "lucide-react";
+import { Plus, Trash2, MoveLeftIcon, Check, ChevronDown } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
+import { cn } from "@/lib/utils";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 export default function UpdateDevisPage({ params }) {
   const [clientList, setClientList] = useState([]);
@@ -33,8 +48,10 @@ export default function UpdateDevisPage({ params }) {
   const [client, setClient] = useState("");
   const [items, setItems] = useState();
   const [devi, setDevi] = useState();
+  const [isLoading, setIsLoading] = useState(true);
   const [deletedArticls, setDeletedArticls] = useState([]);
-
+  const [open, setOpen] = useState(false);
+const [value, setValue] = useState("");
   const [formData, setFormData] = useState({
     customerName: "",
     quoteDate: new Date().toISOString().split("T")[0],
@@ -59,6 +76,7 @@ export default function UpdateDevisPage({ params }) {
     setDevi(devi);
     setItems(devi.articls);
     setClient(devi.client);
+    setValue(devi.client.nom);
     setFormData((prev) => ({
       ...prev,
       customerName: devi?.client.nom,
@@ -68,6 +86,7 @@ export default function UpdateDevisPage({ params }) {
       discountType: devi?.typeReduction,
       customerNotes: devi?.note,
     }));
+    setIsLoading(false)
     console.log("Articls : ", devi.articls);
     console.log("devi : ", devi);
   };
@@ -104,6 +123,7 @@ export default function UpdateDevisPage({ params }) {
       typeReduction: formData.discountType,
       note: formData.customerNotes,
     };
+console.log('data',data);
 
     toast.promise(
       (async () => {
@@ -115,17 +135,6 @@ export default function UpdateDevisPage({ params }) {
           }
           const response = await axios.put("/api/devis", data);
           console.log("Devi ajouté avec succès");
-          // setFormData((prev) => ({
-          //   ...prev,
-          //   customerName: "",
-          //   salesperson: "",
-          //   shippingCharges: 0,
-          //   discount: 0,
-          //   statut: "En attente",
-          //   discountType: "%",
-          //   customerNotes: "",
-          // }));
-          // setItems([{ id: 1, designation: "", quantite: 1, prixUnite: 0 }]);
           router.push("/ventes/devis");
           if (response.status === 200) {
             console.log("Devi modifier avec succès");
@@ -206,7 +215,7 @@ export default function UpdateDevisPage({ params }) {
               <MoveLeftIcon />
             </Button>
             <h1 className="text-3xl font-bold">Modifier Devis</h1>
-            {isLoading && <LoadingDots size={7}/>}
+            {isLoading && <LoadingDots size={7} />}
           </div>
         </div>
         <Card>
@@ -216,60 +225,61 @@ export default function UpdateDevisPage({ params }) {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="customerName">Client*</Label>
-                  <Select
-                    value={formData.customerName}
-                    onValueChange={(value) => {
-                      // Find the selected client based on the name
-                      const selectedClient = clientList.find(
-                        (client) => client.nom === value
-                      );
-
-                      setClient(selectedClient);
-
-                      handleInputChange({
-                        target: { name: "customerName", value },
-                      });
-
-                      // Update clientId
-                      handleInputChange({
-                        target: {
-                          name: "clientId",
-                          value: selectedClient?.id || "",
-                        },
-                      });
-                    }}
-                  >
-                    <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
-                      <SelectValue placeholder="Sélectionner un client" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {/* Search input */}
-                      <div className="p-2">
-                        <Input
-                          type="text"
-                          placeholder="Rechercher un client"
-                          value={searchClientQuery}
-                          onChange={(e) => setSearchClientQuery(e.target.value)}
-                          className="pl-9 w-full rounded-lg bg-zinc-100 focus:bg-white focus-visible:ring-purple-500 focus-visible:ring-offset-0"
+                  <br />
+                  <Popover open={open} onOpenChange={setOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={open}
+                        className="w-full justify-between"
+                      >
+                        {value
+                          ? clientList?.find((client) => client.nom === value)
+                              ?.nom
+                          : "Sélectioner un client..."}
+                        <ChevronDown className="opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto min-w-[27vw] p-0">
+                      <Command>
+                        <CommandInput
+                          placeholder="Search client..."
+                          className="h-9"
                         />
-                      </div>
-
-                      {/* Filtered client list */}
-                      <div className="max-h-60 overflow-y-auto">
-                        {filteredClients.length > 0 ? (
-                          filteredClients.map((client) => (
-                            <SelectItem key={client.id} value={client.nom}>
-                               {client.nom.toUpperCase()}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <div className="p-2 ml-2 text-sm text-zinc-500">
-                            Aucun client trouvé
-                          </div>
-                        )}
-                      </div>
-                    </SelectContent>
-                  </Select>
+                        <CommandList>
+                          <CommandEmpty>No client found.</CommandEmpty>
+                          <ScrollArea className="h-72 w-full">
+                            <CommandGroup>
+                              {clientList?.map((client) => (
+                                <CommandItem
+                                  key={client.id}
+                                  value={client.nom}
+                                  onSelect={(currentValue) => {
+                                    setValue(
+                                      currentValue === value ? "" : currentValue
+                                    );
+                                    setClient(client);
+                                    setOpen(false);
+                                  }}
+                                >
+                                  {client.nom}
+                                  <Check
+                                    className={cn(
+                                      "ml-auto",
+                                      value === client.nom
+                                        ? "opacity-100"
+                                        : "opacity-0"
+                                    )}
+                                  />
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </ScrollArea>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
               <div className="space-y-2">
@@ -469,7 +479,13 @@ export default function UpdateDevisPage({ params }) {
         </Card>
         <div className="flex justify-end items-center">
           <div className="space-x-2">
-            <Button className="rounded-full" onClick={() => router.push("/ventes/devis")} variant="outline">Annuler</Button>
+            <Button
+              className="rounded-full"
+              onClick={() => router.push("/ventes/devis")}
+              variant="outline"
+            >
+              Annuler
+            </Button>
             <Button
               onClick={() => {
                 onSubmit();

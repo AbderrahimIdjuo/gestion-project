@@ -35,8 +35,10 @@ model Produits {
   statut       String   // Use Enum if you have predefined statuses
   stock        Int
   description  String?
+  achatsCommandes AchatsCommandes[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
 }
 model CommandesProduits {
   id          String   @id @default(uuid())
@@ -80,6 +82,22 @@ model Commandes {
   updatedAt      DateTime @updatedAt
 }
 
+model AchatsCommandes {
+  id               String   @id @default(uuid())
+  produitId        String 
+  produit          Produits  @relation(fields: [produitId], references: [id])
+  fournisseurId    String?
+  commandeId       String?   
+  quantite         Int
+  prixUnite        Float?
+  montant          Float?
+  statut           String
+  description      String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+
 model Articls {
   id          String   @id @default(uuid())
   deviId      String   
@@ -108,9 +126,6 @@ model Devis {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
-
-
-
 
 
 model Factures {

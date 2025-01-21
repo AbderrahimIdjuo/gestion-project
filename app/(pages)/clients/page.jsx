@@ -105,7 +105,6 @@ export default function ClientsPage() {
               className="pl-9 w-full rounded-full bg-gray-50 focus-visible:ring-purple-500 focus-visible:ring-offset-0"
             />
           </div>
-
           <Button
             onClick={() => {
               setIsAddingClient(!isAddingClient);
@@ -185,7 +184,7 @@ export default function ClientsPage() {
                         <TableCell className="!py-2" align="left">
                           <Skeleton className="h-4 w-[150px]" />
                         </TableCell>
-                        <TableCell className="!py-2" >
+                        <TableCell className="!py-2">
                           <div className="flex gap-2 justify-end">
                             <Skeleton className="h-7 w-7 rounded-full" />
                             <Skeleton className="h-7 w-7 rounded-full" />
@@ -273,7 +272,7 @@ export default function ClientsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Nom</TableHead>
+                      <TableHead>Client</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>

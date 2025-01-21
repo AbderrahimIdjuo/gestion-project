@@ -23,7 +23,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
-import { Trash2, MoveLeft , Loader2 , CornerUpLeftIcon } from "lucide-react";
+import {
+  Trash2,
+  MoveLeft,
+  Check,
+  ChevronDown,
+} from "lucide-react";
 import { ArticleSelectionDialog } from "@/components/produits-selection-dialog";
 import { useRouter } from "next/navigation";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -40,6 +45,16 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
+import { } from "lucide-react";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+
 
 export default function NouvelleCommandePage() {
   const [items, setItems] = useState([]);
@@ -51,6 +66,8 @@ export default function NouvelleCommandePage() {
   const [client, setClient] = useState("");
   const [switchValue, setSwitchValue] = useState(false);
   const [searchClientQuery, setSearchClientQuery] = useState("");
+   const [open, setOpen] = useState(false);
+   const [value, setValue] = useState("");
 
   const [formData, setFormData] = useState({
     customerName: "",
@@ -270,7 +287,7 @@ export default function NouvelleCommandePage() {
               size="icon"
               variant="ghost"
               onClick={() => router.push("/ventes/commandes")}
-            >              
+            >
               <MoveLeft />
             </Button>
             <h1 className="text-3xl font-bold">Nouvelle Commande</h1>
@@ -297,114 +314,127 @@ export default function NouvelleCommandePage() {
               {switchValue ? (
                 <div className="col-span-2">
                   <Label htmlFor="customerName">Client*</Label>
-                  <Select
-                    value={formData.customerName}
-                    onValueChange={(value) => {
-                      // Find the selected client based on the name
-                      const selectedClient = clientList.find(
-                        (client) => client.nom === value
-                      );
-
-                      setClient(selectedClient);
-
-                      handleInputChange({
-                        target: { name: "customerName", value },
-                      });
-
-                      // Update clientId
-                      handleInputChange({
-                        target: {
-                          name: "clientId",
-                          value: selectedClient?.id || "",
-                        },
-                      });
-                    }}
-                  >
-                    <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500 mt-2">
-                      <SelectValue placeholder="Sélectionner un client" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {/* Search input */}
-                      <div className="p-2">
-                        <Input
-                          type="text"
-                          placeholder="Rechercher un client ..."
-                          value={searchClientQuery}
-                          onChange={(e) => setSearchClientQuery(e.target.value)}
-                          className="pl-9 w-full rounded-lg bg-zinc-100 focus:bg-white focus-visible:ring-purple-500 focus-visible:ring-offset-0"
+                  <br />
+                  <Popover open={open} onOpenChange={setOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={open}
+                        className="w-full justify-between mt-2"
+                      >
+                        {value
+                          ? clientList?.find((client) => client.nom === value)
+                              ?.nom
+                          : "Sélectioner un client..."}
+                        <ChevronDown className="opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto min-w-[27vw] p-0">
+                      <Command>
+                        <CommandInput
+                          placeholder="Search client..."
+                          className="h-9"
                         />
-                      </div>
+                        <CommandList>
+                          <CommandEmpty>No client found.</CommandEmpty>
+                          <ScrollArea className="h-72 w-full">
+                            <CommandGroup>
+                              {clientList?.map((client) => (
+                                <CommandItem
+                                  className="truncate"
+                                  key={client.id}
+                                  value={client.nom}
+                                  onSelect={(currentValue) => {
+                                    setValue(
+                                      currentValue === value ? "" : currentValue
+                                    );
+                                    setClient(client);
+                                    console.log(client);
 
-                      {/* Filtered client list */}
-                      <ScrollArea className="h-56 w-48  w-full">
-                        {filteredClients.length > 0 ? (
-                          filteredClients.map((client) => (
-                            <SelectItem key={client.id} value={client.nom}>
-                              {client.nom.toUpperCase()}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <div className="p-2 ml-2 text-sm text-zinc-500">
-                            Aucun client trouvé
-                          </div>
-                        )}
-                      </ScrollArea>
-                    </SelectContent>
-                  </Select>
+                                    setOpen(false);
+                                  }}
+                                >
+                                  {client.nom}
+                                  <Check
+                                    className={cn(
+                                      "ml-auto",
+                                      value === client.nom
+                                        ? "opacity-100"
+                                        : "opacity-0"
+                                    )}
+                                  />
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </ScrollArea>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
               ) : (
                 <div className="col-span-2">
-                  <Label htmlFor="deviNum">Numero de devi*</Label>
-                  <Select
-                    value={formData.deviNum}
-                    onValueChange={(value) => {
-                      // Find the selected client based on the name
-                      const selectedDevi = devisList.find(
-                        (devi) => devi.numero === value
-                      );
-
-                      setDevi(selectedDevi);
-                      setFormData((prev) => ({
-                        ...prev,
-                        customerName: selectedDevi.client.nom,
-                      }));
-
-                      handleInputChange({
-                        target: { name: "deviNum", value },
-                      });
-                    }}
-                  >
-                    <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500 mt-2">
-                      <SelectValue placeholder="Sélectionner un devi" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {/* Search input */}
-                      <div className="p-2">
-                        <Input
-                          type="text"
-                          placeholder="Rechercher un devi ..."
-                          value={searchDeviQuery}
-                          onChange={(e) => setSearchDeviQuery(e.target.value)}
-                          className="relative pl-9 w-full rounded-lg bg-zinc-100 focus:bg-white focus-visible:ring-purple-500 focus-visible:ring-offset-0"
+                  <Label htmlFor="Devi number">Numéro de devi*</Label>
+                  <br />
+                  <Popover open={open} onOpenChange={setOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={open}
+                        className="w-full justify-between mt-2"
+                      >
+                        {value
+                          ? devisList?.find((devi) => devi.numero === value)
+                              ?.numero
+                          : "Sélectioner un devi..."}
+                        <ChevronDown className="opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto min-w-[27vw] p-0">
+                      <Command>
+                        <CommandInput
+                          placeholder="Search client..."
+                          className="h-9"
                         />
-                      </div>
+                        <CommandList>
+                          <CommandEmpty>Accun devi trouvé.</CommandEmpty>
+                          <ScrollArea className="h-72 w-full">
+                            <CommandGroup>
+                              {devisList?.map((devi) => (
+                                <CommandItem
+                                  className="truncate"
+                                  key={devi.id}
+                                  value={devi.nom}
+                                  onSelect={(currentValue) => {
+                                    setValue(
+                                      currentValue === value ? "" : currentValue
+                                    );
+                                    setDevi(devi);
 
-                      {/* Filtered client list */}
-                      <ScrollArea className="h-56 w-48  w-full">
-                        {filteredDevis.length > 0 ? (
-                          filteredDevis.map((devi) => (
-                            <SelectItem key={devi.id} value={devi.numero}>
-                              {devi.numero}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <div className="p-2 ml-2 text-sm text-zinc-500">
-                            Aucun devi trouvé
-                          </div>
-                        )}
-                      </ScrollArea>
-                    </SelectContent>
-                  </Select>
+                                    console.log(devi);
+
+                                    setOpen(false);
+                                  }}
+                                >
+                                  {devi.numero}
+                                  <Check
+                                    className={cn(
+                                      "ml-auto",
+                                      value === devi.numero
+                                        ? "opacity-100"
+                                        : "opacity-0"
+                                    )}
+                                  />
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </ScrollArea>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
               )}
 
@@ -557,26 +587,20 @@ export default function NouvelleCommandePage() {
                         <TableCell>
                           <Input
                             value={item.prixUnite}
-                            onChange={(e) =>{
-                              console.log('item.prixUnite',item.prixUnite);
-                              
-                                   handleItemChange(
+                            onChange={(e) => {
+                              console.log("item.prixUnite", item.prixUnite);
+
+                              handleItemChange(
                                 item.id,
                                 "prixUnite",
                                 Number(e.target.value)
-                              )
-                            }
-                         
-                            }
+                              );
+                            }}
                             className="focus:!ring-purple-500 w-24"
                           />
                         </TableCell>
                         <TableCell>
-                          {(
-                            item.quantite *
-                            item.prixUnite
-                          ).toFixed(2)}{" "}
-                          DH
+                          {(item.quantite * item.prixUnite).toFixed(2)} DH
                         </TableCell>
                         <TableCell>
                           <Button
@@ -684,7 +708,11 @@ export default function NouvelleCommandePage() {
         </Card>
         <div className="flex justify-end items-center">
           <div className="space-x-2">
-            <Button  onClick={() => router.push("/ventes/commandes")} className="rounded-full" variant="outline">
+            <Button
+              onClick={() => router.push("/ventes/commandes")}
+              className="rounded-full"
+              variant="outline"
+            >
               Annuler
             </Button>
             <Button

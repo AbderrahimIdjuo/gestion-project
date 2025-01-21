@@ -1,18 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
+import { SaveButton } from "./customUi/styledButton";
+
 import toast from "react-hot-toast";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -22,15 +22,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import axios from "axios";
 import { useForm } from "react-hook-form";
 
-export function ModifyProductDialog({ children, currProduct, getProducts }) {
+export function ModifyProductDialog({currProduct, getProducts }) {
   const {
     register,
     handleSubmit,
   } = useForm();
-  const [open, setOpen] = useState(false);
   const [categorie, setCategorie] = useState();
   const [statu, setStatu] = useState();
 
@@ -66,20 +64,22 @@ export function ModifyProductDialog({ children, currProduct, getProducts }) {
   ];
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[425px] md:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Modifier un produit</DialogTitle>
-          <DialogDescription>
-            Modifier les informations du produit. Cliquez sur modifier lorsque
-            vous avez terminé.
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="nom" className="text-right">
+    <>
+    <Card className="w-full grid gap-2 h-full px-2">
+      <CardHeader className="flex-col justify-start">
+        <CardTitle className="my-3">Modifier un produit</CardTitle>
+        <CardDescription className="my-5">
+          Modifier les informations du produit. Cliquez sur
+          enregistrer lorsque vous avez terminé.
+        </CardDescription>
+        <Separator className=" mb-5 w-[95%]" />
+      </CardHeader>
+
+      <CardContent className="w-full">
+        <form  className="w-full h-[80%] grid gap-4" onSubmit={handleSubmit(onSubmit)}>
+        <div className="w-full grid gap-6 ">
+        <div className="w-full grid grid-cols-1">
+              <Label htmlFor="nom" className="text-left mb-2 mb-2">
                 Désignation
               </Label>
               <Input
@@ -90,8 +90,8 @@ export function ModifyProductDialog({ children, currProduct, getProducts }) {
                 className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-purple-500"
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="categorie" className="text-right">
+            <div className="w-full grid grid-cols-1">
+              <Label htmlFor="categorie" className="text-left mb-2 mb-2">
                 Catégorie
               </Label>
               <Select
@@ -110,10 +110,11 @@ export function ModifyProductDialog({ children, currProduct, getProducts }) {
                 </SelectContent>
               </Select>
             </div>
-            <div className="relative grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="prixAchat" className="text-right">
+            <div className="relative w-full grid grid-cols-1">
+              <Label htmlFor="prixAchat" className="text-left mb-2 mb-2">
                 Prix d&apos;achat
               </Label>
+              <div className="relative grid grid-cols-1 items-center gap-4">
               <Input
                 id="prixAchat"
                 name="prixAchat"
@@ -124,11 +125,15 @@ export function ModifyProductDialog({ children, currProduct, getProducts }) {
               <div className="absolute inset-y-0 right-0 w-12 flex items-center justify-center bg-slate-100 border rounded-r-md">
                 <span className="text-sm text-gray-600">MAD</span>
               </div>
+
+              </div>
             </div>
-            <div className="relative grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="prixVente" className="text-right">
+            <div className="relative w-full grid grid-cols-1">
+              <Label htmlFor="prixVente" className="text-left mb-2 mb-2">
                 Prix de vente
               </Label>
+              <div className="relative grid grid-cols-1 items-center gap-4">
+
               <Input
                 id="prixVente"
                 name="prixVente"
@@ -139,9 +144,10 @@ export function ModifyProductDialog({ children, currProduct, getProducts }) {
               <div className="absolute inset-y-0 right-0 w-12 flex items-center justify-center bg-slate-100 border rounded-r-md">
                 <span className="text-sm text-gray-600">MAD</span>
               </div>
+              </div>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="status" className="text-right">
+            <div className="relative w-full grid grid-cols-1">
+              <Label htmlFor="status" className="text-left mb-2 mb-2">
                 Statut
               </Label>
               <Select
@@ -166,8 +172,8 @@ export function ModifyProductDialog({ children, currProduct, getProducts }) {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="stock" className="text-right">
+            <div className="relative w-full grid grid-cols-1">
+            <Label htmlFor="stock" className="text-left mb-2 mb-2">
                 Stock
               </Label>
               <Input
@@ -178,8 +184,8 @@ export function ModifyProductDialog({ children, currProduct, getProducts }) {
                 className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-purple-500"
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="description" className="text-right">
+            <div className="relative w-full grid grid-cols-1">
+              <Label htmlFor="description" className="text-left mb-2 mb-2">
                 Description
               </Label>
               <Textarea
@@ -189,16 +195,10 @@ export function ModifyProductDialog({ children, currProduct, getProducts }) {
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button
-              type="submit"
-              className="bg-[#4ade80] hover:bg-[#22c55e] text-white"
-            >
-              Enregistrer
-            </Button>
-          </DialogFooter>
+          <SaveButton type="submit" title="Enregistrer" />
         </form>
-      </DialogContent>
-    </Dialog>
+        </CardContent>
+        </Card>
+    </>
   );
 }

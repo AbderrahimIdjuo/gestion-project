@@ -189,28 +189,6 @@ export default function DevisPage() {
                   </SheetDescription>
                 </SheetHeader>
                 <div className="grid gap-4 py-4">
-                  {/* <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="statut" className="text-right text-black">
-                      Statut
-                    </Label>
-                    <Select
-                      value={filters.statut}
-                      onValueChange={(value) =>
-                        setFilters({ ...filters, statut: value })
-                      }
-                    >
-                      <SelectTrigger className="col-span-3 border-purple-200 bg-white focus:ring-purple-500">
-                        <SelectValue placeholder="Tous les statuts" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white">
-                        <SelectItem value="all">Tous les statuts</SelectItem>
-                        <SelectItem value="En attente">En attente</SelectItem>
-                        <SelectItem value="Accepté">Accepté</SelectItem>
-                        <SelectItem value="Refusé">Refusé</SelectItem>
-                        <SelectItem value="Expiré">Expiré</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div> */}
                   <div className="grid grid-cols-4 items-center gap-4 my-2">
                     <Label htmlFor="statut" className="text-right text-black">
                       Statut
@@ -270,44 +248,6 @@ export default function DevisPage() {
                       </PopoverContent>
                     </Popover>
                   </div>
-                  {/* <div className="grid grid-cols-4 items-center gap-4">
-                    <Label
-                      htmlFor="dateStart"
-                      className="text-right text-black"
-                    >
-                      Date
-                    </Label>
-                    <Input
-                      id="dateStart"
-                      type="date"
-                      value={filters.dateStart}
-                      onChange={(e) =>
-                        setFilters({ ...filters, dateStart: e.target.value })
-                      }
-                      className="col-span-3 !border-purple-200 bg-white focus:!ring-purple-500"
-                    />
-                  </div> */}
-                  {/* <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="montant" className="text-right text-black">
-                      Montant total
-                    </Label>
-                    <div className="col-span-3">
-                      <Slider
-                        min={0}
-                        max={maxMontant}
-                        step={100}
-                        value={filters.montant}
-                        onValueChange={(value) =>
-                          setFilters({ ...filters, montant: value })
-                        }
-                        className="w-full [&_[role=slider]]:bg-purple-500 [&_[role=slider]]:border-purple-500 [&_[role=slider]]:focus:ring-purple-500 [&_[role=track]]:bg-purple-100 [&_[role=range]]:bg-purple-300"
-                      />
-                      <div className="flex justify-between mt-2">
-                        <span>{filters.montant[0]} DH</span>
-                        <span>{filters.montant[1]} DH</span>
-                      </div>
-                    </div>
-                  </div> */}
                   <div className="grid grid-cols-4 items-center gap-4 my-2">
                     <Label htmlFor="montant" className="text-right text-black">
                       Montant total :
@@ -360,37 +300,35 @@ export default function DevisPage() {
                 [...Array(10)].map((_, index) => (
                   <TableRow
                     className="h-[2rem] MuiTableRow-root"
-                    
                     role="checkbox"
                     tabIndex={-1}
                     key={index}
                   >
                     <TableCell
                       className="!py-2 text-sm md:text-base"
-                      
                       align="left"
                     >
                       <Skeleton className="h-4 w-[150px]" />
                     </TableCell>
-                    <TableCell className="!py-2"  align="left">
+                    <TableCell className="!py-2" align="left">
                       <Skeleton className="h-4 w-[150px]" />
                     </TableCell>
-                    <TableCell className="!py-2"  align="left">
+                    <TableCell className="!py-2" align="left">
                       <Skeleton className="h-4 w-[150px]" />
                     </TableCell>
-                    <TableCell className="!py-2"  align="left">
+                    <TableCell className="!py-2" align="left">
                       <Skeleton className="h-4 w-[150px]" />
                     </TableCell>
-                    <TableCell className="!py-2"  align="left">
+                    <TableCell className="!py-2" align="left">
                       <Skeleton className="h-4 w-[100px]" />
                     </TableCell>
-                    <TableCell className="!py-2" >
-                          <div className="flex gap-2 justify-end">
-                            <Skeleton className="h-7 w-7 rounded-full" />
-                            <Skeleton className="h-7 w-7 rounded-full" />
-                            <Skeleton className="h-7 w-7 rounded-full" />
-                          </div>
-                        </TableCell>
+                    <TableCell className="!py-2">
+                      <div className="flex gap-2 justify-end">
+                        <Skeleton className="h-7 w-7 rounded-full" />
+                        <Skeleton className="h-7 w-7 rounded-full" />
+                        <Skeleton className="h-7 w-7 rounded-full" />
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))
               ) : currentDevis?.length > 0 ? (
@@ -435,8 +373,8 @@ export default function DevisPage() {
                             size="icon"
                             className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
                             onClick={() => {
-                              setDeleteDialogOpen(true)
-                              setCurrentDevi(devis)
+                              setDeleteDialogOpen(true);
+                              setCurrentDevi(devis);
                             }}
                           >
                             <Trash2 className="h-4 w-4" />
@@ -444,24 +382,31 @@ export default function DevisPage() {
                           </Button>
                         </CustomTooltip>
                         <CustomTooltip message="Imprimer">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 rounded-full hover:bg-green-100 hover:text-green-600"
-                          onClick={() => window.open(`/ventes/devis/${devis.id}/pdf`, "_blank")}
-                        >
-                          <Printer className="h-4 w-4" />
-                          <span className="sr-only">Imprimer</span>
-                        </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full hover:bg-green-100 hover:text-green-600"
+                            onClick={() =>
+                              window.open(
+                                `/ventes/devis/${devis.id}/pdf`,
+                                "_blank"
+                              )
+                            }
+                          >
+                            <Printer className="h-4 w-4" />
+                            <span className="sr-only">Imprimer</span>
+                          </Button>
                         </CustomTooltip>
                       </div>
                     </TableCell>
                   </TableRow>
                 ))
               ) : (
-                <TableCell colSpan={7} align="center">
-                  Aucun devi trouvé
-                </TableCell>
+                <TableRow>
+                  <TableCell colSpan={7} align="center">
+                    Aucun devi trouvé
+                  </TableCell>
+                </TableRow>
               )}
             </TableBody>
           </Table>
@@ -477,16 +422,16 @@ export default function DevisPage() {
           ""
         )}
       </div>
-              <DeleteConfirmationDialog
-                recordName={currentDevi?.numero}
-                isOpen={deleteDialogOpen}
-                onClose={() => setDeleteDialogOpen(false)}
-                onConfirm={() => {
-                  setDeleteDialogOpen(false);
-                  deleteDevi(currentDevi.id, currentDevi.numero);
-                }}
-                itemType="devi"
-              />
+      <DeleteConfirmationDialog
+        recordName={currentDevi?.numero}
+        isOpen={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        onConfirm={() => {
+          setDeleteDialogOpen(false);
+          deleteDevi(currentDevi.id, currentDevi.numero);
+        }}
+        itemType="devi"
+      />
     </>
   );
 }
