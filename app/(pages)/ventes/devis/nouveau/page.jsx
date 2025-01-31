@@ -42,6 +42,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { CircleX } from "lucide-react";
 
 export default function NouveauDevisPage() {
   const [clientList, setClientList] = useState([]);

@@ -37,6 +37,6 @@
     "app/(pages)/ventes/commandes/page.jsx",
     "app/(pages)/produits/page1.jsx",
     "components/product-form-dialog.jsx"
-, "app/(pages)/factures/page.jsx", "app/(pages)/ventes/credit-clients/page.jsx", "app/(pages)/ventes/devis/page.jsx", "components/performance-chart.jsx"  ],
+, "app/(pages)/factures/page.jsx", "app/(pages)/ventes/credit-clients/page.jsx", "app/(pages)/ventes/devis/page.jsx", "components/performance-chart.jsx", "components/sppiner.jsx"  ],
   "exclude": ["node_modules"]
 }

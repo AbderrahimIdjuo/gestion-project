@@ -22,7 +22,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-
 export default function FournisseursPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -159,9 +158,10 @@ export default function FournisseursPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Nom</TableHead>
-                    <TableHead>Email</TableHead>
+                    <TableHead>ICE</TableHead>
                     <TableHead>Téléphone</TableHead>
                     <TableHead>Adresse</TableHead>
+                    <TableHead>Email</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -178,6 +178,9 @@ export default function FournisseursPage() {
                           className="!py-2 text-sm md:text-base"
                           align="left"
                         >
+                          <Skeleton className="h-4 w-[150px]" />
+                        </TableCell>
+                        <TableCell className="!py-2" align="left">
                           <Skeleton className="h-4 w-[150px]" />
                         </TableCell>
                         <TableCell className="!py-2" align="left">
@@ -215,9 +218,10 @@ export default function FournisseursPage() {
                             </h2>
                           </div>
                         </TableCell>
-                        <TableCell>{fournisseur.email}</TableCell>
+                        <TableCell>{fournisseur.ice}</TableCell>
                         <TableCell>{fournisseur.telephone}</TableCell>
                         <TableCell>{fournisseur.adresse}</TableCell>
+                        <TableCell>{fournisseur.email}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
                             <Button
@@ -372,15 +376,27 @@ export default function FournisseursPage() {
               ""
             )}
           </div>
-          {isUpdatingFournisseur && (
+          <div className={`${!isUpdatingFournisseur && "hidden"} `}>
+            <ScrollArea className="w-full h-[85vh]">
+              {isUpdatingFournisseur && (
             <ModifyFournisseurDialog
-              currFournisseur={currFournisseur}
-              getFournisseurs={getFournisseurs}
-            />
-          )}
-          {isAddingFournisseur && (
-            <FournisseurFormDialog getFournisseurs={getFournisseurs} />
-          )}
+            currFournisseur={currFournisseur}
+            getFournisseurs={getFournisseurs}
+            fournisseurList={fournisseurList}
+          />
+              )}
+            </ScrollArea>
+          </div>
+          <div className={`${!isAddingFournisseur && "hidden"} `}>
+            <ScrollArea className="w-full h-[85vh]">
+              {isAddingFournisseur && (
+                <FournisseurFormDialog
+                  getFournisseurs={getFournisseurs}
+                  fournisseurList={fournisseurList}
+                />
+              )}
+            </ScrollArea>
+          </div>
         </div>
       </div>
       <DeleteConfirmationDialog

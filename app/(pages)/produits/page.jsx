@@ -73,7 +73,15 @@ export default function ProduitsPage() {
   });
 
   const itemsPerPage = 10;
-
+  const stockStatuts=(stock)=>{
+    if(stock > 19){ 
+      return "En stock"    
+    }else if(stock < 20 && stock > 0){
+      return "Limité"
+    }else if(stock == 0){
+      return "En rupture"
+    }
+      }
   const filteredProducts = products?.filter(
     (product) =>
       (searchQuery === "" ||
@@ -82,7 +90,7 @@ export default function ProduitsPage() {
           .includes(searchQuery.toLowerCase())) &&
       (filters.categorie === "all" ||
         product.categorie === filters.categorie) &&
-      (filters.status === "all" || product.statut === filters.status) &&
+      (filters.status === "all" || stockStatuts(product.stock) === filters.status) &&
       product.prixAchat >= filters.prixAchat[0] &&
       product.prixAchat <= filters.prixAchat[1] &&
       product.prixVente >= filters.prixVente[0] &&
@@ -119,9 +127,11 @@ export default function ProduitsPage() {
       prixVente: Math.max(...prixVenteList),
       stock: Math.max(...stockList),
     });
+    console.log("produits",produits);
+    
     setIsLoading(false);
   };
-
+  
   const deleteProduct = async () => {
     try {
       await axios.delete(`/api/produits/${currProduct.id}`);
@@ -153,7 +163,7 @@ export default function ProduitsPage() {
         return "bg-emerald-500";
       case "En rupture":
         return "bg-red-500";
-      case "Commander":
+      case "Limité":
         return "bg-amber-500";
       default:
         return "bg-gray-500";
@@ -164,7 +174,14 @@ export default function ProduitsPage() {
     { value: "all", lable: "Tous les statut", color: "" },
     { value: "En stock", lable: "En stock", color: "green-500" },
     { value: "En rupture", lable: "En rupture", color: "red-500" },
-    { value: "Commander", lable: "Commander", color: "amber-500" },
+    { value: "Limité", lable: "Limité", color: "amber-500" },
+  ];
+  const categories = [
+    { value: "all", lable: "Tout les catégories" },
+    { value: "Électronique", lable: "Électronique" },
+    { value: "Vêtements", lable: "Vêtements" },
+    { value: "Alimentation", lable: "Alimentation" },
+    { value: "Bureautique", lable: "Bureautique" },
   ];
 
   return (
@@ -218,21 +235,13 @@ export default function ProduitsPage() {
                         setFilters({ ...filters, categorie: value })
                       }
                     >
-                      <SelectTrigger className="col-span-3 border-purple-200 bg-white focus:ring-purple-500">
+                      <SelectTrigger className="col-span-3  bg-white focus:ring-purple-500">
                         <SelectValue placeholder="Toutes les catégories" />
                       </SelectTrigger>
                       <SelectContent className="bg-white">
-                        <SelectItem value="all">
-                          Toutes les catégories
-                        </SelectItem>
-                        <SelectItem value="Électronique">
-                          Électronique
-                        </SelectItem>
-                        <SelectItem value="Vêtements">Vêtements</SelectItem>
-                        <SelectItem value="Alimentation">
-                          Alimentation
-                        </SelectItem>
-                        <SelectItem value="Bureautique">Bureautique</SelectItem>
+                        {categories.map(categorie=> <SelectItem key={categorie.value} value={categorie.value}>
+                          {categorie.lable}
+                        </SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
@@ -440,11 +449,11 @@ export default function ProduitsPage() {
                           <div className="flex items-center gap-2">
                             <span
                               className={`h-2 w-2 rounded-full ${getStatusColor(
-                                product.statut
+                                stockStatuts(product.stock)
                               )}`}
                             />
                             <span className="text-sm text-muted-foreground">
-                              {product.statut}
+                              {stockStatuts(product.stock)}
                             </span>
                           </div>
                         </TableCell>
@@ -572,17 +581,17 @@ export default function ProduitsPage() {
                           </TableCell>
                           <TableCell>{product.categorie}</TableCell>
                           <TableCell>
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={`h-2 w-2 rounded-full ${getStatusColor(
-                                  product.statut
-                                )}`}
-                              />
-                              <span className="text-sm text-muted-foreground">
-                                {product.statut}
-                              </span>
-                            </div>
-                          </TableCell>
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`h-2 w-2 rounded-full ${getStatusColor(
+                                stockStatuts(product.stock)
+                              )}`}
+                            />
+                            <span className="text-sm text-muted-foreground">
+                              {stockStatuts(product.stock)}
+                            </span>
+                          </div>
+                        </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
                               <Button

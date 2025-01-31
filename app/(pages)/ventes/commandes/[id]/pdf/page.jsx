@@ -125,7 +125,7 @@ export default function DevisPDFPage({ params }) {
                   {commande?.commandeProduits.map((articl) => (
                     <TableRow key={articl.id}>
                       <TableCell className=" p-2 text-left">
-                        {articl.designation}{" "}
+                        {articl.produit.designation}{" "}
                       </TableCell>
                       <TableCell className="border-l p-2 text-left">
                         {articl.quantite}

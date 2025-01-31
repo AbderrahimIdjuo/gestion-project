@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import toast, { Toaster } from "react-hot-toast";
 import CustomPagination from "@/components/customUi/customPagination";
-import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import {
   Sheet,
@@ -33,12 +32,20 @@ import {
 import { Search, Plus, X, Pen, Trash2, Filter } from "lucide-react";
 import { AchatCommandeForm } from "@/components/achat-commande-form";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
-import { ClientInfoDialog } from "@/components/client-info";
 import { ModifyClientDialog } from "@/components/modify-client-dialog";
 import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { PriceRangeSlider } from "@/components/customUi/customSlider";
+import Link from "next/link";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 
 export default function ClientsPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -46,83 +53,36 @@ export default function ClientsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false); // Delete dialog
   const [isLoading, setIsLoading] = useState(false); // Fetch the list of commandes
   const [currCommande, setCurrCommande] = useState("");
-  //const [commandeList, setCommandeList] = useState([]);
+  const [commandeList, setCommandeList] = useState([]);
   const [isAddingCommande, setIsAddingCommande] = useState(false);
   const [isUpdatingCommande, setIsUpdatingCommande] = useState(false);
+  const [maxMontant, setMaxMontant] = useState();
   const [filters, setFilters] = useState({
     categorie: "all",
     status: "all",
     statusPaiement: "all",
-    montant: [0, 10000],
+    montant: [0, maxMontant],
   });
   const itemsPerPage = 10;
-  const commandeList = [
-    {
-      id: 1,
-      numero: "A-CMD201547852",
-      fournisseur: "Oujdi Abderrahim",
-      statutLivraison: "En cours",
-      statutPaiement: "Impayé",
-      createdAt: "2025-01-20",
-      montant: 2500,
-      categorie: "Électronique",
-    },
-    {
-      id: 2,
-      numero: "A-CMD201547852",
-      fournisseur: "Oujdi Arwa",
-      statutLivraison: "Livrée",
-      statutPaiement: "Impayé",
-      createdAt: "2025-01-20",
-      montant: 8200,
-      categorie: "Vêtements",
-    },
-    {
-      id: 3,
-      numero: "A-CMD201547852",
-      fournisseur: "Oujdi Fayza",
-      statutLivraison: "En cours",
-      statutPaiement: "Impayé",
-      createdAt: "2025-01-20",
-      montant: 6300,
-      categorie: "Vêtements",
-    },
-    {
-      id: 4,
-      numero: "A-CMD201547852",
-      fournisseur: "Oujdi Mohamed",
-      statutLivraison: "Expédier",
-      statutPaiement: "Payer",
-      createdAt: "2025-01-20",
-      montant: 7400,
-      categorie: "Bureautique",
-    },
-    {
-      id: 5,
-      numero: "A-CMD201547852",
-      fournisseur: "Boudrqa Abdellah",
-      statutLivraison: "Annulé",
-      statutPaiement: "Payer",
-      createdAt: "2025-01-20",
-      montant: 5000,
-      categorie: "Bureautique",
-    },
-  ];
-
+  useEffect(() => {
+    setFilters({
+      ...filters,
+      montant: [0, maxMontant],
+    });
+  }, [maxMontant]);
   const filteredCommandes = commandeList.filter(
     (commande) =>
-      (commande.numero.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        commande.fournisseur
-          ?.toLowerCase()
-          .includes(searchQuery.toLowerCase())) &&
+     commande.produit.designation
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase()) &&
       (filters.categorie === "all" ||
-        commande.categorie === filters.categorie) &&
+        commande.produit.categorie === filters.categorie) &&
       (filters.status === "all" ||
-        commande.statutLivraison === filters.status) &&
+        commande.statut === filters.status) &&
       (filters.statusPaiement === "all" ||
-        commande.statutPaiement === filters.statusPaiement) &&
-      commande.montant >= filters.montant[0] &&
-      commande.montant <= filters.montant[1]
+        commande.payer === filters.statusPaiement) &&
+      (commande.prixUnite*commande.quantite).toFixed(2) >= filters.montant[0] &&
+      (commande.prixUnite*commande.quantite).toFixed(2) <= filters.montant[1]
   );
 
   const totalPages = Math.ceil(filteredCommandes.length / itemsPerPage);
@@ -131,14 +91,18 @@ export default function ClientsPage() {
     currentPage * itemsPerPage
   );
 
-  // const getCommandes = async () => {
-  //   const result = await axios.get("/api/achats-commandes");
-  //   const { Commandes } = result.data;
-  //   setCommandeList(Commandes);
-  //   setIsLoading(false);
-  // };
+  const getCommandes = async () => {
+    const result = await axios.get("/api/achats-commandes");
+    const { commandes } = result.data;
+    const montantList = commandes.map((commande) => (commande.prixUnite*commande.quantite).toFixed(2) );
+    console.log(commandes);
+    console.log("montantList :" , montantList);
+    setCommandeList(commandes);
+    setMaxMontant(Math.max(...montantList),)
+    //  setIsLoading(false);
+  };
 
-  const deleteClient = async () => {
+  const deleteCommande = async () => {
     try {
       await axios.delete(`/api/achats-commandes/${currCommande.id}`);
       toast(
@@ -149,7 +113,7 @@ export default function ClientsPage() {
           icon: "🗑️",
         }
       );
-      //   getCommandes();
+      getCommandes();
     } catch (e) {
       console.log(e);
     }
@@ -159,9 +123,9 @@ export default function ClientsPage() {
     setCurrentPage(1);
   }, [searchQuery]);
 
-  // useEffect(() => {
-  //   getCommandes();
-  // }, []);
+  useEffect(() => {
+    getCommandes();
+  }, []);
   const getStatusColor = (status) => {
     switch (status) {
       case "Livrée":
@@ -177,14 +141,9 @@ export default function ClientsPage() {
     }
   };
   const getStatusPaiemenetColor = (status) => {
-    switch (status) {
-      case "Payer":
-        return "bg-emerald-100 text-emerald-600";
-      case "Impayé":
-        return "bg-red-100 text-red-600";
-      default:
-        return "bg-gray-500";
-    }
+    if (status) {
+      return "bg-emerald-100 text-green-500";
+    } else return "bg-red-100 text-red-500";
   };
   const status = [
     { value: "all", lable: "Tous les statut", color: "" },
@@ -195,8 +154,8 @@ export default function ClientsPage() {
   ];
   const statusPaiement = [
     { value: "all", lable: "Tous les statut" },
-    { value: "Payer", lable: "Payer" },
-    { value: "Impayé", lable: "Impayé" },
+    { value: true, lable: "Payer" },
+    { value: false, lable: "Impayé" },
   ];
   const categories = [
     { value: "all", lable: "Toutes les catégories" },
@@ -209,6 +168,20 @@ export default function ClientsPage() {
   return (
     <>
       <Toaster position="top-center" />
+      <div className="my-4">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <span>Achats</span>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>Commandes</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      </div>
+
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Commandes</h1>
@@ -257,7 +230,7 @@ export default function ClientsPage() {
                         setFilters({ ...filters, categorie: value })
                       }
                     >
-                      <SelectTrigger className="col-span-3 border-purple-200 bg-white focus:ring-purple-500">
+                      <SelectTrigger className="col-span-3  bg-white focus:ring-purple-500">
                         <SelectValue placeholder="Toutes les catégories" />
                       </SelectTrigger>
                       <SelectContent className="bg-white">
@@ -330,7 +303,7 @@ export default function ClientsPage() {
                     <div className="col-span-3">
                       <PriceRangeSlider
                         min={0}
-                        max={10000}
+                        max={maxMontant}
                         step={100}
                         value={filters.montant}
                         onValueChange={(value) =>
@@ -392,11 +365,11 @@ export default function ClientsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Numéro</TableHead>
                     <TableHead>Date</TableHead>
+                    <TableHead>Produit</TableHead>
+                    <TableHead>Catégorie</TableHead>
                     <TableHead>Fournisseur</TableHead>
                     <TableHead>Montant</TableHead>
-                    <TableHead>Catégorie</TableHead>
                     <TableHead>Statut de livraison </TableHead>
                     <TableHead>Statut de paiement</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -444,48 +417,40 @@ export default function ClientsPage() {
                     currentCommandes?.map((commande) => (
                       <TableRow key={commande.id}>
                         <TableCell className="text-md">
-                          {commande.numero}
+                          {commande.createdAt.split("T")[0]}
                         </TableCell>
                         <TableCell className="text-md">
-                          {commande.createdAt}
+                        {commande.produit.designation}
                         </TableCell>
                         <TableCell className="text-md">
-                          {commande.fournisseur.toUpperCase()}
+                          {commande.produit.categorie}
                         </TableCell>
                         <TableCell className="text-md">
-                          {commande.montant}
+                          {commande.produit.fournisseur?.nom.toUpperCase() || "Inconnu"}
                         </TableCell>
                         <TableCell className="text-md">
-                          {commande.categorie}
+                          {(commande.prixUnite*commande.quantite).toFixed(2)} DH
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <span
                               className={`h-2 w-2 rounded-full ${getStatusColor(
-                                commande.statutLivraison
+                                commande.statut
                               )}`}
                             />
                             <span className="text-sm text-muted-foreground">
-                              {commande.statutLivraison}
+                              {commande.statut}
                             </span>
                           </div>
                         </TableCell>
                         <TableCell className="text-md">
                           <span
                             className={`text-sm text-muted-foreground p-[1px] px-3 rounded-full  ${getStatusPaiemenetColor(
-                              commande.statutPaiement
+                              commande.payer
                             )}`}
                           >
-                            {commande.statutPaiement}
+                            {commande.payer ? "Payer" : "Non payer"}
                           </span>
-                          {/* <Badge
-                            variant="outline"
-                            className={`!text-white ${getStatusPaiemenetColor(
-                              commande.statutPaiement
-                            )}`}
-                          >
-                            {commande.statutPaiement}
-                          </Badge> */}
                         </TableCell>
 
                         <TableCell className="text-right">
@@ -538,7 +503,7 @@ export default function ClientsPage() {
               } `}
             >
               <div className="col-span-1">
-                <Table>
+                {/* <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Commande</TableHead>
@@ -610,7 +575,7 @@ export default function ClientsPage() {
                       </TableCell>
                     )}
                   </TableBody>
-                </Table>
+                </Table> */}
               </div>
             </ScrollArea>
             {filteredCommandes.length > 0 ? (
@@ -637,11 +602,11 @@ export default function ClientsPage() {
         </div>
       </div>
       <DeleteConfirmationDialog
-        recordName={currCommande?.designation}
+        recordName={currCommande?.id}
         isOpen={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
         onConfirm={() => {
-          deleteClient();
+          deleteCommande();
           setIsDialogOpen(false);
           getCommandes();
         }}

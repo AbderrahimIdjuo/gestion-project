@@ -13,16 +13,61 @@ import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { SaveButton } from "./customUi/styledButton";
 import { Separator } from "@/components/ui/separator";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { CircleX } from "lucide-react";
 
 
-export function ClientFormDialog({ getClients }) {
+export function ClientFormDialog({ getClients, clientList }) {
+  const clientSchema = z.object({
+    nom: z.string().min(1, "Veuillez insérer le nom du client"),
+    email: z
+      .preprocess((email) => {
+        // If email is empty or undefined, return null
+        return email === "" ? null : email;
+      }, z.string().email("Email invalide").nullable())
+      .refine(
+        (email) => {
+          // If email is null, skip the uniqueness check
+          if (email === null) return true;
+          // Check if the email already exists in the client list
+          return !clientList?.map((client) => client.email?.toLowerCase()).includes(email?.toLowerCase());
+        },
+        {
+          // Message when the email is not unique
+          message: "Cet email existe déjà",
+        }
+      ),
+    telephone: z
+      .preprocess((telephone) => {
+        // If telephone is empty or undefined, return null
+        return telephone === "" ? null : telephone;
+      }, z.string().length(10, "Téléphone doit contenir 10 chiffres").regex(/^\d+$/, "Téléphone doit contenir des chiffres").nullable())
+      .refine(
+        (newTelephone) => {
+          // If telephone is null, skip the uniqueness check
+          if (newTelephone === null) return true;
+          // Check if the telephone already exists in the phone list
+          return !clientList
+            ?.map((client) => client.telephone)
+            .includes(newTelephone);
+        },
+        {
+          // Message when the telephone is not unique
+          message: "Ce téléphone existe déjà",
+        }
+      ),
+      adresse: z.string().optional(),
+  });
+
   const {
     register,
     reset,
     handleSubmit,
-    setError,
-    formState: { errors },
-  } = useForm();
+    formState: { errors , isSubmitting},
+  } = useForm({
+    resolver: zodResolver(clientSchema),
+  });
 
   const onSubmit = async (data) => {
     toast.promise(
@@ -49,14 +94,7 @@ export function ClientFormDialog({ getClients }) {
             throw new Error("Unexpected response status");
           }
         } catch (error) {
-          if (error.response && error.response.status === 409) {
-            // Handle specific error (phone already registered)
-            setError("telephone", {
-              message: "Ce numéro de téléphone est déjà enregistré",
-            });
-          } else {
-            throw new Error("Failed to add client");
-          }
+          console.log(error);
         }
       })(),
       {
@@ -79,7 +117,10 @@ export function ClientFormDialog({ getClients }) {
       </CardHeader>
 
       <CardContent className="w-full">
-        <form className="w-full h-[80%] grid gap-4" onSubmit={handleSubmit(onSubmit)}>
+        <form
+          className="w-full h-[80%] grid gap-4"
+          onSubmit={handleSubmit(onSubmit)}
+        >
           <div className="w-full grid gap-6 ">
             <div className="w-full grid grid-cols-1">
               <Label htmlFor="nom" className="text-left mb-2 mb-2">
@@ -89,11 +130,15 @@ export function ClientFormDialog({ getClients }) {
                 <Input
                   id="nom"
                   name="nom"
-                  {...register("nom", { required: "Nom obligatoir" })}
-                  className="w-full  focus-visible:ring-purple-300 focus-visible:ring-offset-0"
+                  {...register("nom")}
+                  className={`w-full  focus-visible:ring-purple-300 focus-visible:ring-offset-0 ${
+                    errors.nom && "border-red-500 border-2"
+                  }`}
+                  spellCheck={false}
                 />
                 {errors.nom && (
-                  <p className="text-red-500 text-sm mt-1">
+                  <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
+                    <CircleX className="h-4 w-4" />
                     {errors.nom.message}
                   </p>
                 )}
@@ -107,12 +152,15 @@ export function ClientFormDialog({ getClients }) {
               <div className="col-span-1">
                 <Input
                   id="email"
-                  type="email"
                   {...register("email")}
-                  className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
+                  className={`w-full  focus-visible:ring-purple-300 focus-visible:ring-offset-0 ${
+                    errors.email && "border-red-500 border-2"
+                  }`}
+                  spellCheck={false}
                 />
                 {errors.email && (
-                  <p className="text-red-500 text-sm mt-1">
+                  <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
+                    <CircleX className="h-4 w-4" />
                     {errors.email.message}
                   </p>
                 )}
@@ -126,21 +174,14 @@ export function ClientFormDialog({ getClients }) {
                 <Input
                   id="telephone"
                   type="tel"
-                  {...register("telephone", {
-                    required: "Numéro de télé obligatoire",
-                    minLength: {
-                      value: 10,
-                      message: "Le numéro de télé doit contenir 10 chiffres",
-                    },
-                    maxLength: {
-                      value: 10,
-                      message: "Le numéro de télé doit contenir 10 chiffres",
-                    },
-                  })}
-                  className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
+                  {...register("telephone")}
+                  className={`w-full  focus-visible:ring-purple-300 focus-visible:ring-offset-0 ${
+                    errors.telephone && "border-red-500 border-2"
+                  }`}
                 />
                 {errors.telephone && (
-                  <p className="text-red-500 text-sm mt-1">
+                  <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
+                    <CircleX className="h-4 w-4" />
                     {errors.telephone.message}
                   </p>
                 )}
@@ -155,9 +196,10 @@ export function ClientFormDialog({ getClients }) {
                 id="adresse"
                 {...register("adresse")}
                 className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
+                spellCheck={false}
               />
             </div>
-            <SaveButton type="submit" title="Enregistrer" />
+            <SaveButton disabled={isSubmitting} type="submit" title="Enregistrer" />
           </div>
         </form>
       </CardContent>

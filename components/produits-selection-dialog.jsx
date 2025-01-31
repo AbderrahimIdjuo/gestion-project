@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import axios from "axios";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { LoadingDots } from "@/components/loading-dots";
 
 export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -53,7 +54,6 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
 
   const handleQuantityChange = (articleId, delta) => {
     setSelectedArticles((prev) => {
-
       const currentQty = prev[articleId]?.quantite || 0;
       const newQty = Math.max(0, currentQty + delta);
 
@@ -86,12 +86,28 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
   const handleAddItems = () => {
     const articlesToAdd = Object.values(selectedArticles)
       .filter((article) => article.quantite > 0)
-      .map(({ id, designation, prixVente ,prixUnite, quantite }) => ({
-        id,
-        designation: designation,
-        prixUnite: prixUnite || prixVente,
-        quantite,
-      }));
+      .map(
+        ({
+          id,
+          designation,
+          prixVente,
+          prixUnite,
+          quantite,
+          stock,
+          fournisseurId,
+          categorie,
+          description,
+        }) => ({
+          id,
+          designation: designation,
+          prixUnite: prixUnite || prixVente,
+          quantite,
+          stock,
+          fournisseurId,
+          categorie,
+          description,
+        })
+      );
 
     onArticlesAdd(articlesToAdd);
     setSelectedArticles({});
@@ -114,7 +130,7 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
           </DialogTitle>
           <DialogDescription></DialogDescription>
         </DialogHeader>
-    
+
         <div className="grid grid-cols-2 gap-0 h-[500px]">
           {/* Left side - Item list */}
           <div className="h-[500px] border-r p-4">
@@ -128,39 +144,47 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
               />
             </div>
             <div className="h-[500px] space-y-2">
-            <ScrollArea className="h-[84%] w-48  w-full">
-              {filteredArticles?.map((article) => (
-                <div
-                  key={article.id}
-                  className={cn(
-                    "flex items-center justify-between p-3 my-1 rounded-lg cursor-pointer transition-colors w-[95%]",
-                    selectedArticles[article.id]
-                      ? "bg-purple-100 border border-purple-300"
-                      : "hover:bg-gray-50"
-                  )}
-                  onClick={() => handleToggleArticle(article)}
-                >
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">{article.designation}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Prix d&apos;unité: {article.prixVente.toFixed(2)} MAD
-                    </p>
+              <ScrollArea className="h-[84%] w-48  w-full">
+                {filteredArticles?.length > 0 ? (
+                  filteredArticles?.map((article) => (
+                    <div
+                      key={article.id}
+                      className={cn(
+                        "flex items-center justify-between p-3 my-1 rounded-lg cursor-pointer transition-colors w-[95%]",
+                        selectedArticles[article.id]
+                          ? "bg-purple-100 border border-purple-300"
+                          : "hover:bg-gray-50"
+                      )}
+                      onClick={() => handleToggleArticle(article)}
+                    >
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium">
+                          {article.designation}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Prix d&apos;unité: {article.prixVente.toFixed(2)} MAD
+                        </p>
+                      </div>
+                      <div
+                        className={cn(
+                          "h-5 w-5 rounded-full hover:bg-green-500 border flex items-center justify-center transition-colors",
+                          selectedArticles[article.id]
+                            ? "bg-green-500 "
+                            : "hover:bg-gray-50"
+                        )}
+                      >
+                        {selectedArticles[article.id] && (
+                          <Check className="h-3 w-3  text-purple-100" />
+                        )}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="flex justify-center mt-5">
+                    <LoadingDots size={8}/>
                   </div>
-                  <div
-                    className={cn(
-                      "h-5 w-5 rounded-full hover:bg-green-500 border flex items-center justify-center transition-colors",
-                      selectedArticles[article.id]
-                        ? "bg-green-500 "
-                        : "hover:bg-gray-50"
-                    )}
-                  >
-                    {selectedArticles[article.id] && (
-                      <Check className="h-3 w-3  text-purple-100" />
-                    )}
-                  </div>
-                </div>
-              ))}
-            </ScrollArea>
+                )}
+              </ScrollArea>
             </div>
           </div>
 
@@ -173,46 +197,46 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
               </Badge>
             </div>
             <ScrollArea className="h-[100%] w-full">
-            <div className="space-y-3">
-              {Object.values(selectedArticles).map((article) => (
-                <div
-                  key={article.id}
-                  className="flex items-center justify-between p-3 border rounded-lg w-[95%]"
-                >
-                  <span className="font-medium">{article.designation}</span>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-7 w-7 rounded-full"
-                      onClick={() => handleQuantityChange(article.id, -1)}
-                    >
-                      <Minus className="h-3 w-3" />
-                    </Button>
-                    <Input
-                      id="quantite"
-                      name="quantite"
-                      value={article.quantite}
-                      onChange={(e) => handleInputChange(e, article.id)}
-                      className="w-20 text-center focus:!ring-purple-500"
-                    />
-                    {/* <span className="w-8 text-center">{article.quantity}</span> */}
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-7 w-7 rounded-full"
-                      onClick={() => handleQuantityChange(article.id, 1)}
-                    >
-                      <Plus className="h-3 w-3" />
-                    </Button>
+              <div className="space-y-3">
+                {Object.values(selectedArticles).map((article) => (
+                  <div
+                    key={article.id}
+                    className="flex items-center justify-between p-3 border rounded-lg w-[95%]"
+                  >
+                    <span className="font-medium">{article.designation}</span>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-7 w-7 rounded-full"
+                        onClick={() => handleQuantityChange(article.id, -1)}
+                      >
+                        <Minus className="h-3 w-3" />
+                      </Button>
+                      <Input
+                        id="quantite"
+                        name="quantite"
+                        value={article.quantite}
+                        onChange={(e) => handleInputChange(e, article.id)}
+                        className="w-20 text-center focus:!ring-purple-500"
+                      />
+                      {/* <span className="w-8 text-center">{article.quantity}</span> */}
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-7 w-7 rounded-full"
+                        onClick={() => handleQuantityChange(article.id, 1)}
+                      >
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
             </ScrollArea>
           </div>
         </div>
-       
+
         <DialogFooter className="p-4 border-t">
           <Button
             className="rounded-full"

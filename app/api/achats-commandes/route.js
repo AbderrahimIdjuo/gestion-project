@@ -3,20 +3,28 @@ import prisma from "../../../lib/prisma";
 
 export async function POST(req) {
   try {
-    const resopns = await req.json();
-    const { designation, categorie, prixAchat, prixVente, statu, stock , description } =
-      resopns;
-    const result = await prisma.produits.create({
+    const response = await req.json();
+    const { produit, payer, fournisseur, quantite, prixUnite, description } =
+      response;
+    const result = await prisma.achatsCommandes.create({
       data: {
-        designation,
-        categorie,
-        prixAchat: parseFloat(prixAchat),
-        prixVente: parseFloat(prixVente),
-        statut: statu,
-        stock: parseInt(stock, 10),
-        description
+        produitId: produit.id,
+        quantite: parseInt(quantite, 10),
+        prixUnite: parseFloat(prixUnite),
+        payer,
+        description,
+        statut: "En cours",
       },
     });
+    // Mise à jour du produit
+    if (fournisseur) {
+      await prisma.produits.update({
+        where: { id: produit.id },
+        data: {
+          fournisseurId: fournisseur.id,
+        },
+      });
+    }
 
     return NextResponse.json({ result });
   } catch (error) {
@@ -30,9 +38,17 @@ export async function POST(req) {
 
 export async function PUT(req) {
   try {
-    const resopns = await req.json();
-    const { id, designation, categorie, prixAchat, prixVente, statu, stock ,description } =
-      resopns;
+    const response = await req.json();
+    const {
+      id,
+      designation,
+      categorie,
+      prixAchat,
+      prixVente,
+      statu,
+      stock,
+      description,
+    } = response;
 
     const result = await prisma.produits.update({
       where: { id },
@@ -43,7 +59,7 @@ export async function PUT(req) {
         prixVente: parseFloat(prixVente),
         statut: statu,
         stock: parseInt(stock, 10),
-        description
+        description,
       },
     });
 
@@ -58,10 +74,21 @@ export async function PUT(req) {
 }
 
 export async function GET() {
-  const produits = await prisma.produits.findMany({
+  const commandes = await prisma.achatsCommandes.findMany({
     orderBy: {
       updatedAt: "desc",
     },
+    include: {
+      produit: {
+        include: {
+          fournisseur: {
+            select: {
+              nom: true, 
+            },
+          },
+        },
+      },
+    },
   });
-  return NextResponse.json({ produits });
+  return NextResponse.json({ commandes });
 }

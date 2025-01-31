@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, Plus, X, Pen, Trash2, ShoppingBag } from "lucide-react";
+import { Search, Plus, X, Pen, Trash2} from "lucide-react";
 import { ClientFormDialog } from "@/components/client-form-dialog";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import { ClientInfoDialog } from "@/components/client-info";
@@ -37,8 +37,9 @@ export default function ClientsPage() {
   const filteredClients = clientList.filter(
     (client) =>
       client.nom.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      client.address?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      client.phone?.toLowerCase().includes(searchQuery.toLowerCase())
+      client.adresse?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      client.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      client.telephone?.includes(searchQuery)
   );
 
   const totalPages = Math.ceil(filteredClients.length / itemsPerPage);
@@ -103,6 +104,7 @@ export default function ClientsPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 w-full rounded-full bg-gray-50 focus-visible:ring-purple-500 focus-visible:ring-offset-0"
+            spellCheck={false}
             />
           </div>
           <Button
@@ -380,9 +382,11 @@ export default function ClientsPage() {
             <ModifyClientDialog
               currClient={currClient}
               getClients={getClients}
+              clientList={clientList}
+              setIsUpdatingClient={setIsUpdatingClient}
             />
           )}
-          {isAddingClient && <ClientFormDialog getClients={getClients} />}
+          {isAddingClient && <ClientFormDialog getClients={getClients} clientList={clientList} />}
         </div>
       </div>
       <DeleteConfirmationDialog

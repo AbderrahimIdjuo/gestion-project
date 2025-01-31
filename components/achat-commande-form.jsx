@@ -17,8 +17,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useForm } from "react-hook-form";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Check, ChevronDown } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { ChevronDown } from "lucide-react";
+import {Switch} from "@/components/ui/switch"
 import {
   Command,
   CommandEmpty,
@@ -37,15 +37,16 @@ import axios from "axios";
 
 export function AchatCommandeForm({ currProduct }) {
   const [open, setOpen] = useState(false);
-  const [value, setvalue] = useState("");
-  const [fournisseur, setfournisseur] = useState("");
   const [fournisseurList, setFournisseurList] = useState([]);
-  const { register, reset, watch, getValues, handleSubmit, setValue } = useForm(
+  const [switchValue, setSwitchValue] = useState();
+  
+  const { register, reset, watch, getValues, handleSubmit, setValue , formState:{isSubmitting} } = useForm(
     {
       defaultValues: {
         prixUnite: currProduct?.prixAchat,
         produit: currProduct,
         description: currProduct?.description,
+        payer : false,
       },
     }
   );
@@ -63,32 +64,31 @@ export function AchatCommandeForm({ currProduct }) {
 
   const onSubmit = async (data) => {
     console.log("commandes data : ", data);
-
-    // toast.promise(
-    //   (async () => {
-    //     const response = await fetch("/api/achats-commandes", {
-    //       method: "POST",
-    //       headers: {
-    //         "Content-Type": "application/json",
-    //       },
-    //       body: JSON.stringify(Data),
-    //     });
-    //     if (!response.ok) {
-    //       throw new Error("Failed to add commande");
-    //     }
-    //     console.log("Produits ajouté avec succès");
-    //     // reset the form
-    //     reset();
-    //     setStatu("");
-    //     setCategorie("");
-    //     getProducts();
-    //   })(),
-    //   {
-    //     loading: "Ajout de produit...",
-    //     success: "Produit ajouté avec succès!",
-    //     error: "Échec de l'ajout du produit",
-    //   }
-    // );
+    const Data = {
+      ...data,
+      produitId: data.produit.id,
+      fournisseurId: data.fournisseur.id,
+    };
+    toast.promise(
+      (async () => {
+        const response = await fetch("/api/achats-commandes", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(Data),
+        });
+        if (!response.ok) {
+          throw new Error("Failed to add commande");
+        }
+        console.log("Produits ajouté avec succès");
+      })(),
+      {
+        loading: "Ajout de la commande...",
+        success: "commande ajouté avec succès!",
+        error: "Échec de l'ajout de la commande",
+      }
+    );
   };
 
   return (
@@ -117,7 +117,7 @@ export function AchatCommandeForm({ currProduct }) {
               </span>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="customerName">Fournisseur*</Label>
+              <Label htmlFor="customerName">Fournisseur</Label>
               <br />
               <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
@@ -200,7 +200,19 @@ export function AchatCommandeForm({ currProduct }) {
                 </span>
               </div>
             )}
-
+            <div className="flex items-center space-x-2">
+              <Switch
+                checked={watch("payer")}
+                onCheckedChange={() => {
+                  setValue("payer", !watch("payer"))                  
+                  console.log(watch("payer"));
+                }}
+                id="airplane-mode"
+              />
+              <Label htmlFor="airplane-mode">
+                {watch("payer") ? "Payer" :"Non payer" }
+              </Label>
+            </div>
             <div className="relative w-full grid grid-cols-1">
               <Label htmlFor="description" className="text-left mb-2 mb-2">
                 Description
@@ -211,7 +223,7 @@ export function AchatCommandeForm({ currProduct }) {
               />
             </div>
           </div>
-          <SaveButton type="submit" title="Enregistrer" />
+          <SaveButton disabled={isSubmitting} type="submit" title="Enregistrer" />
         </form>
       </CardContent>
     </Card>

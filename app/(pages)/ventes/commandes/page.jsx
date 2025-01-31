@@ -376,7 +376,8 @@ export default function CommandesPage() {
                           size="icon"
                           className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
                           onClick={() =>
-                            router.push(`/ventes/commandes/${commande.id}/update`)
+                           router.push(`/ventes/commandes/${commande.id}/update`)
+                  
                           }
                         >
                           <Pen className="h-4 w-4" />

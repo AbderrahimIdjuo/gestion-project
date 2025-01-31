@@ -12,17 +12,85 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { CircleX } from "lucide-react";
 
-export function FournisseurFormDialog({getFournisseurs }) {
+export function FournisseurFormDialog({ getFournisseurs, fournisseurList }) {
+  const fournisseurSchema = z.object({
+    nom: z.string().min(1, "Veuillez insérer le nom du fournisseur"),
+    email: z
+      .preprocess((email) => {
+        // If email is empty or undefined, return null
+        return email === "" ? null : email;
+      }, z.string().email("Email invalide").nullable())
+      .refine(
+        (email) => {
+          // If email is null, skip the uniqueness check
+          if (email === null) return true;
+          // Check if the email already exists in the fournisseur list
+          return !fournisseurList
+            ?.map((fournisseur) => fournisseur.email?.toLowerCase())
+            .includes(email?.toLowerCase());
+        },
+        {
+          // Message when the email is not unique
+          message: "Cet email existe déjà",
+        }
+      ),
+    telephone: z
+      .preprocess((telephone) => {
+        // If telephone is empty or undefined, return null
+        return telephone === "" ? null : telephone;
+      }, z.string().length(10, "Téléphone doit contenir 10 chiffres").regex(/^\d+$/, "Téléphone doit contenir des chiffres").nullable())
+      .refine(
+        (newTelephone) => {
+          // If telephone is null, skip the uniqueness check
+          if (newTelephone === null) return true;
+          // Check if the telephone already exists in the phone list
+          return !fournisseurList
+            ?.map((fournisseur) => fournisseur.telephone)
+            .includes(newTelephone);
+        },
+        {
+          // Message when the telephone is not unique
+          message: "Ce téléphone existe déjà",
+        }
+      ),
+    telephoneSecondaire: z
+      .preprocess((telephone) => {
+        // If telephone is empty or undefined, return null
+        return telephone === "" ? null : telephone;
+      }, z.string().length(10, "Téléphone doit contenir 10 chiffres").regex(/^\d+$/, "Téléphone doit contenir des chiffres").nullable())
+      .refine(
+        (newTelephone) => {
+          // If telephone is null, skip the uniqueness check
+          if (newTelephone === null) return true;
+          // Check if the telephone already exists in the phone list
+          return !fournisseurList
+            ?.map((fournisseur) => fournisseur.telephone)
+            .includes(newTelephone);
+        },
+        {
+          // Message when the telephone is not unique
+          message: "Ce téléphone existe déjà",
+        }
+      ),
+    ice: z.string().optional(),
+    adresse: z.string().optional(),
+  });
   const {
     register,
     reset,
     handleSubmit,
-    setError,
-    formState: { errors },
-  } = useForm();
+    formState: { errors , isSubmitting },
+  } = useForm({
+    resolver: zodResolver(fournisseurSchema),
+  });
 
   const onSubmit = async (data) => {
+    console.log(data);
+
     toast.promise(
       (async () => {
         const response = await fetch("/api/fournisseurs", {
@@ -65,14 +133,16 @@ export function FournisseurFormDialog({getFournisseurs }) {
           <div className="w-full grid gap-6 ">
             <div className="w-full grid grid-cols-1">
               <Label htmlFor="nom" className="text-left mb-2 mb-2">
-                Nom
+                Nom*
               </Label>
               <div className="w-full">
                 <Input
                   id="nom"
                   name="nom"
                   {...register("nom")}
-                  className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
+                  className={`col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0 ${
+                    errors.nom && "border-red-500 border-2"
+                  }`}                  spellCheck={false}
                 />
                 {errors.nom && (
                   <p className="text-red-500 text-sm mt-1">
@@ -82,14 +152,13 @@ export function FournisseurFormDialog({getFournisseurs }) {
               </div>
             </div>
             <div className="w- full grid grid-cols-1">
-              <Label htmlFor="email" className="text-left mb-2 mb-2">
-                Email
+              <Label htmlFor="adresse" className="text-left mb-2 mb-2">
+                ICE
               </Label>
               <Input
-                id="email"
-                name="email"
-                type="email"
-                {...register("email")}
+                id="ice"
+                name="ice"
+                {...register("ice")}
                 className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
               />
             </div>
@@ -102,8 +171,56 @@ export function FournisseurFormDialog({getFournisseurs }) {
                 name="telephone"
                 type="tel"
                 {...register("telephone")}
-                className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
+                className={`col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0 ${
+                  errors.telephone && "border-red-500 border-2"
+                }`}
+                spellCheck={false}
               />
+              {errors.telephone && (
+                <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
+                  <CircleX className="h-4 w-4" />
+                  {errors.telephone.message}
+                </p>
+              )}
+            </div>
+            <div className="w- full grid grid-cols-1">
+              <Label htmlFor="adresse" className="text-left mb-2 mb-2">
+                Téléphone secondaire
+              </Label>
+              <Input
+                id="telephoneSecondaire"
+                name="telephoneSecondaire"
+                {...register("telephoneSecondaire")}
+                className={`col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0 ${
+                  errors.telephoneSecondaire && "border-red-500 border-2"
+                }`}
+              />
+                            {errors.telephoneSecondaire && (
+                <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
+                  <CircleX className="h-4 w-4" />
+                  {errors.telephoneSecondaire.message}
+                </p>
+              )}
+            </div>
+            <div className="w- full grid grid-cols-1">
+              <Label htmlFor="email" className="text-left mb-2 mb-2">
+                Email
+              </Label>
+              <Input
+                id="email"
+                name="email"
+                {...register("email")}
+                className={`col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0 ${
+                  errors.email && "border-red-500 border-2"
+                }`}
+                spellCheck={false}
+              />
+              {errors.email && (
+                <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
+                  <CircleX className="h-4 w-4" />
+                  {errors.email.message}
+                </p>
+              )}
             </div>
             <div className="w- full grid grid-cols-1">
               <Label htmlFor="adresse" className="text-left mb-2 mb-2">
@@ -116,7 +233,7 @@ export function FournisseurFormDialog({getFournisseurs }) {
                 className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
               />
             </div>
-            <SaveButton type="submit" title="Enregistrer" />
+            <SaveButton disabled={isSubmitting} type="submit" title="Enregistrer" />
           </div>
         </form>
       </CardContent>
