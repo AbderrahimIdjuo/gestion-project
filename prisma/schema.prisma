@@ -96,6 +96,7 @@ model AchatsCommandes {
   updatedAt      DateTime   @updatedAt
   commandeClient Commandes? @relation(fields: [commandeId], references: [id], onDelete: Cascade)
   produit        Produits   @relation(fields: [produitId], references: [id], onDelete: Cascade)
+  @@unique([commandeId, produitId])
 }
 
 model Articls {

@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useRouter } from "next/navigation";
 import { customAlphabet } from "nanoid";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -27,8 +26,7 @@ import { Plus, Trash2, MoveLeftIcon } from "lucide-react";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Check, ChevronDown } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { ChevronDown } from "lucide-react";
 import {
   Command,
   CommandEmpty,
@@ -42,37 +40,44 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { z } from "zod";
+import Link from "next/link";
+import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CircleX } from "lucide-react";
+import newDeviSchema from "@/app/zodSchemas/newDeviSchema";
 
 export default function NouveauDevisPage() {
   const [clientList, setClientList] = useState([]);
-  const [searchClientQuery, setSearchClientQuery] = useState("");
-  const [client, setClient] = useState("");
-  const [items, setItems] = useState([
-    { id: 1, details: "", quantity: 1, rate: 0 },
-  ]);
   const [open, setOpen] = useState(false);
-  const [value, setValue] = useState("");
-
-  const [formData, setFormData] = useState({
-    customerName: "",
-    quoteDate: new Date().toISOString().split("T")[0],
-    salesperson: "",
-    shippingCharges: 0,
-    discount: 0,
-    statut: "En attente",
-    discountType: "%",
-    customerNotes: "",
+  const {
+    register,
+    reset,
+    watch,
+    control,
+    setValue,
+    handleSubmit,
+    formState: { errors, isSubmiting },
+  } = useForm({
+    defaultValues: {
+      client: null,
+      statut: "En attente",
+      fraisLivraison: 0,
+      reduction: 0,
+      typeReduction: "%",
+      articls: [],
+    },
+    resolver: zodResolver(newDeviSchema),
   });
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "articls",
+  });
+  const articls = watch("articls");
   const status = [
     { lable: "En attente", color: "amber-500" },
     { lable: "Accepté", color: "green-500" },
     { lable: "Refusé", color: "red-500" },
   ];
-
-  const router = useRouter();
 
   const getClients = async () => {
     const result = await axios.get("/api/clients");
@@ -80,58 +85,25 @@ export default function NouveauDevisPage() {
     setClientList(Clients);
   };
 
-  const filteredClients = useMemo(() => {
-    return clientList.filter((client) =>
-      client.nom.toLowerCase().includes(searchClientQuery.toLowerCase())
-    );
-  }, [clientList, searchClientQuery]);
-
   useEffect(() => {
     getClients();
   }, []);
 
-  const generateDevisNumber = () => {
+  const generateDeviNumber = () => {
     const digits = "1234567890";
     const nanoidCustom = customAlphabet(digits, 8);
-
     const customId = nanoidCustom();
-
     return `DEV-${customId}`;
   };
 
-  const onSubmit = async () => {
-    const data = {
-      numero: generateDevisNumber(),
-      clientId: client.id,
-      articls: items,
-      statut: formData.statut,
-      sousTotal: calculateSubTotal(),
-      //notesClient: formData.customerNotes,
-      fraisLivraison: Math.max(0, formData.shippingCharges),
-      reduction: Math.max(0, formData.discount),
-      total: calculateTotal(),
-      typeReduction: formData.discountType,
-      note: formData.customerNotes,
-    };
-    console.log(data);
-
+  const onSubmit = async (data) => {
     toast.promise(
       (async () => {
         try {
           const response = await axios.post("/api/devis", data);
           console.log("Devi ajouté avec succès");
-          setFormData((prev) => ({
-            ...prev,
-            customerName: "",
-            salesperson: "",
-            shippingCharges: 0,
-            discount: 0,
-            statut: "En attente",
-            discountType: "%",
-            customerNotes: "",
-          }));
-          setValue("");
-          setItems([{ id: 1, details: "", quantity: 1, rate: 0 }]);
+          reset();
+          setItems([{ id: 1, designation: "", quantite: 1, prixUnite: 0 }]);
           if (response.status === 200) {
             console.log("Devi ajouté avec succès");
           } else {
@@ -149,38 +121,24 @@ export default function NouveauDevisPage() {
     );
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleItemChange = (id, field, value) => {
-    setItems((prevItems) =>
-      prevItems.map((item) =>
-        item.id === id ? { ...item, [field]: value } : item
-      )
-    );
-  };
-
   const addNewItem = () => {
-    setItems((prev) => [
-      ...prev,
+    const currentItems = watch("articls") || [];
+    setValue("articls", [
+      ...currentItems,
       {
-        id: prev.length + 1,
-        details: "",
-        quantity: 1,
-        rate: 0,
+        id: Date.now().toString(),
+        designation: "",
+        quantite: 1,
+        prixUnite: 1,
       },
     ]);
   };
 
-  const removeItem = (id) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
-  };
+
 
   const calculateSubTotal = () => {
-    return items.reduce((sum, item) => {
-      const amount = item.quantity * item.rate;
+    return watch("articls").reduce((sum, item) => {
+      const amount = item.quantite * item.prixUnite;
       return sum + amount;
     }, 0);
   };
@@ -188,312 +146,328 @@ export default function NouveauDevisPage() {
   const calculateTotal = () => {
     const subtotal = calculateSubTotal();
     const discountAmount =
-      formData.discountType === "%"
-        ? subtotal * (formData.discount / 100)
-        : Number(formData.discount);
-    const total = subtotal - discountAmount + Number(formData.shippingCharges);
+      watch("typeReduction") === "%"
+        ? subtotal * (watch("reduction") / 100)
+        : Number(watch("reduction"));
+    const total = subtotal - discountAmount + Number(watch("fraisLivraison"));
     return total.toFixed(2);
   };
 
   return (
     <>
       <Toaster position="top-center" />
-      <div className="container mx-auto py-6 space-y-6 max-w-5xl">
-        <div className="flex justify-between items-center">
-          <div className="flex gap-3 items-center">
-            <Button
-              className="rounded-lg"
-              size="icon"
-              variant="ghost"
-              onClick={() => router.push("/ventes/devis")}
-            >
-              <MoveLeftIcon />
-            </Button>
-            <h1 className="text-3xl font-bold">Nouveau Devis</h1>
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <div className="container mx-auto py-6 space-y-6 max-w-5xl">
+          <div className="flex justify-between items-center">
+            <div className="flex gap-3 items-center">
+              <Link href=".">
+                <Button
+                  type="button"
+                  className="rounded-lg"
+                  size="icon"
+                  variant="ghost"
+                >
+                  <MoveLeftIcon />
+                </Button>
+              </Link>
+              <h1 className="text-3xl font-bold">Nouveau devi</h1>
+            </div>
           </div>
-        </div>
-        <Card>
-          <CardContent className="p-6 space-y-6">
-            {/* Header Section */}
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-4">
+          <Card>
+            <CardContent className="p-6 space-y-6">
+              {/* Header Section */}
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="customerName">client*</Label>
+                    <br />
+                    <Popover open={open} onOpenChange={setOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={open}
+                          className="w-full justify-between mt-2"
+                        >
+                          {watch("client")
+                            ? watch("client").nom.toUpperCase()
+                            : "Sélectioner un client..."}
+                          <ChevronDown className="opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto min-w-[25vw] p-0">
+                        <Command>
+                          <CommandInput
+                            placeholder="Chercher un client..."
+                            className="h-9"
+                          />
+                          <CommandList>
+                            <CommandEmpty>Aucun client trouvé.</CommandEmpty>
+                            <ScrollArea className="h-72 w-full">
+                              <CommandGroup>
+                                {clientList?.map((client) => (
+                                  <CommandItem
+                                    name="client"
+                                    key={client.id}
+                                    value={client.nom}
+                                    onSelect={() => {
+                                      setOpen(false);
+                                      setValue("client", client);
+                                      setValue("clientId", client.id);
+                                    }}
+                                  >
+                                    {client.nom.toUpperCase()}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </ScrollArea>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    {errors.clientId && (
+                      <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
+                        <CircleX className="h-4 w-4" />
+                        {errors.clientId.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
                 <div className="space-y-2">
-                  <Label htmlFor="customerName">Client*</Label>
-                  <br />
-                  <Popover open={open} onOpenChange={setOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={open}
-                        className="w-full justify-between mt-2"
-                      >
-                        {value
-                          ? clientList?.find((client) => client.nom === value)
-                              ?.nom
-                          : "Sélectioner un client..."}
-                        <ChevronDown className="opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto min-w-[27vw] p-0">
-                      <Command>
-                        <CommandInput
-                          placeholder="Search client..."
-                          className="h-9"
-                        />
-                        <CommandList>
-                          <CommandEmpty>No client found.</CommandEmpty>
-                          <ScrollArea className="h-72 w-full">
-                            <CommandGroup>
-                              {clientList?.map((client) => (
-                                <CommandItem
-                                  className="truncate"
-                                  key={client.id}
-                                  value={client.nom}
-                                  onSelect={(currentValue) => {
-                                    setValue(
-                                      currentValue === value ? "" : currentValue
-                                    );
-                                    setClient(client);
-                                    console.log(client);
-
-                                    setOpen(false);
-                                  }}
-                                >
-                                  {client.nom}
-                                  <Check
-                                    className={cn(
-                                      "ml-auto",
-                                      value === client.nom
-                                        ? "opacity-100"
-                                        : "opacity-0"
-                                    )}
-                                  />
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </ScrollArea>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
+                  <Label htmlFor="statut" className="text-right text-black">
+                    Statut
+                  </Label>
+                  <Select
+                    value={watch("statut")}
+                    name="statut"
+                    onValueChange={(value) => setValue("statut", value)}
+                  >
+                    <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
+                      <SelectValue placeholder="Tous les statuts" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {status.map((statut, index) => (
+                        <SelectItem key={index} value={statut.lable}>
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`h-2 w-2 rounded-full bg-${statut.color}`}
+                            />
+                            {statut.lable}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="statut" className="text-right text-black">
-                  Statut
-                </Label>
-                <Select
-                  value={formData.statut}
-                  name="statut"
-                  onValueChange={(value) =>
-                    handleInputChange({
-                      target: { name: "statut", value },
-                    })
-                  }
-                >
-                  <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
-                    <SelectValue placeholder="Tous les statuts" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {status.map((statut, index) => (
-                      <SelectItem key={index} value={statut.lable}>
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`h-2 w-2 rounded-full bg-${statut.color}`}
-                          />
-                          {statut.lable}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
 
-            {/* Items Table */}
-            <div className="space-y-4">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[40%]">Désignation</TableHead>
-                    <TableHead>Quantité</TableHead>
-                    <TableHead>Prix d&apos;unité</TableHead>
-                    <TableHead>Montant</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {items.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell>
-                        <Input
-                          className="focus:!ring-purple-500"
-                          value={item.details}
-                          onChange={(e) => {
-                            handleItemChange(
-                              item.id,
-                              "details",
-                              e.target.value
-                            );
-                          }}
-                          placeholder="Description de l'article"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          min={1}
-                          className="focus:!ring-purple-500 w-20"
-                          value={item.quantity}
-                          onChange={(e) =>
-                            handleItemChange(
-                              item.id,
-                              "quantity",
-                              Number(e.target.value)
-                            )
-                          }
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          value={item.rate}
-                          onChange={(e) =>
-                            handleItemChange(
-                              item.id,
-                              "rate",
-                              Number(e.target.value)
-                            )
-                          }
-                          className="focus:!ring-purple-500 w-24"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        {(item.quantity * item.rate).toFixed(2)} MAD
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeItem(item.id)}
-                          className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
+              {/* Items Table */}
+              <div className="space-y-4">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[35%]">Désignation</TableHead>
+                      <TableHead className="w-[15%]">Quantité</TableHead>
+                      <TableHead className="w-[20%]">
+                        Prix d&apos;unité
+                      </TableHead>
+                      <TableHead>Montant</TableHead>
+                      <TableHead></TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {fields.map((item, index) => (
+                      <TableRow key={item.id}>
+                        <TableCell>
+                          <Controller
+                            control={control}
+                            name={`articls.${index}.designation`}
+                            render={({ field }) => (
+                              <Input
+                                className="focus:!ring-purple-500 w-full"
+                                {...field}
+                                placeholder="Description de l'article"
+                                spellCheck="false"
+                              />
+                            )}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Controller
+                            control={control}
+                            name={`articls.${index}.quantite`}
+                            render={({ field }) => (
+                              <Input
+                                {...field}
+                                type="number"
+                                min={1}
+                                className="focus:!ring-purple-500 w-full"
+                              />
+                            )}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Controller
+                            control={control}
+                            name={`articls.${index}.prixUnite`}
+                            render={({ field }) => (
+                              <Input
+                                className="focus:!ring-purple-500 w-full"
+                                {...field}
+                                type="number"
+                              />
+                            )}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          {(
+                            articls[index].quantite * articls[index].prixUnite
+                          ).toFixed(2)}{" "}
+                          MAD
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => remove(index)}
+                            className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
 
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={addNewItem}
+                  className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 hover:scale-105 text-white hover:!text-white font-semibold transition-all duration-300 transform rounded-full"
+                >
+                  <Plus className="h-4 w-4" />
+                  Ajouter un article
+                </Button>
+                {errors.articls && (
+                  <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
+                    <CircleX className="h-4 w-4" />
+                    {errors.articls.message}
+                  </p>
+                )}
+              </div>
+              <div className="grid gap-6 w-full p-5">
+                <Label htmlFor="noteClient" className="text-left text-black">
+                  Note de client
+                </Label>
+                <Textarea
+                  name="note"
+                  {...register("note")}
+                  className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-purple-500"
+                />
+              </div>
+
+              {/* Totals Section */}
+              <div className="space-y-4 bg-purple-50 p-4 rounded-lg">
+                <div className="space-y-4">
+                  <div className="flex justify-between py-2 border-b">
+                    <span>Sous-total</span>
+                    <span>{calculateSubTotal().toFixed(2)} MAD</span>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <Label htmlFor="shippingCharges">
+                        Frais de livraison
+                      </Label>
+                      <div className="relative w-40 flex">
+                        <div className="absolute inset-y-0 right-0 w-12 flex items-center justify-center bg-white border-l rounded-r-md">
+                          <span className="text-sm text-gray-600">MAD</span>
+                        </div>
+                        <Input
+                          id="shippingCharges"
+                          name="shippingCharges"
+                          {...register("fraisLivraison")}
+                          className="pr-14 text-left rounded-r-md focus:!ring-purple-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="discount">Réduction</Label>
+                      <div className="flex items-center">
+                        <div className="relative flex items-center">
+                          <Input
+                            id="reduction"
+                            name="reduction"
+                            {...register("reduction")}
+                            className="w-40 pr-[70px] focus:!ring-purple-500"
+                          />
+                          <Select
+                            value={watch("typeReduction")}
+                            onValueChange={(value) =>
+                              setValue("typeReduction", value)
+                            }
+                          >
+                            <SelectTrigger className="absolute right-0 w-[80px] rounded-l-none border-l-0 focus:ring-1 focus:!ring-purple-500">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="%">%</SelectItem>
+                              <SelectItem value="DH">MAD</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between py-2 border-t font-bold">
+                    <span>Total</span>
+                    <span>{calculateTotal()} MAD</span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <div className="flex justify-end items-center">
+            <div className="space-x-2">
+              <Link href="/ventes/devis">
+                <Button
+                  type="button"
+                  className="rounded-full"
+                  variant="outline"
+                >
+                  Annuler
+                </Button>
+              </Link>
               <Button
-                variant="outline"
-                onClick={addNewItem}
+                onClick={() => {
+                  setValue("numero", generateDeviNumber());
+                  
+                  setValue(
+                    "sousTotal",
+                    parseFloat(calculateSubTotal().toFixed(2))
+                  );
+                  setValue("total", parseFloat(calculateTotal()));
+                  console.log(
+                    "form data validation :",
+                    newDeviSchema.safeParse(watch())
+                  );
+                }}
+                type="submit"
                 className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 hover:scale-105 text-white hover:!text-white font-semibold transition-all duration-300 transform rounded-full"
+                disabled={isSubmiting}
               >
-                <Plus className="h-4 w-4" />
-                Ajouter un article
+                Enregistrer
               </Button>
             </div>
-            <div className="grid gap-6 w-full p-5">
-              <Label htmlFor="noteClient" className="text-left text-black">
-                Note de client
-              </Label>
-              <Textarea
-                name="customerNotes"
-                value={formData.customerNotes}
-                onChange={handleInputChange}
-                className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-purple-500"
-              />
-            </div>
-
-            {/* Totals Section */}
-            <div className="space-y-4 bg-purple-50 p-4 rounded-lg">
-              <div className="space-y-4">
-                <div className="flex justify-between py-2 border-b">
-                  <span>Sous-total</span>
-                  <span>{calculateSubTotal().toFixed(2)} MAD</span>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <Label htmlFor="shippingCharges">Frais de livraison</Label>
-                    <div className="relative w-40 flex">
-                      <div className="absolute inset-y-0 right-0 w-12 flex items-center justify-center bg-white border-l rounded-r-md">
-                        <span className="text-sm text-gray-600">MAD</span>
-                      </div>
-                      <Input
-                        id="shippingCharges"
-                        name="shippingCharges"
-                        value={formData.shippingCharges}
-                        onChange={handleInputChange}
-                        className="pr-14 text-left rounded-r-md focus:!ring-purple-500"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="discount">Réduction</Label>
-                    <div className="flex items-center">
-                      <div className="relative flex items-center">
-                        <Input
-                          id="discount"
-                          name="discount"
-                          value={formData.discount}
-                          onChange={handleInputChange}
-                          className="w-40 pr-[70px] focus:!ring-purple-500"
-                        />
-                        <Select
-                          value={formData.discountType}
-                          onValueChange={(value) =>
-                            handleInputChange({
-                              target: { name: "discountType", value },
-                            })
-                          }
-                        >
-                          <SelectTrigger className="absolute right-0 w-[80px] rounded-l-none border-l-0 focus:ring-1 focus:!ring-purple-500">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="%">%</SelectItem>
-                            <SelectItem value="DH">MAD</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex justify-between py-2 border-t font-bold">
-                  <span>Total</span>
-                  <span>{calculateTotal()} MAD</span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <div className="flex justify-end items-center">
-          <div className="space-x-2">
-            <Button
-              className="rounded-full"
-              onClick={() => router.push("/ventes/devis")}
-              variant="outline"
-            >
-              Annuler
-            </Button>
-            <Button
-              onClick={() => {
-                onSubmit();
-              }}
-              className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 hover:scale-105 text-white hover:!text-white font-semibold transition-all duration-300 transform rounded-full"
-            >
-              Enregistrer
-            </Button>
           </div>
         </div>
-      </div>
+      </form>
     </>
   );
 }

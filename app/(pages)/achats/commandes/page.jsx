@@ -369,6 +369,7 @@ export default function ClientsPage() {
                     <TableHead>Produit</TableHead>
                     <TableHead>Catégorie</TableHead>
                     <TableHead>Fournisseur</TableHead>
+                    <TableHead>Quantité</TableHead>
                     <TableHead>Montant</TableHead>
                     <TableHead>Statut de livraison </TableHead>
                     <TableHead>Statut de paiement</TableHead>
@@ -427,6 +428,9 @@ export default function ClientsPage() {
                         </TableCell>
                         <TableCell className="text-md">
                           {commande.produit.fournisseur?.nom.toUpperCase() || "Inconnu"}
+                        </TableCell>
+                        <TableCell className="text-md">
+                          {commande.quantite}
                         </TableCell>
                         <TableCell className="text-md">
                           {(commande.prixUnite*commande.quantite).toFixed(2)} DH

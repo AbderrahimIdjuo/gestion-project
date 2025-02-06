@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
 import CustomTooltip from "@/components/customUi/customTooltip";
+import Link from "next/link";
+import { AddButton } from "@/components/customUi/styledButton";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import {
   Table,
@@ -124,6 +126,9 @@ export default function DevisPage() {
         return "bg-gray-500";
     }
   };
+  function formatDate(dateString) {
+    return dateString.split("T")[0].split("-").reverse().join("-");
+  }
 
   const deleteDevi = async (id, numero) => {
     console.log("delete item");
@@ -271,14 +276,11 @@ export default function DevisPage() {
                 </div>
               </SheetContent>
             </Sheet>
-
-            <Button
-              onClick={() => router.push("/ventes/devis/nouveau")}
-              className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 hover:scale-105 text-white font-semibold transition-all duration-300 transform rounded-full"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Nouveau Devis
-            </Button>
+            <Link href="/ventes/devis/nouveau">
+            <AddButton
+              title="Nouveau devi"
+            />
+            </Link>
           </div>
         </div>
 
@@ -334,7 +336,7 @@ export default function DevisPage() {
               ) : currentDevis?.length > 0 ? (
                 currentDevis?.map((devis) => (
                   <TableRow key={devis.id}>
-                    <TableCell>{devis.createdAt.split("T")[0]}</TableCell>
+                    <TableCell>{formatDate(devis.createdAt)}</TableCell>
                     <TableCell className="font-medium">
                       {devis.numero}
                     </TableCell>

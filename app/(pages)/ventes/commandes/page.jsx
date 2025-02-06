@@ -13,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import Link from "next/link";
 import { AddButton } from "@/components/customUi/styledButton";
 import CustomPagination from "@/components/customUi/customPagination";
 import { Search, Pen, Trash2, Printer, Filter } from "lucide-react";
@@ -126,14 +127,10 @@ export default function CommandesPage() {
         return "bg-red-500";
     }
   };
+  function formatDate(dateString) {
+    return dateString.split("T")[0].split("-").reverse().join("-");
+  }
 
-  const handleEdit = (id) => {
-    console.log("Edit commande:", id);
-  };
-
-  const handleInfo = (id) => {
-    console.log("View info for commande:", id);
-  };
 
   const deleteCommande = async (id, numero) => {
     try {
@@ -281,10 +278,9 @@ export default function CommandesPage() {
                 </div>
               </SheetContent>
             </Sheet>
-            <AddButton
-              onClick={() => router.push("/ventes/commandes/nouveau")}
-              title="Nouvelle Commande"
-            />
+            <Link href="/ventes/commandes/nouveau">
+              <AddButton title="Nouvelle Commande" />
+            </Link>
           </div>
         </div>
 
@@ -350,12 +346,12 @@ export default function CommandesPage() {
                     <TableCell className="font-medium">
                       {commande.numero}
                     </TableCell>
-                    <TableCell>{commande.createdAt.split("T")[0]}</TableCell>
+                    <TableCell>{formatDate(commande.createdAt)}</TableCell>
                     <TableCell>{commande.client.nom.toUpperCase()}</TableCell>
                     <TableCell>{commande.total} DH</TableCell>
                     <TableCell>{commande.avance} DH</TableCell>
                     <TableCell>
-                      {(commande.total - commande.avance).toFixed(2)} DH
+                      {(commande.total - commande.avance).toFixed()} DH
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
@@ -371,18 +367,16 @@ export default function CommandesPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
-                          onClick={() =>
-                           router.push(`/ventes/commandes/${commande.id}/update`)
-                  
-                          }
-                        >
-                          <Pen className="h-4 w-4" />
-                          <span className="sr-only">Modifier</span>
-                        </Button>
+                        <Link href={`/ventes/commandes/${commande.id}/update`}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
+                          >
+                            <Pen className="h-4 w-4" />
+                            <span className="sr-only">Modifier</span>
+                          </Button>
+                        </Link>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -399,7 +393,12 @@ export default function CommandesPage() {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 rounded-full hover:bg-green-100 hover:text-green-600"
-                          onClick={() => window.open(`/ventes/commandes/${commande.id}/pdf`, "_blank")}
+                          onClick={() =>
+                            window.open(
+                              `/ventes/commandes/${commande.id}/pdf`,
+                              "_blank"
+                            )
+                          }
                         >
                           <Printer className="h-4 w-4" />
                           <span className="sr-only">Imprimer</span>
@@ -435,7 +434,7 @@ export default function CommandesPage() {
         onClose={() => setDeleteDialogOpen(false)}
         onConfirm={() => {
           setDeleteDialogOpen(false);
-          deleteCommande(currentCommande.id, currentCommande.numero)
+          deleteCommande(currentCommande.id, currentCommande.numero);
         }}
         itemType="produit"
       />

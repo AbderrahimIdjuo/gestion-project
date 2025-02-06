@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../lib/prisma";
+import { log } from "console";
 
 export async function POST(req) {
   try {
@@ -30,68 +31,126 @@ export async function POST(req) {
     console.log("Produits en rupture:", produitsEnRupture);
 
     // Update stock and create purchase orders for out-of-stock products
-    const transactionResult = await prisma.$transaction([
-      // Create the main order
-      prisma.commandes.create({
+    const transactionResult = await prisma.$transaction(async (tx) => {
+      // Créer la commande
+      const commande = await tx.commandes.create({
         data: {
           numero,
           clientId,
           statut,
-          sousTotal: parseFloat(sousTotal) || 0,
-          fraisLivraison: parseFloat(fraisLivraison) || 0,
-          reduction: parseInt(reduction, 10) || 0,
-          total: parseFloat(total) || 0,
+          sousTotal: sousTotal ,
+          fraisLivraison: fraisLivraison || 0,
+          reduction: reduction || 0,
+          total: total,
           typeReduction,
           note,
           echeance,
-          avance: parseInt(avance, 10) || 0,
+          avance: avance || 0,
           commandeProduits: {
             create: produits.map((produit) => ({
               produitId: produit.id,
-              quantite: parseInt(produit.quantite, 10) || 0,
-              prixUnite: parseFloat(produit.prixUnite) || 0,
-              montant:
-                parseFloat(
-                  (
-                    parseInt(produit.quantite, 10) *
-                    parseFloat(produit.prixUnite)
-                  ).toFixed(2)
-                ) || 0,
+              quantite: produit.quantite || 0,
+              prixUnite: produit.prixUnite || 0,
+              montant: produit.quantite * produit.prixUnite || 0,
             })),
           },
-          //Crée une commande de produits en rupture de stock au fournisseur
           achatsCommande: {
             create: produitsEnRupture.map((produit) => ({
               produitId: produit.id,
-              quantite: parseInt(produit.quantite - produit.stock, 10),
-              prixUnite: parseFloat(produit.prixUnite),
+              quantite: produit.quantite - produit.stock,
+              prixUnite: produit.prixUnite,
               payer: false,
               description: produit.description,
               statut: "En cours",
             })),
           },
         },
-      }),
+      });
+    
+      // Mettre à jour le stock des produits en stock
+      await Promise.all(
+        produitsEnStock.map((produit) =>
+          tx.produits.update({
+            where: { id: produit.id },
+            data: {
+              stock: { decrement: produit.quantite }, 
+            },
+          })
+        )
+      );
+    
+      // Mettre le stock des produits en rupture à 0
+      await Promise.all(
+        produitsEnRupture.map((produit) =>
+          tx.produits.update({
+            where: { id: produit.id },
+            data: {
+              stock: 0,
+            },
+          })
+        )
+      );
+    
+      return commande;
+    });
+    
 
-      //Modifier le stock pour les prouduits en stock
-      ...produitsEnStock.map((produit) =>
-        prisma.produits.update({
-          where: { id: produit.id },
-          data: {
-            stock: produit.stock - produit.quantite,
-          },
-        })
-      ),
-      //Modifier le stock pour les prouduits en rupture de stock
-      ...produitsEnRupture.map((produit) =>
-        prisma.produits.update({
-          where: { id: produit.id },
-          data: {
-            stock: 0,
-          },
-        })
-      ),
-    ]);
+    // const transactionResult = await prisma.$transaction([
+    //   // Create the main order
+    //   prisma.commandes.create({
+    //     data: {
+    //       numero,
+    //       clientId,
+    //       statut,
+    //       sousTotal: sousTotal || 0,
+    //       fraisLivraison: fraisLivraison || 0,
+    //       reduction: reduction || 0,
+    //       total: total || 0,
+    //       typeReduction,
+    //       note,
+    //       echeance,
+    //       avance: avance || 0,
+    //       commandeProduits: {
+    //         create: produits.map((produit) => ({
+    //           produitId: produit.id,
+    //           quantite: produit.quantite || 0,
+    //           prixUnite: produit.prixUnite || 0,
+    //           montant: produit.quantite * produit.prixUnite || 0,
+    //         })),
+    //       },
+    //       //Crée une commande de produits en rupture de stock au fournisseur
+    //       achatsCommande: {
+    //         create: produitsEnRupture.map((produit) => ({
+    //           produitId: produit.id,
+    //           quantite: produit.quantite - produit.stock,
+    //           prixUnite: produit.prixUnite,
+    //           payer: false,
+    //           description: produit.description,
+    //           statut: "En cours",
+    //         })),
+    //       },
+    //     },
+    //   }),
+
+    //   //Modifier le stock pour les prouduits en stock
+    //   ...produitsEnStock.map((produit) =>
+    //     prisma.produits.update({
+    //       where: { id: produit.id },
+    //       data: {
+    //         stock: { decrement: produit.quantite },
+    //       },
+    //     })
+    //   ),
+    //   //Modifier le stock pour les prouduits en rupture de stock
+    //   ...produitsEnRupture.map((produit) =>
+    //     prisma.produits.update({
+    //       where: { id: produit.id },
+    //       data: {
+    //         stock: 0,
+    //       },
+    //     })
+    //   ),
+    // ]);
 
     return NextResponse.json({
       message: "Commande créée avec succès.",
@@ -106,263 +165,12 @@ export async function POST(req) {
   }
 }
 
-// export async function PUT(req) {
-//   try {
-//     const response = await req.json();
-//     const {
-//       id,
-//       numero,
-//       clientId,
-//       produits,
-//       statut,
-//       sousTotal,
-//       fraisLivraison,
-//       reduction,
-//       total,
-//       typeReduction,
-//       note,
-//       avance,
-//       echeance,
-//     } = response;
-
-//     // Récupérer les produits associés à la commande client
-//     const produitsCommande = await prisma.commandesProduits.findMany({
-//       where: {
-//         commandeId: id,
-//       },
-//     });
-//     const produitsEnStock = produits.filter(
-//       (produit) => produit.stock >= produit.quantite
-//     );
-//     const produitsEnRupture = produits.filter(
-//       (produit) => produit.stock < produit.quantite
-//     );
-//     const existingIds = produits.map((produit) => produit.id);
-//     // Produits supprimés de la liste de produits
-//     const produitsSupprime = produitsCommande.filter(
-//       (produit) => !existingIds.includes(produit.produitId)
-//     );
-//     // Récupérer les commandes achats liés à cette commande
-//     const commandesAchats = await prisma.achatsCommandes.findMany({
-//       where: {
-//         commandeId: id,
-//       },
-//     });
-//     console.log("produits", produits);
-//     console.log("produitsCommande", produitsCommande);
-//     console.log("existingIds:", existingIds);
-//     console.log("response:", response);
-//     // console.log("produitsEnRupture", produitsEnRupture);
-//     // console.log("produitsSupprime", produitsSupprime);
-//     // console.log("commandesAchats", commandesAchats);
-// //     const updatingDeletedProducts = produitsSupprime.map((item1) => {
-// //       const item2 = commandesAchats.find(
-// //         (item) => item.produitId === item1.produitId
-// //       );
-// //       const produitsQuantite = item1.quantite; // la quanité de produits dans la commande de client
-// //       const commandesQuantite = item2 ? item2.quantite : 0; // la quantité de produits demander au fornisseur
-// //       let conclusion = "";
-
-// //       // if (!item2) {
-// //       //   conclusion = "Le stock est plein";
-// //       //   return {
-// //       //     produitId: item1.produitId,
-// //       //     produits: produitsQuantite,
-// //       //     commandes: commandesQuantite,
-// //       //     difference: produitsQuantite,
-// //       //     conclusion,
-// //       //     update: prisma.produits.update({
-// //       //       where: { id: item1.produitId },
-// //       //       data: { stock: { increment: produitsQuantite } },
-// //       //     }),
-// //       //     delete: null,
-// //       //   };
-// //       // } else
-// //       if (produitsQuantite > commandesQuantite && commandesQuantite > 0) {
-// //         conclusion = `Le stock contient ${
-// //           produitsQuantite - commandesQuantite
-// //         }`;
-// //         return {
-// //           produitId: item1.produitId,
-// //           produits: produitsQuantite,
-// //           commandes: commandesQuantite,
-// //           difference: produitsQuantite - commandesQuantite,
-// //           conclusion,
-// //           update: prisma.produits.update({
-// //             where: { id: item1.produitId },
-// //             data: {
-// //               stock: { increment: produitsQuantite - commandesQuantite },
-// //             },
-// //           }),
-// //           delete: prisma.achatsCommandes.delete({
-// //             where: {
-// //               id: item2.id,
-// //             },
-// //           }),
-// //         };
-// //       }
-// //     //   else if (produitsQuantite === commandesQuantite) {
-// //     //     conclusion = "Le stock est vide";
-// //     //     return {
-// //     //       produitId: item2.produitId,
-// //     //       produits: produitsQuantite,
-// //     //       commandes: commandesQuantite,
-// //     //       difference: 0,
-// //     //       conclusion,
-// //     //       update: null, // Pas besoin de mise à jour
-// //     //       delete: prisma.achatsCommandes.delete({
-// //     //         where: {
-// //     //           id: item2.id,
-// //     //         },
-// //     //       }),
-// //     //     };
-// //     //   }
-// //     });
-
-// //     const updatingUpdatedProducts = produits.map((item1) => {
-// //       const item2 = produitsCommande.find(
-// //         (item) => item.produitId === item1.id
-// //       );
-// //       const produitsQuantite = item1.quantite; // la quanité de produits dans la commande de client
-// //       const produitcommandesQuantite = item2 ? item2.quantite : 0; // la quantité de produits demander au fornisseur
-// //       const diff = produitsQuantite-produitcommandesQuantite
-
-// // if(item2){
-
-// //   if (diff>0 && produitcommandesQuantite > 0) {
-
-// //     return {
-// //       produitId:item1.id,
-// //       designation:item1.designation,
-// //       conclusion : `Le stock est augmenter de ${diff}`,
-// //       }
-// //     }else if (diff<0 && produitcommandesQuantite > 0){
-// //       return {
-// //         produitId:item1.id,
-// //         designation:item1.designation,
-// //         conclusion : `Le stock est diminué de ${-diff}`,
-// //         }
-// //     }else if (diff===0){
-// //       return {
-// //         produitId:item1.id,
-// //         designation:item1.designation,
-// //         conclusion : `Le stock est n'est pas modifié`,
-// //         }
-// //     }else{
-// //       return {
-// //         produitId:null,
-// //         designation:null,
-// //         conclusion : `null`,
-// //         }
-// //     }
-// // }
-// //       });
-// //       console.log("updatingUpdatedProducts", updatingUpdatedProducts? updatingUpdatedProducts : "null");
-
-//     // Filtrer les mises à jour nulles
-//     // const updates = updatingDeletedProducts.map((item) => item.update).filter(Boolean);
-//     // const deletes = updatingDeletedProducts.map((item) => item.delete).filter(Boolean);
-
-//     const transactionResult = await prisma.$transaction([
-//      // ...updates,
-//      // ...deletes,
-//       // Supprimer les produits supprimés
-//       // prisma.commandesProduits.deleteMany({
-//       //   where: {
-//       //     commandeId: id,
-//       //     id: {
-//       //       notIn: existingIds, // Delete records not in the incoming produits array
-//       //     },
-//       //   },
-//       // }),
-//       // Modifier la commande du client
-//       prisma.commandes.update({
-//         where: { id },
-//         data: {
-//           numero,
-//           clientId,
-//           statut,
-//           sousTotal: sousTotal,
-//           fraisLivraison: fraisLivraison,
-//           reduction: reduction,
-//           total: total,
-//           typeReduction,
-//           avance,
-//           echeance,
-//           note,
-//           description:"description",
-//           commandeProduits: {
-//             upsert: produits.map((articl) => ({
-//               where: {
-//                 commandeId_produitId: {
-//                   commandeId: id,
-//                   produitId: articl.id
-//                 }
-//               },
-//               update: {
-//                 produitId: articl.id,
-//                 quantite: parseInt(articl.quantite),
-//                 prixUnite: parseFloat(articl.prixUnite),
-//                 montant: articl.quantite * articl.prixUnite,
-//               },
-//               create: {
-//                 produitId: articl.id,
-//                 quantite: parseInt(articl.quantite),
-//                 prixUnite: parseFloat(articl.prixUnite),
-//                 montant: articl.quantite * articl.prixUnite,
-//               },
-//             })),
-//           },
-//         },
-//       }),
-//  //Crée une commande de produits en rupture de stock au fournisseur
-//       prisma.achatsCommandes.createMany({
-//         data: produitsEnRupture.map((produit) => ({
-//           produitId: produit.id,
-//           quantite: parseInt(produit.quantite - produit.stock, 10),
-//           prixUnite: parseFloat(produit.prixUnite),
-//           payer: false,
-//           description: produit.description,
-//           statut: "En cours",
-//         })),
-//       }),
-//       //Modifier le stock pour les prouduits en stock
-//       ...produitsEnStock.map((produit) =>
-//         prisma.produits.update({
-//           where: { id: produit.id },
-//           data: {
-//             stock: produit.stock - produit.quantite,
-//           },
-//         })
-//       ),
-//       //Modifier le stock pour les prouduits en rupture de stock
-//       ...produitsEnRupture.map((produit) =>
-//         prisma.produits.update({
-//           where: { id: produit.id },
-//           data: {
-//             stock: 0,
-//           },
-//         })
-//       ),
-//     ]);
-//     return NextResponse.json({ transactionResult });
-//   } catch (error) {
-//     console.log(error);
-
-//     return NextResponse.json(
-//       { message: "An unexpected error occurred." },
-//       { status: 500 }
-//     );
-//   }
-// }
-
 export async function PUT(req) {
   try {
     const response = await req.json();
     const {
       id,
       numero,
-      clientId,
       produits,
       statut,
       sousTotal,
@@ -375,56 +183,325 @@ export async function PUT(req) {
       echeance,
     } = response;
     console.log("response:", response);
-
-    const existingIds = produits.map((produit) => produit.id);
-    console.log("existingIds", existingIds);
-
-     // Step 1: Delete products not in the new produits array
-    await prisma.commandesProduits.deleteMany({
+    // Récupérer les produits associés à la commande client
+    const produitsCommande = await prisma.commandesProduits.findMany({
       where: {
-        commandeId: id, // Ensure this matches your schema for linking `commandeProduits` to `commandes`
-        id: {
-          notIn: existingIds, // Delete records not in the incoming produits array
-        },
+        commandeId: id,
       },
     });
-
-    const result = await prisma.commandes.update({
-      where: { id },
-      data: {
-        numero,
-        statut,
-        sousTotal: sousTotal,
-        fraisLivraison: fraisLivraison,
-        reduction: reduction,
-        total: total,
-        typeReduction,
-        avance,
-        echeance,
-        note,
-        commandeProduits: {
-          upsert: produits.map((articl) => ({
-            where: {
-              commandeId_produitId: {
-                commandeId: id, // Ensure it's the correct order ID
-                produitId: articl.id, // Ensure it's the correct product ID
-              },
-            },
-            update: {
-              quantite: parseInt(articl.quantite),
-              prixUnite: parseFloat(articl.prixUnite),
-              montant: parseInt(articl.quantite) * parseFloat(articl.prixUnite),
-            },
-            create: {
-             // commandeId: id, // Needed for linking the order
-              produitId: articl.id,
-              quantite: parseInt(articl.quantite),
-              prixUnite: parseFloat(articl.prixUnite),
-              montant: parseInt(articl.quantite) * parseFloat(articl.prixUnite),
-            },
-          })),
-        },
+    const existingIds = produits.map((produit) => produit.id);
+    console.log("existingIds", existingIds);
+    // Récupérer les commandes achats liés à cette commande
+    const commandesAchats = await prisma.achatsCommandes.findMany({
+      where: {
+        commandeId: id,
       },
+    });
+    // Récupérer la list de tous les produits
+    const produitsList = await prisma.produits.findMany();
+    // les produits suprimés de la commande client
+    const productsToDelete = await prisma.commandesProduits.findMany({
+      where: {
+        commandeId: id,
+        produitId: { notIn: existingIds },
+      },
+    });
+    //console.log("productsToDelete", productsToDelete);
+
+    const result = await prisma.$transaction(async (tx) => {
+      // Step 1: Delete products that are no longer part of the order
+      if (productsToDelete.length > 0) {
+        await tx.commandesProduits.deleteMany({
+          where: {
+            id: { in: productsToDelete.map((p) => p.id) },
+          },
+        });
+      }
+      // Step 2: Restore stock for deleted products
+      const updatingDeletedProductsStock = productsToDelete.map((item1) => {
+        const item2 = commandesAchats.find(
+          (item) => item.produitId === item1.produitId
+        );
+        const produitsQuantite = item1.quantite; // Quantity in customer order
+        const commandesQuantite = item2 ? item2.quantite : 0; // Quantity ordered from supplier
+
+        if (!item2) {
+          return {
+            update: tx.produits.update({
+              where: { id: item1.produitId },
+              data: { stock: { increment: produitsQuantite } },
+            }),
+            delete: null,
+          };
+        } else if (
+          produitsQuantite > commandesQuantite &&
+          commandesQuantite > 0
+        ) {
+          return {
+            update: tx.produits.update({
+              where: { id: item1.produitId },
+              data: {
+                stock: { increment: produitsQuantite - commandesQuantite },
+              },
+            }),
+            delete: tx.achatsCommandes.delete({
+              where: {
+                commandeId_produitId: {
+                  commandeId: id,
+                  produitId: item1.produitId,
+                },
+              },
+            }),
+          };
+        } else if (produitsQuantite === commandesQuantite) {
+          return {
+            update: null, // No stock update needed
+            delete: tx.achatsCommandes.delete({
+              where: {
+                commandeId_produitId: {
+                  commandeId: id,
+                  produitId: item1.produitId,
+                },
+              },
+            }),
+          };
+        }
+      });
+
+      // Execute stock updates
+      await Promise.all(
+        updatingDeletedProductsStock.map((item) => item.update).filter(Boolean)
+      );
+
+      // Execute supplier order deletions
+      await Promise.all(
+        updatingDeletedProductsStock.map((item) => item.delete).filter(Boolean)
+      );
+      // Step 3: Restore stock for updating products quantite in the list of products
+      const updatingProduitsCommande = produits.map((item1) => {
+        const item2 = produitsCommande.find(
+          (item) => item.produitId === item1.id && item.commandeId === id
+        );
+        const item3 = produitsList.find((item) => item.id === item1.id);
+        const item4 = commandesAchats.find(
+          (item) => item.produitId === item1.id && item.commandeId === id
+        );
+        const produitsQuantite = item1.quantite; // Quantity in customer order
+        const produitcommandesQuantite = item2 ? item2.quantite : 0; // Previous quantity in order
+        const diff = produitsQuantite - produitcommandesQuantite;
+        console.log("stok - diff : ", item3.stock - diff);
+        // if (item2 && produitcommandesQuantite>0) {
+        //   if (diff > 0) {
+        //     if(item3.stock-diff>0){
+        //       return {
+        //         produitId: item1.id,
+        //         designation: item1.designation,
+        //         conclusion: `le stock diminue par ${-diff}`,
+        //         update: tx.produits.update({
+        //           where: { id: item1.id },
+        //           data: { stock: { decrement: diff } },
+        //         }),
+        //       };
+        //     }else if(item3.stock-diff<0){
+        //       return {
+        //         produitId: item1.id,
+        //         designation: item1.designation,
+        //         conclusion: `le stock diminue par ${-diff} et une demande d'achat est crée`,
+        //         update: tx.produits.update({
+        //           where: { id: item1.id },
+        //           data: { stock: 0 },
+        //         }),
+        //         create: tx.achatsCommandes.create({
+        //           data: {
+        //             commandeId: id,
+        //             produitId: item1.id,
+        //             quantite:  diff-item3.stock ,
+        //             prixUnite: item1.prixUnite,
+        //             payer: false,
+        //             statut: "En cours",
+        //             description: `le stock diminue par ${-diff} et une demande d'achat est crée`,
+        //           },
+        //         }),
+        //       };
+        //     }
+        //   } else if (diff < 0) {
+        //     if(item3.stock>=0){
+        //       return {
+        //         produitId: item1.id,
+        //         designation: item1.designation,
+        //         conclusion: `Le stock est augmenter par ${diff}`,
+        //         update: tx.produits.update({
+        //           where: { id: item1.id },
+        //           data: { stock: { increment: diff } },
+        //         }),
+        //       };
+        //     }
+        // }}
+
+        // if (item3.stock - diff < 0) {
+        //   return {
+        //     produitId: item1.id,
+        //     designation: item1.designation,
+        //     conclusion: `La quantité a augmenté de ${diff}`,
+        //     create: tx.achatsCommandes.create({
+        //       data: {
+        //         commandeId: id,
+        //         produitId: item1.id,
+        //         quantite: -item3.stock + diff,
+        //         prixUnite: item1.prixUnite,
+        //         payer: false,
+        //         statut: "En cours",
+        //         description: `Commande de ${-item3.stock + diff} ${
+        //           item1.designation
+        //         }`,
+        //       },
+        //     }),
+        //     update: tx.produits.update({
+        //       where: { id: item1.id },
+        //       data: { stock: 0 },
+        //     }),
+        //   };
+        // }
+
+        if (item2) {
+          if (diff > 0 && produitcommandesQuantite > 0) {
+            if (item3.stock - diff > 0) {
+              return {
+                produitId: item1.id,
+                designation: item1.designation,
+                conclusion: `La quantité a augmenté de ${diff}`,
+                update: tx.produits.update({
+                  where: { id: item1.id },
+                  data: { stock: { decrement: diff } },
+                }),
+              };
+            } else if (item3.stock - diff < 0) {
+              return {
+                produitId: item1.id,
+                designation: item1.designation,
+                conclusion: `le stock diminue par ${-diff} et une demande d'achat est crée`,
+                update: tx.produits.update({
+                  where: { id: item1.id },
+                  data: { stock: 0 },
+                }),
+                create: tx.achatsCommandes.create({
+                  data: {
+                    commandeId: id,
+                    produitId: item1.id,
+                    quantite: diff - item3.stock,
+                    prixUnite: item1.prixUnite,
+                    payer: false,
+                    statut: "En cours",
+                    description: `le stock diminue par ${-diff} et une demande d'achat est crée`,
+                  },
+                }),
+              };
+            }
+          } else if (diff < 0 && produitcommandesQuantite > 0) {
+            if (item3.stock > 0) {
+              return {
+                produitId: item1.id,
+                designation: item1.designation,
+                conclusion: `Le stock est augmenter par ${-diff}`,
+                update: tx.produits.update({
+                  where: { id: item1.id },
+                  data: { stock: { increment: -diff } },
+                }),
+              };
+            } else if (item3.stock === 0) {
+              console.log("item4", item4);
+              console.log("item4.quantite", item4.quantite);
+
+              return {
+                produitId: item1.id,
+                designation: item1.designation,
+                conclusion: `Le stock est augmenter par ${-diff}`,
+                update: tx.produits.update({
+                  where: { id: item1.id },
+                  data: { stock: { increment: -diff - item4.quantite } },
+                }),
+                delete: tx.achatsCommandes.delete({
+                  where: {
+                    commandeId_produitId: {
+                      commandeId: id,
+                      produitId: item1.id,
+                    },
+                  },
+                }),
+              };
+            }
+            // return {
+            //   produitId: item1.id,
+            //   designation: item1.designation,
+            //   conclusion: `Le stock est diminué de ${-diff}`,
+            //   update: tx.produits.update({
+            //     where: { id: item1.id },
+            //     data: { stock: { increment: -diff } },
+            //   }),
+            // };
+          } else if (diff === 0) {
+            return {
+              produitId: item1.id,
+              designation: item1.designation,
+              conclusion: `Le stock n'est pas modifié`,
+              update: null,
+            };
+          }
+        }
+        // return null;}
+      });
+
+      // Execute stock updates
+      await Promise.all(
+        updatingProduitsCommande.map((item) => item.update).filter(Boolean)
+      );
+      // Execute purchase creation
+      await Promise.all(
+        updatingProduitsCommande.map((item) => item.create).filter(Boolean)
+      );
+      // Execute delete commande
+      await Promise.all(
+        updatingProduitsCommande.map((item) => item.delete).filter(Boolean)
+      );
+      // Step 3: Update the order and upsert related products
+      return tx.commandes.update({
+        where: { id },
+        data: {
+          numero,
+          statut,
+          sousTotal,
+          fraisLivraison,
+          reduction,
+          total,
+          typeReduction,
+          avance,
+          echeance,
+          note,
+          commandeProduits: {
+            upsert: produits.map((articl) => ({
+              where: {
+                commandeId_produitId: {
+                  commandeId: id,
+                  produitId: articl.id,
+                },
+              },
+              update: {
+                quantite: parseInt(articl.quantite),
+                prixUnite: parseFloat(articl.prixUnite),
+                montant:
+                  parseInt(articl.quantite) * parseFloat(articl.prixUnite),
+              },
+              create: {
+                produitId: articl.id,
+                quantite: parseInt(articl.quantite),
+                prixUnite: parseFloat(articl.prixUnite),
+                montant:
+                  parseInt(articl.quantite) * parseFloat(articl.prixUnite),
+              },
+            })),
+          },
+        },
+      });
     });
 
     return NextResponse.json({ result });

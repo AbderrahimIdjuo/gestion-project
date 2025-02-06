@@ -8,6 +8,7 @@ import { AddButton } from "@/components/customUi/styledButton";
 import { Textarea } from "@/components/ui/textarea";
 import toast, { Toaster } from "react-hot-toast";
 import { LoadingDots } from "@/components/loading-dots";
+import Link from "next/link"
 import {
   Select,
   SelectContent,
@@ -62,7 +63,7 @@ export default function UpdateCommandePage({ params }) {
     setValue,
     formState: { errors, isSubmiting },
   } = useForm({
-    resolver:zodResolver(updateCommandeSchema),
+    resolver: zodResolver(updateCommandeSchema),
   });
 
   const getCommandeById = async () => {
@@ -116,8 +117,8 @@ export default function UpdateCommandePage({ params }) {
         }
         reset();
         setItems([]);
-
         console.log("Commande modifier avec succès");
+        router.push("/ventes/commandes")
       })(),
       {
         loading: "Modification du commande ...",
@@ -178,15 +179,17 @@ export default function UpdateCommandePage({ params }) {
         <div className="container mx-auto py-6 space-y-6 max-w-5xl">
           <div className="flex justify-between items-center">
             <div className="flex gap-3 items-center">
-              <Button
-                type="button"
-                className="rounded-lg !p-0"
-                size="icon"
-                variant="ghost"
-                onClick={() => router.push("/ventes/commandes")}
-              >
-                <MoveLeft />
-              </Button>
+              <Link href="/ventes/commandes">
+                <Button
+                  type="button"
+                  className="rounded-lg !p-0"
+                  size="icon"
+                  variant="ghost"
+                >
+                  <MoveLeft />
+                </Button>
+              </Link>
+
               <h1 className="text-3xl font-bold mr-2">Modifier une commande</h1>
               {isLoading && <LoadingDots size={7} />}
             </div>
@@ -450,13 +453,11 @@ export default function UpdateCommandePage({ params }) {
           </Card>
           <div className="flex justify-end items-center">
             <div className="space-x-2">
-              <Button
-                onClick={() => router.push("/ventes/commandes")}
-                className="rounded-full"
-                variant="outline"
-              >
-                Annuler
-              </Button>
+              <Link href="/ventes/commandes">
+                <Button className="rounded-full" variant="outline">
+                  Annuler
+                </Button>
+              </Link>
               <Button
                 onClick={() => {
                   setValue("produits", items);
@@ -466,7 +467,10 @@ export default function UpdateCommandePage({ params }) {
                   );
                   setValue("total", parseFloat(calculateTotal()));
                   console.log("form data :", watch());
-                  console.log("form data :",updateCommandeSchema.parse(watch()));
+                  console.log(
+                    "form data :",
+                    updateCommandeSchema.parse(watch())
+                  );
                 }}
                 type="submit"
                 className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 hover:scale-105 text-white hover:!text-white font-semibold transition-all duration-300 transform rounded-full"

@@ -26,6 +26,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Trash2, MoveLeft, ChevronDown } from "lucide-react";
 import { ArticleSelectionDialog } from "@/components/produits-selection-dialog";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import axios from "axios";
 import { format } from "date-fns";
@@ -40,7 +41,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
-import {} from "lucide-react";
 import {
   Command,
   CommandEmpty,
@@ -50,7 +50,6 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { useForm, Controller } from "react-hook-form";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CircleX } from "lucide-react";
 import newCommandeSchema from "@/app/zodSchemas/newCommandeSchema";
@@ -148,6 +147,7 @@ export default function NouvelleCommandePage() {
         reset();
         setItems([]);
         console.log("Commande ajouté avec succès");
+        router.push("/ventes/commandes")
       })(),
       {
         loading: "Ajout du commande ...",
@@ -201,14 +201,15 @@ export default function NouvelleCommandePage() {
         <div className="container mx-auto py-6 space-y-6 max-w-5xl">
           <div className="flex justify-between items-center">
             <div className="flex gap-3 items-center">
+              <Link href="/ventes/commandes">
               <Button
                 type="button"
                 size="icon"
                 variant="ghost"
-                onClick={() => router.push("/ventes/commandes")}
               >
                 <MoveLeft />
               </Button>
+              </Link>
               <h1 className="text-3xl font-bold">Nouvelle Commande</h1>
             </div>
           </div>
@@ -620,13 +621,14 @@ export default function NouvelleCommandePage() {
           </Card>
           <div className="flex justify-end items-center mt-3">
             <div className="space-x-2">
+              <Link href="/ventes/commandes">
               <Button
-                onClick={() => router.push("/ventes/commandes")}
                 className="rounded-full"
                 variant="outline"
               >
                 Annuler
               </Button>
+              </Link>
               <Button
                 onClick={() => {
                   setValue(
