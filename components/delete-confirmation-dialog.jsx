@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
-
 export function DeleteConfirmationDialog({
   recordName,
   isOpen,
@@ -23,8 +22,9 @@ export function DeleteConfirmationDialog({
         <DialogHeader>
           <DialogTitle>Confirmer la suppression</DialogTitle>
           <DialogDescription>
-            Êtes-vous sûr de vouloir supprimer <b> {recordName}  </b> ?
-            Cette action ne peut pas être annulée.
+            Êtes-vous sûr de vouloir supprimer{" "}
+            <b> {recordName?.toUpperCase()} </b> ? Cette action ne peut pas être
+            annulée.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="gap-2 sm:gap-0">
@@ -35,7 +35,6 @@ export function DeleteConfirmationDialog({
             variant="destructive"
             onClick={() => {
               onConfirm();
-              // onClose();
             }}
           >
             Supprimer

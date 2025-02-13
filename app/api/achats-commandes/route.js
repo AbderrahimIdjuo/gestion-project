@@ -88,6 +88,11 @@ export async function GET() {
           },
         },
       },
+      commandeClient : {
+        select: {
+          numero: true, 
+        },
+      },
     },
   });
   return NextResponse.json({ commandes });

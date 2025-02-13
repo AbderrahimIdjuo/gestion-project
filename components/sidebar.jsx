@@ -11,6 +11,7 @@ import {
   ShoppingCart,
   ChevronDown,
   ChevronRight,
+  ContactRound
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +26,11 @@ const menuItems = [
     icon: Package,
     label: "Produits",
     href: "/produits",
+  },
+  {
+    icon: ContactRound,
+    label: "Employés",
+    href: "/Employes",
   },
   {
     icon: ShoppingCart,
@@ -47,12 +53,11 @@ const menuItems = [
       },
       { label: "Commandes", href: "/achats/commandes" },
       { label: "Dépenses", href: "/achats/depenses" },
-      { label: "Dépenses récurrentes", href: "/achats/depenses-recurrentes" },
-      {
-        label: "Factures",
-        href: "/achats/factures",
-      },
-      { label: "Crédit fournisseurs", href: "/achats/credit-fournisseurs" },
+      // {
+      //   label: "Factures",
+      //   href: "/achats/factures",
+      // },
+      // { label: "Crédit fournisseurs", href: "/achats/credit-fournisseurs" },
     ],
   },
 ];

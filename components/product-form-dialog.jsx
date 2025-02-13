@@ -148,6 +148,7 @@ export function ProductFormDialog({ getProducts }) {
     { value: "Bureautique", lable: "Bureautique" },
   ];
 
+
   return (
     <Card className="w-full grid gap-2 h-full px-2">
       <CardHeader className="flex-col justify-start">

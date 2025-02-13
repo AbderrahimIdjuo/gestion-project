@@ -20,6 +20,19 @@ model Clients {
   devies    Devis[]
 }
 
+model Employes {
+  id        String   @id @default(uuid())
+  nom       String
+  cin       String?
+  rib       String?
+  telephone String?
+  adresse   String?
+  role      String?
+  salaire   Float?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model Produits {
   id                String              @id @default(uuid())
   designation       String
@@ -47,7 +60,8 @@ model CommandesProduits {
   updatedAt  DateTime  @updatedAt
   produit    Produits  @relation(fields: [produitId], references: [id], onDelete: Cascade)
   commande   Commandes @relation(fields: [commandeId], references: [id], onDelete: Cascade)
-   @@unique([commandeId, produitId])
+
+  @@unique([commandeId, produitId])
 }
 
 model Fournisseurs {
@@ -96,6 +110,7 @@ model AchatsCommandes {
   updatedAt      DateTime   @updatedAt
   commandeClient Commandes? @relation(fields: [commandeId], references: [id], onDelete: Cascade)
   produit        Produits   @relation(fields: [produitId], references: [id], onDelete: Cascade)
+
   @@unique([commandeId, produitId])
 }
 
@@ -129,13 +144,14 @@ model Devis {
 }
 
 model Factures {
-  id        String   @id @default(uuid())
-  nom       String
-  numero    String   @unique
-  categorie String
-  montant   Float
-  statut    String
-  echeance  DateTime
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(uuid())
+  lable       String
+  numero      String   @unique
+  type        String
+  montant     Float
+  payer       Boolean @default(false)
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
+

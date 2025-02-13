@@ -47,6 +47,7 @@ export function AchatCommandeForm({ currProduct }) {
         produit: currProduct,
         description: currProduct?.description,
         payer : false,
+        fournisseur:currProduct.fournisseur
       },
     }
   );

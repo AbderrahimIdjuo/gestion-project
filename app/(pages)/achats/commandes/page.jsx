@@ -37,6 +37,7 @@ import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { PriceRangeSlider } from "@/components/customUi/customSlider";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import Link from "next/link";
 import {
   Breadcrumb,
@@ -47,13 +48,13 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 
-export default function ClientsPage() {
+export default function CommandesAchats() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [isDialogOpen, setIsDialogOpen] = useState(false); // Delete dialog
-  const [isLoading, setIsLoading] = useState(false); // Fetch the list of commandes
+  //const [isLoading, setIsLoading] = useState(false); // Fetch the list of commandes
   const [currCommande, setCurrCommande] = useState("");
-  const [commandeList, setCommandeList] = useState([]);
+  // const [commandeList, setCommandeList] = useState([]);
   const [isAddingCommande, setIsAddingCommande] = useState(false);
   const [isUpdatingCommande, setIsUpdatingCommande] = useState(false);
   const [maxMontant, setMaxMontant] = useState();
@@ -70,37 +71,40 @@ export default function ClientsPage() {
       montant: [0, maxMontant],
     });
   }, [maxMontant]);
-  const filteredCommandes = commandeList.filter(
+  const { data, isLoading } = useQuery({
+    queryKey: ["commandesAchats"],
+    queryFn: async () => {
+      const response = await axios.get("/api/achats-commandes");
+      const commandes = response.data.commandes;
+      const montantList = commandes.map((commande) =>
+        (commande.prixUnite * commande.quantite).toFixed(2)
+      );
+      //console.log("montantList :", montantList);
+      setMaxMontant(Math.max(...montantList));
+      return commandes;
+    },
+  });
+  console.log("commandes List : ", data);
+  const filteredCommandes = data?.filter(
     (commande) =>
-     commande.produit.designation
+      commande.produit.designation
         .toLowerCase()
         .includes(searchQuery.toLowerCase()) &&
       (filters.categorie === "all" ||
         commande.produit.categorie === filters.categorie) &&
-      (filters.status === "all" ||
-        commande.statut === filters.status) &&
+      (filters.status === "all" || commande.statut === filters.status) &&
       (filters.statusPaiement === "all" ||
         commande.payer === filters.statusPaiement) &&
-      (commande.prixUnite*commande.quantite).toFixed(2) >= filters.montant[0] &&
-      (commande.prixUnite*commande.quantite).toFixed(2) <= filters.montant[1]
+      (commande.prixUnite * commande.quantite).toFixed(2) >=
+        filters.montant[0] &&
+      (commande.prixUnite * commande.quantite).toFixed(2) <= filters.montant[1]
   );
 
-  const totalPages = Math.ceil(filteredCommandes.length / itemsPerPage);
-  const currentCommandes = filteredCommandes.slice(
+  const totalPages = Math.ceil(filteredCommandes?.length / itemsPerPage);
+  const currentCommandes = filteredCommandes?.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
-
-  const getCommandes = async () => {
-    const result = await axios.get("/api/achats-commandes");
-    const { commandes } = result.data;
-    const montantList = commandes.map((commande) => (commande.prixUnite*commande.quantite).toFixed(2) );
-    console.log(commandes);
-    console.log("montantList :" , montantList);
-    setCommandeList(commandes);
-    setMaxMontant(Math.max(...montantList),)
-    //  setIsLoading(false);
-  };
 
   const deleteCommande = async () => {
     try {
@@ -123,9 +127,6 @@ export default function ClientsPage() {
     setCurrentPage(1);
   }, [searchQuery]);
 
-  useEffect(() => {
-    getCommandes();
-  }, []);
   const getStatusColor = (status) => {
     switch (status) {
       case "Livrée":
@@ -142,8 +143,8 @@ export default function ClientsPage() {
   };
   const getStatusPaiemenetColor = (status) => {
     if (status) {
-      return "bg-emerald-100 text-green-500";
-    } else return "bg-red-100 text-red-500";
+      return "bg-emerald-100 text-green-600 font-semibold";
+    } else return "bg-red-100 text-red-600 font-semibold";
   };
   const status = [
     { value: "all", lable: "Tous les statut", color: "" },
@@ -168,6 +169,7 @@ export default function ClientsPage() {
   return (
     <>
       <Toaster position="top-center" />
+
       <div className="my-4">
         <Breadcrumb>
           <BreadcrumbList>
@@ -368,6 +370,7 @@ export default function ClientsPage() {
                     <TableHead>Date</TableHead>
                     <TableHead>Produit</TableHead>
                     <TableHead>Catégorie</TableHead>
+                    <TableHead>Bon de commande </TableHead>
                     <TableHead>Fournisseur</TableHead>
                     <TableHead>Quantité</TableHead>
                     <TableHead>Montant</TableHead>
@@ -406,6 +409,12 @@ export default function ClientsPage() {
                         <TableCell className="!py-2" align="left">
                           <Skeleton className="h-4 w-[100px]" />
                         </TableCell>
+                        <TableCell className="!py-2" align="left">
+                          <Skeleton className="h-4 w-[100px]" />
+                        </TableCell>
+                        <TableCell className="!py-2" align="left">
+                          <Skeleton className="h-4 w-[100px]" />
+                        </TableCell>
                         <TableCell className="!py-2">
                           <div className="flex gap-2 justify-end">
                             <Skeleton className="h-7 w-7 rounded-full" />
@@ -414,26 +423,31 @@ export default function ClientsPage() {
                         </TableCell>
                       </TableRow>
                     ))
-                  ) : currentCommandes.length > 0 ? (
+                  ) : currentCommandes?.length > 0 ? (
                     currentCommandes?.map((commande) => (
                       <TableRow key={commande.id}>
                         <TableCell className="text-md">
                           {commande.createdAt.split("T")[0]}
                         </TableCell>
                         <TableCell className="text-md">
-                        {commande.produit.designation}
+                          {commande.produit.designation}
                         </TableCell>
                         <TableCell className="text-md">
                           {commande.produit.categorie}
                         </TableCell>
                         <TableCell className="text-md">
-                          {commande.produit.fournisseur?.nom.toUpperCase() || "Inconnu"}
+                        {commande.commandeClient ? commande.commandeClient.numero : ""}
+                        </TableCell>
+                        <TableCell className="text-md">
+                          {commande.produit.fournisseur?.nom.toUpperCase() ||
+                            "Inconnu"}
                         </TableCell>
                         <TableCell className="text-md">
                           {commande.quantite}
                         </TableCell>
                         <TableCell className="text-md">
-                          {(commande.prixUnite*commande.quantite).toFixed(2)} DH
+                          {(commande.prixUnite * commande.quantite).toFixed(2)}{" "}
+                          DH
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
@@ -582,7 +596,7 @@ export default function ClientsPage() {
                 </Table> */}
               </div>
             </ScrollArea>
-            {filteredCommandes.length > 0 ? (
+            {filteredCommandes?.length > 0 ? (
               <CustomPagination
                 currentPage={currentPage}
                 setCurrentPage={setCurrentPage}
