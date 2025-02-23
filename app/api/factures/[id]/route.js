@@ -10,30 +10,18 @@ export async function DELETE(_, { params }) {
   return NextResponse.json(facture);
 }
 
-// export async function GET(_, { params }) {
-//   const { id } = params;  // Use destructuring to get the id from params
+export async function PUT(_, { params }) {
+  const id = params.id;
+  try {
+    const result = await prisma.factures.update({
+      where: { id },
+      data: {
+        payer: true,
+      },
+    });
 
-//   try {
-//     const client = await prisma.employes.findUnique({
-//       where: { id },
-//     });
-
-//     // If client not found, return a 404 response
-//     if (!client) {
-//       return NextResponse.json(
-//         { message: 'Client not found' },
-//         { status: 404 }
-//       );
-//     }
-
-//     // Return the client data
-//     return NextResponse.json({ client });
-//   } catch (error) {
-//     // Log and return a 500 server error if something goes wrong
-//     console.error('Error fetching client data:', error);
-//     return NextResponse.json(
-//       { message: 'Internal server error' },
-//       { status: 500 }
-//     );
-//   }
-// }
+    return NextResponse.json({ result });
+  } catch (error) {
+    console.log(error);
+  }
+}

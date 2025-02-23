@@ -51,6 +51,10 @@ export function AddFactureForm() {
     type: z.string(),
     payer: z.boolean(),
     description: z.string().optional(),
+    date: z.preprocess(
+      (value) => Number(value),
+      z.number().int().min(1).max(28)
+    ),
   });
 
   const {
@@ -63,7 +67,7 @@ export function AddFactureForm() {
   } = useForm({
     defaultValues: {
       numero: generateDeviNumber(),
-      payer : false,
+      payer: false,
     },
     resolver: zodResolver(factureSchema),
   });
@@ -88,6 +92,7 @@ export function AddFactureForm() {
       queryClient.invalidateQueries({ queryKey: ["factures"] });
       reset();
       setValue("type", null);
+      setValue("date", null);
     },
   });
   const onSubmit = async (data) => {
@@ -98,6 +103,8 @@ export function AddFactureForm() {
     { value: "récurrente", lable: "récurrente" },
     { value: "variante", lable: "variante" },
   ];
+  const dayList = Array.from({ length: 28 }, (_, i) => i + 1);
+  console.log("dayList", dayList);
 
   return (
     <Card className="w-full grid gap-2 h-full px-2">
@@ -182,6 +189,27 @@ export function AddFactureForm() {
                   {errors.salaire.message}
                 </p>
               )}
+            </div>
+            <div className="w-full grid grid-cols-1">
+              <Label htmlFor="date" className="text-left mb-2 mb-2">
+                Date d'émission
+              </Label>
+              <Select
+                name="date"
+                onValueChange={(value) => setValue("date", value)}
+                value={watch("date")}
+              >
+                <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
+                  <SelectValue placeholder="Sélectionnez une date" />
+                </SelectTrigger>
+                <SelectContent>
+                  {dayList.map((day, index) => (
+                    <SelectItem key={index} value={day.toString()}>
+                      {day}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex items-center space-x-2">
               <Switch

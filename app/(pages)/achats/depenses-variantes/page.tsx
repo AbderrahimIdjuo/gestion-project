@@ -36,7 +36,7 @@ import {
   CircleDollarSign,
   EllipsisVertical,
 } from "lucide-react";
-import { AddFactureForm } from "@/components/add-facture-form";
+import { AddFactureVarianteForm } from "@/components/add-facture-variante-form";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import { DeleteManyConfirmation } from "@/components/delete-many-confirmation";
 import { UpdateFactureForm } from "@/components/update-facture-form";
@@ -59,7 +59,6 @@ function page() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currfacture, setCurrFacture] = useState<Facture | undefined>();
   const [currentPage, setCurrentPage] = useState(1);
-  const [type, setType] = useState<string>("récurrente");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isManyDialogOpen, setIsManyDialogOpen] = useState(false);
   const [isAddingfacture, setIsAddingfacture] = useState(false);
@@ -87,29 +86,17 @@ function page() {
     }
     setSelectedFactures(newSelected);
   };
-  const facturesRecurrentes = query.data?.filter(
-    (facture: Facture) => facture.type === "récurrente"
-  );
   const facturesVariantes = query.data?.filter(
-    (facture: Facture) => facture.type === "variante"
+    (facture: Facture) => facture.type === "variantes"
   );
+
   const toggleAll = () => {
-    if (type === "récurrente") {
-      if (selectedFactures.size === facturesRecurrentes?.length) {
-        setSelectedFactures(new Set());
-      } else {
-        setSelectedFactures(
-          new Set(facturesRecurrentes.map((facture: Facture) => facture.id))
-        );
-      }
+    if (selectedFactures.size === facturesVariantes?.length) {
+      setSelectedFactures(new Set());
     } else {
-      if (selectedFactures.size === facturesVariantes?.length) {
-        setSelectedFactures(new Set());
-      } else {
-        setSelectedFactures(
-          new Set(facturesVariantes.map((facture: Facture) => facture.id))
-        );
-      }
+      setSelectedFactures(
+        new Set(facturesVariantes.map((facture: Facture) => facture.id))
+      );
     }
   };
 
@@ -119,7 +106,7 @@ function page() {
         facture.description
           ?.toLowerCase()
           .includes(searchQuery.toLowerCase())) &&
-      facture.type === type
+      facture.type === "variante"
   );
 
   const totalPages = Math.ceil(filteredFactures?.length / itemsPerPage);
@@ -127,43 +114,7 @@ function page() {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
-  const payerFacture = useMutation({
-    mutationFn: async () => {
-      const loadingToast = toast.loading("Paiement de la facture...");
-      try {
-        const response = await axios.put(`/api/factures/${currfacture?.id}`);
-        toast.success("Paiement effecuter avec succès");
 
-        return response.data;
-      } catch (error) {
-        toast.error("Échec du paiement!");
-        throw error;
-      } finally {
-        toast.dismiss(loadingToast);
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["factures"] });
-    },
-  });
-  const handlePayeMany = useMutation({
-    mutationFn: async (selectedFactures: Set<string>) => {
-      const loadingToast = toast.loading("Paiement des factures...");
-      try {
-        await payeManyFactures(Array.from(selectedFactures));
-        toast.success("Paiement effecuter avec succès");
-        setSelectedFactures(new Set());
-      } catch (error) {
-        toast.error("Échec du paiement!");
-        throw error;
-      } finally {
-        toast.dismiss(loadingToast);
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["factures"] });
-    },
-  });
   const handleDeleteMany = useMutation({
     mutationFn: async (selectedFactures: Set<string>) => {
       const loadingToast = toast.loading("Suppression des factures...");
@@ -213,13 +164,7 @@ function page() {
       <Toaster position="top-center" />
       <div className="space-y-6">
         <div className="flex justify-start gap-2 items-center">
-          <span className="text-3xl font-bold">Dépenses </span>
-          <ChevronRight className="h-8 w-8" />
-          <span className="text-3xl font-bold">
-            {type === "récurrente"
-              ? "Factures récurrentes "
-              : "Factures variantes"}
-          </span>
+          <span className="text-3xl font-bold">Dépenses variantes </span>
         </div>
 
         <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-6 ">
@@ -233,58 +178,34 @@ function page() {
               spellCheck={false}
             />
           </div>
-          <div className="grid grid-cols-3 gap-3">
-            <Button
-              onClick={() => {
-                setType("récurrente");
-                console.log("type", type);
-              }}
-              variant="outline"
-              className="border-purple-500 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900 rounded-full"
-            >
-              <ScrollTextIcon className="mr-2 h-4 w-4" />
-              Factures récurrentes
-            </Button>
-            <Button
-              onClick={() => {
-                setType("variante");
-                console.log("type", type);
-                setSelectedFactures(new Set());
-              }}
-              variant="outline"
-              className="border-purple-500 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900 rounded-full"
-            >
-              <FileChartLine className="mr-2 h-4 w-4" />
-              Factures variantes
-            </Button>
-            <Button
-              onClick={() => {
-                setIsAddingfacture(!isAddingfacture);
-                if (isUpdatingfacture) {
-                  setIsUpdatingfacture(false);
-                  setIsAddingfacture(false);
-                }
-                setSelectedFactures(new Set());
-              }}
-              className={`${
-                isAddingfacture || isUpdatingfacture
-                  ? "bg-red-500 hover:bg-red-600"
-                  : "bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 "
-              } text-white font-semibold transition-all duration-300 transform hover:scale-105 rounded-full`}
-            >
-              {isAddingfacture || isUpdatingfacture ? (
-                <>
-                  <X className="mr-2 h-4 w-4" />
-                  Annuler
-                </>
-              ) : (
-                <>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Ajouter une facture
-                </>
-              )}
-            </Button>
-          </div>
+
+          <Button
+            onClick={() => {
+              setIsAddingfacture(!isAddingfacture);
+              if (isUpdatingfacture) {
+                setIsUpdatingfacture(false);
+                setIsAddingfacture(false);
+              }
+              setSelectedFactures(new Set());
+            }}
+            className={`${
+              isAddingfacture || isUpdatingfacture
+                ? "bg-red-500 hover:bg-red-600"
+                : "bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 "
+            } text-white font-semibold transition-all duration-300 transform hover:scale-105 rounded-full`}
+          >
+            {isAddingfacture || isUpdatingfacture ? (
+              <>
+                <X className="mr-2 h-4 w-4" />
+                Annuler
+              </>
+            ) : (
+              <>
+                <Plus className="mr-2 h-4 w-4" />
+                Ajouter une facture
+              </>
+            )}
+          </Button>
         </div>
 
         <div
@@ -305,23 +226,12 @@ function page() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[50px]">
-                      {type === "récurrente" && (
-                        <Checkbox
-                          checked={
-                            selectedFactures.size ===
-                            facturesRecurrentes?.length
-                          }
-                          onCheckedChange={toggleAll}
-                        />
-                      )}
-                      {type === "variante" && (
-                        <Checkbox
-                          checked={
-                            selectedFactures.size === facturesVariantes?.length
-                          }
-                          onCheckedChange={toggleAll}
-                        />
-                      )}
+                      <Checkbox
+                        checked={
+                          selectedFactures.size === facturesVariantes?.length
+                        }
+                        onCheckedChange={toggleAll}
+                      />
                     </TableHead>
                     <TableHead>Label</TableHead>
                     <TableHead>Montant</TableHead>
@@ -346,13 +256,6 @@ function page() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => {
-                                handlePayeMany.mutate(selectedFactures);
-                              }}
-                            >
-                              Payer les factures sélectionnées.
-                            </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => {
                                 setIsManyDialogOpen(true);
@@ -446,41 +349,6 @@ function page() {
                                 }}
                               >
                                 <Pen className="h-4 w-4" />
-                              </Button>
-                            </CustomTooltip>
-                            <CustomTooltip message="payer">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 rounded-full hover:bg-green-100 hover:text-green-600"
-                                onClick={() => {
-                                  setCurrFacture(facture);
-                                  if (facture.payer === false) {
-                                    payerFacture.mutate();
-                                  } else {
-                                    toast.custom((t) => (
-                                      <div
-                                        className={`${
-                                          t.visible
-                                            ? "animate-enter"
-                                            : "animate-leave"
-                                        } max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}
-                                      >
-                                        <div className="p-4 ml-3 flex-1">
-                                          <p className="mt-1 text-md text-gray-500">
-                                            La facture :{" "}
-                                            <span className=" font-semibold text-gray-900">
-                                              {facture.numero}{" "}
-                                            </span>
-                                            est déja payer
-                                          </p>
-                                        </div>
-                                      </div>
-                                    ));
-                                  }
-                                }}
-                              >
-                                <CircleDollarSign className="h-4 w-4" />
                               </Button>
                             </CustomTooltip>
                             <CustomTooltip message="Supprimer">
@@ -594,41 +462,6 @@ function page() {
                                   <Pen className="h-4 w-4" />
                                 </Button>
                               </CustomTooltip>
-                              <CustomTooltip message="payer">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 rounded-full hover:bg-green-100 hover:text-green-600"
-                                  onClick={() => {
-                                    setCurrFacture(facture);
-                                    if (facture.payer === false) {
-                                      payerFacture.mutate();
-                                    } else {
-                                      toast.custom((t) => (
-                                        <div
-                                          className={`${
-                                            t.visible
-                                              ? "animate-enter"
-                                              : "animate-leave"
-                                          } max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}
-                                        >
-                                          <div className="p-4 ml-3 flex-1">
-                                            <p className="mt-1 text-md text-gray-500">
-                                              La facture :{" "}
-                                              <span className=" font-semibold text-gray-900">
-                                                {facture.numero}{" "}
-                                              </span>
-                                              est déja payer
-                                            </p>
-                                          </div>
-                                        </div>
-                                      ));
-                                    }
-                                  }}
-                                >
-                                  <CircleDollarSign className="h-4 w-4" />
-                                </Button>
-                              </CustomTooltip>
                               <CustomTooltip message="Supprimer">
                                 <Button
                                   name="delete btn"
@@ -680,7 +513,7 @@ function page() {
           </div>
           <div className={`${!isAddingfacture && "hidden"} `}>
             <ScrollArea className="w-full h-[75vh]">
-              {isAddingfacture && <AddFactureForm />}
+              {isAddingfacture && <AddFactureVarianteForm />}
             </ScrollArea>
           </div>
         </div>

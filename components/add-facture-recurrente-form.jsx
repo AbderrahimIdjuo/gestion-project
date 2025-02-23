@@ -19,6 +19,7 @@ import { CircleX } from "lucide-react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { customAlphabet } from "nanoid";
 
 import {
   Select,
@@ -29,9 +30,15 @@ import {
 } from "@/components/ui/select";
 import axios from "axios";
 
-export function UpdateFactureForm({ currFacture, setIsUpdatingfacture }) {
+const generateDeviNumber = () => {
+  const digits = "1234567890";
+  const nanoidCustom = customAlphabet(digits, 8);
+  const customId = nanoidCustom();
+  return `FACT-${customId}`;
+};
+
+export function AddFactureForm() {
   const factureSchema = z.object({
-    id: z.string(),
     numero: z.string(),
     lable: z.string().min(1, "Veuillez insérer un label de l'employé"),
     montant: z.preprocess(
@@ -44,8 +51,11 @@ export function UpdateFactureForm({ currFacture, setIsUpdatingfacture }) {
     type: z.string(),
     payer: z.boolean(),
     description: z.string().optional(),
+    date: z.preprocess(
+      (value) => Number(value),
+      z.number().int().min(1).max(28)
+    ),
   });
-  console.log("currFacture", currFacture);
 
   const {
     register,
@@ -56,28 +66,24 @@ export function UpdateFactureForm({ currFacture, setIsUpdatingfacture }) {
     formState: { errors, isSubmitting },
   } = useForm({
     defaultValues: {
-      id: currFacture.id,
-      numero: currFacture.numero,
-      lable: currFacture.lable,
-      type: currFacture.type,
-      payer: currFacture.payer,
-      description: currFacture.description,
-      montant: currFacture.montant,
+      numero: generateDeviNumber(),
+      payer: false,
+      type: "récurrente",
     },
     resolver: zodResolver(factureSchema),
   });
 
   const queryClient = useQueryClient();
-  const updateFacture = useMutation({
+  const createNewFacture = useMutation({
     mutationFn: async (data) => {
-      const loadingToast = toast.loading("Modification de la facture...");
+      const loadingToast = toast.loading("Ajout de la facture...");
       try {
-        const response = await axios.put("/api/factures", data);
-        toast.success("facture modifier avec succès");
+        const response = await axios.post("/api/factures", data);
+        toast.success("facture ajouté avec succès");
 
         return response.data;
       } catch (error) {
-        toast.error("Échec de la modification de la facture");
+        toast.error("Échec de l'ajout de la facture");
         throw error;
       } finally {
         toast.dismiss(loadingToast);
@@ -85,18 +91,20 @@ export function UpdateFactureForm({ currFacture, setIsUpdatingfacture }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["factures"] });
-      setIsUpdatingfacture(false);
+      reset();
+      setValue("type", null);
+      setValue("date", null);
     },
   });
   const onSubmit = async (data) => {
-    console.log("Data : ", data);
-
-    updateFacture.mutate(data);
+    createNewFacture.mutate(data);
   };
 
-  const types = [
-    { value: "récurrente", lable: "récurrente" },
-    { value: "variante", lable: "variante" },
+  const dayList = Array.from({ length: 28 }, (_, i) => i + 1);
+
+  const comptes = [
+    { lable: "CIH Bank", value: "cih" },
+    { lable: "Caisse", value: "caisse" },
   ];
 
   return (
@@ -104,7 +112,7 @@ export function UpdateFactureForm({ currFacture, setIsUpdatingfacture }) {
       <CardHeader className="flex-col justify-start">
         <CardTitle className="my-3">Ajouter une nouvelle facture</CardTitle>
         <CardDescription className="my-5">
-          Remplissez les informations du nouvelle facture ici. Cliquez sur
+          Remplissez les informations de la nouvelle facture ici. Cliquez sur
           enregistrer lorsque vous avez terminé.
         </CardDescription>
         <Separator className=" mb-5 w-[95%]" />
@@ -138,27 +146,6 @@ export function UpdateFactureForm({ currFacture, setIsUpdatingfacture }) {
                 )}
               </div>
             </div>
-            <div className="w-full grid grid-cols-1">
-              <Label htmlFor="type" className="text-left mb-2 mb-2">
-                Type
-              </Label>
-              <Select
-                name="type"
-                onValueChange={(value) => setValue("type", value)}
-                value={watch("type")}
-              >
-                <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
-                  <SelectValue placeholder="Sélectionnez un type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {types.map((type, index) => (
-                    <SelectItem key={index} value={type.value}>
-                      {type.lable}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
             <div className="relative w-full grid grid-cols-1">
               <Label htmlFor="montant" className="text-left mb-2 mb-2">
                 Montant
@@ -176,12 +163,33 @@ export function UpdateFactureForm({ currFacture, setIsUpdatingfacture }) {
                   <span className="text-sm text-gray-600">MAD</span>
                 </div>
               </div>
-              {errors.salaire && (
+              {errors.montant && (
                 <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
                   <CircleX className="h-4 w-4" />
-                  {errors.salaire.message}
+                  {errors.montant.message}
                 </p>
               )}
+            </div>
+            <div className="w-full grid grid-cols-1">
+              <Label htmlFor="date" className="text-left mb-2 mb-2">
+                Date d'émission
+              </Label>
+              <Select
+                name="date"
+                onValueChange={(value) => setValue("date", value)}
+                value={watch("date")}
+              >
+                <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
+                  <SelectValue placeholder="Sélectionnez ..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {dayList.map((day, index) => (
+                    <SelectItem key={index} value={day.toString()}>
+                      {day}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex items-center space-x-2">
               <Switch
@@ -196,6 +204,29 @@ export function UpdateFactureForm({ currFacture, setIsUpdatingfacture }) {
                 {watch("payer") ? "Payer" : "Non payer"}
               </Label>
             </div>
+            {watch("payer") && (
+              <div className="w-full grid grid-cols-1">
+                <Label htmlFor="compte" className="text-left mb-2 mb-2">
+                  Compte bancaire
+                </Label>
+                <Select
+                  name="compte"
+                  onValueChange={(value) => setValue("compte", value)}
+                  value={watch("compte")}
+                >
+                  <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
+                    <SelectValue placeholder="Sélectionnez ..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {comptes.map((compte, index) => (
+                      <SelectItem key={index} value={compte.value}>
+                        {compte.lable}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="relative w-full grid grid-cols-1">
               <Label htmlFor="description" className="text-left mb-2 mb-2">
                 Description
@@ -207,6 +238,7 @@ export function UpdateFactureForm({ currFacture, setIsUpdatingfacture }) {
             </div>
             <SaveButton
               onClick={() => {
+                console.log(watch());
                 console.log(factureSchema.parse(watch()));
               }}
               disabled={isSubmitting}

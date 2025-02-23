@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/select";
 import axios from "axios";
 
-export function UpdateFactureForm({ currFacture, setIsUpdatingfacture }) {
+export function UpdateFactureRecurrenteForm({ currFacture, setIsUpdatingfacture }) {
   const factureSchema = z.object({
     id: z.string(),
     numero: z.string(),
@@ -94,17 +94,17 @@ export function UpdateFactureForm({ currFacture, setIsUpdatingfacture }) {
     updateFacture.mutate(data);
   };
 
-  const types = [
-    { value: "récurrente", lable: "récurrente" },
-    { value: "variante", lable: "variante" },
+  const comptes = [
+    { lable: "CIH Bank", value: "cih" },
+    { lable: "Caisse", value: "caisse" },
   ];
 
   return (
     <Card className="w-full grid gap-2 h-full px-2">
       <CardHeader className="flex-col justify-start">
-        <CardTitle className="my-3">Ajouter une nouvelle facture</CardTitle>
+        <CardTitle className="my-3">Modifier la facture</CardTitle>
         <CardDescription className="my-5">
-          Remplissez les informations du nouvelle facture ici. Cliquez sur
+          Modifier les informations de la facture ici. Cliquez sur
           enregistrer lorsque vous avez terminé.
         </CardDescription>
         <Separator className=" mb-5 w-[95%]" />
@@ -138,27 +138,6 @@ export function UpdateFactureForm({ currFacture, setIsUpdatingfacture }) {
                 )}
               </div>
             </div>
-            <div className="w-full grid grid-cols-1">
-              <Label htmlFor="type" className="text-left mb-2 mb-2">
-                Type
-              </Label>
-              <Select
-                name="type"
-                onValueChange={(value) => setValue("type", value)}
-                value={watch("type")}
-              >
-                <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
-                  <SelectValue placeholder="Sélectionnez un type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {types.map((type, index) => (
-                    <SelectItem key={index} value={type.value}>
-                      {type.lable}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
             <div className="relative w-full grid grid-cols-1">
               <Label htmlFor="montant" className="text-left mb-2 mb-2">
                 Montant
@@ -176,10 +155,10 @@ export function UpdateFactureForm({ currFacture, setIsUpdatingfacture }) {
                   <span className="text-sm text-gray-600">MAD</span>
                 </div>
               </div>
-              {errors.salaire && (
+              {errors.montant && (
                 <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
                   <CircleX className="h-4 w-4" />
-                  {errors.salaire.message}
+                  {errors.montant.message}
                 </p>
               )}
             </div>
@@ -196,6 +175,29 @@ export function UpdateFactureForm({ currFacture, setIsUpdatingfacture }) {
                 {watch("payer") ? "Payer" : "Non payer"}
               </Label>
             </div>
+            {watch("payer") && (
+              <div className="w-full grid grid-cols-1">
+                <Label htmlFor="compte" className="text-left mb-2 mb-2">
+                  Compte bancaire
+                </Label>
+                <Select
+                  name="compte"
+                  onValueChange={(value) => setValue("compte", value)}
+                  value={watch("compte")}
+                >
+                  <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
+                    <SelectValue placeholder="Sélectionnez ..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {comptes.map((compte, index) => (
+                      <SelectItem key={index} value={compte.value}>
+                        {compte.lable}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="relative w-full grid grid-cols-1">
               <Label htmlFor="description" className="text-left mb-2 mb-2">
                 Description

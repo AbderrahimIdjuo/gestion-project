@@ -30,16 +30,14 @@ import {
   X,
   Pen,
   Trash2,
-  ScrollTextIcon,
-  FileChartLine,
-  ChevronRight,
   CircleDollarSign,
   EllipsisVertical,
 } from "lucide-react";
-import { AddFactureForm } from "@/components/add-facture-form";
+import { AddFactureForm } from "@/components/add-facture-recurrente-form";
+import { PaymentDialog } from "@/components/select-bank-account";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import { DeleteManyConfirmation } from "@/components/delete-many-confirmation";
-import { UpdateFactureForm } from "@/components/update-facture-form";
+import { UpdateFactureRecurrenteForm } from "@/components/update-facture-recurrente-form";
 import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -56,12 +54,13 @@ type Facture = {
   description: string;
 };
 function page() {
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [currfacture, setCurrFacture] = useState<Facture | undefined>();
   const [currentPage, setCurrentPage] = useState(1);
-  const [type, setType] = useState<string>("récurrente");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isManyDialogOpen, setIsManyDialogOpen] = useState(false);
+  const [isBankDialogOpen, setIsBankDialogOpen] = useState(false);
   const [isAddingfacture, setIsAddingfacture] = useState(false);
   const [isUpdatingfacture, setIsUpdatingfacture] = useState(false);
   const itemsPerPage = 10;
@@ -90,26 +89,14 @@ function page() {
   const facturesRecurrentes = query.data?.filter(
     (facture: Facture) => facture.type === "récurrente"
   );
-  const facturesVariantes = query.data?.filter(
-    (facture: Facture) => facture.type === "variante"
-  );
+
   const toggleAll = () => {
-    if (type === "récurrente") {
-      if (selectedFactures.size === facturesRecurrentes?.length) {
-        setSelectedFactures(new Set());
-      } else {
-        setSelectedFactures(
-          new Set(facturesRecurrentes.map((facture: Facture) => facture.id))
-        );
-      }
+    if (selectedFactures.size === facturesRecurrentes?.length) {
+      setSelectedFactures(new Set());
     } else {
-      if (selectedFactures.size === facturesVariantes?.length) {
-        setSelectedFactures(new Set());
-      } else {
-        setSelectedFactures(
-          new Set(facturesVariantes.map((facture: Facture) => facture.id))
-        );
-      }
+      setSelectedFactures(
+        new Set(facturesRecurrentes.map((facture: Facture) => facture.id))
+      );
     }
   };
 
@@ -119,7 +106,7 @@ function page() {
         facture.description
           ?.toLowerCase()
           .includes(searchQuery.toLowerCase())) &&
-      facture.type === type
+      facture.type === "récurrente"
   );
 
   const totalPages = Math.ceil(filteredFactures?.length / itemsPerPage);
@@ -208,18 +195,36 @@ function page() {
       queryClient.invalidateQueries({ queryKey: ["factures"] });
     },
   });
+  const payerFactureUnique = () => {
+    if (currfacture?.payer === false) {
+      payerFacture.mutate();
+    } else {
+      toast.custom((t) => (
+        <div
+          className={`${
+            t.visible ? "animate-enter" : "animate-leave"
+          } max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}
+        >
+          <div className="p-4 ml-3 flex-1">
+            <p className="mt-1 text-md text-gray-500">
+              La facture :{" "}
+              <span className=" font-semibold text-gray-900">
+                {currfacture?.numero}{" "}
+              </span>
+              est déja payer
+            </p>
+          </div>
+        </div>
+      ));
+    }
+  };
+
   return (
     <>
       <Toaster position="top-center" />
       <div className="space-y-6">
         <div className="flex justify-start gap-2 items-center">
-          <span className="text-3xl font-bold">Dépenses </span>
-          <ChevronRight className="h-8 w-8" />
-          <span className="text-3xl font-bold">
-            {type === "récurrente"
-              ? "Factures récurrentes "
-              : "Factures variantes"}
-          </span>
+          <span className="text-3xl font-bold">Dépenses récurrentes </span>
         </div>
 
         <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-6 ">
@@ -233,58 +238,34 @@ function page() {
               spellCheck={false}
             />
           </div>
-          <div className="grid grid-cols-3 gap-3">
-            <Button
-              onClick={() => {
-                setType("récurrente");
-                console.log("type", type);
-              }}
-              variant="outline"
-              className="border-purple-500 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900 rounded-full"
-            >
-              <ScrollTextIcon className="mr-2 h-4 w-4" />
-              Factures récurrentes
-            </Button>
-            <Button
-              onClick={() => {
-                setType("variante");
-                console.log("type", type);
-                setSelectedFactures(new Set());
-              }}
-              variant="outline"
-              className="border-purple-500 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900 rounded-full"
-            >
-              <FileChartLine className="mr-2 h-4 w-4" />
-              Factures variantes
-            </Button>
-            <Button
-              onClick={() => {
-                setIsAddingfacture(!isAddingfacture);
-                if (isUpdatingfacture) {
-                  setIsUpdatingfacture(false);
-                  setIsAddingfacture(false);
-                }
-                setSelectedFactures(new Set());
-              }}
-              className={`${
-                isAddingfacture || isUpdatingfacture
-                  ? "bg-red-500 hover:bg-red-600"
-                  : "bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 "
-              } text-white font-semibold transition-all duration-300 transform hover:scale-105 rounded-full`}
-            >
-              {isAddingfacture || isUpdatingfacture ? (
-                <>
-                  <X className="mr-2 h-4 w-4" />
-                  Annuler
-                </>
-              ) : (
-                <>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Ajouter une facture
-                </>
-              )}
-            </Button>
-          </div>
+
+          <Button
+            onClick={() => {
+              setIsAddingfacture(!isAddingfacture);
+              if (isUpdatingfacture) {
+                setIsUpdatingfacture(false);
+                setIsAddingfacture(false);
+              }
+              setSelectedFactures(new Set());
+            }}
+            className={`${
+              isAddingfacture || isUpdatingfacture
+                ? "bg-red-500 hover:bg-red-600"
+                : "bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 "
+            } text-white font-semibold transition-all duration-300 transform hover:scale-105 rounded-full`}
+          >
+            {isAddingfacture || isUpdatingfacture ? (
+              <>
+                <X className="mr-2 h-4 w-4" />
+                Annuler
+              </>
+            ) : (
+              <>
+                <Plus className="mr-2 h-4 w-4" />
+                Ajouter une facture
+              </>
+            )}
+          </Button>
         </div>
 
         <div
@@ -305,7 +286,7 @@ function page() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[50px]">
-                      {type === "récurrente" && (
+                      {currentFactures?.length > 0 && (
                         <Checkbox
                           checked={
                             selectedFactures.size ===
@@ -314,25 +295,22 @@ function page() {
                           onCheckedChange={toggleAll}
                         />
                       )}
-                      {type === "variante" && (
-                        <Checkbox
-                          checked={
-                            selectedFactures.size === facturesVariantes?.length
-                          }
-                          onCheckedChange={toggleAll}
-                        />
-                      )}
                     </TableHead>
+                    <TableHead>Numéro</TableHead>
                     <TableHead>Label</TableHead>
                     <TableHead>Montant</TableHead>
-                    <TableHead>Statut de Paiement</TableHead>
+                    <TableHead>État</TableHead>
                     <TableHead>Description</TableHead>
                     <TableHead className="text-right">
                       <div className="flex gap-2 items-center justify-end">
                         Actions
-                        <DropdownMenu>
+                        <DropdownMenu
+                          open={dropdownOpen}
+                          onOpenChange={setDropdownOpen}
+                        >
                           <DropdownMenuTrigger asChild>
                             <Button
+                              onClick={() => setDropdownOpen((prev) => !prev)}
                               size="icon"
                               variant="ghost"
                               className="focus:!ring-0 focus:!ring-offset-0"
@@ -348,15 +326,18 @@ function page() {
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               onClick={() => {
-                                handlePayeMany.mutate(selectedFactures);
+                                setDropdownOpen(false);
+
+                                // handlePayeMany.mutate(selectedFactures);
+                                setIsBankDialogOpen(true);
                               }}
                             >
                               Payer les factures sélectionnées.
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => {
+                                setDropdownOpen(false);
                                 setIsManyDialogOpen(true);
-                                console.log("delete factures");
                               }}
                             >
                               Supprimer les factures sélectionnées.
@@ -391,6 +372,9 @@ function page() {
                         <TableCell className="!py-2" align="left">
                           <Skeleton className="h-4 w-[150px]" />
                         </TableCell>
+                        <TableCell className="!py-2" align="left">
+                          <Skeleton className="h-4 w-[150px]" />
+                        </TableCell>
                         <TableCell className="!py-2">
                           <div className="flex gap-2 justify-end">
                             <Skeleton className="h-7 w-7 rounded-full" />
@@ -410,6 +394,9 @@ function page() {
                               toggleFacture(facture.id);
                             }}
                           />
+                        </TableCell>
+                        <TableCell className="text-md">
+                          {facture.numero}
                         </TableCell>
                         <TableCell className="text-md">
                           {facture.lable}
@@ -454,30 +441,8 @@ function page() {
                                 size="icon"
                                 className="h-8 w-8 rounded-full hover:bg-green-100 hover:text-green-600"
                                 onClick={() => {
+                                  setIsBankDialogOpen(true);
                                   setCurrFacture(facture);
-                                  if (facture.payer === false) {
-                                    payerFacture.mutate();
-                                  } else {
-                                    toast.custom((t) => (
-                                      <div
-                                        className={`${
-                                          t.visible
-                                            ? "animate-enter"
-                                            : "animate-leave"
-                                        } max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}
-                                      >
-                                        <div className="p-4 ml-3 flex-1">
-                                          <p className="mt-1 text-md text-gray-500">
-                                            La facture :{" "}
-                                            <span className=" font-semibold text-gray-900">
-                                              {facture.numero}{" "}
-                                            </span>
-                                            est déja payer
-                                          </p>
-                                        </div>
-                                      </div>
-                                    ));
-                                  }
                                 }}
                               >
                                 <CircleDollarSign className="h-4 w-4" />
@@ -503,8 +468,8 @@ function page() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={5} align="center">
-                        Aucun facture trouvé
+                      <TableCell colSpan={7} align="center">
+                        Aucune facture trouvé
                       </TableCell>
                     </TableRow>
                   )}
@@ -524,7 +489,7 @@ function page() {
                     <TableRow>
                       <TableHead>Facture</TableHead>
                       <TableHead>Montant</TableHead>
-                      <TableHead>Statut de paiement</TableHead>
+                      <TableHead>État</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -600,30 +565,8 @@ function page() {
                                   size="icon"
                                   className="h-8 w-8 rounded-full hover:bg-green-100 hover:text-green-600"
                                   onClick={() => {
+                                    setIsBankDialogOpen(true);
                                     setCurrFacture(facture);
-                                    if (facture.payer === false) {
-                                      payerFacture.mutate();
-                                    } else {
-                                      toast.custom((t) => (
-                                        <div
-                                          className={`${
-                                            t.visible
-                                              ? "animate-enter"
-                                              : "animate-leave"
-                                          } max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}
-                                        >
-                                          <div className="p-4 ml-3 flex-1">
-                                            <p className="mt-1 text-md text-gray-500">
-                                              La facture :{" "}
-                                              <span className=" font-semibold text-gray-900">
-                                                {facture.numero}{" "}
-                                              </span>
-                                              est déja payer
-                                            </p>
-                                          </div>
-                                        </div>
-                                      ));
-                                    }
                                   }}
                                 >
                                   <CircleDollarSign className="h-4 w-4" />
@@ -649,8 +592,8 @@ function page() {
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={2} align="center">
-                          Aucun facture trouvé
+                        <TableCell colSpan={4} align="center">
+                          Aucune facture trouvé
                         </TableCell>
                       </TableRow>
                     )}
@@ -671,7 +614,7 @@ function page() {
           <div className={`${!isUpdatingfacture && "hidden"} `}>
             <ScrollArea className="w-full h-[75vh]">
               {isUpdatingfacture && (
-                <UpdateFactureForm
+                <UpdateFactureRecurrenteForm
                   currFacture={currfacture}
                   setIsUpdatingfacture={setIsUpdatingfacture}
                 />
@@ -693,15 +636,27 @@ function page() {
           deleteFacture.mutate();
           setIsDialogOpen(false);
         }}
-      ></DeleteConfirmationDialog>
+      />
       <DeleteManyConfirmation
         isOpen={isManyDialogOpen}
-        onClose={() => setIsManyDialogOpen(false)}
+        onClose={() => {
+          setIsManyDialogOpen(false);
+        }}
         onConfirm={() => {
           handleDeleteMany.mutate(selectedFactures);
           setIsManyDialogOpen(false);
         }}
-      ></DeleteManyConfirmation>
+      />
+      <PaymentDialog
+        isOpen={isBankDialogOpen}
+        onClose={() => setIsBankDialogOpen(false)}
+        onConfirm={() => {
+          if (selectedFactures.size > 0) {
+            handlePayeMany.mutate(selectedFactures);
+          } else payerFactureUnique();
+          setIsManyDialogOpen(false);
+        }}
+      />
     </>
   );
 }

@@ -42,6 +42,7 @@ import axios from "axios";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CircleX } from "lucide-react";
+import { useQuery} from "@tanstack/react-query";
 
 export function ProductFormDialog({ getProducts }) {
   const productSchema = z.object({
@@ -96,6 +97,7 @@ export function ProductFormDialog({ getProducts }) {
   });
   const [open, setOpen] = useState(false);
   const [fournisseurList, setFournisseurList] = useState([]);
+  const [categories, setCategories] = useState();
 
   const getFournisseurs = async () => {
     const result = await axios.get("/api/fournisseurs");
@@ -103,6 +105,16 @@ export function ProductFormDialog({ getProducts }) {
     console.log(Fournisseurs);
     setFournisseurList(Fournisseurs);
   };
+  const getCategories = async () => {
+    const response = await axios.get("/api/categoriesProduits");
+    const categories = response.data.categories;
+    console.log("categories : ", categories);
+    return categories
+  };
+  const query = useQuery({
+    queryKey: ["categories"],
+    queryFn: getCategories,
+  });
   useEffect(() => {
     getFournisseurs();
   }, []);
@@ -140,14 +152,6 @@ export function ProductFormDialog({ getProducts }) {
       setValue("statut", "En rupture");
     }
   };
-
-  const categories = [
-    { value: "Électronique", lable: "Électronique" },
-    { value: "Vêtements", lable: "Vêtements" },
-    { value: "Alimentation", lable: "Alimentation" },
-    { value: "Bureautique", lable: "Bureautique" },
-  ];
-
 
   return (
     <Card className="w-full grid gap-2 h-full px-2">
@@ -199,7 +203,7 @@ export function ProductFormDialog({ getProducts }) {
                   >
                     {watch("fournisseur")
                       ? watch("fournisseur").nom.toUpperCase()
-                      : "Sélectioner un fournisseur..."}
+                      : "Sélectionner ..."}
                     <ChevronDown className="opacity-50" />
                   </Button>
                 </PopoverTrigger>
@@ -243,12 +247,12 @@ export function ProductFormDialog({ getProducts }) {
                 value={watch("categorie")}
               >
                 <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
-                  <SelectValue placeholder="Sélectionnez une catégorie" />
+                  <SelectValue placeholder="Sélectionner ..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.map((categorie, index) => (
-                    <SelectItem key={index} value={categorie.value}>
-                      {categorie.lable}
+                  {query.data?.map((element) => (
+                    <SelectItem key={element.id} value={element.categorie}>
+                      {element.categorie}
                     </SelectItem>
                   ))}
                 </SelectContent>

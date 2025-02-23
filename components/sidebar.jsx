@@ -11,7 +11,8 @@ import {
   ShoppingCart,
   ChevronDown,
   ChevronRight,
-  ContactRound
+  ContactRound,
+  Settings
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -53,11 +54,26 @@ const menuItems = [
       },
       { label: "Commandes", href: "/achats/commandes" },
       { label: "Dépenses", href: "/achats/depenses" },
-      // {
-      //   label: "Factures",
-      //   href: "/achats/factures",
-      // },
-      // { label: "Crédit fournisseurs", href: "/achats/credit-fournisseurs" },
+      { label: "Dépenses récurrentes", href: "/achats/depenses-recurrentes" },
+      { label: "Dépenses variantes", href: "/achats/depenses-variantes" },
+    ],
+  },
+  {
+    icon: Settings,
+    label: "Paramètres",
+    href: "/parametres",
+    subItems: [
+      {
+        label: "Info de l'entreprise",
+        href: "/parametres/infoEntreprise",
+      },
+      {
+        label: "Catégories des produits",
+        href: "/parametres/categories",
+      },
+      { label: "Banques", href: "/parametres/banques" },
+      { label: "Modes de paiement", href: "/parametres/modesPaiement" },
+      { label: "Type de tâches", href: "/parametres/typeTaches" },
     ],
   },
 ];
@@ -109,7 +125,7 @@ export function Sidebar() {
                     "flex items-center px-3 py-2 rounded-xl transition-all duration-300 ease-in-out cursor-pointer",
                     isMenuActive
                       ? "bg-purple-100 text-purple-600"
-                      : "text-muted-foreground hover:bg-muted"
+                      : "text-slate-500 hover:bg-slate-100"
                   )}
                   onClick={() => {
                     if (item.subItems) {
@@ -149,7 +165,6 @@ export function Sidebar() {
                         isExpanded ? "opacity-100" : "opacity-0"
                       }`}
                     >
-                      
                       {isOpen ? (
                         <ChevronDown
                           className={cn(
@@ -185,7 +200,7 @@ export function Sidebar() {
                               "block px-3 py-2 rounded-xl transition-colors flex-grow",
                               isSubItemActive
                                 ? "bg-purple-100 text-purple-600"
-                                : "text-muted-foreground hover:bg-muted"
+                                : "text-slate-500 hover:bg-slate-100"
                             )}
                           >
                             {subItem.label}
