@@ -53,7 +53,7 @@ type Facture = {
   payer: boolean;
   description: string;
 };
-function page() {
+function Page() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [currfacture, setCurrFacture] = useState<Facture | undefined>();
@@ -661,4 +661,4 @@ function page() {
   );
 }
 
-export default page;
+export default Page;

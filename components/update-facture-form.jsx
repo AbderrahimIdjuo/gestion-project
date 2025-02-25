@@ -49,7 +49,6 @@ export function UpdateFactureForm({ currFacture, setIsUpdatingfacture }) {
 
   const {
     register,
-    reset,
     watch,
     setValue,
     handleSubmit,

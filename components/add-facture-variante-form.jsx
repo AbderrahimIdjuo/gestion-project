@@ -93,8 +93,6 @@ export function AddFactureVarianteForm() {
     createNewFacture.mutate(data);
   };
 
-  const dayList = Array.from({ length: 28 }, (_, i) => i + 1);
-
   const comptes = [
     { lable: "CIH Bank", value: "cih" },
     { lable: "Caisse", value: "caisse" },

@@ -43,8 +43,11 @@ export function AddEmployeForm() {
     ),
     role: z.string().optional(),
     adresse: z.string().optional(),
-    rib: z.string().length(24, "Le RIB contient 24 chiffres").nullable().or(z.literal(""))
-
+    rib: z
+      .string()
+      .length(24, "Le RIB contient 24 chiffres")
+      .nullable()
+      .or(z.literal("")),
   });
 
   const {
@@ -57,7 +60,16 @@ export function AddEmployeForm() {
   } = useForm({
     resolver: zodResolver(employeSchema),
   });
-
+  const getTachesEmploye = async () => {
+    const response = await axios.get("/api/typeTaches");
+    const taches = response.data.taches;
+    console.log("taches : ", taches);
+    return taches;
+  };
+  const query = useQuery({
+    queryKey: ["taches"],
+    queryFn: getTachesEmploye,
+  });
   const queryClient = useQueryClient();
   const createNewEmploye = useMutation({
     mutationFn: async (data) => {
@@ -84,12 +96,7 @@ export function AddEmployeForm() {
     createNewEmploye.mutate(data);
   };
 
-  const roles = [
-    { value: "commerçant", lable: "Commerçant" },
-    { value: "charpentier", lable: "Charpentier" },
-    { value: "Secrétaire", lable: "Secrétaire" },
-    { value: "Sécurité", lable: "Sécurité" },
-  ];
+
 
   return (
     <Card className="w-full grid gap-2 h-full px-2">
@@ -187,7 +194,7 @@ export function AddEmployeForm() {
             </div>
             <div className="w-full grid grid-cols-1">
               <Label htmlFor="role" className="text-left mb-2 mb-2">
-                Rôle
+                Tâche
               </Label>
               <Select
                 name="role"
@@ -195,12 +202,12 @@ export function AddEmployeForm() {
                 value={watch("role")}
               >
                 <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
-                  <SelectValue placeholder="Sélectionnez un rôle" />
+                  <SelectValue placeholder="Sélectionner ..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {roles.map((role, index) => (
-                    <SelectItem key={index} value={role.value}>
-                      {role.lable}
+                  {query.data?.map((element) => (
+                    <SelectItem key={element.id} value={element.tache}>
+                      {element.tache}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -242,12 +249,12 @@ export function AddEmployeForm() {
                 }`}
                 spellCheck={false}
               />
-                {errors.rib && (
-                  <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
-                    <CircleX className="h-4 w-4" />
-                    {errors.rib.message}
-                  </p>
-                )}
+              {errors.rib && (
+                <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
+                  <CircleX className="h-4 w-4" />
+                  {errors.rib.message}
+                </p>
+              )}
             </div>
             <SaveButton
               onClick={() => {

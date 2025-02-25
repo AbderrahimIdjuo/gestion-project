@@ -91,3 +91,14 @@ export async function deleteModePaiementProduits(id) {
   });
   return result;
 }
+
+export async function addInfoEntreprise(info) {
+  const { nom, telephone, mobile, email, adresse, slogan } = info;
+
+  const result = await prisma.infoEntreprise.upsert({
+    where: { id: 1 },
+    update: { nom, telephone, mobile, email, adresse, slogan },
+    create: { id: 1, nom, telephone, mobile, email, adresse, slogan },
+  });
+  return result;
+}

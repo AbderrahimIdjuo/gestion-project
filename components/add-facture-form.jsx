@@ -192,7 +192,7 @@ export function AddFactureForm() {
             </div>
             <div className="w-full grid grid-cols-1">
               <Label htmlFor="date" className="text-left mb-2 mb-2">
-                Date d'émission
+                Date d&apos;émission
               </Label>
               <Select
                 name="date"

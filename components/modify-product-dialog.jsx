@@ -46,7 +46,6 @@ import { useQuery } from "@tanstack/react-query";
 export function ModifyProductDialog({ currProduct, getProducts }) {
   const [fournisseurList, setFournisseurList] = useState([]);
   const [open, setOpen] = useState(false);
-  const [categories, setCategories] = useState();
   const productSchema = z.object({
     id: z.string(),
     designation: z.string().min(1, "Champ obligatoire"),
@@ -151,12 +150,6 @@ export function ModifyProductDialog({ currProduct, getProducts }) {
       }
     );
   };
-
-  const status = [
-    { lable: "En stock", color: "emerald-500" },
-    { lable: "En rupture", color: "red-500" },
-    { lable: "Commander", color: "amber-500" },
-  ];
 
   return (
     <>

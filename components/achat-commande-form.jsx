@@ -38,9 +38,8 @@ import axios from "axios";
 export function AchatCommandeForm({ currProduct }) {
   const [open, setOpen] = useState(false);
   const [fournisseurList, setFournisseurList] = useState([]);
-  const [switchValue, setSwitchValue] = useState();
   
-  const { register, reset, watch, getValues, handleSubmit, setValue , formState:{isSubmitting} } = useForm(
+  const { register,  watch,  handleSubmit, setValue , formState:{isSubmitting} } = useForm(
     {
       defaultValues: {
         prixUnite: currProduct?.prixAchat,

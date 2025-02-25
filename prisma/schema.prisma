@@ -178,10 +178,13 @@ model ModesPaiement {
 }
 
 model InfoEntreprise {
-  id        String  @id @default(uuid())
-  name      String
+  id        Int      @id @default(1)
+  nom       String
   telephone String
+  mobile    String?
   email     String?
   adresse   String
-  ville     String?
+  slogan    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

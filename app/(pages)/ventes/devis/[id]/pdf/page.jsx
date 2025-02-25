@@ -6,22 +6,32 @@ import { Printer } from "lucide-react";
 import axios from "axios";
 import { useState } from "react";
 import { Table, TableCell, TableHead, TableRow } from "@/components/ui/table";
-import { Phone, MapPin } from "lucide-react";
+import { Phone, MapPin, Smartphone } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 import LoadingDeviPdf from "@/components/loading-devi-pdf";
 
-export default function DevisPDFPage({ params }) {
+export default function DevisPDFPage() {
   const [devi, setDevi] = useState();
 
-  const getDevisById = async () => {
-    const result = await axios.get(`/api/devis/${params.id}`);
-    const { devi } = result.data;
-    setDevi(devi);
-    
+  const getInfoEntreprise = async () => {
+    const response = await axios.get("/api/infoEntreprise");
+    const infoEntreprise = response.data.infoEntreprise;
+    return infoEntreprise;
   };
+
+  const query = useQuery({
+    queryKey: ["infoEntreprise"],
+    queryFn: getInfoEntreprise,
+  });
+
   useEffect(() => {
-    getDevisById();
-  }, [params.id]);
+    const storedData = localStorage.getItem("devi");
+    if (storedData) {
+      setDevi(JSON.parse(storedData));
+    }
+  }, []);
 
   const handlePrint = () => {
     window.print();
@@ -34,41 +44,43 @@ export default function DevisPDFPage({ params }) {
           {/* Document Content */}
           <div id="print-area" className="space-y-6">
             {/* Header */}
-            <div className="flex justify-between items-start text-sm text-gray-600">
-              <div>
-                {new Date().toLocaleString("fr-FR", {
-                  year: "numeric",
-                  month: "2-digit",
-                  day: "2-digit",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </div>
-              <div>Statut : {devi?.statut}</div>
-            </div>
-            <div className="border-b border-purple-500 pb-4">
+            <div className="flex justify-between items-end border-b border-purple-500 pb-4">
               <h1 className="text-3xl font-bold text-purple-600">
                 DEVIS N° : {devi?.numero}
               </h1>
+
+              <Avatar className="w-24 h-24">
+                <AvatarImage src="" />
+                <AvatarFallback>Logo</AvatarFallback>
+              </Avatar>
             </div>
+
             {/* Title */}
 
             {/* Company and Client Info */}
             <div className="grid grid-cols-2 gap-8">
               {/* Company Info */}
               <div className="space-y-1">
-                <h2 className="font-bold text-xl text-gray-900">OUDAOUDOX</h2>
+                <h2 className="font-bold text-xl text-gray-900">
+                  {query.data?.[0].nom.toUpperCase()}
+                </h2>
                 <p className="font-small font-bold text-slate-700 text-sm">
-                  DECORATION-MENUISERIE-TRAVAUX DIVERS
+                  {query.data?.[0].slogan.toUpperCase()}
                 </p>
                 <div className="flex items-center gap-2 ">
                   <MapPin className="h-4 w-4" />
-                  <p>Dcheira Rue 1630 N° 01, Inzegan</p>
+                  <p>{query.data?.[0].adresse}</p>
                 </div>
                 <div className="flex items-center gap-2 ">
                   <Phone className="h-4 w-4" />
-                  <p>0654788963</p>
+                  <p>{query.data?.[0].telephone}</p>
                 </div>
+                {query.data?.[0].mobile && (
+                  <div className="flex items-center gap-2 ">
+                    <Smartphone className="h-4 w-4" />
+                    <p>{query.data?.[0].mobile}</p>
+                  </div>
+                )}
               </div>
 
               {/* Client Info */}
@@ -101,6 +113,9 @@ export default function DevisPDFPage({ params }) {
                 20/6/2025
               </p>
               <p>
+                <span className="font-medium">Statut :</span> {devi?.statut}
+              </p>
+              <p>
                 <span className="font-medium">Émis par:</span> John Doe
               </p>
             </div>
@@ -123,8 +138,8 @@ export default function DevisPDFPage({ params }) {
                   </TableRow>
                 </thead>
                 <tbody>
-                  {devi?.articls.map((articl) => (
-                    <TableRow key={articl.id} >
+                  {devi?.articls?.map((articl) => (
+                    <TableRow key={articl.id}>
                       <TableCell className=" p-2 text-left">
                         {articl.designation}{" "}
                       </TableCell>
@@ -187,7 +202,16 @@ export default function DevisPDFPage({ params }) {
               </Table>
             </div>
             <div className="flex justify-between text-sm text-gray-600 pt-4">
-              <div>www.oudaoudox.com</div>
+              <div>
+                {" "}
+                {new Date().toLocaleString("fr-FR", {
+                  year: "numeric",
+                  month: "2-digit",
+                  day: "2-digit",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </div>
             </div>
           </div>
           <div className="print:hidden mt-8 flex justify-end">

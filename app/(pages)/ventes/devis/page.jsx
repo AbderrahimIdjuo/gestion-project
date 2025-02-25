@@ -16,7 +16,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Search, Pen, Trash2, Filter , Printer , CalendarIcon} from "lucide-react";
+import {
+  Search,
+  Pen,
+  Trash2,
+  Filter,
+  Printer,
+  CalendarIcon,
+} from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -64,7 +71,6 @@ export default function DevisPage() {
     montant: [0, maxMontant],
     statut: "all",
   });
- 
 
   const itemsPerPage = 10;
   useEffect(() => {
@@ -86,7 +92,6 @@ export default function DevisPage() {
       (filters.statut === "all" || devis.statut === filters.statut) &&
       devis.total >= filters.montant[0] &&
       devis.total <= filters.montant[1] &&
-  
       (!date || new Date(devis.createdAt) >= new Date(date))
   );
 
@@ -100,6 +105,8 @@ export default function DevisPage() {
   const getDevis = async () => {
     const result = await axios.get("/api/devis");
     const { devis } = result.data;
+    console.log("list devis: ", devis);
+
     setDevisList(devis);
     setIsLoading(false);
   };
@@ -277,9 +284,7 @@ export default function DevisPage() {
               </SheetContent>
             </Sheet>
             <Link href="/ventes/devis/nouveau">
-            <AddButton
-              title="Nouveau devi"
-            />
+              <AddButton title="Nouveau devi" />
             </Link>
           </div>
         </div>
@@ -388,12 +393,16 @@ export default function DevisPage() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 rounded-full hover:bg-green-100 hover:text-green-600"
-                            onClick={() =>
+                            onClick={() => {
                               window.open(
                                 `/ventes/devis/${devis.id}/pdf`,
                                 "_blank"
-                              )
-                            }
+                              );
+                              localStorage.setItem(
+                                "devi",
+                                JSON.stringify(devis)
+                              );
+                            }}
                           >
                             <Printer className="h-4 w-4" />
                             <span className="sr-only">Imprimer</span>

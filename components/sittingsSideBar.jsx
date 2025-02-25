@@ -3,18 +3,31 @@ import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import NavItem from "@/components/customUi/customNavItem";
 import { Info, Landmark, Tags, List, CircleDollarSign } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
+
 function SittingsSideBar({ page }) {
+  const getInfoEntreprise = async () => {
+    const response = await axios.get("/api/infoEntreprise");
+    const infoEntreprise = response.data.infoEntreprise;
+    return infoEntreprise;
+  };
+
+  const query = useQuery({
+    queryKey: ["infoEntreprise"],
+    queryFn: getInfoEntreprise,
+  });
   return (
     <>
       {/* the Sittings sideBar */}
       <div className="flex w-64 flex-col bg-white py-4 shadow-lg rounded-lg">
         <div className="mb-8 flex flex-col items-center space-y-2">
           <Avatar className="w-16 h-16">
-            <AvatarImage src="https://github.com/shadcn.png" />
-            <AvatarFallback>OD</AvatarFallback>
+            <AvatarImage src="https://picsum.photos/200" />
+            <AvatarFallback></AvatarFallback>
           </Avatar>
           <span className="text-lg font-semibold text-orange-400">
-            OUDAOUDOX
+            {query.data?.[0]?.nom?.toUpperCase()}
           </span>
         </div>
 

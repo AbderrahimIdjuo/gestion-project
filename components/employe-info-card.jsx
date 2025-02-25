@@ -15,7 +15,6 @@ import {
   UserRoundCog,
   Phone,
   MapPin,
-  CreditCard,
   IdCard,
   HandCoins,
   ReceiptText,
@@ -42,7 +41,7 @@ export function EmployeInfoDialog({ employe, children }) {
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-[425px] md:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Informations de l'employé</DialogTitle>
+          <DialogTitle>Informations de l&apos;employé</DialogTitle>
           <DialogDescription></DialogDescription>
         </DialogHeader>
         <Card className="w-full">

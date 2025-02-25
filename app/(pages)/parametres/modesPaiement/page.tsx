@@ -26,7 +26,7 @@ type modePaiement = {
   id: string;
 };
 
-export default function modePaiementsProduits() {
+export default function ModePaiementsProduits() {
   const [value, setValue] = useState<string>(""); //Inpute value
   const [modePaiement, setmodePaiement] = useState<modePaiement | undefined>();
   const [deleteDialog, setDeleteDialog] = useState<boolean>(false);
@@ -95,11 +95,10 @@ export default function modePaiementsProduits() {
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Modes de paiement</h1>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 items-start">
+        <div className="flex justify between gap-6 items-start">
           <div className="hidden md:block">
             <SittingsSideBar page={"modesPaiement"} />
           </div>
-
           <div className="w-full col-span-1 sm:col-span-2 md:col-span-3">
             <form
               onSubmit={(e) => {

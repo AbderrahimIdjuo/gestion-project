@@ -37,24 +37,14 @@ import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { PriceRangeSlider } from "@/components/customUi/customSlider";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import Link from "next/link";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
+import { useQuery} from "@tanstack/react-query";
+
 
 export default function CommandesAchats() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [isDialogOpen, setIsDialogOpen] = useState(false); // Delete dialog
-  //const [isLoading, setIsLoading] = useState(false); // Fetch the list of commandes
   const [currCommande, setCurrCommande] = useState("");
-  // const [commandeList, setCommandeList] = useState([]);
   const [isAddingCommande, setIsAddingCommande] = useState(false);
   const [isUpdatingCommande, setIsUpdatingCommande] = useState(false);
   const [maxMontant, setMaxMontant] = useState();
@@ -169,21 +159,6 @@ export default function CommandesAchats() {
   return (
     <>
       <Toaster position="top-center" />
-
-      <div className="my-4">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <span>Achats</span>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>Commandes</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-      </div>
-
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Commandes</h1>

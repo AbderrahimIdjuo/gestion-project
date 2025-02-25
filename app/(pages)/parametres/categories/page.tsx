@@ -95,8 +95,8 @@ export default function CategoriesProduits() {
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Catégories des produits</h1>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 items-start">
-          <div className="hidden md:block">
+        <div className="flex justify between gap-6 items-start">         
+           <div className="hidden md:block">
             <SittingsSideBar page={"categories"} />
           </div>
 

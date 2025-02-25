@@ -68,7 +68,7 @@ export default function NouveauDevisPage() {
     },
     resolver: zodResolver(newDeviSchema),
   });
-  const { fields, append, remove } = useFieldArray({
+  const { fields, remove } = useFieldArray({
     control,
     name: "articls",
   });
@@ -133,8 +133,6 @@ export default function NouveauDevisPage() {
       },
     ]);
   };
-
-
 
   const calculateSubTotal = () => {
     return watch("articls").reduce((sum, item) => {
@@ -447,7 +445,7 @@ export default function NouveauDevisPage() {
               <Button
                 onClick={() => {
                   setValue("numero", generateDeviNumber());
-                  
+
                   setValue(
                     "sousTotal",
                     parseFloat(calculateSubTotal().toFixed(2))

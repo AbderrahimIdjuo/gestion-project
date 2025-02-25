@@ -29,7 +29,10 @@ import {
 } from "@/components/ui/select";
 import axios from "axios";
 
-export function UpdateFactureRecurrenteForm({ currFacture, setIsUpdatingfacture }) {
+export function UpdateFactureRecurrenteForm({
+  currFacture,
+  setIsUpdatingfacture,
+}) {
   const factureSchema = z.object({
     id: z.string(),
     numero: z.string(),
@@ -49,7 +52,6 @@ export function UpdateFactureRecurrenteForm({ currFacture, setIsUpdatingfacture 
 
   const {
     register,
-    reset,
     watch,
     setValue,
     handleSubmit,
@@ -104,8 +106,8 @@ export function UpdateFactureRecurrenteForm({ currFacture, setIsUpdatingfacture 
       <CardHeader className="flex-col justify-start">
         <CardTitle className="my-3">Modifier la facture</CardTitle>
         <CardDescription className="my-5">
-          Modifier les informations de la facture ici. Cliquez sur
-          enregistrer lorsque vous avez terminé.
+          Modifier les informations de la facture ici. Cliquez sur enregistrer
+          lorsque vous avez terminé.
         </CardDescription>
         <Separator className=" mb-5 w-[95%]" />
       </CardHeader>

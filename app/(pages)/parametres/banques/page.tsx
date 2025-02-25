@@ -26,7 +26,7 @@ type Compte = {
   id: string;
 };
 
-export default function banques() {
+export default function Banques() {
   const [value, setValue] = useState<string>(""); //Inpute value
   const [compte, setCompte] = useState<Compte | undefined>();
   const [deleteDialog, setDeleteDialog] = useState<boolean>(false);
@@ -94,7 +94,7 @@ export default function banques() {
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Comptes Bancaires</h1>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 items-start">
+        <div className="flex justify between gap-6 items-start">
           <div className="hidden md:block">
             <SittingsSideBar page={"banques"} />
           </div>

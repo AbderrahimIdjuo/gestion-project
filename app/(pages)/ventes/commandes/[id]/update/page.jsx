@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,7 +8,7 @@ import { AddButton } from "@/components/customUi/styledButton";
 import { Textarea } from "@/components/ui/textarea";
 import toast, { Toaster } from "react-hot-toast";
 import { LoadingDots } from "@/components/loading-dots";
-import Link from "next/link"
+import Link from "next/link";
 import {
   Select,
   SelectContent,
@@ -28,11 +28,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Trash2, MoveLeft } from "lucide-react";
 import { ArticleSelectionDialog } from "@/components/produits-selection-dialog";
 import { useRouter } from "next/navigation";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import axios from "axios";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
-import { customAlphabet } from "nanoid";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
 import { fr } from "date-fns/locale";
@@ -41,16 +39,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Switch } from "@/components/ui/switch";
 import { useForm, Controller } from "react-hook-form";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CircleX } from "lucide-react";
 import updateCommandeSchema from "@/app/zodSchemas/updateCommandeSchema";
 
 export default function UpdateCommandePage({ params }) {
   const [items, setItems] = useState([]);
-  const [commande, setCommande] = useState();
+  // const [commande, setCommande] = useState();
   const [isLoading, setIsLoading] = useState(true);
   const [isArticleDialogOpen, setIsArticleDialogOpen] = useState(false);
   const router = useRouter();
@@ -79,7 +74,7 @@ export default function UpdateCommandePage({ params }) {
         stock: article.produit.stock,
       };
     });
-    setCommande(commande);
+    // setCommande(commande);
     setItems(produits);
     setValue("id", commande?.id);
     setValue("numero", commande?.numero);
@@ -118,7 +113,7 @@ export default function UpdateCommandePage({ params }) {
         reset();
         setItems([]);
         console.log("Commande modifier avec succès");
-        router.push("/ventes/commandes")
+        router.push("/ventes/commandes");
       })(),
       {
         loading: "Modification du commande ...",

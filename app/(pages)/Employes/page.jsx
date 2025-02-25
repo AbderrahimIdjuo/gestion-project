@@ -70,7 +70,7 @@ export default function EmployesPage() {
         const response = await axios.delete(`/api/employes/${id}`);
         toast(
           <span>
-            L'employé <b>{currEmploye?.nom.toUpperCase()}</b> a été supprimé
+            L&apos;employé <b>{currEmploye?.nom.toUpperCase()}</b> a été supprimé
             avec succès!
           </span>,
           {

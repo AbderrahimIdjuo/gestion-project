@@ -87,7 +87,6 @@ export default function CommandesPage() {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
-  const router = useRouter();
   const getCommandes = async () => {
     const result = await axios.get("/api/commandes");
     const { commandes } = result.data;

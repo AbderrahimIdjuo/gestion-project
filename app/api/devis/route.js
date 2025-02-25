@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../lib/prisma";
-import { randomUUID } from "crypto";
 
 export async function POST(req) {
   try {
@@ -48,7 +47,6 @@ export async function POST(req) {
   }
 }
 
-
 export async function PUT(req) {
   try {
     const requestBody = await req.json();
@@ -82,9 +80,13 @@ export async function PUT(req) {
     const incomingIds = new Set(articls.map((articl) => articl.id));
 
     // Categorize articles
-    const existingArticls = articls.filter((articl) => existingIds.has(articl.id));
+    const existingArticls = articls.filter((articl) =>
+      existingIds.has(articl.id)
+    );
     const newArticls = articls.filter((articl) => !existingIds.has(articl.id));
-    const deletedArticls = devi.articls.filter((articl) => !incomingIds.has(articl.id));
+    const deletedArticls = devi.articls.filter(
+      (articl) => !incomingIds.has(articl.id)
+    );
 
     const result = await prisma.$transaction(async (tx) => {
       // Delete old articls only if necessary
@@ -136,7 +138,10 @@ export async function PUT(req) {
 
     if (error.code === "P2002") {
       return NextResponse.json(
-        { message: "Duplicate field error: A record with this value already exists." },
+        {
+          message:
+            "Duplicate field error: A record with this value already exists.",
+        },
         { status: 409 }
       );
     }
@@ -148,7 +153,6 @@ export async function PUT(req) {
   }
 }
 
-
 export async function GET() {
   const devis = await prisma.devis.findMany({
     orderBy: {
@@ -156,6 +160,7 @@ export async function GET() {
     },
     include: {
       client: true,
+      articls: true,
     },
   });
   return NextResponse.json({ devis });

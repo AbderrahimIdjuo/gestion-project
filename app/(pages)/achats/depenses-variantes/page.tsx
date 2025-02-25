@@ -7,7 +7,6 @@ import toast, { Toaster } from "react-hot-toast";
 import CustomPagination from "@/components/customUi/customPagination";
 import CustomTooltip from "@/components/customUi/customTooltip";
 import { deleteManyFactures } from "@/app/api/actions";
-import { payeManyFactures } from "@/app/api/actions";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,18 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Search,
-  Plus,
-  X,
-  Pen,
-  Trash2,
-  ScrollTextIcon,
-  FileChartLine,
-  ChevronRight,
-  CircleDollarSign,
-  EllipsisVertical,
-} from "lucide-react";
+import { Search, Plus, X, Pen, Trash2, EllipsisVertical } from "lucide-react";
 import { AddFactureVarianteForm } from "@/components/add-facture-variante-form";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import { DeleteManyConfirmation } from "@/components/delete-many-confirmation";
@@ -55,7 +43,7 @@ type Facture = {
   payer: boolean;
   description: string;
 };
-function page() {
+function Page() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currfacture, setCurrFacture] = useState<Facture | undefined>();
   const [currentPage, setCurrentPage] = useState(1);
@@ -539,4 +527,4 @@ function page() {
   );
 }
 
-export default page;
+export default Page;

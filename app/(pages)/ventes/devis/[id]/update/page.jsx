@@ -43,7 +43,6 @@ import {
 import Link from "next/link";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CircleX } from "lucide-react";
 import updateDeviSchema from "@/app/zodSchemas/updateDeviSchema";
 
 export default function UpdateDevisPage({ params }) {
@@ -52,19 +51,18 @@ export default function UpdateDevisPage({ params }) {
   const [open, setOpen] = useState(false);
   const {
     register,
-    reset,
     watch,
     control,
     setValue,
     handleSubmit,
-    formState: { errors, isSubmiting },
+    formState: { isSubmiting },
   } = useForm({
     defaultValues: {
       articls: [],
     },
     resolver: zodResolver(updateDeviSchema),
   });
-  const { fields, append, remove } = useFieldArray({
+  const { fields, remove } = useFieldArray({
     control,
     name: "articls",
   });
@@ -267,8 +265,10 @@ export default function UpdateDevisPage({ params }) {
                     <TableRow>
                       <TableHead className="w-[35%]">Désignation</TableHead>
                       <TableHead className="w-[15%]">Quantité</TableHead>
-                      <TableHead className="w-[20%]">Prix d&apos;unité</TableHead>
-                      <TableHead >Montant</TableHead>
+                      <TableHead className="w-[20%]">
+                        Prix d&apos;unité
+                      </TableHead>
+                      <TableHead>Montant</TableHead>
                       <TableHead></TableHead>
                     </TableRow>
                   </TableHeader>

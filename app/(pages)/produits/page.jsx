@@ -21,7 +21,6 @@ import {
   Search,
   Pen,
   Trash2,
-  Info,
   Filter,
   X,
   ShoppingBag,

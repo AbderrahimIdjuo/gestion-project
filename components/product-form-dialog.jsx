@@ -97,7 +97,6 @@ export function ProductFormDialog({ getProducts }) {
   });
   const [open, setOpen] = useState(false);
   const [fournisseurList, setFournisseurList] = useState([]);
-  const [categories, setCategories] = useState();
 
   const getFournisseurs = async () => {
     const result = await axios.get("/api/fournisseurs");
