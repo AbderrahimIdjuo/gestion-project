@@ -1,8 +1,7 @@
-"use server";
 import { NextResponse } from "next/server";
 import prisma from "../../../lib/prisma";
 
-export default async function POST(req, res) {
+export async function POST() {
   try {
     // Obtenir le jour actuel du mois (ex: 26 si on est le 26 février)
     const todayDay = new Date().getDate();
@@ -19,11 +18,13 @@ export default async function POST(req, res) {
     console.log(
       `✅ ${updated.count} factures mises à jour en impayées pour le jour ${todayDay}`
     );
+    return NextResponse.json({ message: "Ok." }, { status: 200 });
   } catch (error) {
     console.error("Erreur lors de la mise à jour des factures :", error);
-    res
-      .status(500)
-      .json({ error: "Erreur lors de la mise à jour des factures." });
+    return NextResponse.json(
+      { message: "An unexpected error occurred." },
+      { status: 500 }
+    );
   } finally {
     await prisma.$disconnect();
   }
