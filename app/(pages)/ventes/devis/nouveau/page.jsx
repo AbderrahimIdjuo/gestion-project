@@ -155,7 +155,7 @@ export default function NouveauDevisPage() {
     <>
       <Toaster position="top-center" />
       <form onSubmit={handleSubmit(onSubmit)}>
-        <div className="container mx-auto py-6 space-y-6 max-w-5xl">
+        <div className="container mb-10 mx-auto py-6 space-y-6 max-w-5xl caret-transparent">
           <div className="flex justify-between items-center">
             <div className="flex gap-3 items-center">
               <Link href=".">
@@ -177,7 +177,7 @@ export default function NouveauDevisPage() {
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="customerName">client*</Label>
+                    <Label htmlFor="customerName">Client*</Label>
                     <br />
                     <Popover open={open} onOpenChange={setOpen}>
                       <PopoverTrigger asChild>
@@ -262,82 +262,84 @@ export default function NouveauDevisPage() {
 
               {/* Items Table */}
               <div className="space-y-4">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[35%]">Désignation</TableHead>
-                      <TableHead className="w-[15%]">Quantité</TableHead>
-                      <TableHead className="w-[20%]">
-                        Prix d&apos;unité
-                      </TableHead>
-                      <TableHead>Montant</TableHead>
-                      <TableHead></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {fields.map((item, index) => (
-                      <TableRow key={item.id}>
-                        <TableCell>
-                          <Controller
-                            control={control}
-                            name={`articls.${index}.designation`}
-                            render={({ field }) => (
-                              <Input
-                                className="focus:!ring-purple-500 w-full"
-                                {...field}
-                                placeholder="Description de l'article"
-                                spellCheck="false"
-                              />
-                            )}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Controller
-                            control={control}
-                            name={`articls.${index}.quantite`}
-                            render={({ field }) => (
-                              <Input
-                                {...field}
-                                type="number"
-                                min={1}
-                                className="focus:!ring-purple-500 w-full"
-                              />
-                            )}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Controller
-                            control={control}
-                            name={`articls.${index}.prixUnite`}
-                            render={({ field }) => (
-                              <Input
-                                className="focus:!ring-purple-500 w-full"
-                                {...field}
-                                type="number"
-                              />
-                            )}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          {(
-                            articls[index].quantite * articls[index].prixUnite
-                          ).toFixed(2)}{" "}
-                          MAD
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => remove(index)}
-                            className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
+                {watch("articls").length > 0 && (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[35%]">Désignation</TableHead>
+                        <TableHead className="w-[15%]">Quantité</TableHead>
+                        <TableHead className="w-[20%]">
+                          Prix d&apos;unité
+                        </TableHead>
+                        <TableHead>Montant</TableHead>
+                        <TableHead></TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {fields.map((item, index) => (
+                        <TableRow key={item.id}>
+                          <TableCell>
+                            <Controller
+                              control={control}
+                              name={`articls.${index}.designation`}
+                              render={({ field }) => (
+                                <Input
+                                  className="focus:!ring-purple-500 w-full"
+                                  {...field}
+                                  placeholder="Description de l'article"
+                                  spellCheck="false"
+                                />
+                              )}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Controller
+                              control={control}
+                              name={`articls.${index}.quantite`}
+                              render={({ field }) => (
+                                <Input
+                                  {...field}
+                                  type="number"
+                                  min={1}
+                                  className="focus:!ring-purple-500 w-full"
+                                />
+                              )}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Controller
+                              control={control}
+                              name={`articls.${index}.prixUnite`}
+                              render={({ field }) => (
+                                <Input
+                                  className="focus:!ring-purple-500 w-full"
+                                  {...field}
+                                  type="number"
+                                />
+                              )}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            {(
+                              articls[index].quantite * articls[index].prixUnite
+                            ).toFixed(2)}{" "}
+                            MAD
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => remove(index)}
+                              className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
 
                 <Button
                   type="button"

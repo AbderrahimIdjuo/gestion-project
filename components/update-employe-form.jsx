@@ -16,7 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CircleX } from "lucide-react";
-import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import {
   Select,
   SelectContent,
@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/select";
 import axios from "axios";
 
-export function UpdateEmployeForm({setIsUpdatingEmploye , currEmploye }) {
+export function UpdateEmployeForm({ setIsUpdatingEmploye, currEmploye }) {
   const employeSchema = z.object({
     id: z.string(),
     nom: z.string().min(1, "Veuillez insérer le nom de l'employé"),
@@ -83,7 +83,7 @@ export function UpdateEmployeForm({setIsUpdatingEmploye , currEmploye }) {
         toast.dismiss(loadingToast);
         reset();
         setValue("role", null);
-        setIsUpdatingEmploye(false)
+        setIsUpdatingEmploye(false);
       }
     },
     onSuccess: () => {
@@ -94,12 +94,16 @@ export function UpdateEmployeForm({setIsUpdatingEmploye , currEmploye }) {
     updateEmploye.mutate(data);
   };
 
-  const roles = [
-    { value: "commercant", lable: "commerçant" },
-    { value: "role 1", lable: "role 1" },
-    { value: "role 2", lable: "role 2" },
-    { value: "role 3", lable: "role 3" },
-  ];
+  const getTachesEmploye = async () => {
+    const response = await axios.get("/api/typeTaches");
+    const taches = response.data.taches;
+    console.log("taches : ", taches);
+    return taches;
+  };
+  const query = useQuery({
+    queryKey: ["taches"],
+    queryFn: getTachesEmploye,
+  });
 
   return (
     <Card className="w-full grid gap-2 h-full px-2">
@@ -197,7 +201,7 @@ export function UpdateEmployeForm({setIsUpdatingEmploye , currEmploye }) {
             </div>
             <div className="w-full grid grid-cols-1">
               <Label htmlFor="role" className="text-left mb-2 mb-2">
-                Rôle
+                Tâches
               </Label>
               <Select
                 name="role"
@@ -205,12 +209,12 @@ export function UpdateEmployeForm({setIsUpdatingEmploye , currEmploye }) {
                 value={watch("role")}
               >
                 <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
-                  <SelectValue placeholder="Sélectionnez un rôle" />
+                  <SelectValue placeholder="Sélectionner..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {roles.map((role, index) => (
-                    <SelectItem key={index} value={role.value}>
-                      {role.lable}
+                  {query.data?.map((element) => (
+                    <SelectItem key={element.id} value={element.tache}>
+                      {element.tache}
                     </SelectItem>
                   ))}
                 </SelectContent>

@@ -90,7 +90,7 @@ export default function TypeTaches() {
   return (
     <>
       <Toaster position="top-center" />
-      <div className="space-y-6">
+      <div className="space-y-6 caret-transparent">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Tâches des employés </h1>
         </div>

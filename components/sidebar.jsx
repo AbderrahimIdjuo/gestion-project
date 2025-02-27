@@ -12,7 +12,7 @@ import {
   ChevronDown,
   ChevronRight,
   ContactRound,
-  Settings
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -40,7 +40,6 @@ const menuItems = [
     subItems: [
       { label: "Devis", href: "/ventes/devis" },
       { label: "Commandes", href: "/ventes/commandes" },
-      { label: "Crédit de clients", href: "/ventes/credit-clients" },
     ],
   },
   {
@@ -53,7 +52,6 @@ const menuItems = [
         href: "/achats/fournisseurs",
       },
       { label: "Commandes", href: "/achats/commandes" },
-      { label: "Dépenses", href: "/achats/depenses" },
       { label: "Dépenses récurrentes", href: "/achats/depenses-recurrentes" },
       { label: "Dépenses variantes", href: "/achats/depenses-variantes" },
     ],
@@ -105,7 +103,7 @@ export function Sidebar() {
 
   return (
     <div
-      className={`h-full bg-white border-r border-gray-200 transition-all duration-300 ease-in-out ${
+      className={`h-full bg-white border-r border-gray-200 transition-all duration-300 ease-in-out caret-transparent ${
         isExpanded ? "w-64" : "w-16"
       }`}
       onMouseEnter={() => setIsExpanded(true)}

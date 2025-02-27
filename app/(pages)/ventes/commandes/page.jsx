@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useRouter } from "next/navigation";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import {
   Table,
@@ -16,7 +15,14 @@ import {
 import Link from "next/link";
 import { AddButton } from "@/components/customUi/styledButton";
 import CustomPagination from "@/components/customUi/customPagination";
-import { Search, Pen, Trash2, Printer, Filter } from "lucide-react";
+import {
+  Search,
+  Pen,
+  Trash2,
+  Printer,
+  Filter,
+  CircleDollarSign,
+} from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -24,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import CustomTooltip from "@/components/customUi/customTooltip";
 import {
   Sheet,
   SheetContent,
@@ -130,7 +137,6 @@ export default function CommandesPage() {
     return dateString.split("T")[0].split("-").reverse().join("-");
   }
 
-
   const deleteCommande = async (id, numero) => {
     try {
       await axios.delete(`/api/commandes/${id}`);
@@ -160,7 +166,7 @@ export default function CommandesPage() {
   return (
     <>
       <Toaster position="top-center" />
-      <div className="space-y-6">
+      <div className="space-y-6 caret-transparent">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Commandes</h1>
         </div>
@@ -367,41 +373,53 @@ export default function CommandesPage() {
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Link href={`/ventes/commandes/${commande.id}/update`}>
+                          <CustomTooltip message="Modifier">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
+                            >
+                              <Pen className="h-4 w-4" />
+                            </Button>
+                          </CustomTooltip>
+                        </Link>
+                        <CustomTooltip message="Payer">
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
+                            className="h-8 w-8 rounded-full hover:bg-green-100 hover:text-green-600"
                           >
-                            <Pen className="h-4 w-4" />
-                            <span className="sr-only">Modifier</span>
+                            <CircleDollarSign className="h-4 w-4" />
                           </Button>
-                        </Link>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
-                          onClick={() => {
-                            setDeleteDialogOpen(true);
-                            setCurrentCommande(commande);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          <span className="sr-only">Supprimer</span>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 rounded-full hover:bg-green-100 hover:text-green-600"
-                          onClick={() =>
-                            window.open(
-                              `/ventes/commandes/${commande.id}/pdf`,
-                              "_blank"
-                            )
-                          }
-                        >
-                          <Printer className="h-4 w-4" />
-                          <span className="sr-only">Imprimer</span>
-                        </Button>
+                        </CustomTooltip>
+                        <CustomTooltip message="Supprimer">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
+                            onClick={() => {
+                              setDeleteDialogOpen(true);
+                              setCurrentCommande(commande);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </CustomTooltip>
+                        <CustomTooltip message="Imprimer">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full hover:bg-green-100 hover:text-green-600"
+                            onClick={() =>
+                              window.open(
+                                `/ventes/commandes/${commande.id}/pdf`,
+                                "_blank"
+                              )
+                            }
+                          >
+                            <Printer className="h-4 w-4" />
+                          </Button>
+                        </CustomTooltip>
                       </div>
                     </TableCell>
                   </TableRow>

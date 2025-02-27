@@ -21,7 +21,7 @@ function SaveButton({ title, type ,onClick , disabled }) {
     disabled={disabled}
     onClick={onClick}
       type={type}
-      className="bg-[#00e701] hover:bg-[#00e701] shadow-lg hover:scale-105 text-white text-md  font-bold transition-all duration-300 transform"
+      className="bg-emerald-300 hover:bg-emerald-400 rounded-full shadow-lg hover:scale-105 text-white text-md  font-bold transition-all duration-300 transform"
     >
       {title}
     </Button>

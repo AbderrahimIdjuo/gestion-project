@@ -44,7 +44,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Checkbox } from "@/components/ui/checkbox";
 type Facture = {
-  date: Date;
+  dateEmission: number;
   numero: string;
   id: string;
   lable: string;
@@ -199,30 +199,31 @@ function Page() {
     if (currfacture?.payer === false) {
       payerFacture.mutate();
     } else {
-      toast.custom((t) => (
-        <div
-          className={`${
-            t.visible ? "animate-enter" : "animate-leave"
-          } max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}
-        >
-          <div className="p-4 ml-3 flex-1">
-            <p className="mt-1 text-md text-gray-500">
-              La facture :{" "}
-              <span className=" font-semibold text-gray-900">
-                {currfacture?.numero}{" "}
-              </span>
-              est déja payer
-            </p>
-          </div>
-        </div>
-      ));
+      facturDejaPayeToast(currfacture?.numero);
     }
+  };
+  const facturDejaPayeToast = (numero: string | undefined) => {
+    return toast.custom((t) => (
+      <div
+        className={`${
+          t.visible ? "animate-enter" : "animate-leave"
+        } max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}
+      >
+        <div className="p-4 ml-3 flex-1">
+          <p className="mt-1 text-md text-gray-500">
+            La facture :{" "}
+            <span className=" font-semibold text-gray-900">{numero} </span>
+            est déja payer
+          </p>
+        </div>
+      </div>
+    ));
   };
 
   return (
     <>
       <Toaster position="top-center" />
-      <div className="space-y-6">
+      <div className="space-y-6 caret-transparent">
         <div className="flex justify-start gap-2 items-center">
           <span className="text-3xl font-bold">Dépenses récurrentes </span>
         </div>
@@ -300,9 +301,10 @@ function Page() {
                     <TableHead>Label</TableHead>
                     <TableHead>Montant</TableHead>
                     <TableHead>État</TableHead>
+                    <TableHead>Date d'émission</TableHead>
                     <TableHead>Description</TableHead>
                     <TableHead className="text-right">
-                      <div className="flex gap-2 items-center justify-end">
+                      <div className="flex gap-2 items-center justify-end caret-transparent">
                         Actions
                         <DropdownMenu
                           open={dropdownOpen}
@@ -375,6 +377,9 @@ function Page() {
                         <TableCell className="!py-2" align="left">
                           <Skeleton className="h-4 w-[150px]" />
                         </TableCell>
+                        <TableCell className="!py-2" align="left">
+                          <Skeleton className="h-4 w-[150px]" />
+                        </TableCell>
                         <TableCell className="!py-2">
                           <div className="flex gap-2 justify-end">
                             <Skeleton className="h-7 w-7 rounded-full" />
@@ -415,7 +420,9 @@ function Page() {
                             {facture.payer ? "Payé" : "Impayé"}
                           </span>
                         </TableCell>
-
+                        <TableCell className="text-md">
+                          {facture.dateEmission}
+                        </TableCell>
                         <TableCell className="text-md">
                           {facture.description}
                         </TableCell>
@@ -441,8 +448,10 @@ function Page() {
                                 size="icon"
                                 className="h-8 w-8 rounded-full hover:bg-green-100 hover:text-green-600"
                                 onClick={() => {
-                                  setIsBankDialogOpen(true);
                                   setCurrFacture(facture);
+                                  if (facture.payer) {
+                                    facturDejaPayeToast(facture.numero);
+                                  } else setIsBankDialogOpen(true);
                                 }}
                               >
                                 <CircleDollarSign className="h-4 w-4" />

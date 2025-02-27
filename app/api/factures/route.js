@@ -5,9 +5,10 @@ import prisma from "../../../lib/prisma";
 export async function POST(req) {
   try {
     const response = await req.json();
-    const { numero, lable, type, montant, description, payer } = response;
+    const { numero, lable, type, montant, description, payer, dateEmission } =
+      response;
     const result = await prisma.factures.create({
-      data: { numero, lable, type, montant, description, payer },
+      data: { numero, lable, type, montant : montant || 0 , description, payer, dateEmission },
     });
     return NextResponse.json({ result });
   } catch (error) {
@@ -45,5 +46,3 @@ export async function GET() {
   });
   return NextResponse.json({ factures });
 }
-
-

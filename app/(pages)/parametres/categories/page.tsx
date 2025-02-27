@@ -91,12 +91,12 @@ export default function CategoriesProduits() {
   return (
     <>
       <Toaster position="top-center" />
-      <div className="space-y-6">
+      <div className="space-y-6 caret-transparent">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Catégories des produits</h1>
         </div>
-        <div className="flex justify between gap-6 items-start">         
-           <div className="hidden md:block">
+        <div className="flex justify between gap-6 items-start">
+          <div className="hidden md:block">
             <SittingsSideBar page={"categories"} />
           </div>
 

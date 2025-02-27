@@ -14,11 +14,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ChangeEvent } from "react";
 import { Trash2 } from "lucide-react";
-import axios from "axios";
 import SittingsSideBar from "@/components/sittingsSideBar";
 import { addCompteBancaire } from "@/app/api/actions";
 import { deleteCompteBancaire } from "@/app/api/actions";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 
 type Compte = {
@@ -42,7 +42,6 @@ export default function Banques() {
     queryKey: ["comptes"],
     queryFn: getcomptes,
   });
-  console.log("data :", typeof query.data);
 
   const addcompte = useMutation({
     mutationFn: async (compte: string) => {
@@ -90,7 +89,7 @@ export default function Banques() {
   return (
     <>
       <Toaster position="top-center" />
-      <div className="space-y-6">
+      <div className="space-y-6 caret-transparent">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Comptes Bancaires</h1>
         </div>

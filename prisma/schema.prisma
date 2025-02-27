@@ -148,13 +148,22 @@ model Factures {
   lable         String
   numero        String    @unique
   type          String
-  montant       Float
+  montant       Float?
   payer         Boolean   @default(false)
-  dateEmission  DateTime?
-  dateReglement DateTime?
+  dateEmission  Int?
   description   String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+}
+
+model Transactions {
+  id        String   @id @default(uuid())
+  type      String
+  montant   Float
+  methode   String?
+  reference String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model TachesEmployes {

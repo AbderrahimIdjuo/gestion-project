@@ -41,17 +41,21 @@ export function AddFactureForm() {
   const factureSchema = z.object({
     numero: z.string(),
     lable: z.string().min(1, "Veuillez insérer un label de l'employé"),
-    montant: z.preprocess(
-      (value) =>
-        value === "" || value === undefined ? undefined : Number(value),
-      z
-        .number({ invalid_type_error: "Le salaire doit être un nombre" })
-        .optional()
-    ),
+    montant: z
+      .preprocess(
+        (value) =>
+          value === "" || value === undefined || value === null
+            ? null
+            : Number(value),
+        z
+          .number({ invalid_type_error: "Le salaire doit être un nombre" })
+          .nullable()
+      )
+      .optional(),
     type: z.string(),
     payer: z.boolean(),
     description: z.string().optional(),
-    date: z.preprocess(
+    dateEmission: z.preprocess(
       (value) => Number(value),
       z.number().int().min(1).max(28)
     ),
@@ -93,10 +97,12 @@ export function AddFactureForm() {
       queryClient.invalidateQueries({ queryKey: ["factures"] });
       reset();
       setValue("type", null);
-      setValue("date", null);
+      setValue("dateEmission", null);
     },
   });
   const onSubmit = async (data) => {
+    console.log(data);
+
     createNewFacture.mutate(data);
   };
 
@@ -171,13 +177,13 @@ export function AddFactureForm() {
               )}
             </div>
             <div className="w-full grid grid-cols-1">
-              <Label htmlFor="date" className="text-left mb-2 mb-2">
+              <Label htmlFor="dateEmission" className="text-left mb-2 mb-2">
                 Date d&apos;émission
               </Label>
               <Select
-                name="date"
-                onValueChange={(value) => setValue("date", value)}
-                value={watch("date")}
+                name="dateEmission"
+                onValueChange={(value) => setValue("dateEmission", value)}
+                value={watch("dateEmission")}
               >
                 <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
                   <SelectValue placeholder="Sélectionnez ..." />

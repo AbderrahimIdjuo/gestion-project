@@ -189,7 +189,7 @@ export default function ProduitsPage() {
   return (
     <>
       <Toaster position="top-center" />
-      <div className="space-y-6">
+      <div className="space-y-6 caret-transparent">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Produits</h1>
         </div>
@@ -383,7 +383,7 @@ export default function ProduitsPage() {
               : "grid-cols-1"
           }`}
         >
-          <div className="col-span-2 ">
+          <div className="col-span-2 mb-10">
             <div
               className={`grid  gap-3 border mb-5 rounded-lg ${
                 (isAddingProduct || isUpdatingProduct || isPurchasingProduct) &&
@@ -479,46 +479,48 @@ export default function ProduitsPage() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
-                              onClick={() => {
-                                setCurrProduct(product);
-                                setIsUpdatingProduct(true);
-                                setIsAddingProduct(false);
-                              }}
-                            >
-                              <Pen className="h-4 w-4" />
-                              <span className="sr-only">Modifier</span>
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
-                              onClick={() => {
-                                setDeleteDialogOpen(true);
-                                setCurrProduct(product);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              <span className="sr-only">Supprimer</span>
-                            </Button>
-
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 rounded-full hover:bg-green-100 hover:text-green-600"
-                              onClick={() => {
-                                setCurrProduct(product);
-                                setIsPurchasingProduct(!isPurchasingProduct);
-                                setIsUpdatingProduct(false);
-                                setIsAddingProduct(false);
-                              }}
-                            >
-                              <ShoppingBag className="h-4 w-4" />
-                              <span className="sr-only">Détails</span>
-                            </Button>
+                            <CustomTooltip message="Modifier">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
+                                onClick={() => {
+                                  setCurrProduct(product);
+                                  setIsUpdatingProduct(true);
+                                  setIsAddingProduct(false);
+                                }}
+                              >
+                                <Pen className="h-4 w-4" />
+                              </Button>
+                            </CustomTooltip>
+                            <CustomTooltip message="Supprimer">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
+                                onClick={() => {
+                                  setDeleteDialogOpen(true);
+                                  setCurrProduct(product);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </CustomTooltip>
+                            <CustomTooltip message="Commander">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-full hover:bg-green-100 hover:text-green-600"
+                                onClick={() => {
+                                  setCurrProduct(product);
+                                  setIsPurchasingProduct(!isPurchasingProduct);
+                                  setIsUpdatingProduct(false);
+                                  setIsAddingProduct(false);
+                                }}
+                              >
+                                <ShoppingBag className="h-4 w-4" />
+                              </Button>
+                            </CustomTooltip>
                           </div>
                         </TableCell>
                       </TableRow>

@@ -53,6 +53,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CircleX } from "lucide-react";
 import newCommandeSchema from "@/app/zodSchemas/newCommandeSchema";
+import { useQuery } from "@tanstack/react-query";
 
 export default function NouvelleCommandePage() {
   const [items, setItems] = useState([]);
@@ -70,14 +71,14 @@ export default function NouvelleCommandePage() {
     handleSubmit,
     setValue,
     formState: { errors, isSubmiting },
-  } = useForm({    
-    defaultValues:{
+  } = useForm({
+    defaultValues: {
       statut: "En cours",
-      fraisLivraison:0,
-      avance:0,
-      reduction:0,
-      typeReduction:"%",
-  },
+      fraisLivraison: 0,
+      avance: 0,
+      reduction: 0,
+      typeReduction: "%",
+    },
     resolver: zodResolver(newCommandeSchema),
   });
   const selectedDate = watch("echeance");
@@ -110,12 +111,19 @@ export default function NouvelleCommandePage() {
     );
     setDevisList(devisList);
   };
-
+  const getcomptes = async () => {
+    const response = await axios.get("/api/comptesBancaires");
+    const comptes = response.data.comptes;
+    return comptes;
+  };
+  const query = useQuery({
+    queryKey: ["comptes"],
+    queryFn: getcomptes,
+  });
   useEffect(() => {
     getDevisCommandes();
     getClients();
   }, []);
-
 
   const generateCommandeNumber = () => {
     if (watch("devi")) {
@@ -130,8 +138,6 @@ export default function NouvelleCommandePage() {
   };
 
   const onSubmit = async (data) => {
-    console.log(data);
-
     toast.promise(
       (async () => {
         const response = await fetch("/api/commandes", {
@@ -147,7 +153,7 @@ export default function NouvelleCommandePage() {
         reset();
         setItems([]);
         console.log("Commande ajouté avec succès");
-        router.push("/ventes/commandes")
+        router.push("/ventes/commandes");
       })(),
       {
         loading: "Ajout du commande ...",
@@ -198,17 +204,13 @@ export default function NouvelleCommandePage() {
     <>
       <Toaster position="top-center" />
       <form onSubmit={handleSubmit(onSubmit)}>
-        <div className="container mx-auto py-6 space-y-6 max-w-5xl">
+        <div className="container mx-auto py-6 space-y-6 max-w-5xl mb-10">
           <div className="flex justify-between items-center">
             <div className="flex gap-3 items-center">
               <Link href="/ventes/commandes">
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-              >
-                <MoveLeft />
-              </Button>
+                <Button type="button" size="icon" variant="ghost">
+                  <MoveLeft />
+                </Button>
               </Link>
               <h1 className="text-3xl font-bold">Nouvelle Commande</h1>
             </div>
@@ -221,7 +223,6 @@ export default function NouvelleCommandePage() {
                   checked={switchValue}
                   onCheckedChange={() => {
                     setSwitchValue(!switchValue);
-                    console.log(switchValue);
                   }}
                   id="airplane-mode"
                 />
@@ -232,7 +233,7 @@ export default function NouvelleCommandePage() {
               <div className="grid grid-cols-4 items-center gap-6">
                 {switchValue ? (
                   <div className="col-span-2">
-                    <Label htmlFor="customerName">client*</Label>
+                    <Label htmlFor="customerName">Client*</Label>
                     <br />
                     <Popover open={open} onOpenChange={setOpen}>
                       <PopoverTrigger asChild>
@@ -244,7 +245,7 @@ export default function NouvelleCommandePage() {
                         >
                           {watch("client")
                             ? watch("client").nom.toUpperCase()
-                            : "Sélectioner un client..."}
+                            : "Sélectionner..."}
                           <ChevronDown className="opacity-50" />
                         </Button>
                       </PopoverTrigger>
@@ -392,7 +393,7 @@ export default function NouvelleCommandePage() {
                   )}
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid gap-6 grid-cols-3">
                 <div className="space-y-1">
                   <Label htmlFor="client">Date limite de livraison : </Label>
                   <Popover>
@@ -454,6 +455,27 @@ export default function NouvelleCommandePage() {
                       {errors.avance.message}
                     </p>
                   )}
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="orderNumber">Compte :</Label>
+                  <Select
+                    value={watch("compte")}
+                    name="compte"
+                    onValueChange={(value) => setValue("compte", value)}
+                  >
+                    <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500 mt-2">
+                      <SelectValue placeholder="Séléctionner ..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {query.data?.map((element) => (
+                        <SelectItem key={element.id} value={element.compte}>
+                          <div className="flex items-center gap-2">
+                            {element.compte}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
@@ -619,15 +641,12 @@ export default function NouvelleCommandePage() {
               </div>
             </CardContent>
           </Card>
-          <div className="flex justify-end items-center mt-3">
+          <div className="flex justify-end items-center mt-3 ">
             <div className="space-x-2">
               <Link href="/ventes/commandes">
-              <Button
-                className="rounded-full"
-                variant="outline"
-              >
-                Annuler
-              </Button>
+                <Button className="rounded-full" variant="outline">
+                  Annuler
+                </Button>
               </Link>
               <Button
                 onClick={() => {

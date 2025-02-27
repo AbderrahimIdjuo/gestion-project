@@ -37,8 +37,7 @@ import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { PriceRangeSlider } from "@/components/customUi/customSlider";
-import { useQuery} from "@tanstack/react-query";
-
+import { useQuery } from "@tanstack/react-query";
 
 export default function CommandesAchats() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -159,7 +158,7 @@ export default function CommandesAchats() {
   return (
     <>
       <Toaster position="top-center" />
-      <div className="space-y-6">
+      <div className="space-y-6 caret-transparent">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Commandes</h1>
         </div>
@@ -411,7 +410,9 @@ export default function CommandesAchats() {
                           {commande.produit.categorie}
                         </TableCell>
                         <TableCell className="text-md">
-                        {commande.commandeClient ? commande.commandeClient.numero : ""}
+                          {commande.commandeClient
+                            ? commande.commandeClient.numero
+                            : ""}
                         </TableCell>
                         <TableCell className="text-md">
                           {commande.produit.fournisseur?.nom.toUpperCase() ||

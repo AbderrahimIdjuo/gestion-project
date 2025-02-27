@@ -26,12 +26,10 @@ export default function InfoEntreprise() {
   return (
     <>
       <Toaster position="top-center" />
-      <div className="space-y-6">
+      <div className="space-y-6 caret-transparent">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Informations de la société</h1>
         </div>
-
-        {/* <div className="grid grid-cols-4 gap-2 items-start"> */}
         <div className="flex justify between gap-6 items-start">
           <SittingsSideBar page={"infoEntreprise"} />
           <div className="rounded-lg border h-full w-[80%] flex-grow-3 p-5">

@@ -70,8 +70,8 @@ export default function EmployesPage() {
         const response = await axios.delete(`/api/employes/${id}`);
         toast(
           <span>
-            L&apos;employé <b>{currEmploye?.nom.toUpperCase()}</b> a été supprimé
-            avec succès!
+            L&apos;employé <b>{currEmploye?.nom.toUpperCase()}</b> a été
+            supprimé avec succès!
           </span>,
           {
             icon: "🗑️",
@@ -103,7 +103,7 @@ export default function EmployesPage() {
   return (
     <>
       <Toaster position="top-center" />
-      <div className="space-y-6">
+      <div className="space-y-6 caret-transparent">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Employés</h1>
         </div>
@@ -148,13 +148,13 @@ export default function EmployesPage() {
         </div>
 
         <div
-          className={`grid  ${
+          className={`grid ${
             isAddingEmploye || isUpdatingEmploye
               ? "grid-cols-3 gap-6"
               : "grid-cols-1"
           }`}
         >
-          <div className="col-span-2">
+          <div className="col-span-2 mb-10">
             <div
               className={`grid gap-3 border mb-3 rounded-lg ${
                 isAddingEmploye || isUpdatingEmploye ? "hidden" : ""
@@ -166,7 +166,7 @@ export default function EmployesPage() {
                   <TableRow>
                     <TableHead>Nom</TableHead>
                     <TableHead>Téléphone</TableHead>
-                    <TableHead>Rôle</TableHead>
+                    <TableHead>Tâche</TableHead>
                     <TableHead>Salaire</TableHead>
                     <TableHead>CIN</TableHead>
                     <TableHead>Adresse</TableHead>
@@ -199,16 +199,16 @@ export default function EmployesPage() {
                           <Skeleton className="h-4 w-[150px]" />
                         </TableCell>
                         <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-[150px]" />
+                          <Skeleton className="h-4 w-[100px]" />
                         </TableCell>
                         <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-[150px]" />
+                          <Skeleton className="h-4 w-[100px]" />
                         </TableCell>
                         <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-[150px]" />
+                          <Skeleton className="h-4 w-[100px]" />
                         </TableCell>
                         <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-[150px]" />
+                          <Skeleton className="h-4 w-[100px]" />
                         </TableCell>
                         <TableCell className="!py-2">
                           <div className="flex gap-2 justify-end">
@@ -306,12 +306,12 @@ export default function EmployesPage() {
             </div>
 
             {/* the half table with the name and Action columns */}
-            <ScrollArea
-              className={`h-[35rem] w-full  grid gap-3  border mb-3 rounded-lg ${
-                !isAddingEmploye && !isUpdatingEmploye ? "hidden" : ""
-              } `}
-            >
-              <div>
+            <div>
+              <ScrollArea
+                className={`w-full h-[80vh]  grid gap-3  border mb-3 rounded-lg ${
+                  !isAddingEmploye && !isUpdatingEmploye ? "hidden" : ""
+                } `}
+              >
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -411,8 +411,8 @@ export default function EmployesPage() {
                     )}
                   </TableBody>
                 </Table>
-              </div>
-            </ScrollArea>
+              </ScrollArea>
+            </div>
             {filteredEmployes?.length > 0 ? (
               <CustomPagination
                 currentPage={currentPage}

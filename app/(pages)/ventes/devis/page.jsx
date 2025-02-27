@@ -167,7 +167,7 @@ export default function DevisPage() {
   return (
     <>
       <Toaster position="top-center"></Toaster>
-      <div className="space-y-6">
+      <div className="space-y-6 caret-transparent">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Devis</h1>
         </div>
