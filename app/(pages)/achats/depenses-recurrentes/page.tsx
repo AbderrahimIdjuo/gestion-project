@@ -301,7 +301,7 @@ function Page() {
                     <TableHead>Label</TableHead>
                     <TableHead>Montant</TableHead>
                     <TableHead>État</TableHead>
-                    <TableHead>Date d'émission</TableHead>
+                    <TableHead>Date d&apos;émission</TableHead>
                     <TableHead>Description</TableHead>
                     <TableHead className="text-right">
                       <div className="flex gap-2 items-center justify-end caret-transparent">
