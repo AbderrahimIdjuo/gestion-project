@@ -15,6 +15,7 @@ import {
 import Link from "next/link";
 import { AddButton } from "@/components/customUi/styledButton";
 import CustomPagination from "@/components/customUi/customPagination";
+import { PaymentDialog } from "@/components/select-bank-account";
 import {
   Search,
   Pen,
@@ -31,6 +32,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import CustomTooltip from "@/components/customUi/customTooltip";
+import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
 import {
   Sheet,
   SheetContent,
@@ -39,85 +41,126 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { LoadingDots } from "@/components/loading-dots";
 import { Label } from "@/components/ui/label";
 import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
-import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
-import { cn } from "@/lib/utils";
-import { Calendar } from "@/components/ui/calendar";
-import { fr } from "date-fns/locale";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { addtransaction } from "@/app/api/actions";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+
 import { PriceRangeSlider } from "@/components/customUi/customSlider";
 
 export default function CommandesPage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [commandesList, setCommandesList] = useState();
-  const [isLoading, setIsLoading] = useState(true);
   const [maxMontant, setMaxMontant] = useState();
-  const [date, setDate] = useState();
   const [currentCommande, setCurrentCommande] = useState();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-
+  const [compte, setCompte] = useState("");
+  const [montant, setMontant] = useState(""); // montant de paiement
+  const [isBankDialogOpen, setIsBankDialogOpen] = useState(false);
+  const [info, setInfo] = useState(false);
+  //const [numeroCommande, setNumeroCommande] = useState();
+  const [transactions, setTransactions] = useState();
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState();
+  const [transactionCreated, setTransactionCreated] = useState(false);
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [startDate, setStartDate] = useState();
+  const [endDate, setEndDate] = useState();
   const [filters, setFilters] = useState({
     client: "all",
     dateStart: "",
     dateEnd: "",
     montant: [0, maxMontant],
     statut: "all",
+    etat: "all",
   });
 
-  const itemsPerPage = 10;
-  const totalList = commandesList?.map((product) => product.total);
-
-  const filteredCommandes = commandesList?.filter(
-    (commande) =>
-      (searchQuery === "" ||
-        commande.numero.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        commande.client.nom
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase())) &&
-      (filters.statut === "all" || commande.statut === filters.statut) &&
-      commande.total >= filters.montant[0] &&
-      commande.total <= filters.montant[1] &&
-      (!date || new Date(commande.createdAt) >= new Date(date))
-  );
-
-  const totalPages = Math.ceil(filteredCommandes?.length / itemsPerPage);
-  const currentCommandes = filteredCommandes?.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-  const getCommandes = async () => {
-    const result = await axios.get("/api/commandes");
-    const { commandes } = result.data;
-    setCommandesList(commandes);
-    console.log(commandes);
-
-    setIsLoading(false);
-  };
+  const queryClient = useQueryClient();
 
   useEffect(() => {
-    getCommandes();
-  }, []);
+    const handler = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+      setPage(1);
+    }, 500); // Adjust delay as needed
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchQuery]);
+
+  const commandes = useQuery({
+    queryKey: [
+      "commandes",
+      filters.statut,
+      debouncedQuery,
+      page,
+      // numeroCommande,
+      startDate,
+      endDate,
+      filters.montant,
+      filters.etat,
+      transactionCreated,
+    ],
+    queryFn: async () => {
+      const response = await axios.get("/api/commandes", {
+        params: {
+          query: debouncedQuery,
+          page,
+          statut: filters.statut,
+          //numeroCommande,
+          from: startDate,
+          to: endDate,
+          minTotal: filters.montant[0],
+          maxTotal: filters.montant[1],
+          etat: filters.etat,
+        },
+      });
+      setMaxMontant(response.data.maxMontant);
+      setTransactions(response.data.transactionsList);
+      setTotalPages(response.data.totalPages);
+      return response.data.commandes;
+    },
+    keepPreviousData: true, // Keeps old data visible while fetching new page
+    refetchOnWindowFocus: false,
+  });
+
+  const transactionPerCommande = (numero) => {
+    const trans = transactions?.filter((c) => c.reference === numero);
+    console.log("trans", trans);
+
+    return trans;
+  };
+
+  const etatPaiement = (commande) => {
+    if (
+      commande.totalPaye === commande.total ||
+      commande.totalPaye > commande.total
+    ) {
+      return (
+        <span className="text-sm p-[1px] px-3 rounded-full  bg-green-100 text-green-600 font-medium">
+          Payé
+        </span>
+      );
+    } else if (commande.totalPaye === 0) {
+      return (
+        <span className="text-sm p-[1px] px-3 rounded-full  bg-red-100 text-red-600 font-medium">
+          Impayé
+        </span>
+      );
+    } else
+      return (
+        <span className="text-sm p-[1px] px-3 rounded-full  bg-orange-100 text-orange-600 font-medium">
+          En partie
+        </span>
+      );
+  };
+
+  // intialiser les valeure du monatant total handler
   useEffect(() => {
     setFilters({ ...filters, montant: [0, maxMontant] });
   }, [maxMontant]);
-  useEffect(() => {
-    if (totalList?.length > 0) {
-      const maxPrice = Math.max(...totalList);
-      setMaxMontant(maxPrice);
-    }
-  }, [totalList]);
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filters, searchQuery]);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -149,14 +192,37 @@ export default function CommandesPage() {
           icon: "🗑️",
         }
       );
-      getCommandes();
+      queryClient.invalidateQueries(["commandes"]);
     } catch (e) {
       console.log(e);
     }
   };
-
+  const data = {
+    ...currentCommande,
+    compte,
+    montant: Number(montant),
+    type: "recette",
+  };
+  const createTransaction = useMutation({
+    mutationFn: async (data) => {
+      const loadingToast = toast.loading("Paiement en cours...");
+      try {
+        await addtransaction(data);
+        toast.success("Paiement éffectué avec succès");
+      } catch (error) {
+        toast.error("Échec de l'opération!");
+        throw error;
+      } finally {
+        toast.dismiss(loadingToast);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["commandes", "transactions"]);
+      setTransactionCreated(!transactionCreated);
+    },
+  });
   const status = [
-    { value: "all", lable: "All", color: "" },
+    { value: "all", lable: "Tous les statuts", color: "" },
     { value: "En cours", lable: "En cours", color: "amber-500" },
     { value: "Expédiée", lable: "Expédiée", color: "blue-500" },
     { value: "Livrée", lable: "Livrée", color: "green-500" },
@@ -166,7 +232,7 @@ export default function CommandesPage() {
   return (
     <>
       <Toaster position="top-center" />
-      <div className="space-y-6 caret-transparent">
+      <div className="space-y-6 mb-[5rem]">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Commandes</h1>
         </div>
@@ -175,11 +241,15 @@ export default function CommandesPage() {
           <div className="relative w-full sm:w-96">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Rechercher des commandes..."
+              placeholder="Rechercher des clients..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 w-full rounded-full bg-gray-50 focus-visible:ring-purple-500 focus-visible:ring-offset-0"
+              spellCheck={false}
             />
+            <div className="absolute right-6 top-1/3 h-4 w-4 -translate-y-1/2 text-muted-foreground">
+              {commandes.isFetching && !commandes.isLoading && <LoadingDots />}
+            </div>
           </div>
           <div className="flex space-x-2">
             <Sheet>
@@ -202,8 +272,8 @@ export default function CommandesPage() {
                 </SheetHeader>
                 <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-4 items-center gap-4 my-2">
-                    <Label htmlFor="statut" className="text-right text-black">
-                      Statut
+                    <Label htmlFor="statut" className="text-left text-black">
+                      Statut :
                     </Label>
                     <Select
                       value={filters.statut}
@@ -230,39 +300,66 @@ export default function CommandesPage() {
                     </Select>
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4 my-2">
-                    <Label htmlFor="client" className="text-right text-black">
+                    <Label htmlFor="etat" className="text-left text-black">
+                      État :
+                    </Label>
+                    <Select
+                      value={filters.etat}
+                      name="etat"
+                      onValueChange={(value) =>
+                        setFilters({ ...filters, etat: value })
+                      }
+                    >
+                      <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
+                        <SelectValue placeholder="Séléctionner un statut" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">
+                          <div className="flex items-center gap-2">
+                            Tous les états
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="paye">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`h-2 w-2 rounded-full bg-green-500`}
+                            />
+                            Payé
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="impaye">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`h-2 w-2 rounded-full bg-red-500`}
+                            />
+                            Impayé
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="enPartie">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`h-2 w-2 rounded-full bg-orange-500`}
+                            />
+                            En partie
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="date" className="text-left text-black">
                       Date :
                     </Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "col-span-3 w-full justify-start text-left font-normal hover:text-purple-600 hover:bg-white hover:border-2 hover:border-purple-500",
-                            !date && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon />
-                          {date ? (
-                            format(date, "PPP", { locale: fr })
-                          ) : (
-                            <span>Choisis une date</span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <Calendar
-                          mode="single"
-                          selected={date}
-                          onSelect={setDate}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <CustomDateRangePicker
+                      startDate={startDate}
+                      setStartDate={setStartDate}
+                      endDate={endDate}
+                      setEndDate={setEndDate}
+                    />
                   </div>
-                  <div className="grid grid-cols-4 items-center gap-4 my-2">
-                    <Label htmlFor="montant" className="text-right text-black">
-                      Montant
+                  <div className="grid grid-cols-4 items-start gap-4 my-4">
+                    <Label htmlFor="montant" className="text-left text-black">
+                      Montant :
                     </Label>
                     <div className="col-span-3">
                       <PriceRangeSlider
@@ -270,9 +367,9 @@ export default function CommandesPage() {
                         max={maxMontant}
                         step={100}
                         value={filters.montant} // Ensure montant is an array, e.g., [min, max]
-                        onValueChange={
-                          (value) => setFilters({ ...filters, montant: value }) // value will be [min, max]
-                        }
+                        onValueChange={(value) => {
+                          setFilters({ ...filters, montant: value }); // value will be [min, max]
+                        }}
                       />
                       <div className="flex justify-between mt-2">
                         <span>{filters.montant[0]} DH</span>
@@ -297,17 +394,17 @@ export default function CommandesPage() {
                 <TableHead>Date</TableHead>
                 <TableHead>Client</TableHead>
                 <TableHead>Montant</TableHead>
-                <TableHead>Avance</TableHead>
-                <TableHead>Reste a payer</TableHead>
+                <TableHead>Reste à payer</TableHead>
+                <TableHead>État</TableHead>
                 <TableHead>Statut</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isLoading ? (
+              {commandes?.isFetching ? (
                 [...Array(10)].map((_, index) => (
                   <TableRow
-                    className="h-[2rem] MuiTableRow-root"
+                    className="h-[2rem] MuiTableRow-root !py-2"
                     role="checkbox"
                     tabIndex={-1}
                     key={index}
@@ -341,24 +438,67 @@ export default function CommandesPage() {
                         <Skeleton className="h-7 w-7 rounded-full" />
                         <Skeleton className="h-7 w-7 rounded-full" />
                         <Skeleton className="h-7 w-7 rounded-full" />
+                        <Skeleton className="h-7 w-7 rounded-full" />
                       </div>
                     </TableCell>
                   </TableRow>
                 ))
-              ) : currentCommandes?.length > 0 ? (
-                currentCommandes?.map((commande) => (
+              ) : commandes?.data?.length > 0 ? (
+                commandes?.data?.map((commande) => (
                   <TableRow key={commande.id}>
-                    <TableCell className="font-medium">
+                    <TableCell
+                      onClick={() => {
+                        if (commande.totalPaye !== 0) {
+                          if (currentCommande?.id === commande.id) {
+                            setInfo(!info);
+                          } else setInfo(true);
+                          setCurrentCommande(commande);
+                          //setNumeroCommande(commande.numero);
+                        }
+                      }}
+                      className={`font-medium !py-2  ${
+                        (commande.totalPaye === commande.total ||
+                          commande.totalPaye > commande.total) &&
+                        "cursor-pointer hover:text-green-400"
+                      } ${
+                        commande.totalPaye !== 0 &&
+                        commande.totalPaye < commande.total &&
+                        "cursor-pointer hover:text-orange-400"
+                      }`}
+                    >
                       {commande.numero}
                     </TableCell>
-                    <TableCell>{formatDate(commande.createdAt)}</TableCell>
-                    <TableCell>{commande.client.nom.toUpperCase()}</TableCell>
-                    <TableCell>{commande.total} DH</TableCell>
-                    <TableCell>{commande.avance} DH</TableCell>
-                    <TableCell>
-                      {(commande.total - commande.avance).toFixed()} DH
+                    <TableCell className="!py-2">
+                      {formatDate(commande.createdAt)}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="!py-2">
+                      {commande.client.nom.toUpperCase()}
+                    </TableCell>
+                    <TableCell className="!py-2">{commande.total} DH</TableCell>
+                    <TableCell className="!py-2">
+                      {commande.total - commande.totalPaye} DH
+                    </TableCell>
+                    <TableCell className="!py-2">
+                      {etatPaiement(commande)}
+                      {info && commande.id === currentCommande?.id && (
+                        <ul>
+                          {transactionPerCommande(commande.numero)?.map(
+                            (trans) => (
+                              <li key={trans.id} className="w-full bg-slate-200 text-sky-800 font-medium my-1 px-2 rounded-full">
+                                <span>Date :{formatDate(trans.createdAt)}</span>
+                                <span className="ml-4">
+                                  Montant : {trans.montant} DH
+                                </span>
+                                <span className="ml-4">
+                                  Compte : {trans.compte}
+                                </span>
+                              </li>
+                            )
+                          )}
+                        </ul>
+                      )}
+                    </TableCell>
+                    <TableCell className="!py-2">
                       <div className="flex items-center gap-2">
                         <span
                           className={`h-2 w-2 rounded-full ${getStatusColor(
@@ -370,7 +510,7 @@ export default function CommandesPage() {
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right !py-2">
                       <div className="flex justify-end gap-2">
                         <Link href={`/ventes/commandes/${commande.id}/update`}>
                           <CustomTooltip message="Modifier">
@@ -383,15 +523,6 @@ export default function CommandesPage() {
                             </Button>
                           </CustomTooltip>
                         </Link>
-                        <CustomTooltip message="Payer">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-full hover:bg-green-100 hover:text-green-600"
-                          >
-                            <CircleDollarSign className="h-4 w-4" />
-                          </Button>
-                        </CustomTooltip>
                         <CustomTooltip message="Supprimer">
                           <Button
                             variant="ghost"
@@ -405,17 +536,35 @@ export default function CommandesPage() {
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </CustomTooltip>
+                        <CustomTooltip message="Payer">
+                          <Button
+                            onClick={() => {
+                              setIsBankDialogOpen(true);
+                              setCurrentCommande(commande);
+                            }}
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full hover:bg-sky-100 hover:text-sky-600"
+                            disabled={commande.montantPaye === commande.total}
+                          >
+                            <CircleDollarSign className="h-4 w-4" />
+                          </Button>
+                        </CustomTooltip>
                         <CustomTooltip message="Imprimer">
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 rounded-full hover:bg-green-100 hover:text-green-600"
-                            onClick={() =>
+                            className="h-8 w-8 rounded-full hover:bg-emerald-100 hover:text-emerald-600"
+                            onClick={() => {
                               window.open(
                                 `/ventes/commandes/${commande.id}/pdf`,
                                 "_blank"
-                              )
-                            }
+                              );
+                              localStorage.setItem(
+                                "commande",
+                                JSON.stringify(commande)
+                              );
+                            }}
                           >
                             <Printer className="h-4 w-4" />
                           </Button>
@@ -435,10 +584,10 @@ export default function CommandesPage() {
           </Table>
         </div>
 
-        {currentCommandes?.length > 0 ? (
+        {commandes?.data?.length > 0 ? (
           <CustomPagination
-            currentPage={currentPage}
-            setCurrentPage={setCurrentPage}
+            currentPage={page}
+            setCurrentPage={setPage}
             totalPages={totalPages}
           />
         ) : (
@@ -454,6 +603,17 @@ export default function CommandesPage() {
           deleteCommande(currentCommande.id, currentCommande.numero);
         }}
         itemType="produit"
+      />
+      <PaymentDialog
+        setCompte={setCompte}
+        compte={compte}
+        setMontant={setMontant}
+        isOpen={isBankDialogOpen}
+        onClose={() => setIsBankDialogOpen(false)}
+        onConfirm={() => {
+          createTransaction.mutate(data);
+          console.log("data : ", data);
+        }}
       />
     </>
   );

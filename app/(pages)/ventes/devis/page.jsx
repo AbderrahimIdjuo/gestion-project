@@ -16,14 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Search,
-  Pen,
-  Trash2,
-  Filter,
-  Printer,
-  CalendarIcon,
-} from "lucide-react";
+import { Search, Pen, Trash2, Filter, Printer, FilePlus } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -44,80 +37,72 @@ import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 import CustomPagination from "@/components/customUi/customPagination";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { PriceRangeSlider } from "@/components/customUi/customSlider";
-import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
-import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
 
 export default function DevisPage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState();
   const [currentDevi, setCurrentDevi] = useState();
-  const [date, setDate] = useState();
-  const [devisList, setDevisList] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [maxMontant, setMaxMontant] = useState();
+  const [startDate, setStartDate] = useState();
+  const [endDate, setEndDate] = useState();
   const [filters, setFilters] = useState({
-    client: "all",
     dateStart: "",
     dateEnd: "",
     montant: [0, maxMontant],
     statut: "all",
   });
 
-  const itemsPerPage = 10;
+  const router = useRouter();
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+      setPage(1);
+    }, 500); // Adjust delay as needed
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchQuery]);
+  const devis = useQuery({
+    queryKey: [
+      "devis",
+      filters.statut,
+      debouncedQuery,
+      page,
+      startDate,
+      endDate,
+      filters.montant,
+    ],
+    queryFn: async () => {
+      const response = await axios.get("/api/devis", {
+        params: {
+          query: debouncedQuery,
+          page,
+          statut: filters.statut,
+          from: startDate,
+          to: endDate,
+          minTotal: filters.montant[0],
+          maxTotal: filters.montant[1],
+        },
+      });
+      setMaxMontant(response.data.maxMontant);
+      setTotalPages(response.data.totalPages);
+      return response.data.devis;
+    },
+    keepPreviousData: true, // Keeps old data visible while fetching new page
+    refetchOnWindowFocus: false,
+  });
+
+  // intialiser les valeure du monatant total handler
   useEffect(() => {
     setFilters({ ...filters, montant: [0, maxMontant] });
   }, [maxMontant]);
-  const totalList = devisList?.map((devi) => devi.total);
-  useEffect(() => {
-    if (totalList?.length > 0) {
-      const maxPrice = Math.max(...totalList);
-      setMaxMontant(maxPrice);
-    }
-  }, [totalList]);
-  const filteredDevis = devisList?.filter(
-    (devis) =>
-      (searchQuery === "" ||
-        devis.numero.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        devis.client.nom.toLowerCase().includes(searchQuery.toLowerCase())) &&
-      (filters.client === "all" || devis.client === filters.client) &&
-      (filters.statut === "all" || devis.statut === filters.statut) &&
-      devis.total >= filters.montant[0] &&
-      devis.total <= filters.montant[1] &&
-      (!date || new Date(devis.createdAt) >= new Date(date))
-  );
-
-  const totalPages = Math.ceil(filteredDevis.length / itemsPerPage);
-  const currentDevis = filteredDevis.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-  const router = useRouter();
-
-  const getDevis = async () => {
-    const result = await axios.get("/api/devis");
-    const { devis } = result.data;
-    console.log("list devis: ", devis);
-
-    setDevisList(devis);
-    setIsLoading(false);
-  };
-
-  useEffect(() => {
-    getDevis();
-  }, []);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filters, searchQuery]);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -151,7 +136,6 @@ export default function DevisPage() {
           icon: "🗑️",
         }
       );
-      getDevis();
     } catch (e) {
       console.log(e);
     }
@@ -167,7 +151,7 @@ export default function DevisPage() {
   return (
     <>
       <Toaster position="top-center"></Toaster>
-      <div className="space-y-6 caret-transparent">
+      <div className="space-y-6 mb-[5rem]">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Devis</h1>
         </div>
@@ -202,7 +186,7 @@ export default function DevisPage() {
                 </SheetHeader>
                 <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-4 items-center gap-4 my-2">
-                    <Label htmlFor="statut" className="text-right text-black">
+                    <Label htmlFor="statut" className="text-left text-black">
                       Statut
                     </Label>
                     <Select
@@ -229,40 +213,15 @@ export default function DevisPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="grid grid-cols-4 items-center gap-4 my-2">
-                    <Label htmlFor="client" className="text-right text-black">
-                      Date :
-                    </Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "col-span-3 w-full justify-start text-left font-normal hover:text-purple-600 hover:bg-white hover:border-2 hover:border-purple-500",
-                            !date && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon />
-                          {date ? (
-                            format(date, "PPP", { locale: fr })
-                          ) : (
-                            <span>Choisis une date</span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <Calendar
-                          mode="single"
-                          selected={date}
-                          onSelect={setDate}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4 my-2">
-                    <Label htmlFor="montant" className="text-right text-black">
-                      Montant total :
+                  <CustomDateRangePicker
+                    startDate={startDate}
+                    setStartDate={setStartDate}
+                    endDate={endDate}
+                    setEndDate={setEndDate}
+                  />
+                  <div className="grid grid-cols-4 items-start gap-4 my-4">
+                    <Label htmlFor="montant" className="text-left text-black">
+                      Montant :
                     </Label>
                     <div className="col-span-3">
                       <PriceRangeSlider
@@ -270,9 +229,10 @@ export default function DevisPage() {
                         max={maxMontant}
                         step={100}
                         value={filters.montant} // Ensure montant is an array, e.g., [min, max]
-                        onValueChange={
-                          (value) => setFilters({ ...filters, montant: value }) // value will be [min, max]
-                        }
+                        onValueChange={(value) => {
+                          setFilters({ ...filters, montant: value }); // value will be [min, max]
+                          console.log(filters.montant);
+                        }}
                       />
                       <div className="flex justify-between mt-2">
                         <span>{filters.montant[0]} DH</span>
@@ -303,7 +263,7 @@ export default function DevisPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isLoading ? (
+              {devis.isFetching ? (
                 [...Array(10)].map((_, index) => (
                   <TableRow
                     className="h-[2rem] MuiTableRow-root"
@@ -338,15 +298,19 @@ export default function DevisPage() {
                     </TableCell>
                   </TableRow>
                 ))
-              ) : currentDevis?.length > 0 ? (
-                currentDevis?.map((devis) => (
+              ) : devis.data?.length > 0 ? (
+                devis.data?.map((devis) => (
                   <TableRow key={devis.id}>
-                    <TableCell>{formatDate(devis.createdAt)}</TableCell>
-                    <TableCell className="font-medium">
+                    <TableCell className="!py-2">
+                      {formatDate(devis.createdAt)}
+                    </TableCell>
+                    <TableCell className="font-medium !py-2">
                       {devis.numero}
                     </TableCell>
-                    <TableCell>{devis.client.nom.toUpperCase()}</TableCell>
-                    <TableCell>
+                    <TableCell className="!py-2">
+                      {devis.client.nom.toUpperCase()}
+                    </TableCell>
+                    <TableCell className="!py-2">
                       <div className="flex items-center gap-2">
                         <span
                           className={`h-2 w-2 rounded-full ${getStatusColor(
@@ -358,8 +322,8 @@ export default function DevisPage() {
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell>{devis.total} DH</TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="!py-2">{devis.total} DH</TableCell>
+                    <TableCell className="text-right !py-2">
                       <div className="flex justify-end gap-2">
                         <CustomTooltip message="Modifier">
                           <Button
@@ -388,11 +352,23 @@ export default function DevisPage() {
                             <span className="sr-only">Supprimer</span>
                           </Button>
                         </CustomTooltip>
+                        <CustomTooltip message="crée une commande">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full hover:bg-sky-100 hover:text-sky-600"
+                            onClick={() => {
+                              console.log("create a commande");
+                            }}
+                          >
+                            <FilePlus className="h-4 w-4" />
+                          </Button>
+                        </CustomTooltip>
                         <CustomTooltip message="Imprimer">
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 rounded-full hover:bg-green-100 hover:text-green-600"
+                            className="h-8 w-8 rounded-full hover:bg-emerald-100 hover:text-emerald-600"
                             onClick={() => {
                               window.open(
                                 `/ventes/devis/${devis.id}/pdf`,
@@ -423,10 +399,10 @@ export default function DevisPage() {
           </Table>
         </div>
 
-        {currentDevis?.length > 0 ? (
+        {devis.data?.length > 0 ? (
           <CustomPagination
-            currentPage={currentPage}
-            setCurrentPage={setCurrentPage}
+            currentPage={page}
+            setCurrentPage={setPage}
             totalPages={totalPages}
           />
         ) : (

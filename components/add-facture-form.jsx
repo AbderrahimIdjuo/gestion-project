@@ -96,6 +96,8 @@ export function AddFactureForm() {
     },
   });
   const onSubmit = async (data) => {
+    console.log("data :", data);
+
     createNewFacture.mutate(data);
   };
 

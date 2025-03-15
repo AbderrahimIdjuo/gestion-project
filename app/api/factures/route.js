@@ -5,14 +5,52 @@ import prisma from "../../../lib/prisma";
 export async function POST(req) {
   try {
     const response = await req.json();
-    const { numero, lable, type, montant, description, payer, dateEmission } =
-      response;
-    const result = await prisma.factures.create({
-      data: { numero, lable, type, montant : montant || 0 , description, payer, dateEmission },
+    const {
+      numero,
+      lable,
+      type,
+      montant,
+      description,
+      payer,
+      dateEmission,
+      compte,
+    } = response;
+    const transactionResult = await prisma.$transaction(async (tx) => {
+      const factureRecurrente = await tx.factures.create({
+        data: {
+          numero,
+          lable,
+          type,
+          montant: montant || 0,
+          description,
+          payer,
+          dateEmission,
+        },
+      });
+      // Si une facture est payer créer une transaction
+      if (payer) {
+        await tx.transactions.create({
+          data: {
+            reference: numero,
+            type: "dépense",
+            montant,
+            compte,
+            lable,
+          },
+        });
+      }
+      return factureRecurrente;
     });
-    return NextResponse.json({ result });
+    return NextResponse.json({
+      message: "facture recurrente créée avec succès.",
+      transactionResult,
+    });
   } catch (error) {
-    console.log(error);
+    console.error(error);
+    return NextResponse.json(
+      { message: "Une erreur est survenue lors de la création de la facture." },
+      { status: 500 }
+    );
   }
 }
 

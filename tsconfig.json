@@ -7,7 +7,7 @@
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
@@ -37,6 +37,6 @@
     "app/(pages)/ventes/commandes/page.jsx",
     "app/(pages)/produits/page1.jsx",
     "components/product-form-dialog.jsx"
-, "app/(pages)/factures/page.jsx", "app/(pages)/ventes/credit-clients/page.jsx", "app/(pages)/ventes/devis/page.jsx", "components/performance-chart.jsx", "components/sppiner.jsx"  ],
+, "app/(pages)/factures/page.jsx", "app/(pages)/ventes/credit-clients/page.jsx", "app/(pages)/ventes/devis/page.jsx", "components/performance-chart.jsx", "components/sppiner.jsx", "app/(pages)/ventes/commandes/test/page.jsx", "app/api/commandes/nouveau/route.js"  ],
   "exclude": ["node_modules"]
 }

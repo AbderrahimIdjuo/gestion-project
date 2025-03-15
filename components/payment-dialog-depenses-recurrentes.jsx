@@ -22,10 +22,10 @@ export function PaymentDialog({
   onClose,
   onConfirm,
   compte,
+  montant,
   setCompte,
   setMontant,
 }) {
-
   const comptes = useQuery({
     queryKey: ["comptes"],
     queryFn: async () => {
@@ -53,6 +53,7 @@ export function PaymentDialog({
             <Input
               id="montant"
               name="montant"
+              defaultValue={montant}
               className="col-span-3 focus-visible:ring-purple-500"
               onChange={(e) => setMontant(e.target.value)}
             />

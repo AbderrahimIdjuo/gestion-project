@@ -45,7 +45,6 @@ import updateCommandeSchema from "@/app/zodSchemas/updateCommandeSchema";
 
 export default function UpdateCommandePage({ params }) {
   const [items, setItems] = useState([]);
-  // const [commande, setCommande] = useState();
   const [isLoading, setIsLoading] = useState(true);
   const [isArticleDialogOpen, setIsArticleDialogOpen] = useState(false);
   const router = useRouter();
@@ -56,7 +55,7 @@ export default function UpdateCommandePage({ params }) {
     control,
     handleSubmit,
     setValue,
-    formState: { errors, isSubmiting },
+    formState: { isSubmiting },
   } = useForm({
     resolver: zodResolver(updateCommandeSchema),
   });
@@ -212,7 +211,7 @@ export default function UpdateCommandePage({ params }) {
                   </span>
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-6">
+              <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-1">
                   <Label htmlFor="statut" className="text-right text-black">
                     Statut
@@ -274,7 +273,7 @@ export default function UpdateCommandePage({ params }) {
                     </PopoverContent>
                   </Popover>
                 </div>
-                <div className="space-y-1">
+                {/* <div className="space-y-1">
                   <Label htmlFor="orderNumber">Avance :</Label>
                   <div className="relative w-full flex">
                     <div className="absolute border-2 border-gray-300 bg-white inset-y-0 right-0 w-12 flex items-center justify-center  rounded-r-md">
@@ -287,7 +286,7 @@ export default function UpdateCommandePage({ params }) {
                       className="focus:!ring-purple-500 pr-14 text-left rounded-r-md"
                     />
                   </div>
-                </div>
+                </div> */}
               </div>
 
               {/* Items Table */}

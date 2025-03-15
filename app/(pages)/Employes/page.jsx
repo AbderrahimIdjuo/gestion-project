@@ -23,38 +23,46 @@ import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { LoadingDots } from "@/components/loading-dots";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function EmployesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currEmploye, setcurrEmploye] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAddingEmploye, setIsAddingEmploye] = useState(false);
   const [isUpdatingEmploye, setIsUpdatingEmploye] = useState(false);
-  const itemsPerPage = 10;
-
-  const getEmployes = async () => {
-    const response = await axios.get("/api/employes");
-    const employes = response.data.employes;
-    console.log("employes : ", employes);
-    return employes;
-  };
+  const [page, setPage] = useState(1);
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [totalPages, setTotalPages] = useState();
   const queryClient = useQueryClient();
-  const query = useQuery({ queryKey: ["employes"], queryFn: getEmployes });
 
-  const filteredEmployes = query.data?.filter(
-    (employe) =>
-      employe.nom.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      employe.adresse?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      employe.telephone?.includes(searchQuery)
-  );
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+      setPage(1);
+    }, 500); // Adjust delay as needed
 
-  const totalPages = Math.ceil(filteredEmployes?.length / itemsPerPage);
-  const currentEmployes = filteredEmployes?.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchQuery]);
+
+  const employes = useQuery({
+    queryKey: ["employes", page, debouncedQuery],
+    queryFn: async () => {
+      const response = await axios.get("/api/employes", {
+        params: {
+          query: debouncedQuery,
+          page,
+        },
+      });
+      setTotalPages(response.data.totalPages);
+      return response.data.employes;
+    },
+    keepPreviousData: true, // Keeps old data visible while fetching new page
+    refetchOnWindowFocus: false,
+  });
   const getInitials = (name) => {
     return name
       .split(" ")
@@ -90,9 +98,6 @@ export default function EmployesPage() {
     },
   });
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery]);
 
   function formatRIB(rib) {
     return `${rib.slice(0, 3)} ${rib.slice(3, 6)} ${rib.slice(
@@ -103,22 +108,25 @@ export default function EmployesPage() {
   return (
     <>
       <Toaster position="top-center" />
-      <div className="space-y-6 caret-transparent">
+      <div className="space-y-6 mb-[5rem]">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Employés</h1>
         </div>
 
         <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-6 ">
-          <div className="relative w-full sm:w-96">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Rechercher des Employes..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 w-full rounded-full bg-gray-50 focus-visible:ring-purple-500 focus-visible:ring-offset-0"
-              spellCheck={false}
-            />
-          </div>
+            <div className="relative w-full sm:w-96">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Rechercher des employés..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 w-full rounded-full bg-gray-50 focus-visible:ring-purple-500 focus-visible:ring-offset-0"
+                spellCheck={false}
+              />
+              <div className="absolute right-6 top-1/3 h-4 w-4 -translate-y-1/2 text-muted-foreground">
+                {employes.isFetching && !employes.isLoading && <LoadingDots />}
+              </div>
+            </div>
           <Button
             onClick={() => {
               setIsAddingEmploye(!isAddingEmploye);
@@ -175,7 +183,7 @@ export default function EmployesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {query.isLoading ? (
+                  {employes.isLoading ? (
                     [...Array(10)].map((_, index) => (
                       <TableRow
                         className="h-[2rem] MuiTableRow-root"
@@ -218,13 +226,13 @@ export default function EmployesPage() {
                         </TableCell>
                       </TableRow>
                     ))
-                  ) : currentEmployes?.length > 0 ? (
-                    currentEmployes?.map((employe) => (
-                      <TableRow key={employe.id}>
+                  ) : employes.data?.length > 0 ? (
+                    employes.data?.map((employe) => (
+                      <TableRow className="font-medium hover:text-emerald-400" key={employe.id}>
                         <EmployeInfoDialog employe={employe}>
-                          <TableCell className="font-medium cursor-pointer hover:text-purple-600">
+                          <TableCell className="font-medium cursor-pointer !py-2">
                             <div className="flex flex-row gap-2 justify-start items-center">
-                              <Avatar className="w-10 h-10">
+                              <Avatar className="w-8 h-8">
                                 <AvatarImage
                                   src={`https://api.dicebear.com/7.x/initials/svg?seed=${employe.nom}`}
                                 />
@@ -238,20 +246,20 @@ export default function EmployesPage() {
                             </div>
                           </TableCell>
                         </EmployeInfoDialog>
-                        <TableCell className="text-md">
+                        <TableCell className="text-md !py-2">
                           {employe.telephone}
                         </TableCell>
-                        <TableCell className="text-md">
+                        <TableCell className="text-md !py-2">
                           {employe.role}
                         </TableCell>
-                        <TableCell className="text-md">
+                        <TableCell className="text-md !py-2">
                           {employe.salaire}
                         </TableCell>
-                        <TableCell className="text-md">{employe.cin}</TableCell>
-                        <TableCell className="text-md">
+                        <TableCell className="text-md !py-2">{employe.cin}</TableCell>
+                        <TableCell className="text-md !py-2">
                           {employe.adresse}
                         </TableCell>
-                        <TableCell className="text-md">
+                        <TableCell className="text-md !py-2">
                           <CustomTooltip message={formatRIB(employe.rib)}>
                             {employe.rib && (
                               <span className="cursor-default">
@@ -260,7 +268,7 @@ export default function EmployesPage() {
                             )}
                           </CustomTooltip>
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right !py-2">
                           <div className="flex justify-end gap-2">
                             <CustomTooltip message="Modifier">
                               <Button
@@ -320,7 +328,7 @@ export default function EmployesPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {query.isLoading ? (
+                    {employes.isLoading ? (
                       [...Array(10)].map((_, index) => (
                         <TableRow
                           className="h-[2rem] MuiTableRow-root"
@@ -342,8 +350,8 @@ export default function EmployesPage() {
                           </TableCell>
                         </TableRow>
                       ))
-                    ) : currentEmployes?.length > 0 ? (
-                      currentEmployes?.map((employe) => (
+                    ) : employes.data?.length > 0 ? (
+                      employes.data?.map((employe) => (
                         <TableRow key={employe.id}>
                           <EmployeInfoDialog employe={employe}>
                             <TableCell className="font-medium cursor-pointer hover:text-purple-600">
@@ -413,10 +421,10 @@ export default function EmployesPage() {
                 </Table>
               </ScrollArea>
             </div>
-            {filteredEmployes?.length > 0 ? (
+            {employes.data?.length > 0 ? (
               <CustomPagination
-                currentPage={currentPage}
-                setCurrentPage={setCurrentPage}
+                currentPage={page}
+                setCurrentPage={setPage}
                 totalPages={totalPages}
               />
             ) : (

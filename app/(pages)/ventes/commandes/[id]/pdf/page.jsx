@@ -3,35 +3,31 @@
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
-import axios from "axios";
 import { useState } from "react";
 import { Table, TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { Phone, MapPin } from "lucide-react";
-
 import LoadingCommandePdf from "@/components/loading-commande-pdf";
 
-export default function DevisPDFPage({ params }) {
+function formatDate(dateString) {
+  return dateString?.split("T")[0].split("-").reverse().join("-");
+}
+
+export default function DevisPDFPage() {
   const [commande, setCommande] = useState();
-
-  const getCommandeById = async () => {
-    const result = await axios.get(`/api/commandes/${params.id}`);
-    const { commande } = result.data;
-    console.log("commande", commande);
-
-    setCommande(commande);
-  };
-  useEffect(() => {
-    getCommandeById();
-  }, [params.id]);
-
   const handlePrint = () => {
     window.print();
   };
-
+  useEffect(() => {
+    const storedData = localStorage.getItem("commande");
+    console.log("storedData", JSON.parse(storedData));
+    if (storedData) {
+      setCommande(JSON.parse(storedData));
+    }
+  }, []);
   return (
     <>
       {commande ? (
-        <div className="container mx-auto p-8 max-w-4xl bg-white min-h-screen print:p-0 print:max-w-none">
+        <div className="container mx-auto p-8 max-w-4xl bg-white min-h-screen print:p-0 print:max-w-none mb-10">
           {/* Document Content */}
           <div id="print-area" className="space-y-6">
             {/* Header */}
@@ -91,13 +87,11 @@ export default function DevisPDFPage({ params }) {
             <div className="space-y-1">
               <p>
                 <span className="font-medium">Date de création:</span>{" "}
-                {commande?.createdAt.split("T")[0]}{" "}
+                {formatDate(commande?.createdAt)}{" "}
               </p>
               <p>
-                <span className="font-medium">
-                  Date limite de livraison :
-                </span>{" "}
-                {commande?.echeance}
+                <span className="font-medium">Date limite de livraison :</span>{" "}
+                {formatDate(commande?.echeance)}
               </p>
               <p>
                 <span className="font-medium">Émis par:</span> Commerçant 1
@@ -140,28 +134,38 @@ export default function DevisPDFPage({ params }) {
                   ))}
                 </tbody>
                 <tfoot className="font-medium bg-zinc-100">
+                  {commande?.fraisLivraison > 0 && (
+                    <TableRow>
+                      <TableCell
+                        colSpan={3}
+                        className="border-b p-2 text-right"
+                      >
+                        Frais de transport :
+                      </TableCell>
+                      <TableCell className="border-l border-b p-2 text-right">
+                        {commande?.fraisLivraison} DH
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {!commande?.sousTotal === commande?.total && (
+                    <TableRow>
+                      <TableCell
+                        colSpan={3}
+                        className="border-b p-2 text-right"
+                      >
+                        Sous-total :
+                      </TableCell>
+                      <TableCell className="border-l border-b p-2 text-right">
+                        {commande?.sousTotal} DH
+                      </TableCell>
+                    </TableRow>
+                  )}
                   <TableRow>
                     <TableCell colSpan={3} className="border-b p-2 text-right">
-                      Frais de transport :
+                      Montant payé :
                     </TableCell>
                     <TableCell className="border-l border-b p-2 text-right">
-                      {commande?.fraisLivraison} DH
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell colSpan={3} className="border-b p-2 text-right">
-                      Sous-total :
-                    </TableCell>
-                    <TableCell className="border-l border-b p-2 text-right">
-                      {commande?.sousTotal} DH
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell colSpan={3} className="border-b p-2 text-right">
-                      Avance :
-                    </TableCell>
-                    <TableCell className="border-l border-b p-2 text-right">
-                      {commande?.avance} DH
+                      {commande?.totalPaye} DH
                     </TableCell>
                   </TableRow>
                   <TableRow>
@@ -195,15 +199,15 @@ export default function DevisPDFPage({ params }) {
                       Reste a payer :
                     </TableCell>
                     <TableCell className="border-l p-2 text-xl text-gray-900 text-right">
-                      {(commande?.total - commande?.avance).toFixed(2)} DH
+                      {(commande?.total - commande?.totalPaye).toFixed(2)} DH
                     </TableCell>
                   </TableRow>
                 </tfoot>
               </Table>
             </div>
-            <div className="flex justify-between text-sm text-gray-600 pt-4">
+            {/* <div className="flex justify-between text-sm text-gray-600 pt-4">
               <div>www.oudaoudox.com</div>
-            </div>
+            </div> */}
           </div>
           <div className="print:hidden mt-8 flex justify-end">
             <Button

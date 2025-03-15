@@ -22,43 +22,54 @@ import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { LoadingDots } from "@/components/loading-dots";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export default function ClientsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currClient, setcurrClient] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [clientList, setClientList] = useState([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const [isAddingClient, setIsAddingClient] = useState(false);
   const [isUpdatingClient, setIsUpdatingClient] = useState(false);
-  const itemsPerPage = 10;
+  const [page, setPage] = useState(1);
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [totalPages, setTotalPages] = useState();
 
-  const filteredClients = clientList.filter(
-    (client) =>
-      client.nom.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      client.adresse?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      client.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      client.telephone?.includes(searchQuery)
-  );
+  const queryClient = useQueryClient();
 
-  const totalPages = Math.ceil(filteredClients.length / itemsPerPage);
-  const currentClients = filteredClients.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  const clients = useQuery({
+    queryKey: ["clients", page, debouncedQuery],
+    queryFn: async () => {
+      const response = await axios.get("/api/clients", {
+        params: {
+          query: debouncedQuery,
+          page,
+        },
+      });
+      setTotalPages(response.data.totalPages);
+      return response.data.clients;
+    },
+    keepPreviousData: true, // Keeps old data visible while fetching new page
+    refetchOnWindowFocus: false,
+  });
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+      setPage(1);
+    }, 500); // Adjust delay as needed
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchQuery]);
+
   const getInitials = (name) => {
     return name
       .split(" ")
       .map((word) => word[0])
       .join("")
       .toUpperCase();
-  };
-  const getClients = async () => {
-    const result = await axios.get("/api/clients");
-    const { Clients } = result.data;
-    setClientList(Clients);
-    setIsLoading(false);
   };
 
   const deleteClient = async () => {
@@ -80,33 +91,31 @@ export default function ClientsPage() {
     }
   };
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery]);
-
-  useEffect(() => {
-    getClients();
-  }, []);
-
   return (
     <>
       <Toaster position="top-center" />
-      <div className="space-y-6 caret-transparent">
+      <div className="space-y-6 mb-[5rem]">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Clients</h1>
         </div>
 
         <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-6 ">
-          <div className="relative w-full sm:w-96">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Rechercher des clients..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 w-full rounded-full bg-gray-50 focus-visible:ring-purple-500 focus-visible:ring-offset-0"
-            spellCheck={false}
-            />
+          <div className="flex gap-2">
+            <div className="relative w-full sm:w-96">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Rechercher des clients..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 w-full rounded-full bg-gray-50 focus-visible:ring-purple-500 focus-visible:ring-offset-0"
+                spellCheck={false}
+              />
+              <div className="absolute right-6 top-1/3 h-4 w-4 -translate-y-1/2 text-muted-foreground">
+                {clients.isFetching && !clients.isLoading && <LoadingDots />}
+              </div>
+            </div>
           </div>
+
           <Button
             onClick={() => {
               setIsAddingClient(!isAddingClient);
@@ -160,10 +169,10 @@ export default function ClientsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {isLoading ? (
+                  {clients.isLoading ? (
                     [...Array(10)].map((_, index) => (
                       <TableRow
-                        className="h-[2rem] MuiTableRow-root"
+                        className="h-[2rem] MuiTableRow-root !py-2"
                         role="checkbox"
                         tabIndex={-1}
                         key={index}
@@ -194,13 +203,13 @@ export default function ClientsPage() {
                         </TableCell>
                       </TableRow>
                     ))
-                  ) : currentClients.length > 0 ? (
-                    currentClients?.map((client) => (
-                      <TableRow key={client.id}>
+                  ) : clients.data?.length > 0 ? (
+                    clients.data?.map((client) => (
+                      <TableRow className="font-medium hover:text-emerald-400" key={client.id}>
                         <ClientInfoDialog client={client}>
-                          <TableCell className="font-medium cursor-pointer hover:text-purple-600">
+                          <TableCell className="font-medium cursor-pointer !py-2">
                             <div className="flex flex-row gap-2 justify-start items-center">
-                              <Avatar className="w-10 h-10">
+                              <Avatar className="w-8 h-8">
                                 <AvatarImage
                                   src={`https://api.dicebear.com/7.x/initials/svg?seed=${client.nom}`}
                                 />
@@ -214,16 +223,16 @@ export default function ClientsPage() {
                             </div>
                           </TableCell>
                         </ClientInfoDialog>
-                        <TableCell className="text-md">
+                        <TableCell className="text-md !py-2">
                           {client.telephone}
                         </TableCell>
-                        <TableCell className="text-md">
+                        <TableCell className="text-md !py-2">
                           {client.adresse}
                         </TableCell>
-                        <TableCell className="text-md">
+                        <TableCell className="text-md !py-2">
                           {client.email}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right !py-2">
                           <div className="flex justify-end gap-2">
                             <Button
                               variant="ghost"
@@ -279,7 +288,7 @@ export default function ClientsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {isLoading ? (
+                    {clients.isLoading ? (
                       [...Array(10)].map((_, index) => (
                         <TableRow
                           className="h-[2rem] MuiTableRow-root"
@@ -301,8 +310,8 @@ export default function ClientsPage() {
                           </TableCell>
                         </TableRow>
                       ))
-                    ) : currentClients.length > 0 ? (
-                      currentClients?.map((client) => (
+                    ) : clients.data?.length > 0 ? (
+                      clients.data?.map((client) => (
                         <TableRow key={client.id}>
                           <ClientInfoDialog client={client}>
                             <TableCell className="font-medium cursor-pointer hover:text-purple-600">
@@ -368,10 +377,10 @@ export default function ClientsPage() {
                 </Table>
               </div>
             </ScrollArea>
-            {filteredClients.length > 0 ? (
+            {clients.data?.length > 0 ? (
               <CustomPagination
-                currentPage={currentPage}
-                setCurrentPage={setCurrentPage}
+                currentPage={page}
+                setCurrentPage={setPage}
                 totalPages={totalPages}
               />
             ) : (
@@ -381,12 +390,13 @@ export default function ClientsPage() {
           {isUpdatingClient && (
             <ModifyClientDialog
               currClient={currClient}
-              getClients={getClients}
-              clientList={clientList}
+              clientList={clients.data}
               setIsUpdatingClient={setIsUpdatingClient}
             />
           )}
-          {isAddingClient && <ClientFormDialog getClients={getClients} clientList={clientList} />}
+          {isAddingClient && (
+            <ClientFormDialog getClients={getClients} clientList={clientList} />
+          )}
         </div>
       </div>
       <DeleteConfirmationDialog
@@ -396,7 +406,7 @@ export default function ClientsPage() {
         onConfirm={() => {
           deleteClient();
           setIsDialogOpen(false);
-          getClients();
+          queryClient.invalidateQueries(["clients"]);
         }}
         itemType="client"
       ></DeleteConfirmationDialog>

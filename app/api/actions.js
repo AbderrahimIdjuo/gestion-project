@@ -102,3 +102,32 @@ export async function addInfoEntreprise(info) {
   });
   return result;
 }
+
+export async function addtransaction(data) {
+  const {numero , type , montant , compte , lable} = data
+    const result = await prisma.transactions.create({
+      data: {
+        reference: numero,
+        type,
+        montant,
+        compte,
+        lable,
+      },
+    });
+   // const commandes = await prisma.commandes.findUnique({where: { numero : numero}})
+    const updateCommande = await prisma.commandes.update({
+      where: { numero : numero},
+      data:{
+        totalPaye: { increment: montant }
+      }
+    
+    })
+    return {result , updateCommande};
+  }
+
+  // export async function deleteTransaction(id) {
+  //   const result = await prisma.transactions.delete({
+  //     where: { id },
+  //   });
+  //   return result;
+  // }

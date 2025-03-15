@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  TestTubeDiagonal,
   LayoutDashboard,
   Users,
   Package,
@@ -13,10 +14,12 @@ import {
   ChevronRight,
   ContactRound,
   Settings,
+  Landmark
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const menuItems = [
+  { icon: TestTubeDiagonal, label: "Test", href: "/test" },
   { icon: LayoutDashboard, label: "Dashboard", href: "/" },
   {
     icon: Users,
@@ -41,6 +44,11 @@ const menuItems = [
       { label: "Devis", href: "/ventes/devis" },
       { label: "Commandes", href: "/ventes/commandes" },
     ],
+  },
+  {
+    icon: Landmark,
+    label: "Trésorie",
+    href: "/tresorie",
   },
   {
     icon: Truck,
@@ -200,6 +208,7 @@ export function Sidebar() {
                                 ? "bg-purple-100 text-purple-600"
                                 : "text-slate-500 hover:bg-slate-100"
                             )}
+                            prefetch={true}
                           >
                             {subItem.label}
                           </Link>

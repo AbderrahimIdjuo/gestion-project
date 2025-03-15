@@ -47,32 +47,31 @@ import { ModifyProductDialog } from "@/components/modify-product-dialog";
 import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PriceRangeSlider } from "@/components/customUi/customSlider";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { LoadingDots } from "@/components/loading-dots";
 
 export default function ProduitsPage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
+  const [page, setPage] = useState(1);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [products, setProducts] = useState(null);
+  const [debouncedQuery, setDebouncedQuery] = useState();
+  const [totalPages, setTotalPages] = useState();
+  const [maxPrixAchat, setMaxPrixAchat] = useState();
+  const [maxPrixVente, setMaxPrixVente] = useState();
+  const [maxStock, setMaxStock] = useState();
   const [currProduct, setCurrProduct] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isAddingProduct, setIsAddingProduct] = useState(false);
   const [isUpdatingProduct, setIsUpdatingProduct] = useState(false);
   const [isPurchasingProduct, setIsPurchasingProduct] = useState(false);
-  const [categories, setCategories] = useState();
-  const [max, setMax] = useState({
-    prixAchat: "",
-    prixVente: 0,
-    stock: 0,
-  });
+
   const [filters, setFilters] = useState({
     categorie: "all",
-    status: "all",
-    prixAchat: [0, max.prixAchat],
-    prixVente: [0, max.prixVente],
-    stock: [0, max.stock],
+    statut: "all",
+    prixAchat: [0, maxPrixAchat],
+    prixVente: [0, maxPrixVente],
+    stock: [0, maxStock],
   });
 
-  const itemsPerPage = 10;
   const stockStatuts = (stock) => {
     if (stock > 19) {
       return "En stock";
@@ -82,56 +81,50 @@ export default function ProduitsPage() {
       return "En rupture";
     }
   };
-  const filteredProducts = products?.filter(
-    (product) =>
-      (searchQuery === "" ||
-        product.designation
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase())) &&
-      (filters.categorie === "all" ||
-        product.categorie === filters.categorie) &&
-      (filters.status === "all" ||
-        stockStatuts(product.stock) === filters.status) &&
-      product.prixAchat >= filters.prixAchat[0] &&
-      product.prixAchat <= filters.prixAchat[1] &&
-      product.prixVente >= filters.prixVente[0] &&
-      product.prixVente <= filters.prixVente[1] &&
-      product.stock >= filters.stock[0] &&
-      product.stock <= filters.stock[1]
-  );
-
-  const totalPages = Math.ceil(filteredProducts?.length / itemsPerPage);
-  const currentProducts = filteredProducts?.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
   useEffect(() => {
-    setFilters({
-      ...filters,
-      prixAchat: [0, max.prixAchat],
-      prixVente: [0, max.prixVente],
-      stock: [0, max.stock],
-    });
-  }, [max]);
+    const handler = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+      setPage(1);
+    }, 500); // Adjust delay as needed
 
-  const getProducts = async () => {
-    const result = await axios.get("/api/produits");
-    const { produits } = result.data;
-    setProducts(produits);
-    const prixAchatList = produits.map((produit) => produit.prixAchat);
-    const prixVenteList = produits.map((produit) => produit.prixVente);
-    const stockList = produits.map((produit) => produit.stock);
-    setMax({
-      ...max,
-      prixAchat: Math.max(...prixAchatList),
-      prixVente: Math.max(...prixVenteList),
-      stock: Math.max(...stockList),
-    });
-    console.log("produits", produits);
-
-    setIsLoading(false);
-  };
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchQuery]);
+  const queryClient = useQueryClient();
+  const produits = useQuery({
+    queryKey: [
+      "produits",
+      filters.statut,
+      debouncedQuery,
+      page,
+      filters.categorie,
+      filters.prixAchat,
+      filters.prixVente,
+      filters.stock,
+    ],
+    queryFn: async () => {
+      const response = await axios.get("/api/produits", {
+        params: {
+          query: debouncedQuery,
+          page,
+          statut: filters.statut,
+          categorie: filters.categorie,
+          minPrixAchats: filters.prixAchat[0],
+          maxPrixAchats: filters.prixAchat[1],
+          minPrixVentes: filters.prixVente[0],
+          maxPrixVentes: filters.prixVente[1],
+        },
+      });
+      setTotalPages(response.data.totalPages);
+      setMaxPrixAchat(response.data.maxPrixAchat);
+      setMaxPrixVente(response.data.maxPrixVente);
+      setMaxStock(response.data.maxStock);
+      return response.data;
+    },
+    keepPreviousData: true, // Keeps old data visible while fetching new page
+    refetchOnWindowFocus: false,
+  });
 
   const deleteProduct = async () => {
     try {
@@ -145,26 +138,27 @@ export default function ProduitsPage() {
           icon: "🗑️",
         }
       );
-
-      getProducts();
+      queryClient.invalidateQueries(["produits"]);
     } catch (e) {
       console.log(e);
     }
   };
-  const getCategories = async () => {
-    const response = await axios.get("/api/categoriesProduits");
-    const categories = response.data.categories;
-    console.log("categories : ", categories);
+  useEffect(() => {
+    setFilters((prevFilters) => ({
+      ...prevFilters,
+      stock: [0, maxStock],
+      prixAchat: [0, maxPrixAchat],
+      prixVente: [0, maxPrixVente],
+    }));
+  }, [maxStock, maxPrixAchat, maxPrixVente]);
 
-    setCategories(categories);
-  };
-  useEffect(() => {
-    getProducts();
-    getCategories();
-  }, []);
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filters, searchQuery]);
+  const categories = useQuery({
+    queryKey: ["categories"],
+    queryFn: async () => {
+      const response = await axios.get("/api/categoriesProduits");
+      return response.data.categories;
+    },
+  });
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -189,7 +183,7 @@ export default function ProduitsPage() {
   return (
     <>
       <Toaster position="top-center" />
-      <div className="space-y-6 caret-transparent">
+      <div className="space-y-6 mb-[5rem]">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Produits</h1>
         </div>
@@ -202,7 +196,11 @@ export default function ProduitsPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 w-full rounded-full bg-gray-50 focus-visible:ring-purple-500 focus-visible:ring-offset-0"
+              spellCheck={false}
             />
+            <div className="absolute right-6 top-1/3 h-4 w-4 -translate-y-1/2 text-muted-foreground">
+              {produits.isFetching && !produits.isLoading && <LoadingDots />}
+            </div>
           </div>
           <div className="flex space-x-2">
             <Sheet>
@@ -244,7 +242,7 @@ export default function ProduitsPage() {
                         <SelectItem key="all" value="all">
                           Toutes les catégories
                         </SelectItem>
-                        {categories?.map((element) => (
+                        {categories.data?.map((element) => (
                           <SelectItem
                             key={element.id}
                             value={element.categorie}
@@ -260,10 +258,10 @@ export default function ProduitsPage() {
                       Statut
                     </Label>
                     <Select
-                      value={filters.status}
+                      value={filters.statut}
                       name="statut"
                       onValueChange={(value) =>
-                        setFilters({ ...filters, status: value })
+                        setFilters({ ...filters, statut: value })
                       }
                     >
                       <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
@@ -290,7 +288,7 @@ export default function ProduitsPage() {
                     <div className="col-span-3">
                       <PriceRangeSlider
                         min={0}
-                        max={max.prixAchat}
+                        max={maxPrixAchat}
                         step={100}
                         value={filters.prixAchat}
                         onValueChange={(value) =>
@@ -310,7 +308,7 @@ export default function ProduitsPage() {
                     <div className="col-span-3">
                       <PriceRangeSlider
                         min={0}
-                        max={max.prixVente}
+                        max={maxPrixVente}
                         step={100}
                         value={filters.prixVente}
                         onValueChange={(value) =>
@@ -330,7 +328,7 @@ export default function ProduitsPage() {
                     <div className="col-span-3">
                       <PriceRangeSlider
                         min={0}
-                        max={max.stock}
+                        max={maxStock}
                         step={10}
                         value={filters.stock}
                         onValueChange={(value) =>
@@ -405,7 +403,7 @@ export default function ProduitsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {isLoading ? (
+                  {produits.isLoading ? (
                     [...Array(10)].map((_, index) => (
                       <TableRow
                         className="h-[2rem] MuiTableRow-root"
@@ -446,16 +444,16 @@ export default function ProduitsPage() {
                         </TableCell>
                       </TableRow>
                     ))
-                  ) : currentProducts?.length > 0 ? (
-                    currentProducts?.map((product) => (
+                  ) : produits.data?.produits.length > 0 ? (
+                    produits.data?.produits.map((product) => (
                       <TableRow key={product.id}>
-                        <TableCell className="font-medium">
+                        <TableCell className="font-medium !py-2">
                           {product.designation}
                         </TableCell>
-                        <TableCell>{product.categorie}</TableCell>
-                        <TableCell>{product.prixAchat.toFixed(2)} DH</TableCell>
-                        <TableCell>{product.prixVente.toFixed(2)} DH</TableCell>
-                        <TableCell>
+                        <TableCell className="!py-2">{product.categorie}</TableCell>
+                        <TableCell className="!py-2">{product.prixAchat.toFixed(2)} DH</TableCell>
+                        <TableCell className="!py-2">{product.prixVente.toFixed(2)} DH</TableCell>
+                        <TableCell className="!py-2">
                           <div className="flex items-center gap-2">
                             <span
                               className={`h-2 w-2 rounded-full ${getStatusColor(
@@ -467,17 +465,17 @@ export default function ProduitsPage() {
                             </span>
                           </div>
                         </TableCell>
-                        <TableCell>{product.stock}</TableCell>
-                        <TableCell>
+                        <TableCell className="!py-2">{product.stock}</TableCell>
+                        <TableCell className="!py-2">
                           <CustomTooltip message={product.description}>
                             {product.description && (
                               <span className="cursor-default">
-                                {product.description.slice(0, 10)}...
+                                {product.description.slice(0, 10)}
                               </span>
                             )}
                           </CustomTooltip>
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right !py-2">
                           <div className="flex justify-end gap-2">
                             <CustomTooltip message="Modifier">
                               <Button
@@ -556,7 +554,7 @@ export default function ProduitsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {isLoading ? (
+                    {produits.isLoading ? (
                       [...Array(10)].map((_, index) => (
                         <TableRow
                           className="h-[2rem] MuiTableRow-root"
@@ -585,8 +583,8 @@ export default function ProduitsPage() {
                           </TableCell>
                         </TableRow>
                       ))
-                    ) : currentProducts?.length > 0 ? (
-                      currentProducts?.map((product) => (
+                    ) : produits.data?.produits.length > 0 ? (
+                      produits.data?.produits.map((product) => (
                         <TableRow key={product.id}>
                           <TableCell className="font-medium">
                             {product.designation}
@@ -661,21 +659,19 @@ export default function ProduitsPage() {
                 </Table>
               </ScrollArea>
             </div>
-            {filteredProducts?.length > 0 ? (
+            {produits.data?.produits.length > 0 && (
               <CustomPagination
-                currentPage={currentPage}
-                setCurrentPage={setCurrentPage}
+                currentPage={page}
+                setCurrentPage={setPage}
                 totalPages={totalPages}
               />
-            ) : (
-              ""
             )}
           </div>
 
           <div className={`${!isAddingProduct && "hidden"} `}>
             <ScrollArea className="w-full h-[85vh]">
               {isAddingProduct && (
-                <ProductFormDialog getProducts={getProducts} />
+                <ProductFormDialog  />
               )}
             </ScrollArea>
           </div>
@@ -684,7 +680,7 @@ export default function ProduitsPage() {
               {isUpdatingProduct && (
                 <ModifyProductDialog
                   currProduct={currProduct}
-                  getProducts={getProducts}
+                  
                 />
               )}
             </ScrollArea>

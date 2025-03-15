@@ -17,15 +17,14 @@ import { cn } from "@/lib/utils";
 import axios from "axios";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { LoadingDots } from "@/components/loading-dots";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInView } from "react-intersection-observer";
 
 export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedArticles, setSelectedArticles] = useState({});
-  const [products, setProducts] = useState(null);
-
-  const filteredArticles = products?.filter((article) =>
-    article.designation.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const { ref, inView } = useInView();
 
   const handleToggleArticle = (article) => {
     setSelectedArticles((prev) => {
@@ -41,16 +40,6 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
       return newSelected;
     });
   };
-  const getProducts = async () => {
-    const result = await axios.get("/api/produits");
-    const { produits } = result.data;
-    setProducts(produits);
-    // setIsLoading(false);
-  };
-
-  useEffect(() => {
-    getProducts();
-  }, []);
 
   const handleQuantityChange = (articleId, delta) => {
     setSelectedArticles((prev) => {
@@ -121,6 +110,45 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
 
   const selectedCount = Object.keys(selectedArticles).length;
 
+  // infinite scrolling produits comboBox
+  const {
+    data,
+    fetchNextPage,
+    isLoading,
+    isFetchingNextPage,
+    isFetching,
+    hasNextPage,
+  } = useInfiniteQuery({
+    queryKey: ["produits", debouncedQuery],
+    queryFn: async ({ pageParam = null }) => {
+      const response = await axios.get("/api/produits/infinitPagination", {
+        params: {
+          limit: 10,
+          query: debouncedQuery,
+          cursor: pageParam,
+        },
+      });
+      return response.data;
+    },
+    getNextPageParam: (lastPage) => lastPage.nextCursor || null,
+    keepPreviousData: true,
+  });
+
+  const produits = data?.pages.flatMap((page) => page.produits) || [];
+
+  useEffect(() => {
+    if (inView && hasNextPage) {
+      fetchNextPage();
+    }
+  }, [inView, hasNextPage, fetchNextPage]);
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 500);
+
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[900px] p-0 gap-0">
@@ -142,11 +170,14 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 w-full text-left rounded-r-md focus:!ring-purple-500"
               />
+              <div className="absolute right-6 top-1/3 h-4 w-4 -translate-y-1/2 text-muted-foreground">
+                {isFetching && !isLoading && <LoadingDots />}
+              </div>
             </div>
             <div className="h-[500px] space-y-2">
               <ScrollArea className="h-[84%] w-48  w-full">
-                {filteredArticles?.length > 0 ? (
-                  filteredArticles?.map((article) => (
+                {produits?.length > 0 ? (
+                  produits?.map((article) => (
                     <div
                       key={article.id}
                       className={cn(
@@ -181,9 +212,14 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
                   ))
                 ) : (
                   <div className="flex justify-center mt-5">
-                    <LoadingDots size={8}/>
+                    <LoadingDots size={8} />
                   </div>
                 )}
+                <div
+                  key="observer"
+                  ref={ref}
+                  className="flex justify-center p-2"
+                ></div>
               </ScrollArea>
             </div>
           </div>

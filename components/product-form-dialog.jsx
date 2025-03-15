@@ -42,9 +42,15 @@ import axios from "axios";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CircleX } from "lucide-react";
-import { useQuery} from "@tanstack/react-query";
+import { useInView } from "react-intersection-observer";
+import {
+  useQuery,
+  useQueryClient,
+  useInfiniteQuery,
+  useMutation,
+} from "@tanstack/react-query";
 
-export function ProductFormDialog({ getProducts }) {
+export function ProductFormDialog() {
   const productSchema = z.object({
     designation: z.string().min(1, "Champ obligatoire"),
     categorie: z.string().optional(),
@@ -52,9 +58,9 @@ export function ProductFormDialog({ getProducts }) {
       .object({
         id: z.string().uuid(),
         nom: z.string(),
-        email: z.string().email(),
-        telephone: z.string(),
-        adresse: z.string(),
+        email: z.string().email().nullable(),
+        telephone: z.string().nullable(),
+        adresse: z.string().nullable(),
       })
       .optional(),
 
@@ -96,61 +102,81 @@ export function ProductFormDialog({ getProducts }) {
     resolver: zodResolver(productSchema),
   });
   const [open, setOpen] = useState(false);
-  const [fournisseurList, setFournisseurList] = useState([]);
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const { ref, inView } = useInView();
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const getFournisseurs = async () => {
-    const result = await axios.get("/api/fournisseurs");
-    const { Fournisseurs } = result.data;
-    console.log(Fournisseurs);
-    setFournisseurList(Fournisseurs);
-  };
-  const getCategories = async () => {
-    const response = await axios.get("/api/categoriesProduits");
-    const categories = response.data.categories;
-    console.log("categories : ", categories);
-    return categories
-  };
-  const query = useQuery({
+  const queryClient = useQueryClient();
+
+  const categories = useQuery({
     queryKey: ["categories"],
-    queryFn: getCategories,
+    queryFn: async () => {
+      const response = await axios.get("/api/categoriesProduits");
+      const categories = response.data.categories;
+      return categories;
+    },
   });
-  useEffect(() => {
-    getFournisseurs();
-  }, []);
-  const onSubmit = async (data) => {
-    console.log("produit data : ", data);
 
-    toast.promise(
-      (async () => {
-        const response = await fetch("/api/produits", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(data),
-        });
-        if (!response.ok) {
-          throw new Error("Failed to add commande");
-        }
-        console.log("Produits ajouté avec succès");
-        // reset the form
-        reset();
-        getProducts();
-      })(),
-      {
-        loading: "Ajout de produit...",
-        success: "Produit ajouté avec succès!",
-        error: "Échec de l'ajout du produit",
+  const ajouterProduit = useMutation({
+    mutationFn: async (data) => {
+      const loadingToast = toast.loading("Ajout de produit...");
+      try {
+        const response = await axios.post("/api/produits", data);
+        toast.success("Produit ajouté avec succès!");
+        return response.data;
+      } catch (error) {
+        toast.error("Échec de l'ajout du produit");
+        throw error;
+      } finally {
+        toast.dismiss(loadingToast);
       }
-    );
+    },
+    onSuccess: () => {
+      reset();
+      queryClient.invalidateQueries(["produits"]);
+    },
+  });
+
+  const onSubmit = async (data) => {
+    ajouterProduit.mutate(data);
   };
-  const stockStatuts = (stock) => {
-    if (stock > 0) {
-      setValue("statut", "En stock");
-    } else {
-      setValue("statut", "En rupture");
+
+  // infinite scrolling fournisseurs comboBox
+  const { data, fetchNextPage, isLoading, isFetchingNextPage, hasNextPage } =
+    useInfiniteQuery({
+      queryKey: ["fournisseurs", debouncedQuery],
+      queryFn: async ({ pageParam = null }) => {
+        const response = await axios.get(
+          "/api/fournisseurs/infinitPagination",
+          {
+            params: {
+              limit: 10,
+              query: debouncedQuery,
+              cursor: pageParam,
+            },
+          }
+        );
+
+        return response.data;
+      },
+      getNextPageParam: (lastPage) => lastPage.nextCursor || null,
+      keepPreviousData: true,
+    });
+
+  const fournisseurs = data?.pages.flatMap((page) => page.fournisseurs) || [];
+
+  useEffect(() => {
+    if (inView && hasNextPage) {
+      fetchNextPage();
     }
-  };
+  }, [inView, hasNextPage, fetchNextPage]);
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 500);
+
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
 
   return (
     <Card className="w-full grid gap-2 h-full px-2">
@@ -190,7 +216,7 @@ export function ProductFormDialog({ getProducts }) {
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="customerName">Fournisseur</Label>
+              <Label htmlFor="customerName">Fournisseur*</Label>
               <br />
               <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
@@ -209,28 +235,54 @@ export function ProductFormDialog({ getProducts }) {
                 <PopoverContent className="w-auto min-w-[25vw] p-0">
                   <Command>
                     <CommandInput
-                      placeholder="Search fournisseur..."
+                      placeholder="Chercher..."
                       className="h-9"
+                      value={searchQuery}
+                      onValueChange={setSearchQuery}
                     />
                     <CommandList>
-                      <CommandEmpty>Aucun fournisseur trouvé.</CommandEmpty>
-                      <ScrollArea className="h-72 w-full">
-                        <CommandGroup>
-                          {fournisseurList?.map((fournisseur) => (
-                            <CommandItem
-                              name="fournisseur"
-                              key={fournisseur.id}
-                              value={fournisseur.nom}
-                              onSelect={() => {
-                                setOpen(false);
-                                setValue("fournisseur", fournisseur);
-                              }}
-                            >
-                              {fournisseur.nom.toUpperCase()}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </ScrollArea>
+                      {isLoading ? (
+                        <div className="flex justify-center p-2">
+                          <span className="px-5 pb-5 text-gray-400 text-sm text-center">
+                            Chargement...
+                          </span>
+                        </div>
+                      ) : fournisseurs.length === 0 ? (
+                        <CommandEmpty>
+                          <span>Aucun fournisseur trouvé.</span>
+                        </CommandEmpty>
+                      ) : (
+                        <>
+                          <ScrollArea
+                            className="h-72 w-full"
+                          >
+                            <CommandGroup>
+                              {fournisseurs.map((fournisseur) => (
+                                <CommandItem
+                                  name="fournisseur"
+                                  key={fournisseur.id}
+                                  value={fournisseur.nom}
+                                  onSelect={() => {
+                                    setOpen(false);
+                                    setValue("fournisseur", fournisseur);
+                                  }}
+                                >
+                                  {fournisseur.nom.toUpperCase()}
+                                </CommandItem>
+                              ))}
+                              <div
+                                ref={ref}
+                                className="flex justify-center p-2"
+                              ></div>
+                            </CommandGroup>
+                            {isFetchingNextPage && (
+                              <span className="px-5 pb-5 text-gray-400 text-sm text-center">
+                                Chargement...
+                              </span>
+                            )}
+                          </ScrollArea>
+                        </>
+                      )}
                     </CommandList>
                   </Command>
                 </PopoverContent>
@@ -249,7 +301,7 @@ export function ProductFormDialog({ getProducts }) {
                   <SelectValue placeholder="Sélectionner ..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {query.data?.map((element) => (
+                  {categories.data?.map((element) => (
                     <SelectItem key={element.id} value={element.categorie}>
                       {element.categorie}
                     </SelectItem>
@@ -334,7 +386,7 @@ export function ProductFormDialog({ getProducts }) {
           </div>
           <SaveButton
             disabled={isSubmitting}
-            onClick={() => stockStatuts(watch("stock"))}
+            onClick={() => productSchema.parse(watch())}
             type="submit"
             title="Enregistrer"
           />

@@ -10,17 +10,36 @@ export async function DELETE(_, { params }) {
   return NextResponse.json(facture);
 }
 
-export async function PUT(_, { params }) {
+export async function PUT(req, { params }) {
+  const response = await req.json();
+  const {
+    numero,
+    lable,
+    montant,
+    compte,
+  } = response;
   const id = params.id;
+
   try {
-    const result = await prisma.factures.update({
-      where: { id },
-      data: {
-        payer: true,
-      },
+    const transactionResult = await prisma.$transaction(async (tx) => {
+      await tx.factures.update({
+        where: { id },
+        data: {
+          payer: true,
+        },
+      });
+      await tx.transactions.create({
+        data: {
+          reference: numero,
+          type: "dépense",
+          montant: montant,
+          compte,
+          lable 
+        },
+      });
     });
 
-    return NextResponse.json({ result });
+    return NextResponse.json({ transactionResult });
   } catch (error) {
     console.log(error);
   }

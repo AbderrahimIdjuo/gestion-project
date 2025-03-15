@@ -16,7 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CircleX } from "lucide-react";
-import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { customAlphabet } from "nanoid";
@@ -59,6 +59,7 @@ export function AddFactureForm() {
       (value) => Number(value),
       z.number().int().min(1).max(28)
     ),
+    compte: z.string().optional(),
   });
 
   const {
@@ -70,7 +71,6 @@ export function AddFactureForm() {
     formState: { errors, isSubmitting },
   } = useForm({
     defaultValues: {
-      numero: generateDeviNumber(),
       payer: false,
       type: "récurrente",
     },
@@ -96,7 +96,6 @@ export function AddFactureForm() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["factures"] });
       reset();
-      setValue("type", null);
       setValue("dateEmission", null);
     },
   });
@@ -107,11 +106,17 @@ export function AddFactureForm() {
   };
 
   const dayList = Array.from({ length: 28 }, (_, i) => i + 1);
+  const getComptes = async () => {
+    const response = await axios.get("/api/comptesBancaires");
+    const transactions = response.data.transactions;
+    console.log("transactions : ", transactions);
+    return transactions;
+  };
 
-  const comptes = [
-    { lable: "CIH Bank", value: "cih" },
-    { lable: "Caisse", value: "caisse" },
-  ];
+  const query = useQuery({
+    queryKey: ["comptes"],
+    queryFn: getComptes,
+  });
 
   return (
     <Card className="w-full grid gap-2 h-full px-2">
@@ -224,9 +229,9 @@ export function AddFactureForm() {
                     <SelectValue placeholder="Sélectionnez ..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {comptes.map((compte, index) => (
-                      <SelectItem key={index} value={compte.value}>
-                        {compte.lable}
+                    {query.data.map((element) => (
+                      <SelectItem key={element.id} value={element.compte}>
+                        {element.compte}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -244,6 +249,7 @@ export function AddFactureForm() {
             </div>
             <SaveButton
               onClick={() => {
+                setValue("numero", generateDeviNumber());
                 console.log(watch());
                 console.log(factureSchema.parse(watch()));
               }}

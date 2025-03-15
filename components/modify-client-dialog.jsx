@@ -17,10 +17,10 @@ import { SaveButton } from "./customUi/styledButton";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CircleX } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export function ModifyClientDialog({
   currClient,
-  getClients,
   clientList,
   setIsUpdatingClient,
 }) {
@@ -72,7 +72,7 @@ export function ModifyClientDialog({
   const {
     register,
     handleSubmit,
-    formState: { errors , isSubmitting},
+    formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(clientSchema),
     defaultValues: {
@@ -82,6 +82,7 @@ export function ModifyClientDialog({
       adresse: currClient?.adresse,
     },
   });
+  const queryClient = useQueryClient();
 
   const onSubmit = async (data) => {
     const Data = { ...data, id: currClient.id };
@@ -95,7 +96,8 @@ export function ModifyClientDialog({
           throw new Error("Failed to add client");
         }
         console.log("Client modifier avec succès");
-        getClients();
+        queryClient.invalidateQueries(["clients"]);
+
         setIsUpdatingClient(false);
       })(),
       {
@@ -199,7 +201,11 @@ export function ModifyClientDialog({
                 className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
               />
             </div>
-            <SaveButton disabled={isSubmitting} type="submit" title="Enregistrer" />
+            <SaveButton
+              disabled={isSubmitting}
+              type="submit"
+              title="Enregistrer"
+            />
           </div>
         </form>
       </CardContent>

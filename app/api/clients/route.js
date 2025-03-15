@@ -64,11 +64,40 @@ export async function PUT(req) {
   }
 }
 
-export async function GET() {
-  const Clients = await prisma.clients.findMany({
-    orderBy: {
-      updatedAt: "desc",
-    },
+export async function GET(req) {
+  const { searchParams } = new URL(req.url);
+  const page = parseInt(searchParams.get("page") || "1");
+  const searchQuery = searchParams.get("query") || "";
+
+  const filters = {};
+
+  const clientsPerPage = 10;
+
+  // Search filter by numero and client name
+  filters.OR = [
+    { nom: { contains: searchQuery } },
+    { adresse: { contains: searchQuery } },
+    { telephone: { contains: searchQuery } },
+    { email: { contains: searchQuery } },
+  ];
+
+  // Fetch filtered commandes with pagination and related data
+  const [clients, totalClients] = await Promise.all([
+    prisma.clients.findMany({
+      where: filters,
+      skip: (page - 1) * clientsPerPage,
+      take: clientsPerPage,
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.clients.count({ where: filters }), // Get total count for pagination
+  ]);
+
+  // Calculate total pages for pagination
+  const totalPages = Math.ceil(totalClients / clientsPerPage);
+
+  // Return the response
+  return NextResponse.json({
+    clients,
+    totalPages,
   });
-  return NextResponse.json({ Clients });
 }

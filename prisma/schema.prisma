@@ -89,6 +89,7 @@ model Commandes {
   note             String?
   typeReduction    String              @default("%")
   avance           Int?
+  totalPaye        Float?
   echeance         DateTime?
   createdAt        DateTime            @default(now())
   updatedAt        DateTime            @updatedAt
@@ -144,23 +145,24 @@ model Devis {
 }
 
 model Factures {
-  id            String    @id @default(uuid())
-  lable         String
-  numero        String    @unique
-  type          String
-  montant       Float?
-  payer         Boolean   @default(false)
-  dateEmission  Int?
-  description   String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id           String   @id @default(uuid())
+  lable        String
+  numero       String   @unique
+  type         String
+  montant      Float?
+  payer        Boolean  @default(false)
+  dateEmission Int?
+  description  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model Transactions {
   id        String   @id @default(uuid())
   type      String
   montant   Float
-  methode   String?
+  compte    String?
+  lable     String?
   reference String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

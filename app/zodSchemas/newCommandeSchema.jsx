@@ -43,43 +43,54 @@ const productSchema = z.object({
   description: z.string().optional(),
   categorie: z.string().nullable(),
 });
-const newCommandeSchema = z.object({
-  clientId: z.string({ required_error: "Champ obligatoir" }).uuid(),
-  numero: z.string(),
-  statut: z.string(),
-  fraisLivraison: z.preprocess(
-    (value) =>
-      value === "" || value === undefined ? 0 : validateInt(value),
-    z.number().optional()
-  ),
-  reduction: z.preprocess(
-    (value) =>
-      value === "" || value === undefined ? 0 : validateInt(value),
-    z.number().optional()
-  ),
-  typeReduction: z.string().default("%"),
-  avance: z.preprocess(
-    (value) =>
-      value === "" || value === undefined ? 0 : validateFloat(value),
-    z.number({ invalid_type_error: "L'avance' doit être un nombre" }).optional()
-  ),
-  note: z.string(),
-  sousTotal: z.preprocess(
-    (value) =>
-      value === "" || value === undefined ? 0 : validateFloat(value),
-    z
-      .number({ invalid_type_error: "Le sousTotal doit être un nombre" })
-      .optional()
-  ),
-  total: z.preprocess(
-    (value) =>
-      value === "" || value === undefined ? 0 : validateFloat(value),
-    z.number({ invalid_type_error: "Le total doit être un nombre" }).optional()
-  ),
-  produits: z
-    .array(productSchema)
-    .min(1, { message: "La commande doit contenir au moins un produit" }),
-  echeance: z.date().nullable().default(null),
-});
+const newCommandeSchema = z
+  .object({
+    clientId: z.string({ required_error: "Champ obligatoir" }).uuid(),
+    numero: z.string(),
+    statut: z.string(),
+    fraisLivraison: z.preprocess(
+      (value) => (value === "" || value === undefined ? 0 : validateInt(value)),
+      z.number().optional()
+    ),
+    reduction: z.preprocess(
+      (value) => (value === "" || value === undefined ? 0 : validateInt(value)),
+      z.number().optional()
+    ),
+    typeReduction: z.string().default("%"),
+    avance: z.preprocess(
+      (value) =>
+        value === "" || value === undefined ? 0 : validateFloat(value),
+      z
+        .number({ invalid_type_error: "L'avance' doit être un nombre" })
+        .optional()
+    ),
+    compte: z.string().optional(),
+    note: z.string(),
+    sousTotal: z.preprocess(
+      (value) =>
+        value === "" || value === undefined ? 0 : validateFloat(value),
+      z
+        .number({ invalid_type_error: "Le sousTotal doit être un nombre" })
+        .optional()
+    ),
+    total: z.preprocess(
+      (value) =>
+        value === "" || value === undefined ? 0 : validateFloat(value),
+      z
+        .number({ invalid_type_error: "Le total doit être un nombre" })
+        .optional()
+    ),
+    produits: z
+      .array(productSchema)
+      .min(1, { message: "La commande doit contenir au moins un produit" }),
+    echeance: z.date().nullable().default(null),
+  })
+  .refine(
+    (data) => data.avance === 0 || data.compte, // If `avance` > 0, `compte` must be provided
+    {
+      message: "Le compte est requis lorsque l'avance est spécifiée",
+      path: ["compte"], // Attach error message to `compte`
+    }
+  );
 
 export default newCommandeSchema;

@@ -15,16 +15,11 @@ import {
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CircleX } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 
-export function ModifyFournisseurDialog({
-  currFournisseur,
-  getFournisseurs,
-  fournisseurList,
-}) {
+export function ModifyFournisseurDialog({ currFournisseur, fournisseurList }) {
   const fournisseurSchema = z.object({
-    nom: z
-      .string()
-      .min(1, "Veuillez insérer le nom du fournisseur"),
+    nom: z.string().min(1, "Veuillez insérer le nom du fournisseur"),
     email: z
       .preprocess((email) => {
         // If email is empty or undefined, return null
@@ -85,21 +80,23 @@ export function ModifyFournisseurDialog({
     ice: z.string().optional(),
     adresse: z.string().optional(),
   });
+
+  const queryClient = useQueryClient();
   const {
     register,
     reset,
     handleSubmit,
-    formState: { errors , isSubmitting},
+    formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(fournisseurSchema),
-    defaultValues:{
+    defaultValues: {
       nom: currFournisseur?.nom.toUpperCase(),
-      email:currFournisseur?.email,
-      telephone:currFournisseur?.telephone,
-      telephoneSecondaire:currFournisseur?.telephoneSecondaire,
-      adresse:currFournisseur?.adresse,
-      ice:currFournisseur?.ice,
-    }
+      email: currFournisseur?.email,
+      telephone: currFournisseur?.telephone,
+      telephoneSecondaire: currFournisseur?.telephoneSecondaire,
+      adresse: currFournisseur?.adresse,
+      ice: currFournisseur?.ice,
+    },
   });
 
   const onSubmit = async (data) => {
@@ -115,7 +112,7 @@ export function ModifyFournisseurDialog({
         }
         console.log("Client ajouté avec succès");
         reset();
-        getFournisseurs();
+        queryClient.invalidateQueries(["fournisseurs"]);
         setOpen(false);
       })(),
       {
@@ -142,111 +139,116 @@ export function ModifyFournisseurDialog({
             className="w-full h-[80%] grid gap-4"
             onSubmit={handleSubmit(onSubmit)}
           >
-                 <div className="w-full grid gap-6 ">
-            <div className="w-full grid grid-cols-1">
-              <Label htmlFor="nom" className="text-left mb-2 mb-2">
-                Nom*
-              </Label>
-              <div className="w-full">
+            <div className="w-full grid gap-6 ">
+              <div className="w-full grid grid-cols-1">
+                <Label htmlFor="nom" className="text-left mb-2 mb-2">
+                  Nom*
+                </Label>
+                <div className="w-full">
+                  <Input
+                    id="nom"
+                    name="nom"
+                    {...register("nom")}
+                    className={`col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0 ${
+                      errors.nom && "border-red-500 border-2"
+                    }`}
+                    spellCheck={false}
+                  />
+                  {errors.nom && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.nom.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="w- full grid grid-cols-1">
+                <Label htmlFor="adresse" className="text-left mb-2 mb-2">
+                  ICE
+                </Label>
                 <Input
-                  id="nom"
-                  name="nom"
-                  {...register("nom")}
-                  className={`col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0 ${
-                    errors.nom && "border-red-500 border-2"
-                  }`}                  spellCheck={false}
+                  id="ice"
+                  name="ice"
+                  {...register("ice")}
+                  className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
                 />
-                {errors.nom && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {errors.nom.message}
+              </div>
+              <div className="w- full grid grid-cols-1">
+                <Label htmlFor="telephone" className="text-left mb-2 mb-2">
+                  Téléphone
+                </Label>
+                <Input
+                  id="telephone"
+                  name="telephone"
+                  type="tel"
+                  {...register("telephone")}
+                  className={`col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0 ${
+                    errors.telephone && "border-red-500 border-2"
+                  }`}
+                  spellCheck={false}
+                />
+                {errors.telephone && (
+                  <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
+                    <CircleX className="h-4 w-4" />
+                    {errors.telephone.message}
                   </p>
                 )}
               </div>
-            </div>
-            <div className="w- full grid grid-cols-1">
-              <Label htmlFor="adresse" className="text-left mb-2 mb-2">
-                ICE
-              </Label>
-              <Input
-                id="ice"
-                name="ice"
-                {...register("ice")}
-                className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
+              <div className="w- full grid grid-cols-1">
+                <Label htmlFor="adresse" className="text-left mb-2 mb-2">
+                  Téléphone secondaire
+                </Label>
+                <Input
+                  id="telephoneSecondaire"
+                  name="telephoneSecondaire"
+                  {...register("telephoneSecondaire")}
+                  className={`col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0 ${
+                    errors.telephoneSecondaire && "border-red-500 border-2"
+                  }`}
+                />
+                {errors.telephoneSecondaire && (
+                  <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
+                    <CircleX className="h-4 w-4" />
+                    {errors.telephoneSecondaire.message}
+                  </p>
+                )}
+              </div>
+              <div className="w- full grid grid-cols-1">
+                <Label htmlFor="email" className="text-left mb-2 mb-2">
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  name="email"
+                  {...register("email")}
+                  className={`col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0 ${
+                    errors.email && "border-red-500 border-2"
+                  }`}
+                  spellCheck={false}
+                />
+                {errors.email && (
+                  <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
+                    <CircleX className="h-4 w-4" />
+                    {errors.email.message}
+                  </p>
+                )}
+              </div>
+              <div className="w- full grid grid-cols-1">
+                <Label htmlFor="adresse" className="text-left mb-2 mb-2">
+                  Adresse
+                </Label>
+                <Input
+                  id="adresse"
+                  name="adresse"
+                  {...register("adresse")}
+                  className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
+                />
+              </div>
+              <SaveButton
+                disabled={isSubmitting}
+                type="submit"
+                title="Enregistrer"
               />
             </div>
-            <div className="w- full grid grid-cols-1">
-              <Label htmlFor="telephone" className="text-left mb-2 mb-2">
-                Téléphone
-              </Label>
-              <Input
-                id="telephone"
-                name="telephone"
-                type="tel"
-                {...register("telephone")}
-                className={`col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0 ${
-                  errors.telephone && "border-red-500 border-2"
-                }`}
-                spellCheck={false}
-              />
-              {errors.telephone && (
-                <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
-                  <CircleX className="h-4 w-4" />
-                  {errors.telephone.message}
-                </p>
-              )}
-            </div>
-            <div className="w- full grid grid-cols-1">
-              <Label htmlFor="adresse" className="text-left mb-2 mb-2">
-                Téléphone secondaire
-              </Label>
-              <Input
-                id="telephoneSecondaire"
-                name="telephoneSecondaire"
-                {...register("telephoneSecondaire")}
-                className={`col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0 ${
-                  errors.telephoneSecondaire && "border-red-500 border-2"
-                }`}
-              />
-                            {errors.telephoneSecondaire && (
-                <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
-                  <CircleX className="h-4 w-4" />
-                  {errors.telephoneSecondaire.message}
-                </p>
-              )}
-            </div>
-            <div className="w- full grid grid-cols-1">
-              <Label htmlFor="email" className="text-left mb-2 mb-2">
-                Email
-              </Label>
-              <Input
-                id="email"
-                name="email"
-                {...register("email")}
-                className={`col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0 ${
-                  errors.email && "border-red-500 border-2"
-                }`}
-                spellCheck={false}
-              />
-              {errors.email && (
-                <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
-                  <CircleX className="h-4 w-4" />
-                  {errors.email.message}
-                </p>
-              )}
-            </div>
-            <div className="w- full grid grid-cols-1">
-              <Label htmlFor="adresse" className="text-left mb-2 mb-2">
-                Adresse
-              </Label>
-              <Input
-                id="adresse"
-                name="adresse"
-                {...register("adresse")}
-                className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
-              />
-            </div>
-            <SaveButton disabled={isSubmitting} type="submit" title="Enregistrer" />
-          </div>
           </form>
         </CardContent>
       </Card>

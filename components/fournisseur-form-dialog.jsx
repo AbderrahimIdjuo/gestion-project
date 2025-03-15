@@ -15,6 +15,7 @@ import {
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CircleX } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 
 export function FournisseurFormDialog({ getFournisseurs, fournisseurList }) {
   const fournisseurSchema = z.object({
@@ -83,11 +84,11 @@ export function FournisseurFormDialog({ getFournisseurs, fournisseurList }) {
     register,
     reset,
     handleSubmit,
-    formState: { errors , isSubmitting },
+    formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(fournisseurSchema),
   });
-
+  const queryClient = useQueryClient();
   const onSubmit = async (data) => {
     console.log(data);
 
@@ -104,7 +105,7 @@ export function FournisseurFormDialog({ getFournisseurs, fournisseurList }) {
           throw new Error("Failed to add commande");
         }
         console.log("Fournisseur ajouté avec succès");
-        getFournisseurs();
+        queryClient.invalidateQueries(["fournisseurs"]);
         reset();
       })(),
       {
@@ -142,7 +143,8 @@ export function FournisseurFormDialog({ getFournisseurs, fournisseurList }) {
                   {...register("nom")}
                   className={`col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0 ${
                     errors.nom && "border-red-500 border-2"
-                  }`}                  spellCheck={false}
+                  }`}
+                  spellCheck={false}
                 />
                 {errors.nom && (
                   <p className="text-red-500 text-sm mt-1">
@@ -195,7 +197,7 @@ export function FournisseurFormDialog({ getFournisseurs, fournisseurList }) {
                   errors.telephoneSecondaire && "border-red-500 border-2"
                 }`}
               />
-                            {errors.telephoneSecondaire && (
+              {errors.telephoneSecondaire && (
                 <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
                   <CircleX className="h-4 w-4" />
                   {errors.telephoneSecondaire.message}
@@ -233,7 +235,11 @@ export function FournisseurFormDialog({ getFournisseurs, fournisseurList }) {
                 className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
               />
             </div>
-            <SaveButton disabled={isSubmitting} type="submit" title="Enregistrer" />
+            <SaveButton
+              disabled={isSubmitting}
+              type="submit"
+              title="Enregistrer"
+            />
           </div>
         </form>
       </CardContent>

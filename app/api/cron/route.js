@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../lib/prisma";
 
-export async function POST() {
+export async function GET() {
   try {
     // Obtenir le jour actuel du mois (ex: 26 si on est le 26 février)
     const todayDay = new Date().getDate();

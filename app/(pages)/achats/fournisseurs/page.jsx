@@ -21,48 +21,47 @@ import { FournisseurFormDialog } from "@/components/fournisseur-form-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { LoadingDots } from "@/components/loading-dots";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export default function FournisseursPage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
   const [currFournisseur, setCurrFournisseur] = useState("");
-  const [fournisseurList, setFournisseurList] = useState([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const [isAddingFournisseur, setIsAddingFournisseur] = useState(false);
   const [isUpdatingFournisseur, setIsUpdatingFournisseur] = useState(false);
+  const [page, setPage] = useState(1);
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [totalPages, setTotalPages] = useState();
 
-  const itemsPerPage = 10;
+  const queryClient = useQueryClient();
 
-  const filteredFournisseurs = fournisseurList.filter(
-    (fournisseur) =>
-      searchQuery === "" ||
-      fournisseur.nom.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      fournisseur.telephone.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      fournisseur.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      fournisseur.adresse.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const totalPages = Math.ceil(filteredFournisseurs.length / itemsPerPage);
-  const currentFournisseurs = filteredFournisseurs.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  const getFournisseurs = async () => {
-    const result = await axios.get("/api/fournisseurs");
-    const { Fournisseurs } = result.data;
-    setFournisseurList(Fournisseurs);
-    setIsLoading(false);
-  };
+  const fournisseurs = useQuery({
+    queryKey: ["fournisseurs", page, debouncedQuery],
+    queryFn: async () => {
+      const response = await axios.get("/api/fournisseurs", {
+        params: {
+          query: debouncedQuery,
+          page,
+        },
+      });
+      setTotalPages(response.data.totalPages);
+      return response.data.fournisseurs;
+    },
+    keepPreviousData: true, // Keeps old data visible while fetching new page
+    refetchOnWindowFocus: false,
+  });
 
   useEffect(() => {
-    setCurrentPage(1);
+    const handler = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+      setPage(1);
+    }, 500); // Adjust delay as needed
+
+    return () => {
+      clearTimeout(handler);
+    };
   }, [searchQuery]);
-
-  useEffect(() => {
-    getFournisseurs();
-  }, []);
 
   const deleteFournisseur = async () => {
     try {
@@ -76,8 +75,7 @@ export default function FournisseursPage() {
           icon: "🗑️",
         }
       );
-
-      getFournisseurs();
+      queryClient.invalidateQueries(["fournisseurs"]);
     } catch (e) {
       console.log(e);
     }
@@ -93,21 +91,25 @@ export default function FournisseursPage() {
   return (
     <>
       <Toaster position="top-center" />
-      <div className="space-y-6 caret-transparent">
+      <div className="space-y-6 mb-[5rem]">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Fournisseurs</h1>
         </div>
 
         <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-6">
-          <div className="relative w-full sm:w-96">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Rechercher des fournisseurs..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 w-full rounded-full bg-gray-50 focus-visible:ring-purple-500 focus-visible:ring-offset-0"
-            />
-          </div>
+        <div className="relative w-full sm:w-96">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Rechercher des fournisseurs..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 w-full rounded-full bg-gray-50 focus-visible:ring-purple-500 focus-visible:ring-offset-0"
+                spellCheck={false}
+              />
+              <div className="absolute right-6 top-1/3 h-4 w-4 -translate-y-1/2 text-muted-foreground">
+                {fournisseurs.isFetching && !fournisseurs.isLoading && <LoadingDots />}
+              </div>
+            </div>
 
           <div className="flex space-x-2">
             {/* Botton d'ajout de fournisseur */}
@@ -166,7 +168,7 @@ export default function FournisseursPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {isLoading ? (
+                  {fournisseurs.isLoading ? (
                     [...Array(10)].map((_, index) => (
                       <TableRow
                         className="h-[2rem] MuiTableRow-root"
@@ -200,10 +202,13 @@ export default function FournisseursPage() {
                         </TableCell>
                       </TableRow>
                     ))
-                  ) : currentFournisseurs?.length > 0 ? (
-                    currentFournisseurs.map((fournisseur) => (
-                      <TableRow key={fournisseur.id}>
-                        <TableCell className="font-medium">
+                  ) : fournisseurs.data?.length > 0 ? (
+                    fournisseurs.data.map((fournisseur) => (
+                      <TableRow
+                        className="font-medium hover:text-emerald-400"
+                        key={fournisseur.id}
+                      >
+                        <TableCell className="font-medium cursor-pointer !py-2">
                           <div className="flex flex-row gap-2 justify-start items-center">
                             <Avatar className="w-10 h-10">
                               <AvatarImage
@@ -218,11 +223,19 @@ export default function FournisseursPage() {
                             </h2>
                           </div>
                         </TableCell>
-                        <TableCell>{fournisseur.ice}</TableCell>
-                        <TableCell>{fournisseur.telephone}</TableCell>
-                        <TableCell>{fournisseur.adresse}</TableCell>
-                        <TableCell>{fournisseur.email}</TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-md !py-2">
+                          {fournisseur.ice}
+                        </TableCell>
+                        <TableCell className="text-md !py-2">
+                          {fournisseur.telephone}
+                        </TableCell>
+                        <TableCell className="text-md !py-2">
+                          {fournisseur.adresse}
+                        </TableCell>
+                        <TableCell className="text-md !py-2">
+                          {fournisseur.email}
+                        </TableCell>
+                        <TableCell className="text-right !py-2">
                           <div className="flex justify-end gap-2">
                             <Button
                               variant="ghost"
@@ -279,7 +292,7 @@ export default function FournisseursPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {isLoading ? (
+                    {fournisseurs.isLoading ? (
                       [...Array(10)].map((_, index) => (
                         <TableRow
                           className="h-[2rem] MuiTableRow-root"
@@ -301,8 +314,8 @@ export default function FournisseursPage() {
                           </TableCell>
                         </TableRow>
                       ))
-                    ) : currentFournisseurs?.length > 0 ? (
-                      currentFournisseurs.map((fournisseur) => (
+                    ) : fournisseurs.data?.length > 0 ? (
+                      fournisseurs.data.map((fournisseur) => (
                         <TableRow key={fournisseur.id}>
                           <TableCell className="font-medium cursor-pointer hover:text-purple-600">
                             <div className="flex flex-row gap-2 justify-start items-center">
@@ -366,10 +379,10 @@ export default function FournisseursPage() {
                 </Table>
               </div>
             </ScrollArea>
-            {filteredFournisseurs.length > 0 ? (
+            {fournisseurs.data?.length > 0 ? (
               <CustomPagination
-                currentPage={currentPage}
-                setCurrentPage={setCurrentPage}
+                currentPage={page}
+                setCurrentPage={setPage}
                 totalPages={totalPages}
               />
             ) : (
@@ -379,11 +392,10 @@ export default function FournisseursPage() {
           <div className={`${!isUpdatingFournisseur && "hidden"} `}>
             <ScrollArea className="w-full h-[85vh]">
               {isUpdatingFournisseur && (
-            <ModifyFournisseurDialog
-            currFournisseur={currFournisseur}
-            getFournisseurs={getFournisseurs}
-            fournisseurList={fournisseurList}
-          />
+                <ModifyFournisseurDialog
+                  currFournisseur={currFournisseur}
+                  fournisseurList={fournisseurs.data}
+                />
               )}
             </ScrollArea>
           </div>
@@ -391,8 +403,7 @@ export default function FournisseursPage() {
             <ScrollArea className="w-full h-[85vh]">
               {isAddingFournisseur && (
                 <FournisseurFormDialog
-                  getFournisseurs={getFournisseurs}
-                  fournisseurList={fournisseurList}
+                  fournisseurList={fournisseurs.data}
                 />
               )}
             </ScrollArea>
@@ -406,7 +417,7 @@ export default function FournisseursPage() {
         onConfirm={() => {
           deleteFournisseur();
           setIsDialogOpen(false);
-          getFournisseurs();
+          queryClient.invalidateQueries(["fournisseurs"]);
         }}
         itemType="fournisseur"
       ></DeleteConfirmationDialog>

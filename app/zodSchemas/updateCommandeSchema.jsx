@@ -54,10 +54,10 @@ const updateCommandeSchema = z.object({
     z.number().optional()
   ),
   typeReduction: z.string().default("%"),
-  avance: z.preprocess(
-    (value) => (value === "" || value === undefined ? 0 : validateFloat(value)),
-    z.number({ invalid_type_error: "L'avance' doit être un nombre" }).optional()
-  ),
+  // avance: z.preprocess(
+  //   (value) => (value === "" || value === undefined ? 0 : validateFloat(value)),
+  //   z.number({ invalid_type_error: "L'avance' doit être un nombre" }).optional()
+  // ),
   note: z.string(),
   sousTotal: z.preprocess(
     (value) => (value === "" || value === undefined ? 0 : validateFloat(value)),

@@ -155,9 +155,9 @@ function LoadingCommandePdf() {
         </div>
         {/* Print Button - Hidden when printing */}
         {/* Footer */}
-        <div className="flex justify-between text-sm text-gray-600 pt-4">
+        {/* <div className="flex justify-between text-sm text-gray-600 pt-4">
           <div>www.oudaoudox.com</div>
-        </div>
+        </div> */}
       </div>
     </div>
   );

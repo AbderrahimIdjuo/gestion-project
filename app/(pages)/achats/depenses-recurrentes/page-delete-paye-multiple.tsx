@@ -54,13 +54,6 @@ type Facture = {
   payer: boolean;
   description: string;
 };
-type Transaction = {
-  numero: string | undefined;
-  lable: string | undefined;
-  montant: number;
-  type: string;
-  compte: string;
-};
 function Page() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -134,6 +127,7 @@ function Page() {
           data
         );
         toast.success("Paiement effecuter avec succès");
+
         return response.data;
       } catch (error) {
         toast.error("Échec du paiement!");
@@ -234,7 +228,7 @@ function Page() {
   };
 
   const createTransaction = useMutation({
-    mutationFn: async (data: Transaction) => {
+    mutationFn: async (data) => {
       const loadingToast = toast.loading("Paiement en cours...");
       try {
         await addtransaction(data);
@@ -248,7 +242,6 @@ function Page() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["transactions"]);
-      payerFactureUnique();
     },
   });
 
@@ -701,16 +694,18 @@ function Page() {
           const data = {
             numero: currfacture?.numero,
             type: "dépense",
-            montant: Number(montant),
+            montant,
             compte,
             lable: currfacture?.lable,
           };
           console.log("create a transaction :", data);
 
+
           if (selectedFactures.size > 0) {
             handlePayeMany.mutate(selectedFactures);
           } else {
-            createTransaction.mutate(data);
+            //createTransaction.mutate(data);
+            payerFactureUnique();
           }
           setIsManyDialogOpen(false);
         }}

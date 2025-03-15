@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect , useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -45,10 +45,17 @@ import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CircleX } from "lucide-react";
 import newDeviSchema from "@/app/zodSchemas/newDeviSchema";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInView } from "react-intersection-observer";
+
 
 export default function NouveauDevisPage() {
-  const [clientList, setClientList] = useState([]);
+  //const [clientList, setClientList] = useState([]);
   const [open, setOpen] = useState(false);
+  const scrollAreaRef = useRef(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const { ref, inView } = useInView();
   const {
     register,
     reset,
@@ -79,15 +86,15 @@ export default function NouveauDevisPage() {
     { lable: "Refusé", color: "red-500" },
   ];
 
-  const getClients = async () => {
-    const result = await axios.get("/api/clients");
-    const { Clients } = result.data;
-    setClientList(Clients);
-  };
+  // const getClients = async () => {
+  //   const result = await axios.get("/api/clients");
+  //   const { Clients } = result.data;
+  //   setClientList(Clients);
+  // };
 
-  useEffect(() => {
-    getClients();
-  }, []);
+  // useEffect(() => {
+  //   getClients();
+  // }, []);
 
   const generateDeviNumber = () => {
     const digits = "1234567890";
@@ -151,6 +158,39 @@ export default function NouveauDevisPage() {
     return total.toFixed(2);
   };
 
+  // infinite scrolling clients comboBox
+  const { data, fetchNextPage, isLoading, isFetchingNextPage, hasNextPage } =
+    useInfiniteQuery({
+      queryKey: ["clients", debouncedQuery],
+      queryFn: async ({ pageParam = null }) => {
+        const response = await axios.get("/api/commandes/nouveau", {
+          params: {
+            limit: 15,
+            query: debouncedQuery,
+            cursor: pageParam,
+          },
+        });
+        return response.data;
+      },
+      getNextPageParam: (lastPage) => lastPage.nextCursor || null,
+      keepPreviousData: true,
+    });
+
+  const clients = data?.pages.flatMap((page) => page.clients) || [];
+
+  useEffect(() => {
+    if (inView && hasNextPage) {
+      fetchNextPage();
+    }
+  }, [inView, hasNextPage, fetchNextPage]);
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 500);
+
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
   return (
     <>
       <Toaster position="top-center" />
@@ -176,13 +216,12 @@ export default function NouveauDevisPage() {
               {/* Header Section */}
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-4">
-                  <div className="space-y-2">
+                  <div className="col-span-2">
                     <Label htmlFor="customerName">Client*</Label>
                     <br />
                     <Popover open={open} onOpenChange={setOpen}>
                       <PopoverTrigger asChild>
                         <Button
-                          type="button"
                           variant="outline"
                           role="combobox"
                           aria-expanded={open}
@@ -190,7 +229,7 @@ export default function NouveauDevisPage() {
                         >
                           {watch("client")
                             ? watch("client").nom.toUpperCase()
-                            : "Sélectioner un client..."}
+                            : "Sélectionner..."}
                           <ChevronDown className="opacity-50" />
                         </Button>
                       </PopoverTrigger>
@@ -199,37 +238,58 @@ export default function NouveauDevisPage() {
                           <CommandInput
                             placeholder="Chercher un client..."
                             className="h-9"
+                            value={searchQuery}
+                            onValueChange={setSearchQuery}
                           />
                           <CommandList>
-                            <CommandEmpty>Aucun client trouvé.</CommandEmpty>
-                            <ScrollArea className="h-72 w-full">
-                              <CommandGroup>
-                                {clientList?.map((client) => (
-                                  <CommandItem
-                                    name="client"
-                                    key={client.id}
-                                    value={client.nom}
-                                    onSelect={() => {
-                                      setOpen(false);
-                                      setValue("client", client);
-                                      setValue("clientId", client.id);
-                                    }}
-                                  >
-                                    {client.nom.toUpperCase()}
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
-                            </ScrollArea>
+                            {isLoading ? (
+                              <div className="flex justify-center p-2">
+                                <span className="px-5 pb-5 text-gray-400 text-sm text-center">
+                                  Chargement...
+                                </span>
+                              </div>
+                            ) : clients.length === 0 ? (
+                              <CommandEmpty>
+                                <span>Aucun client trouvé.</span>
+                              </CommandEmpty>
+                            ) : (
+                              <>
+                                <ScrollArea
+                                  className="h-72 w-full"
+                                  ref={scrollAreaRef}
+                                >
+                                  <CommandGroup>
+                                    {clients.map((client) => (
+                                      <CommandItem
+                                        name="client"
+                                        key={client.id}
+                                        value={client.nom}
+                                        onSelect={() => {
+                                          setOpen(false);
+                                          setValue("client", client);
+                                          generateDeviNumber()
+                                        }}
+                                      >
+                                        {client.nom.toUpperCase()}
+                                      </CommandItem>
+                                    ))}
+                                    <div
+                                      ref={ref}
+                                      className="flex justify-center p-2"
+                                    ></div>
+                                  </CommandGroup>
+                                  {isFetchingNextPage && (
+                                    <span className="px-5 pb-5 text-gray-400 text-sm text-center">
+                                      Chargement...
+                                    </span>
+                                  )}
+                                </ScrollArea>
+                              </>
+                            )}
                           </CommandList>
                         </Command>
                       </PopoverContent>
                     </Popover>
-                    {errors.clientId && (
-                      <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
-                        <CircleX className="h-4 w-4" />
-                        {errors.clientId.message}
-                      </p>
-                    )}
                   </div>
                 </div>
                 <div className="space-y-2">

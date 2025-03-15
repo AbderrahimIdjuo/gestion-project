@@ -153,17 +153,84 @@ export async function PUT(req) {
   }
 }
 
-export async function GET() {
-  const devis = await prisma.devis.findMany({
-    orderBy: {
-      updatedAt: "desc",
-    },
-    include: {
-      client: true,
-      articls: true,
-    },
+
+export async function GET(req) {
+  const { searchParams } = new URL(req.url);
+  const page = parseInt(searchParams.get("page") || "1");
+  const searchQuery = searchParams.get("query") || "";
+  const statut = searchParams.get("statut");
+  const from = searchParams.get("from"); // Start date
+  const to = searchParams.get("to"); // End date
+  const minTotal = searchParams.get("minTotal");
+  const maxTotal = searchParams.get("maxTotal");
+  
+
+  const filters = {};
+
+  const devisPerPage = 10;
+
+  // Search filter by numero and client name
+  filters.OR = [
+    { numero: { contains: searchQuery } },
+    { client: { nom: { contains: searchQuery } } },
+  ];
+
+  // Statut filter
+  if (statut !== "all") {
+    filters.statut = statut; // Filters by "depense" or "recette"
+  }
+
+  // Date range filter
+  if (from && to) {
+    filters.createdAt = {
+      gte: new Date(from), // Greater than or equal to "from"
+      lte: new Date(to), // Less than or equal to "to"
+    };
+  }
+
+
+  // total range filter
+  if (minTotal && maxTotal) {
+    filters.total = {
+      gte: Number(minTotal),
+      lte: Number(maxTotal),
+    };
+  }
+
+
+  // Fetch filtered commandes with pagination and related data
+  const [devis, totalDevis, deviMaxTotal] = await Promise.all([
+    prisma.devis.findMany({
+      where: filters,
+      skip: (page - 1) * devisPerPage,
+      take: devisPerPage,
+      orderBy: { createdAt: "desc" },
+      include: {
+        client: true,
+        articls: true,
+      },
+    }),
+    prisma.devis.count({ where: filters }), // Get total count for pagination
+    prisma.devis.findFirst({
+      orderBy: {
+        total: "desc", // Get the commande with the maximum total
+      },
+      select: {
+        total: true, // Only fetch the total field
+      },
+    }),
+  ]);
+
+
+  // Calculate total pages for pagination
+  const totalPages = Math.ceil(totalDevis / devisPerPage);
+
+  // Return the response
+  return NextResponse.json({
+    devis,
+    totalPages,
+    maxMontant: deviMaxTotal.total,
   });
-  return NextResponse.json({ devis });
 }
 
 export async function DELETE(req) {
