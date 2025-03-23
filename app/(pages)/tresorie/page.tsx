@@ -147,9 +147,8 @@ export default function Banques() {
       <Toaster position="top-center" />
       <div className="space-y-6 mb-[5rem]">
         <div className="flex justify-between items-center ">
-          <h1 className="text-3xl font-bold">Trésorie</h1>
+          <h1 className="text-3xl font-bold">Transactions</h1>
         </div>
-
         <div className="flex justify-between space-x-2">
           <div className="relative w-full sm:w-96">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

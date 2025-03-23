@@ -80,6 +80,13 @@ const newCommandeSchema = z
         .number({ invalid_type_error: "Le total doit être un nombre" })
         .optional()
     ),
+    totalDevi: z.preprocess(
+      (value) =>
+        value === "" || value === undefined ? 0 : validateFloat(value),
+      z
+        .number({ invalid_type_error: "Le total doit être un nombre" })
+        .optional()
+    ),
     produits: z
       .array(productSchema)
       .min(1, { message: "La commande doit contenir au moins un produit" }),

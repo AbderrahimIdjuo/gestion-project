@@ -1,6 +1,6 @@
 "use fournisseur";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { addInfoEntreprise } from "@/app/api/actions";
 import toast from "react-hot-toast";
 import {
@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { LogoManager } from "@/components/logoManager";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +22,7 @@ import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import axios from "axios";
 
 export function AddInfoEntrepriseForm({ isOpen, onClose, onConfirm }) {
+  const [imageUrl, setImageUrl] = useState();
   const infoEntrepriseSchema = z.object({
     nom: z.string().min(1, "champ obligatoir"),
     slogan: z.string().optional(),
@@ -36,15 +38,16 @@ export function AddInfoEntrepriseForm({ isOpen, onClose, onConfirm }) {
       .nullable(),
     email: z.string().email("Email invalide").nullable(),
     adresse: z.string().min(1, "champ obligatoir"),
+    logoUrl: z.string().optional(),
   });
+
   const getInfoEntreprise = async () => {
     const response = await axios.get("/api/infoEntreprise");
     const infoEntreprise = response.data.infoEntreprise;
-    console.log("infoEntreprise : ", infoEntreprise);
-    return infoEntreprise;
+    return infoEntreprise || null;
   };
 
-  const query = useQuery({
+  const info = useQuery({
     queryKey: ["infoEntreprise"],
     queryFn: getInfoEntreprise,
   });
@@ -81,20 +84,29 @@ export function AddInfoEntrepriseForm({ isOpen, onClose, onConfirm }) {
     },
   });
   const onSubmit = async (data) => {
+    console.log("data", data);
+    
     addInfosEntreprise.mutate(data);
   };
+
   useEffect(() => {
-    if (query.data) {
+    console.log("imageUrl : ", imageUrl);
+  }, [imageUrl]);
+
+  useEffect(() => {
+    console.log("infoEntreprise ## : ", info.data);
+    if (info.data) {
       reset({
-        nom: query.data[0]?.nom || "",
-        slogan: query.data[0]?.slogan || "",
-        telephone: query.data[0]?.telephone || "",
-        mobile: query.data[0]?.mobile || "",
-        email: query.data[0]?.email || "",
-        adresse: query.data[0]?.adresse || "",
+        nom: info.data?.nom || "",
+        slogan: info.data?.slogan || "",
+        telephone: info.data?.telephone || "",
+        mobile: info.data?.mobile || "",
+        email: info.data?.email || "",
+        adresse: info.data?.adresse || "",
+        logoUrl: info.data?.logoUrl || "",
       });
     }
-  }, [query.data, reset]);
+  }, [info.data, reset]);
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
@@ -102,6 +114,9 @@ export function AddInfoEntrepriseForm({ isOpen, onClose, onConfirm }) {
           <DialogTitle>Informations de la société</DialogTitle>
           <DialogDescription></DialogDescription>
         </DialogHeader>
+        <div className="flex gap-3 justify-center">
+          <LogoManager logoUrl={imageUrl ? imageUrl : watch("logoUrl") } setImageUrl={setImageUrl} />
+        </div>
         <form
           className="w-full h-[80%] grid gap-4"
           onSubmit={handleSubmit(onSubmit)}
@@ -224,6 +239,7 @@ export function AddInfoEntrepriseForm({ isOpen, onClose, onConfirm }) {
               className="rounded-full bg-emerald-300 hover:bg-emerald-400 "
               variant="default"
               onClick={() => {
+                setValue("logoUrl", imageUrl);
                 onConfirm();
                 infoEntrepriseSchema.parse(watch());
               }}

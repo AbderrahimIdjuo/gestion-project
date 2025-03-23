@@ -18,7 +18,7 @@ import { Label } from "@/components/ui/label";
 import { useForm } from "react-hook-form";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChevronDown } from "lucide-react";
-import {Switch} from "@/components/ui/switch"
+import { Switch } from "@/components/ui/switch";
 import {
   Command,
   CommandEmpty,
@@ -34,33 +34,30 @@ import {
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import axios from "axios";
+import { useInView } from "react-intersection-observer";
+import { useInfiniteQuery } from "@tanstack/react-query";
 
 export function AchatCommandeForm({ currProduct }) {
   const [open, setOpen] = useState(false);
-  const [fournisseurList, setFournisseurList] = useState([]);
-  
-  const { register,  watch,  handleSubmit, setValue , formState:{isSubmitting} } = useForm(
-    {
-      defaultValues: {
-        prixUnite: currProduct?.prixAchat,
-        produit: currProduct,
-        description: currProduct?.description,
-        payer : false,
-        fournisseur:currProduct.fournisseur
-      },
-    }
-  );
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const { ref, inView } = useInView();
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const getFournisseurs = async () => {
-    const result = await axios.get("/api/fournisseurs");
-    const { Fournisseurs } = result.data;
-    console.log(Fournisseurs);
-    setFournisseurList(Fournisseurs);
-  };
-
-  useEffect(() => {
-    getFournisseurs();
-  }, []);
+  const {
+    register,
+    watch,
+    handleSubmit,
+    setValue,
+    formState: { isSubmitting },
+  } = useForm({
+    defaultValues: {
+      prixUnite: currProduct?.prixAchat,
+      produit: currProduct,
+      description: currProduct?.description,
+      payer: false,
+      fournisseur: currProduct.fournisseur,
+    },
+  });
 
   const onSubmit = async (data) => {
     console.log("commandes data : ", data);
@@ -90,6 +87,43 @@ export function AchatCommandeForm({ currProduct }) {
       }
     );
   };
+
+  // infinite scrolling fournisseurs comboBox
+  const { data, fetchNextPage, isLoading, isFetchingNextPage, hasNextPage } =
+    useInfiniteQuery({
+      queryKey: ["fournisseurs", debouncedQuery],
+      queryFn: async ({ pageParam = null }) => {
+        const response = await axios.get(
+          "/api/fournisseurs/infinitPagination",
+          {
+            params: {
+              limit: 10,
+              query: debouncedQuery,
+              cursor: pageParam,
+            },
+          }
+        );
+
+        return response.data;
+      },
+      getNextPageParam: (lastPage) => lastPage.nextCursor || null,
+      keepPreviousData: true,
+    });
+
+  const fournisseurs = data?.pages.flatMap((page) => page.fournisseurs) || [];
+
+  useEffect(() => {
+    if (inView && hasNextPage) {
+      fetchNextPage();
+    }
+  }, [inView, hasNextPage, fetchNextPage]);
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 500);
+
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
 
   return (
     <Card className="w-full grid gap-2 h-full px-2">
@@ -129,35 +163,59 @@ export function AchatCommandeForm({ currProduct }) {
                   >
                     {watch("fournisseur")
                       ? watch("fournisseur").nom.toUpperCase()
-                      : "Sélectioner un fournisseur..."}
+                      : "Sélectionner ..."}
                     <ChevronDown className="opacity-50" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto min-w-[25vw] p-0">
                   <Command>
                     <CommandInput
-                      placeholder="Search fournisseur..."
+                      placeholder="Chercher..."
                       className="h-9"
+                      value={searchQuery}
+                      onValueChange={setSearchQuery}
                     />
                     <CommandList>
-                      <CommandEmpty>Aucun fournisseur trouvé.</CommandEmpty>
-                      <ScrollArea className="h-72 w-full">
-                        <CommandGroup>
-                          {fournisseurList?.map((fournisseur) => (
-                            <CommandItem
-                              name="fournisseur"
-                              key={fournisseur.id}
-                              value={fournisseur.nom}
-                              onSelect={() => {
-                                setOpen(false);
-                                setValue("fournisseur", fournisseur);
-                              }}
-                            >
-                              {fournisseur.nom.toUpperCase()}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </ScrollArea>
+                      {isLoading ? (
+                        <div className="flex justify-center p-2">
+                          <span className="px-5 pb-5 text-gray-400 text-sm text-center">
+                            Chargement...
+                          </span>
+                        </div>
+                      ) : fournisseurs.length === 0 ? (
+                        <CommandEmpty>
+                          <span>Aucun fournisseur trouvé.</span>
+                        </CommandEmpty>
+                      ) : (
+                        <>
+                          <ScrollArea className="h-72 w-full">
+                            <CommandGroup>
+                              {fournisseurs.map((fournisseur) => (
+                                <CommandItem
+                                  name="fournisseur"
+                                  key={fournisseur.id}
+                                  value={fournisseur.nom}
+                                  onSelect={() => {
+                                    setOpen(false);
+                                    setValue("fournisseur", fournisseur);
+                                  }}
+                                >
+                                  {fournisseur.nom.toUpperCase()}
+                                </CommandItem>
+                              ))}
+                              <div
+                                ref={ref}
+                                className="flex justify-center p-2"
+                              ></div>
+                            </CommandGroup>
+                            {isFetchingNextPage && (
+                              <span className="px-5 pb-5 text-gray-400 text-sm text-center">
+                                Chargement...
+                              </span>
+                            )}
+                          </ScrollArea>
+                        </>
+                      )}
                     </CommandList>
                   </Command>
                 </PopoverContent>
@@ -204,13 +262,13 @@ export function AchatCommandeForm({ currProduct }) {
               <Switch
                 checked={watch("payer")}
                 onCheckedChange={() => {
-                  setValue("payer", !watch("payer"))                  
+                  setValue("payer", !watch("payer"));
                   console.log(watch("payer"));
                 }}
                 id="airplane-mode"
               />
               <Label htmlFor="airplane-mode">
-                {watch("payer") ? "Payer" :"Non payer" }
+                {watch("payer") ? "Payer" : "Non payer"}
               </Label>
             </div>
             <div className="relative w-full grid grid-cols-1">
@@ -223,7 +281,11 @@ export function AchatCommandeForm({ currProduct }) {
               />
             </div>
           </div>
-          <SaveButton disabled={isSubmitting} type="submit" title="Enregistrer" />
+          <SaveButton
+            disabled={isSubmitting}
+            type="submit"
+            title="Enregistrer"
+          />
         </form>
       </CardContent>
     </Card>

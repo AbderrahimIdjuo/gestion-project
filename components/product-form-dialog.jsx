@@ -133,6 +133,7 @@ export function ProductFormDialog() {
     },
     onSuccess: () => {
       reset();
+      setValue("categorie", "")
       queryClient.invalidateQueries(["produits"]);
     },
   });

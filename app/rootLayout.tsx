@@ -1,13 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Sidebar } from "@/components/sidebar";
 import { Navbar } from "@/components/navbar";
+import { updatePayerStatus } from "@/app/api/factures/facturesService";
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [queryClient] = useState(() => new QueryClient());
-
+  useEffect(() => {
+    updatePayerStatus();
+    console.log("updatePayerStatus is triggered");
+  }, []);
   return (
     <QueryClientProvider client={queryClient}>
       <Navbar />

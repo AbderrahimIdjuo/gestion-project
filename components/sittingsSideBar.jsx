@@ -22,8 +22,8 @@ function SittingsSideBar({ page }) {
       {/* the Sittings sideBar */}
       <div className="flex w-64 flex-col bg-white py-4 shadow-lg rounded-lg">
         <div className="mb-8 flex flex-col items-center space-y-2">
-          <Avatar className="w-16 h-16">
-            <AvatarImage src="https://picsum.photos/200" />
+          <Avatar className="w-16 h-16 shadow-md">
+            <AvatarImage src={query.data?.logoUrl} />
             <AvatarFallback></AvatarFallback>
           </Avatar>
           <span className="text-lg font-semibold text-orange-400">

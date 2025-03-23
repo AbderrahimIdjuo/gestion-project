@@ -38,8 +38,9 @@ import toast, { Toaster } from "react-hot-toast";
 import CustomPagination from "@/components/customUi/customPagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PriceRangeSlider } from "@/components/customUi/customSlider";
-import { useQuery } from "@tanstack/react-query";
+import { LoadingDots } from "@/components/loading-dots";
 import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function DevisPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -57,7 +58,7 @@ export default function DevisPage() {
     montant: [0, maxMontant],
     statut: "all",
   });
-
+  const queryClient = useQueryClient();
   const router = useRouter();
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -110,7 +111,7 @@ export default function DevisPage() {
         return "bg-amber-500";
       case "Accepté":
         return "bg-emerald-500";
-      case "Refusé":
+      case "Annulé":
         return "bg-red-500";
       case "Expiré":
         return "bg-gray-500";
@@ -121,30 +122,40 @@ export default function DevisPage() {
   function formatDate(dateString) {
     return dateString.split("T")[0].split("-").reverse().join("-");
   }
+  const deleteDevi = useMutation({
+    mutationFn: async (id) => {
+      const loadingToast = toast.loading("Suppression...");
+      try {
+        await axios.delete(`/api/devis/${id}`);
+        toast(
+          <span>
+            Le devi numéro : <b>{currentDevi?.numero?.toUpperCase()}</b> a été
+            supprimé avec succès!
+          </span>,
+          { icon: "🗑️" }
+        );
+        console.log("devi supprimée avec succès !");
+      } catch (error) {
+        console.error("Erreur lors de la suppression :", error);
+        toast.error("Échec de la suppression");
+        throw error; // Relancez l'erreur pour que `onError` soit déclenché
+      } finally {
+        toast.dismiss(loadingToast);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["devis"]);
+    },
+    onError: (error) => {
+      console.error("Erreur lors de la suppression :", error);
+    },
+  });
 
-  const deleteDevi = async (id, numero) => {
-    console.log("delete item");
-
-    try {
-      await axios.delete(`/api/devis/${id}`);
-      toast(
-        <span>
-          Le devi numéro : <b>{numero.toUpperCase()}</b> a été supprimé avec
-          succès!
-        </span>,
-        {
-          icon: "🗑️",
-        }
-      );
-    } catch (e) {
-      console.log(e);
-    }
-  };
   const status = [
     { value: "all", lable: "Tous les statut", color: "" },
     { value: "En attente", lable: "En attente", color: "amber-500" },
     { value: "Accepté", lable: "Accepté", color: "green-500" },
-    { value: "Refusé", lable: "Refusé", color: "red-500" },
+    { value: "Annulé", lable: "Annulé", color: "red-500" },
     { value: "Expiré", lable: "Expiré", color: "gray-500" },
   ];
 
@@ -164,7 +175,11 @@ export default function DevisPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 w-full rounded-full bg-gray-50 focus-visible:ring-purple-500 focus-visible:ring-offset-0"
+              spellCheck={false}
             />
+            <div className="absolute right-6 top-1/3 h-4 w-4 -translate-y-1/2 text-muted-foreground">
+              {devis.isFetching && !devis.isLoading && <LoadingDots />}
+            </div>
           </div>
           <div className="flex space-x-2">
             <Sheet>
@@ -187,7 +202,7 @@ export default function DevisPage() {
                 <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-4 items-center gap-4 my-2">
                     <Label htmlFor="statut" className="text-left text-black">
-                      Statut
+                      Statut :
                     </Label>
                     <Select
                       value={filters.statut}
@@ -213,12 +228,22 @@ export default function DevisPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <CustomDateRangePicker
-                    startDate={startDate}
-                    setStartDate={setStartDate}
-                    endDate={endDate}
-                    setEndDate={setEndDate}
-                  />
+                  <div className="grid grid-cols-4 items-center gap-4 my-2">
+                    <Label
+                      htmlFor="statut"
+                      className="col-span-1 text-left text-black"
+                    >
+                      Date :
+                    </Label>
+                    <div className="col-span-3">
+                      <CustomDateRangePicker
+                        startDate={startDate}
+                        setStartDate={setStartDate}
+                        endDate={endDate}
+                        setEndDate={setEndDate}
+                      />
+                    </div>
+                  </div>
                   <div className="grid grid-cols-4 items-start gap-4 my-4">
                     <Label htmlFor="montant" className="text-left text-black">
                       Montant :
@@ -263,7 +288,7 @@ export default function DevisPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {devis.isFetching ? (
+              {devis.isLoading ? (
                 [...Array(10)].map((_, index) => (
                   <TableRow
                     className="h-[2rem] MuiTableRow-root"
@@ -275,19 +300,19 @@ export default function DevisPage() {
                       className="!py-2 text-sm md:text-base"
                       align="left"
                     >
-                      <Skeleton className="h-4 w-[150px]" />
+                      <Skeleton className="h-4 w-full" />
                     </TableCell>
                     <TableCell className="!py-2" align="left">
-                      <Skeleton className="h-4 w-[150px]" />
+                      <Skeleton className="h-4 w-full" />
                     </TableCell>
                     <TableCell className="!py-2" align="left">
-                      <Skeleton className="h-4 w-[150px]" />
+                      <Skeleton className="h-4 w-full" />
                     </TableCell>
                     <TableCell className="!py-2" align="left">
-                      <Skeleton className="h-4 w-[150px]" />
+                      <Skeleton className="h-4 w-full" />
                     </TableCell>
                     <TableCell className="!py-2" align="left">
-                      <Skeleton className="h-4 w-[100px]" />
+                      <Skeleton className="h-4 w-full" />
                     </TableCell>
                     <TableCell className="!py-2">
                       <div className="flex gap-2 justify-end">
@@ -352,18 +377,26 @@ export default function DevisPage() {
                             <span className="sr-only">Supprimer</span>
                           </Button>
                         </CustomTooltip>
-                        <CustomTooltip message="crée une commande">
+
+                        <CustomTooltip message="créer une commande">
                           <Button
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 rounded-full hover:bg-sky-100 hover:text-sky-600"
                             onClick={() => {
                               console.log("create a commande");
+                              localStorage.setItem(
+                                "devi",
+                                JSON.stringify(devis)
+                              );
+                              router.push("/ventes/commandes/nouveau");
                             }}
+                            disabled={devis.statut === "Accepté"}
                           >
                             <FilePlus className="h-4 w-4" />
                           </Button>
                         </CustomTooltip>
+
                         <CustomTooltip message="Imprimer">
                           <Button
                             variant="ghost"
@@ -415,7 +448,7 @@ export default function DevisPage() {
         onClose={() => setDeleteDialogOpen(false)}
         onConfirm={() => {
           setDeleteDialogOpen(false);
-          deleteDevi(currentDevi.id, currentDevi.numero);
+          deleteDevi.mutate(currentDevi.id);
         }}
         itemType="devi"
       />

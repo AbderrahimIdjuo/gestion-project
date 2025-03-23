@@ -9,8 +9,9 @@ import {
   TableFooter,
   TableRow,
 } from "@/components/ui/table";
-import { Phone, MapPin } from "lucide-react";
+import { Phone, MapPin, Smartphone } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 function LoadingCommandePdf() {
   return (
@@ -18,42 +19,32 @@ function LoadingCommandePdf() {
       {/* Document Content */}
       <div id="print-area" className="space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-start text-sm text-gray-600">
-          <div>
-            {new Date().toLocaleString("fr-FR", {
-              year: "numeric",
-              month: "2-digit",
-              day: "2-digit",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </div>
-          <div className="flex gap-2 items-center">
-            Statut : <Skeleton className="h-4 w-[90px] " />
-          </div>
-        </div>
-        <div className="border-b border-purple-500 pb-4">
+        <div className="flex justify-between items-center border-b border-purple-500 pb-4">
           <h1 className="flex gap-2 items-center text-3xl font-bold text-purple-600">
-          COMMANDE N° : <Skeleton className="bg-purple-200 h-6 w-[200px] my-4" />
+            COMMANDE N° :
+            <Skeleton className="bg-purple-200 h-6 w-[200px] my-4" />
           </h1>
+
+          <Skeleton className="bg-gray-200 h-24 w-24 rounded-full my-4" />
         </div>
-        {/* Title */}
 
         {/* Company and Client Info */}
         <div className="grid grid-cols-2 gap-8">
           {/* Company Info */}
           <div className="space-y-1">
-            <h2 className="font-bold text-xl text-gray-900">OUDAOUDOX</h2>
-            <p className="font-small font-bold text-slate-700 text-sm">
-              DECORATION-MENUISERIE-TRAVAUX DIVERS
-            </p>
+            <Skeleton className="h-4 w-[200px] my-4" />
+            <Skeleton className="h-4 w-[200px] my-4" />
             <div className="flex items-center gap-2 ">
               <MapPin className="h-4 w-4" />
-              <p>Dcheira Rue 1630 N° 01, Inzegan</p>
+              <Skeleton className="h-4 w-[350px] my-2" />
             </div>
             <div className="flex items-center gap-2 ">
               <Phone className="h-4 w-4" />
-              <p>0654788963</p>
+              <Skeleton className="h-4 w-[200px] my-2" />
+            </div>
+            <div className="flex items-center gap-2 ">
+              <Smartphone className="h-4 w-4" />
+              <Skeleton className="h-4 w-[200px] my-2" />
             </div>
           </div>
 

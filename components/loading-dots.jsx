@@ -15,20 +15,20 @@ export const LoadingDots = ({ color = 'currentColor', size = 4 }) => {
             width: size,
             height: size,
             borderRadius: '50%',
-            margin: `0 ${size / 2}px`,
+            margin: `0 ${size/1.5}px`,
             display: 'inline-block',
             animation: 'loadingDotsWave 1.4s infinite ease-in-out both',
-            animationDelay: `${i * 0.16}s`,
+            animationDelay: `${i * 0.25}s`,
           }}
         />
       ))}
       <style jsx>{`
   @keyframes loadingDotsWave {
     0%, 100% { 
-      transform: translateY(0) scale(0.8);
+      transform: translateY(0) scale(0.2);
     }
     50% { 
-      transform: translateY(-100%) scale(1);
+      transform: translateY(0%) scale(1.5);
     }
   }
 `}</style>

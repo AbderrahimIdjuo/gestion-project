@@ -23,6 +23,8 @@ import {
   Printer,
   Filter,
   CircleDollarSign,
+  CalendarDays,
+  Landmark,
 } from "lucide-react";
 import {
   Select,
@@ -47,9 +49,8 @@ import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
 import toast, { Toaster } from "react-hot-toast";
 import { addtransaction } from "@/app/api/actions";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-
 import { PriceRangeSlider } from "@/components/customUi/customSlider";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function CommandesPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -60,7 +61,7 @@ export default function CommandesPage() {
   const [montant, setMontant] = useState(""); // montant de paiement
   const [isBankDialogOpen, setIsBankDialogOpen] = useState(false);
   const [info, setInfo] = useState(false);
-  //const [numeroCommande, setNumeroCommande] = useState();
+  const [devisList, setDevisList] = useState([]);
   const [transactions, setTransactions] = useState();
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState();
@@ -117,9 +118,12 @@ export default function CommandesPage() {
           etat: filters.etat,
         },
       });
+      setDevisList(response.data.devisList);
       setMaxMontant(response.data.maxMontant);
       setTransactions(response.data.transactionsList);
       setTotalPages(response.data.totalPages);
+      console.log("commandes", response.data.commandes);
+
       return response.data.commandes;
     },
     keepPreviousData: true, // Keeps old data visible while fetching new page
@@ -135,8 +139,8 @@ export default function CommandesPage() {
 
   const etatPaiement = (commande) => {
     if (
-      commande.totalPaye === commande.total ||
-      commande.totalPaye > commande.total
+      commande.totalPaye === commande.totalDevi ||
+      commande.totalPaye > commande.totalDevi
     ) {
       return (
         <span className="text-sm p-[1px] px-3 rounded-full  bg-green-100 text-green-600 font-medium">
@@ -180,23 +184,33 @@ export default function CommandesPage() {
     return dateString.split("T")[0].split("-").reverse().join("-");
   }
 
-  const deleteCommande = async (id, numero) => {
-    try {
-      await axios.delete(`/api/commandes/${id}`);
-      toast(
-        <span>
-          Le devi numéro : <b>{numero.toUpperCase()}</b> a été supprimé avec
-          succès!
-        </span>,
-        {
-          icon: "🗑️",
-        }
-      );
+  const deleteCommande = useMutation({
+    mutationFn: async (id) => {
+      const loadingToast = toast.loading("Suppression...");
+      try {
+        await axios.delete(`/api/commandes/${id}`);
+        toast(
+          <span>
+            La commande numéro : <b>{currentCommande?.numero?.toUpperCase()}</b>{" "}
+            a été supprimé avec succès!
+          </span>,
+          {
+            icon: "🗑️",
+          }
+        );
+      } catch (error) {
+        console.log("error :", error);
+        toast.error("Échec de la suppression");
+        throw error;
+      } finally {
+        toast.dismiss(loadingToast);
+      }
+    },
+    onSuccess: () => {
       queryClient.invalidateQueries(["commandes"]);
-    } catch (e) {
-      console.log(e);
-    }
-  };
+      queryClient.invalidateQueries(["devis"]);
+    },
+  });
   const data = {
     ...currentCommande,
     compte,
@@ -217,8 +231,8 @@ export default function CommandesPage() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(["commandes", "transactions"]);
-      setTransactionCreated(!transactionCreated);
+      queryClient.invalidateQueries(["transactions"]);
+      queryClient.invalidateQueries(["commandes"]);
     },
   });
   const status = [
@@ -359,7 +373,7 @@ export default function CommandesPage() {
                   </div>
                   <div className="grid grid-cols-4 items-start gap-4 my-4">
                     <Label htmlFor="montant" className="text-left text-black">
-                      Montant :
+                      cout de production:
                     </Label>
                     <div className="col-span-3">
                       <PriceRangeSlider
@@ -380,7 +394,7 @@ export default function CommandesPage() {
                 </div>
               </SheetContent>
             </Sheet>
-            <Link href="/ventes/commandes/nouveau">
+            <Link href="/ventes/commandes/nouvelleCommande">
               <AddButton title="Nouvelle Commande" />
             </Link>
           </div>
@@ -390,18 +404,20 @@ export default function CommandesPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Numéro</TableHead>
                 <TableHead>Date</TableHead>
+                <TableHead>Numéro</TableHead>
                 <TableHead>Client</TableHead>
+                <TableHead>Coût</TableHead>
                 <TableHead>Montant</TableHead>
-                <TableHead>Reste à payer</TableHead>
+                <TableHead>Marge</TableHead>
+                <TableHead>Reste</TableHead>
                 <TableHead>État</TableHead>
                 <TableHead>Statut</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {commandes?.isFetching ? (
+              {commandes?.isLoading ? (
                 [...Array(10)].map((_, index) => (
                   <TableRow
                     className="h-[2rem] MuiTableRow-root !py-2"
@@ -410,28 +426,34 @@ export default function CommandesPage() {
                     key={index}
                   >
                     <TableCell
-                      className="!py-2 text-sm md:text-base"
+                      className="!py-2 text-sm md:text-base  "
                       align="left"
                     >
-                      <Skeleton className="h-4 w-[150px]" />
+                      <Skeleton className="h-4 w-full" />
+                    </TableCell>
+                    <TableCell className="!py-2 " align="left">
+                      <Skeleton className="h-4 w-full" />
+                    </TableCell>
+                    <TableCell className="!py-2 " align="left">
+                      <Skeleton className="h-4 w-full" />
                     </TableCell>
                     <TableCell className="!py-2" align="left">
-                      <Skeleton className="h-4 w-[150px]" />
+                      <Skeleton className="h-4 w-full" />
                     </TableCell>
                     <TableCell className="!py-2" align="left">
-                      <Skeleton className="h-4 w-[150px]" />
+                      <Skeleton className="h-4 w-full" />
                     </TableCell>
                     <TableCell className="!py-2" align="left">
-                      <Skeleton className="h-4 w-[150px]" />
+                      <Skeleton className="h-4 w-full" />
                     </TableCell>
                     <TableCell className="!py-2" align="left">
-                      <Skeleton className="h-4 w-[100px]" />
+                      <Skeleton className="h-4 w-full" />
                     </TableCell>
                     <TableCell className="!py-2" align="left">
-                      <Skeleton className="h-4 w-[100px]" />
+                      <Skeleton className="h-4 w-full" />
                     </TableCell>
                     <TableCell className="!py-2" align="left">
-                      <Skeleton className="h-4 w-[100px]" />
+                      <Skeleton className="h-4 w-full" />
                     </TableCell>
                     <TableCell className="!py-2">
                       <div className="flex gap-2 justify-end">
@@ -446,6 +468,9 @@ export default function CommandesPage() {
               ) : commandes?.data?.length > 0 ? (
                 commandes?.data?.map((commande) => (
                   <TableRow key={commande.id}>
+                    <TableCell className="!py-2">
+                      {formatDate(commande.createdAt)}
+                    </TableCell>
                     <TableCell
                       onClick={() => {
                         if (commande.totalPaye !== 0) {
@@ -457,26 +482,29 @@ export default function CommandesPage() {
                         }
                       }}
                       className={`font-medium !py-2  ${
-                        (commande.totalPaye === commande.total ||
-                          commande.totalPaye > commande.total) &&
+                        (commande.totalPaye === commande.totalDevi ||
+                          commande.totalPaye > commande.totalDevi) &&
                         "cursor-pointer hover:text-green-400"
                       } ${
                         commande.totalPaye !== 0 &&
-                        commande.totalPaye < commande.total &&
+                        commande.totalPaye < commande.totalDevi &&
                         "cursor-pointer hover:text-orange-400"
                       }`}
                     >
                       {commande.numero}
                     </TableCell>
                     <TableCell className="!py-2">
-                      {formatDate(commande.createdAt)}
-                    </TableCell>
-                    <TableCell className="!py-2">
                       {commande.client.nom.toUpperCase()}
                     </TableCell>
                     <TableCell className="!py-2">{commande.total} DH</TableCell>
                     <TableCell className="!py-2">
-                      {commande.total - commande.totalPaye} DH
+                      {commande.totalDevi} DH
+                    </TableCell>
+                    <TableCell className="!py-2">
+                      {commande.totalDevi - commande.total} DH
+                    </TableCell>
+                    <TableCell className="!py-2">
+                      {commande.totalDevi - commande.totalPaye} DH
                     </TableCell>
                     <TableCell className="!py-2">
                       {etatPaiement(commande)}
@@ -484,13 +512,21 @@ export default function CommandesPage() {
                         <ul>
                           {transactionPerCommande(commande.numero)?.map(
                             (trans) => (
-                              <li key={trans.id} className="w-full bg-slate-200 text-sky-800 font-medium my-1 px-2 rounded-full">
-                                <span>Date :{formatDate(trans.createdAt)}</span>
-                                <span className="ml-4">
-                                  Montant : {trans.montant} DH
+                              <li
+                                key={trans.id}
+                                className="flex w-full bg-slate-200 text-sky-800 font-medium my-1 px-2 rounded-full"
+                              >
+                                <span className="flex gap-1 items-center">
+                                  <CalendarDays className="h-4 w-4" />{" "}
+                                  {formatDate(trans.createdAt)}
                                 </span>
-                                <span className="ml-4">
-                                  Compte : {trans.compte}
+                                <span className="flex gap-1 items-center ml-4">
+                                  <CircleDollarSign className="h-4 w-4" />{" "}
+                                  {trans.montant} DH
+                                </span>
+                                <span className="flex gap-1 items-center ml-4">
+                                  <Landmark className="h-4 w-4" />{" "}
+                                  {trans.compte}
                                 </span>
                               </li>
                             )
@@ -541,11 +577,16 @@ export default function CommandesPage() {
                             onClick={() => {
                               setIsBankDialogOpen(true);
                               setCurrentCommande(commande);
+                              console.log(
+                                "montant payer : ",
+                                commande.totalPaye
+                              );
+                              console.log("total devi : ", commande.totalDevi);
                             }}
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 rounded-full hover:bg-sky-100 hover:text-sky-600"
-                            disabled={commande.montantPaye === commande.total}
+                            disabled={commande.totalPaye === commande.totalDevi}
                           >
                             <CircleDollarSign className="h-4 w-4" />
                           </Button>
@@ -575,7 +616,7 @@ export default function CommandesPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={7} align="center">
+                  <TableCell colSpan={10} align="center">
                     Aucune commande trouvé
                   </TableCell>
                 </TableRow>
@@ -600,7 +641,7 @@ export default function CommandesPage() {
         onClose={() => setDeleteDialogOpen(false)}
         onConfirm={() => {
           setDeleteDialogOpen(false);
-          deleteCommande(currentCommande.id, currentCommande.numero);
+          deleteCommande.mutate(currentCommande.id);
         }}
         itemType="produit"
       />

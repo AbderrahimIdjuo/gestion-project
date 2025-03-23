@@ -153,7 +153,6 @@ export async function PUT(req) {
   }
 }
 
-
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const page = parseInt(searchParams.get("page") || "1");
@@ -163,7 +162,6 @@ export async function GET(req) {
   const to = searchParams.get("to"); // End date
   const minTotal = searchParams.get("minTotal");
   const maxTotal = searchParams.get("maxTotal");
-  
 
   const filters = {};
 
@@ -177,7 +175,7 @@ export async function GET(req) {
 
   // Statut filter
   if (statut !== "all") {
-    filters.statut = statut; // Filters by "depense" or "recette"
+    filters.statut = statut; 
   }
 
   // Date range filter
@@ -188,7 +186,6 @@ export async function GET(req) {
     };
   }
 
-
   // total range filter
   if (minTotal && maxTotal) {
     filters.total = {
@@ -196,7 +193,6 @@ export async function GET(req) {
       lte: Number(maxTotal),
     };
   }
-
 
   // Fetch filtered commandes with pagination and related data
   const [devis, totalDevis, deviMaxTotal] = await Promise.all([
@@ -221,7 +217,6 @@ export async function GET(req) {
     }),
   ]);
 
-
   // Calculate total pages for pagination
   const totalPages = Math.ceil(totalDevis / devisPerPage);
 
@@ -229,7 +224,7 @@ export async function GET(req) {
   return NextResponse.json({
     devis,
     totalPages,
-    maxMontant: deviMaxTotal.total,
+    maxMontant: deviMaxTotal.total || 0,
   });
 }
 

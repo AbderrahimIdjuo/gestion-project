@@ -197,26 +197,26 @@ export default function EmployesPage() {
                         >
                           <div className="flex gap-2 items-center">
                             <Skeleton className="h-12 w-12 rounded-full" />
-                            <Skeleton className="h-4 w-[150px]" />
+                            <Skeleton className="h-4 w-[100px]" />
                           </div>
                         </TableCell>
                         <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-[150px]" />
+                          <Skeleton className="h-4 w-full" />
                         </TableCell>
                         <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-[150px]" />
+                          <Skeleton className="h-4 w-full" />
                         </TableCell>
                         <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-[100px]" />
+                          <Skeleton className="h-4 w-full" />
                         </TableCell>
                         <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-[100px]" />
+                          <Skeleton className="h-4 w-full" />
                         </TableCell>
                         <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-[100px]" />
+                          <Skeleton className="h-4 w-full" />
                         </TableCell>
                         <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-[100px]" />
+                          <Skeleton className="h-4 w-full" />
                         </TableCell>
                         <TableCell className="!py-2">
                           <div className="flex gap-2 justify-end">

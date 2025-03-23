@@ -71,7 +71,7 @@ export default function UpdateDevisPage({ params }) {
   const status = [
     { lable: "En attente", color: "amber-500" },
     { lable: "Accepté", color: "green-500" },
-    { lable: "Refusé", color: "red-500" },
+    { lable: "Annulé", color: "red-500" },
   ];
 
   const getDevisById = async () => {

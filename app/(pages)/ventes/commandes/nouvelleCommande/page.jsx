@@ -21,12 +21,12 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  TableFooter,
 } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
-import { Trash2, MoveLeft } from "lucide-react";
+import { Trash2, MoveLeft, ChevronDown } from "lucide-react";
 import { ArticleSelectionDialog } from "@/components/produits-selection-dialog";
 import Link from "next/link";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import axios from "axios";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
@@ -38,19 +38,26 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useInView } from "react-intersection-observer";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CircleX } from "lucide-react";
-import { useRouter } from "next/navigation";
 import newCommandeSchema from "@/app/zodSchemas/newCommandeSchema";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function NouvelleCommandePage() {
   const [items, setItems] = useState([]);
   const [isArticleDialogOpen, setIsArticleDialogOpen] = useState(false);
-  const [devi, setDevi] = useState("");
-  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const queryClient = useQueryClient();
+
   const {
     register,
     reset,
@@ -69,18 +76,8 @@ export default function NouvelleCommandePage() {
     },
     resolver: zodResolver(newCommandeSchema),
   });
-  const queryClient = useQueryClient();
-  const selectedDate = watch("echeance");
-  useEffect(() => {
-    const storedData = localStorage.getItem("devi");
-    if (storedData) {
-      setDevi(JSON.parse(storedData));
-    }
-  }, []);
 
-  useEffect(() => {
-    setValue("devi", devi);
-  }, [devi]);
+  const selectedDate = watch("echeance");
 
   const statuts = [
     { value: "En cours", lable: "En cours", color: "amber-500" },
@@ -88,6 +85,16 @@ export default function NouvelleCommandePage() {
     { value: "Livrée", lable: "Livrée", color: "green-500" },
     { value: "Annulé", lable: "Annulé", color: "red-500" },
   ];
+
+
+  const devis = useQuery({
+    queryKey: ["devisSansCommandes"],
+    queryFn: async () => {
+      const response = await axios.get("/api/commandes/nouveau");
+      const devis = response.data.devis;
+      return devis;
+    },
+  });
 
   const comptes = useQuery({
     queryKey: ["comptes"],
@@ -97,6 +104,12 @@ export default function NouvelleCommandePage() {
       return comptes;
     },
   });
+
+  const generateCommandeNumber = () => {
+    if (watch("devi")) {
+      setValue("numero", `CMD-${watch("devi").numero.slice(4, 13)}`);
+    }
+  };
 
   const createCommande = useMutation({
     mutationFn: async (data) => {
@@ -179,24 +192,63 @@ export default function NouvelleCommandePage() {
 
           <Card>
             <CardContent className="p-6 space-y-6">
-              <div className="grid grid-cols-3 gap-3">
-                <div className="w-full grid grid-cols-1">
-                  <Label htmlFor="nom" className="text-left mb-2 mb-2">
-                    Numéro de devi :
-                  </Label>
-                  <span className="text-md text-left text-gray-900 rounded-lg p-2 pl-4 bg-violet-50 h-[2.5rem]">
-                    {devi.numero}
-                  </span>
+              <div className="grid grid-cols-4 items-center gap-6">
+                <div className="col-span-2">
+                  <Label htmlFor="Devi number">Numéro de devi*</Label>
+                  <br />
+                  <Popover open={open} onOpenChange={setOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={open}
+                        className="w-full justify-between mt-2"
+                      >
+                        {watch("devi")
+                          ? watch("devi").numero
+                          : "Sélectionner..."}
+                        <ChevronDown className="opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto min-w-[27vw] p-0">
+                      <Command>
+                        <CommandInput
+                          placeholder="Chercher un devi..."
+                          className="h-9"
+                        />
+                        <CommandList>
+                          <CommandEmpty>Aucun devi trouvé.</CommandEmpty>
+                          <ScrollArea className="h-72 w-full">
+                            <CommandGroup>
+                              {devis.data?.map((devi) => (
+                                <CommandItem
+                                  name="devi"
+                                  key={devi.id}
+                                  value={devi.numero}
+                                  onSelect={() => {
+                                    setValue("devi", devi);
+                                    setOpen(false);
+                                    generateCommandeNumber();
+                                  }}
+                                >
+                                  {devi.numero}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </ScrollArea>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  {errors.clientId && (
+                    <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
+                      <CircleX className="h-4 w-4" />
+                      {errors.clientId.message}
+                    </p>
+                  )}
                 </div>
-                <div className="w-full grid grid-cols-1">
-                  <Label htmlFor="nom" className="text-left mb-2 mb-2">
-                    Client :
-                  </Label>
-                  <span className="text-md text-left text-gray-900 rounded-lg p-2 pl-4 bg-violet-50 h-[2.5rem]">
-                    {devi?.client?.nom}
-                  </span>
-                </div>
-                <div className="w-full grid grid-cols-1">
+
+                <div className="col-span-2">
                   <Label htmlFor="statut" className="text-right text-black">
                     Statut
                   </Label>
@@ -223,6 +275,31 @@ export default function NouvelleCommandePage() {
                   </Select>
                 </div>
               </div>
+              {watch("devi") && (
+                <div className="grid grid-cols-2 items-center gap-6">
+                  <div className={`col-span-1 space-y-1`}>
+                    <div className="w-full grid grid-cols-1">
+                      <Label htmlFor="nom" className="text-left mb-2 mb-2">
+                        Commande N°:
+                      </Label>
+                      <span className="text-md text-left text-gray-900 rounded-lg p-2 pl-4 bg-violet-50 h-[2.5rem]">
+                        {watch("numero")}
+                      </span>
+                    </div>
+                  </div>
+                  <div className={`col-span-1 space-y-1`}>
+                    <div className="w-full grid grid-cols-1">
+                      <Label htmlFor="nom" className="text-left mb-2 mb-2">
+                        Client :
+                      </Label>
+                      <span className="text-md text-left text-gray-900 rounded-lg p-2 pl-4 bg-violet-50 h-[2.5rem]">
+                        {watch("devi")?.client.nom.toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="grid gap-6 grid-cols-3">
                 <div className="space-y-1">
                   <Label htmlFor="client">Date limite de livraison : </Label>
@@ -318,7 +395,6 @@ export default function NouvelleCommandePage() {
               {/* Items Table */}
               <div className="space-y-4">
                 {items.length > 0 && (
-                  <>
                   <div className="overflow-hidden border rounded-lg">
                     <Table>
                       <TableHeader>
@@ -387,17 +463,18 @@ export default function NouvelleCommandePage() {
                       </TableBody>
                     </Table>
                   </div>
-                   <div className="space-y-4 bg-violet-50 p-4 rounded-lg">
-                   <div className="space-y-4">
-                     <div className="flex justify-between py-2 font-bold">
-                       <span>Total</span>
-                       <span>{calculateTotal()} DH</span>
-                     </div>
-                   </div>
-                 </div>
-                 </>
                 )}
- 
+                {items.length > 0 && (
+                  <div className="space-y-4 bg-violet-50 p-4 rounded-lg">
+                    <div className="space-y-4">
+                      <div className="flex justify-between py-2 font-bold">
+                        <span>Total</span>
+                        <span>{calculateTotal()} DH</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <AddButton
                   type="button"
                   onClick={() => setIsArticleDialogOpen(true)}
@@ -440,7 +517,6 @@ export default function NouvelleCommandePage() {
                     "clientId",
                     watch("devi")?.client.id || watch("client")?.id
                   );
-                  setValue("numero", `CMD-${devi?.numero?.slice(4, 13)}`);
 
                   setValue("produits", items);
                   setValue("totalDevi", watch("devi").total);

@@ -85,7 +85,7 @@ export default function ClientsPage() {
         }
       );
 
-      getClients();
+      queryClient.invalidateQueries(["clients"])
     } catch (e) {
       console.log(e);
     }
@@ -94,7 +94,7 @@ export default function ClientsPage() {
   return (
     <>
       <Toaster position="top-center" />
-      <div className="space-y-6 mb-[5rem]">
+      <div className="space-y-6 ">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Clients</h1>
         </div>
@@ -183,17 +183,17 @@ export default function ClientsPage() {
                         >
                           <div className="flex gap-2 items-center">
                             <Skeleton className="h-12 w-12 rounded-full" />
-                            <Skeleton className="h-4 w-[150px]" />
+                            <Skeleton className="h-4 w-full" />
                           </div>
                         </TableCell>
                         <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-[150px]" />
+                          <Skeleton className="h-4 w-full" />
                         </TableCell>
                         <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-[150px]" />
+                          <Skeleton className="h-4 w-full" />
                         </TableCell>
                         <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-[150px]" />
+                          <Skeleton className="h-4 w-full" />
                         </TableCell>
                         <TableCell className="!py-2">
                           <div className="flex gap-2 justify-end">
@@ -395,7 +395,7 @@ export default function ClientsPage() {
             />
           )}
           {isAddingClient && (
-            <ClientFormDialog getClients={getClients} clientList={clientList} />
+            <ClientFormDialog clientList={clients?.data} />
           )}
         </div>
       </div>

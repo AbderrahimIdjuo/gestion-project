@@ -89,6 +89,7 @@ model Commandes {
   note             String?
   typeReduction    String              @default("%")
   avance           Int?
+  totalDevi        Float
   totalPaye        Float?
   echeance         DateTime?
   createdAt        DateTime            @default(now())
@@ -152,6 +153,7 @@ model Factures {
   montant      Float?
   payer        Boolean  @default(false)
   dateEmission Int?
+  dateReglement DateTime?
   description  String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -195,6 +197,7 @@ model InfoEntreprise {
   mobile    String?
   email     String?
   adresse   String
+  logoUrl  String?
   slogan    String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

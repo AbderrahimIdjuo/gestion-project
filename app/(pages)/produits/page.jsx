@@ -24,6 +24,7 @@ import {
   Filter,
   X,
   ShoppingBag,
+  Upload,
 } from "lucide-react";
 import { ProductFormDialog } from "@/components/product-form-dialog";
 import {
@@ -49,12 +50,18 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PriceRangeSlider } from "@/components/customUi/customSlider";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { LoadingDots } from "@/components/loading-dots";
+import ImportProduits from "@/components/importer-produits"
 
 export default function ProduitsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [debouncedQuery, setDebouncedQuery] = useState();
+  const [debouncedValues, setDebouncedValues] = useState({
+    stock: undefined,
+    prixVente: undefined,
+    prixAchat: undefined,
+  });
   const [totalPages, setTotalPages] = useState();
   const [maxPrixAchat, setMaxPrixAchat] = useState();
   const [maxPrixVente, setMaxPrixVente] = useState();
@@ -91,6 +98,18 @@ export default function ProduitsPage() {
       clearTimeout(handler);
     };
   }, [searchQuery]);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValues({
+        stock: filters.stock,
+        prixVente: filters.prixVente,
+        prixAchat: filters.prixAchat,
+      });
+    }, 800);
+
+    return () => clearTimeout(handler);
+  }, [filters.stock, filters.prixVente, filters.prixAchat]);
   const queryClient = useQueryClient();
   const produits = useQuery({
     queryKey: [
@@ -99,9 +118,7 @@ export default function ProduitsPage() {
       debouncedQuery,
       page,
       filters.categorie,
-      filters.prixAchat,
-      filters.prixVente,
-      filters.stock,
+      debouncedValues, // On utilise debouncedValues pour éviter d'envoyer plusieurs requêtes au serveur en même temps.
     ],
     queryFn: async () => {
       const response = await axios.get("/api/produits", {
@@ -114,6 +131,8 @@ export default function ProduitsPage() {
           maxPrixAchats: filters.prixAchat[1],
           minPrixVentes: filters.prixVente[0],
           maxPrixVentes: filters.prixVente[1],
+          minimumStock: filters.stock[0],
+          maximumStock: filters.stock[1],
         },
       });
       setTotalPages(response.data.totalPages);
@@ -183,7 +202,7 @@ export default function ProduitsPage() {
   return (
     <>
       <Toaster position="top-center" />
-      <div className="space-y-6 mb-[5rem]">
+      <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Produits</h1>
         </div>
@@ -344,6 +363,15 @@ export default function ProduitsPage() {
                 </div>
               </SheetContent>
             </Sheet>
+            <ImportProduits>
+            <Button
+              variant="outline"
+              className="border-purple-500 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900 rounded-full"
+            >
+              <Upload className="mr-2 h-4 w-4" />
+              Importer
+            </Button>
+            </ImportProduits>
             <Button
               onClick={() => {
                 setIsAddingProduct(!isAddingProduct);
@@ -450,9 +478,15 @@ export default function ProduitsPage() {
                         <TableCell className="font-medium !py-2">
                           {product.designation}
                         </TableCell>
-                        <TableCell className="!py-2">{product.categorie}</TableCell>
-                        <TableCell className="!py-2">{product.prixAchat.toFixed(2)} DH</TableCell>
-                        <TableCell className="!py-2">{product.prixVente.toFixed(2)} DH</TableCell>
+                        <TableCell className="!py-2">
+                          {product.categorie}
+                        </TableCell>
+                        <TableCell className="!py-2">
+                          {product.prixAchat.toFixed(2)} DH
+                        </TableCell>
+                        <TableCell className="!py-2">
+                          {product.prixVente.toFixed(2)} DH
+                        </TableCell>
                         <TableCell className="!py-2">
                           <div className="flex items-center gap-2">
                             <span
@@ -670,18 +704,13 @@ export default function ProduitsPage() {
 
           <div className={`${!isAddingProduct && "hidden"} `}>
             <ScrollArea className="w-full h-[85vh]">
-              {isAddingProduct && (
-                <ProductFormDialog  />
-              )}
+              {isAddingProduct && <ProductFormDialog />}
             </ScrollArea>
           </div>
           <div className={`${!isUpdatingProduct && "hidden"} `}>
             <ScrollArea className="w-full h-[85vh]">
               {isUpdatingProduct && (
-                <ModifyProductDialog
-                  currProduct={currProduct}
-                  
-                />
+                <ModifyProductDialog currProduct={currProduct} />
               )}
             </ScrollArea>
           </div>

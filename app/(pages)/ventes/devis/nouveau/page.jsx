@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect , useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -48,9 +48,7 @@ import newDeviSchema from "@/app/zodSchemas/newDeviSchema";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useInView } from "react-intersection-observer";
 
-
 export default function NouveauDevisPage() {
-  //const [clientList, setClientList] = useState([]);
   const [open, setOpen] = useState(false);
   const scrollAreaRef = useRef(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -83,18 +81,8 @@ export default function NouveauDevisPage() {
   const status = [
     { lable: "En attente", color: "amber-500" },
     { lable: "Accepté", color: "green-500" },
-    { lable: "Refusé", color: "red-500" },
+    { lable: "Annulé", color: "red-500" },
   ];
-
-  // const getClients = async () => {
-  //   const result = await axios.get("/api/clients");
-  //   const { Clients } = result.data;
-  //   setClientList(Clients);
-  // };
-
-  // useEffect(() => {
-  //   getClients();
-  // }, []);
 
   const generateDeviNumber = () => {
     const digits = "1234567890";
@@ -267,7 +255,8 @@ export default function NouveauDevisPage() {
                                         onSelect={() => {
                                           setOpen(false);
                                           setValue("client", client);
-                                          generateDeviNumber()
+                                          setValue("clientId", client.id);
+                                          generateDeviNumber();
                                         }}
                                       >
                                         {client.nom.toUpperCase()}
@@ -515,8 +504,9 @@ export default function NouveauDevisPage() {
                   setValue("total", parseFloat(calculateTotal()));
                   console.log(
                     "form data validation :",
-                    newDeviSchema.safeParse(watch())
+                    newDeviSchema.parse(watch())
                   );
+                  console.log("data :", watch());
                 }}
                 type="submit"
                 className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 hover:scale-105 text-white hover:!text-white font-semibold transition-all duration-300 transform rounded-full"

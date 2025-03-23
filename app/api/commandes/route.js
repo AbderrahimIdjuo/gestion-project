@@ -13,6 +13,7 @@ export async function POST(req) {
       fraisLivraison,
       reduction,
       total,
+      totalDevi,
       typeReduction,
       note,
       avance,
@@ -32,6 +33,16 @@ export async function POST(req) {
 
     // Update stock and create purchase orders for out-of-stock products
     const transactionResult = await prisma.$transaction(async (tx) => {
+      // Changer le statut du devi "Accepté" une fois la commande est créer
+      await tx.devis.update({
+        where: {
+          numero: `DEV-${numero.slice(4, 13)}`,
+        },
+        data: {
+          statut: "Accepté",
+        },
+      });
+
       // Créer la commande
       const commande = await tx.commandes.create({
         data: {
@@ -44,6 +55,7 @@ export async function POST(req) {
           total: total,
           typeReduction,
           note,
+          totalDevi,
           echeance,
           avance: avance || 0,
           totalPaye: avance || 0,
@@ -175,7 +187,7 @@ export async function PUT(req) {
       await Promise.all(
         productsToDelete.map(async (item) => {
           const achat = commandesAchatsMap.get(item.produitId);
-         // const produit = produitsListMap.get(item.produitId);
+          // const produit = produitsListMap.get(item.produitId);
           const stockAdjustment = item.quantite - (achat?.quantite || 0);
 
           if (stockAdjustment > 0) {
@@ -606,7 +618,6 @@ export async function GET(req) {
     };
   }
 
-
   // total range filter
   if (minTotal && maxTotal) {
     filters.total = {
@@ -620,13 +631,13 @@ export async function GET(req) {
     switch (etat) {
       case "enPartie":
         filters.totalPaye = {
-          lt: prisma.commandes.fields.total,
+          lt: prisma.commandes.fields.totalDevi,
           gt: 0,
         };
         break;
       case "paye":
         filters.totalPaye = {
-          equals: prisma.commandes.fields.total,
+          equals: prisma.commandes.fields.totalDevi,
         };
         break;
       case "impaye":
@@ -678,7 +689,7 @@ export async function GET(req) {
     commandes,
     totalPages,
     transactionsList,
-    maxMontant: commandeMaxTotal.total,
+    maxMontant: commandeMaxTotal?.total || 0,
   });
 }
 

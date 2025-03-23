@@ -16,9 +16,9 @@ import { Separator } from "@/components/ui/separator";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CircleX } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 
-
-export function ClientFormDialog({ getClients, clientList }) {
+export function ClientFormDialog({ clientList }) {
   const clientSchema = z.object({
     nom: z.string().min(1, "Veuillez insérer le nom du client"),
     email: z
@@ -31,7 +31,9 @@ export function ClientFormDialog({ getClients, clientList }) {
           // If email is null, skip the uniqueness check
           if (email === null) return true;
           // Check if the email already exists in the client list
-          return !clientList?.map((client) => client.email?.toLowerCase()).includes(email?.toLowerCase());
+          return !clientList
+            ?.map((client) => client.email?.toLowerCase())
+            .includes(email?.toLowerCase());
         },
         {
           // Message when the email is not unique
@@ -57,18 +59,19 @@ export function ClientFormDialog({ getClients, clientList }) {
           message: "Ce téléphone existe déjà",
         }
       ),
-      adresse: z.string().optional(),
+    adresse: z.string().optional(),
   });
 
   const {
     register,
     reset,
     handleSubmit,
-    formState: { errors , isSubmitting},
+    formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(clientSchema),
   });
 
+  const queryClient = useQueryClient();
   const onSubmit = async (data) => {
     toast.promise(
       (async () => {
@@ -83,12 +86,14 @@ export function ClientFormDialog({ getClients, clientList }) {
           if (!response.ok) {
             throw new Error("Failed to add commande");
           }
-          getClients();
+          queryClient.invalidateQueries(["clients"]);
+
           reset();
           if (response.status === 200) {
             // Assuming 201 is the success status code
             console.log("Client ajouté avec succès");
-            getClients();
+            queryClient.invalidateQueries(["clients"]);
+
             reset();
           } else {
             throw new Error("Unexpected response status");
@@ -199,7 +204,11 @@ export function ClientFormDialog({ getClients, clientList }) {
                 spellCheck={false}
               />
             </div>
-            <SaveButton disabled={isSubmitting} type="submit" title="Enregistrer" />
+            <SaveButton
+              disabled={isSubmitting}
+              type="submit"
+              title="Enregistrer"
+            />
           </div>
         </form>
       </CardContent>

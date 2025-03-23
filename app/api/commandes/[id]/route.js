@@ -3,18 +3,27 @@ import prisma from "../../../../lib/prisma";
 
 export async function DELETE(_, { params }) {
   const id = params.id;
-  // Récupérer les produits associés à la commande client
-  const produits = await prisma.commandesProduits.findMany({
-    where: {
-      commandeId: id,
-    },
-  });
-  // Récupérer les commande achats liés à cette commande
-  const commandes = await prisma.achatsCommandes.findMany({
-    where: {
-      commandeId: id,
-    },
-  });
+
+  const [commandeClient, produits, commandes] = await Promise.all([
+    await prisma.commandes.findUnique({
+      where: {
+        id,
+      },
+    }),
+    // Récupérer les produits associés à la commande client
+    await prisma.commandesProduits.findMany({
+      where: {
+        commandeId: id,
+      },
+    }),
+    // Récupérer les commandes achats liés à cette commande
+    await prisma.achatsCommandes.findMany({
+      where: {
+        commandeId: id,
+      },
+    }),
+  ]);
+
   const comparaison = produits.map((item1) => {
     const item2 = commandes.find((item) => item.produitId === item1.produitId);
     const produitsQuantite = item1.quantite;
@@ -63,10 +72,24 @@ export async function DELETE(_, { params }) {
   // Filtrer les mises à jour nulles et exécuter la transaction
   const updates = comparaison.map((item) => item.update).filter(Boolean);
   const transactionResult = await prisma.$transaction(updates);
-  const commande = await prisma.commandes.delete({
-    where: { id },
+  const transactions = await prisma.$transaction(async (prisma) => {
+    // delete the commande
+    await prisma.commandes.delete({
+      where: { id },
+    });
+
+    // Changer le statut du devi "Accepté" une fois la commande est créer
+    await prisma.devis.update({
+      where: {
+        numero: `DEV-${commandeClient.numero.slice(4, 13)}`,
+      },
+      data: {
+        statut: "En attente",
+      },
+    });
   });
-  return NextResponse.json({ transactionResult, commande });
+
+  return NextResponse.json({ transactionResult, transactions });
 }
 
 export async function GET(_, { params }) {

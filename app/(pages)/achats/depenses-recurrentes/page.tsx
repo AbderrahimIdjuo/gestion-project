@@ -233,24 +233,24 @@ function Page() {
     ));
   };
 
-  const createTransaction = useMutation({
-    mutationFn: async (data: Transaction) => {
-      const loadingToast = toast.loading("Paiement en cours...");
-      try {
-        await addtransaction(data);
-        toast.success("Paiement éffectué avec succès");
-      } catch (error) {
-        toast.error("Échec de l'opération!");
-        throw error;
-      } finally {
-        toast.dismiss(loadingToast);
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(["transactions"]);
-      payerFactureUnique();
-    },
-  });
+  // const createTransaction = useMutation({
+  //   mutationFn: async (data: Transaction) => {
+  //     const loadingToast = toast.loading("Paiement en cours...");
+  //     try {
+  //       await addtransaction(data);
+  //       toast.success("Paiement éffectué avec succès");
+  //     } catch (error) {
+  //       toast.error("Échec de l'opération!");
+  //       throw error;
+  //     } finally {
+  //       toast.dismiss(loadingToast);
+  //     }
+  //   },
+  //   onSuccess: () => {
+  //     queryClient.invalidateQueries(["transactions"]);
+  //     payerFactureUnique();
+  //   },
+  // });
 
   return (
     <>
@@ -710,7 +710,8 @@ function Page() {
           if (selectedFactures.size > 0) {
             handlePayeMany.mutate(selectedFactures);
           } else {
-            createTransaction.mutate(data);
+           // createTransaction.mutate(data);
+           payerFactureUnique()
           }
           setIsManyDialogOpen(false);
         }}

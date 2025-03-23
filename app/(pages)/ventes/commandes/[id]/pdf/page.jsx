@@ -4,15 +4,26 @@ import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
 import { useState } from "react";
-import { Table, TableCell, TableHead, TableRow } from "@/components/ui/table";
-import { Phone, MapPin } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { useQuery } from "@tanstack/react-query";
+import { Phone, MapPin, Smartphone } from "lucide-react";
 import LoadingCommandePdf from "@/components/loading-commande-pdf";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import axios from "axios";
 
 function formatDate(dateString) {
   return dateString?.split("T")[0].split("-").reverse().join("-");
 }
 
-export default function DevisPDFPage() {
+export default function CommandesPDFPage() {
   const [commande, setCommande] = useState();
   const handlePrint = () => {
     window.print();
@@ -24,6 +35,14 @@ export default function DevisPDFPage() {
       setCommande(JSON.parse(storedData));
     }
   }, []);
+  const info = useQuery({
+    queryKey: ["infoEntreprise"],
+    queryFn: async () => {
+      const response = await axios.get("/api/infoEntreprise");
+      const infoEntreprise = response.data.infoEntreprise;
+      return infoEntreprise;
+    },
+  });
   return (
     <>
       {commande ? (
@@ -31,41 +50,45 @@ export default function DevisPDFPage() {
           {/* Document Content */}
           <div id="print-area" className="space-y-6">
             {/* Header */}
-            <div className="flex justify-between items-start text-sm text-gray-600">
-              <div>
-                {new Date().toLocaleString("fr-FR", {
-                  year: "numeric",
-                  month: "2-digit",
-                  day: "2-digit",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </div>
-              <div>Statut : {commande?.statut}</div>
-            </div>
-            <div className="border-b border-purple-500 pb-4">
+            <div className="flex justify-between items-center border-b border-purple-500 pb-4">
               <h1 className="text-3xl font-bold text-purple-600">
                 COMMANDE N° : {commande?.numero}
               </h1>
+
+              <Avatar className="w-24 h-24 shadow-md border ">
+                <AvatarImage src={info.data?.logoUrl} />
+                <AvatarFallback>Logo</AvatarFallback>
+              </Avatar>
             </div>
-            {/* Title */}
 
             {/* Company and Client Info */}
             <div className="grid grid-cols-2 gap-8">
               {/* Company Info */}
               <div className="space-y-1">
-                <h2 className="font-bold text-xl text-gray-900">OUDAOUDOX</h2>
+                <h2 className="font-bold text-xl text-gray-900">
+                  {info.data?.nom.toUpperCase()}
+                </h2>
                 <p className="font-small font-bold text-slate-700 text-sm">
-                  DECORATION-MENUISERIE-TRAVAUX DIVERS
+                  {info.data?.slogan.toUpperCase()}
                 </p>
-                <div className="flex items-center gap-2 ">
-                  <MapPin className="h-4 w-4" />
-                  <p>Dcheira Rue 1630 N° 01, Inzegan</p>
-                </div>
-                <div className="flex items-center gap-2 ">
-                  <Phone className="h-4 w-4" />
-                  <p>0654788963</p>
-                </div>
+                {info.data?.adresse && (
+                  <div className="flex items-center gap-2 ">
+                    <MapPin className="h-4 w-4" />
+                    <p>{info.data?.adresse}</p>
+                  </div>
+                )}
+                {info.data?.telephone && (
+                  <div className="flex items-center gap-2 ">
+                    <Phone className="h-4 w-4" />
+                    <p>{info.data?.telephone}</p>
+                  </div>
+                )}
+                {info.data?.mobile && (
+                  <div className="flex items-center gap-2 ">
+                    <Smartphone className="h-4 w-4" />
+                    <p>{info.data?.mobile}</p>
+                  </div>
+                )}
               </div>
 
               {/* Client Info */}
@@ -94,120 +117,113 @@ export default function DevisPDFPage() {
                 {formatDate(commande?.echeance)}
               </p>
               <p>
+                <span className="font-medium">Statut :</span> {commande?.statut}
+              </p>
+              <p>
                 <span className="font-medium">Émis par:</span> Commerçant 1
               </p>
             </div>
 
             {/* Items Table */}
-            <div className="border rounded-md">
-              <Table>
-                <thead className="text-zinc-700 text-[1rem]">
+            <div className="overflow-hidden rounded-lg border border-black">
+              <Table className="w-full border-collapse">
+                <TableHeader className="text-[1rem] border-black">
                   <TableRow>
-                    <TableHead className=" text-left">Désignation</TableHead>
-                    <TableHead className="border-l text-left">
+                    <TableHead className="text-black font-bold text-left border-b border-black">
+                      Désignation
+                    </TableHead>
+                    <TableHead className="text-black font-bold border-l border-b border-black text-left">
                       Quantité
                     </TableHead>
-                    <TableHead className="border-l p-2 text-left">
+                    <TableHead className="text-black font-bold border-l border-b border-black text-left">
                       Prix unitaire
                     </TableHead>
-                    <TableHead className="border-l p-2 text-right">
+                    <TableHead className="text-black font-bold border-l border-b border-black p-2 text-right">
                       Montant
                     </TableHead>
                   </TableRow>
-                </thead>
-                <tbody>
+                </TableHeader>
+                <TableBody>
                   {commande?.commandeProduits.map((articl) => (
                     <TableRow key={articl.id}>
-                      <TableCell className=" p-2 text-left">
+                      <TableCell className=" p-2 text-left border-b border-black">
                         {articl.produit.designation}{" "}
                       </TableCell>
-                      <TableCell className="border-l p-2 text-left">
+                      <TableCell className="border-l border-b border-black p-2 text-left">
                         {articl.quantite}
                       </TableCell>
-                      <TableCell className="border-l p-2 text-left">
+                      <TableCell className="border-l border-b border-black p-2 text-left">
                         {articl.prixUnite} DH
                       </TableCell>
-                      <TableCell className="border-l p-2 text-right">
+                      <TableCell className="border-l border-b border-black p-2 text-right font-bold">
                         {articl.montant} DH
                       </TableCell>
                     </TableRow>
                   ))}
-                </tbody>
-                <tfoot className="font-medium bg-zinc-100">
-                  {commande?.fraisLivraison > 0 && (
-                    <TableRow>
-                      <TableCell
-                        colSpan={3}
-                        className="border-b p-2 text-right"
-                      >
-                        Frais de transport :
-                      </TableCell>
-                      <TableCell className="border-l border-b p-2 text-right">
-                        {commande?.fraisLivraison} DH
-                      </TableCell>
-                    </TableRow>
-                  )}
+                </TableBody>
+                <TableFooter className="font-medium bg-zinc-100">
                   {!commande?.sousTotal === commande?.total && (
                     <TableRow>
                       <TableCell
                         colSpan={3}
-                        className="border-b p-2 text-right"
+                        className="border-b border-black p-2 text-right font-bold"
                       >
                         Sous-total :
                       </TableCell>
-                      <TableCell className="border-l border-b p-2 text-right">
+                      <TableCell className="border-l border-b border-black p-2 text-right font-bold">
                         {commande?.sousTotal} DH
                       </TableCell>
                     </TableRow>
                   )}
                   <TableRow>
-                    <TableCell colSpan={3} className="border-b p-2 text-right">
-                      Montant payé :
+                    <TableCell
+                      colSpan={3}
+                      className=" border-b border-black p-2 text-right font-bold"
+                    >
+                      Coût de production :
                     </TableCell>
-                    <TableCell className="border-l border-b p-2 text-right">
-                      {commande?.totalPaye} DH
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell colSpan={3} className="border-b p-2 text-right">
-                      Total :
-                    </TableCell>
-                    <TableCell className="border-l border-b p-2 text-right">
+                    <TableCell className="border-l border-b border-black p-2 text-right font-bold">
                       {commande?.total} DH
                     </TableCell>
                   </TableRow>
-                  {commande?.reduction > 0 ? (
-                    <TableRow>
-                      <TableCell
-                        colSpan={3}
-                        className=" border-b p-2 text-right"
-                      >
-                        Réduction :
-                      </TableCell>
-                      <TableCell className="border-l border-b p-2 text-right">
-                        {commande?.reduction} {commande?.typeReduction}
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    ""
-                  )}
                   <TableRow>
                     <TableCell
                       colSpan={3}
-                      className="text-xl text-gray-900 p-2 text-right"
+                      className=" border-b border-black p-2 text-right font-bold"
                     >
-                      Reste a payer :
+                      Montant à payer :
                     </TableCell>
-                    <TableCell className="border-l p-2 text-xl text-gray-900 text-right">
-                      {(commande?.total - commande?.totalPaye).toFixed(2)} DH
+                    <TableCell className="border-l border-b border-black p-2 text-right font-bold">
+                      {commande?.totalDevi} DH
                     </TableCell>
                   </TableRow>
-                </tfoot>
+                  <TableRow>
+                    <TableCell
+                      colSpan={3}
+                      className="text-xl text-gray-900 p-2 text-right font-extrabold"
+                    >
+                      Reste à payer :
+                    </TableCell>
+                    <TableCell className="border-l border-black p-2 text-xl text-gray-900 text-right font-extrabold">
+                      {(commande?.totalDevi - commande?.totalPaye).toFixed(2)}{" "}
+                      DH
+                    </TableCell>
+                  </TableRow>
+                </TableFooter>
               </Table>
             </div>
-            {/* <div className="flex justify-between text-sm text-gray-600 pt-4">
-              <div>www.oudaoudox.com</div>
-            </div> */}
+            <div className="flex justify-between text-sm text-gray-600 pt-4">
+              <div>
+                {" "}
+                {new Date().toLocaleString("fr-FR", {
+                  year: "numeric",
+                  month: "2-digit",
+                  day: "2-digit",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </div>
+            </div>
           </div>
           <div className="print:hidden mt-8 flex justify-end">
             <Button

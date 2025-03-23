@@ -12,12 +12,7 @@ export async function DELETE(_, { params }) {
 
 export async function PUT(req, { params }) {
   const response = await req.json();
-  const {
-    numero,
-    lable,
-    montant,
-    compte,
-  } = response;
+  const { numero, lable, montant, compte } = response;
   const id = params.id;
 
   try {
@@ -26,6 +21,7 @@ export async function PUT(req, { params }) {
         where: { id },
         data: {
           payer: true,
+          dateReglement: new Date(),
         },
       });
       await tx.transactions.create({
@@ -34,7 +30,7 @@ export async function PUT(req, { params }) {
           type: "dépense",
           montant: montant,
           compte,
-          lable 
+          lable,
         },
       });
     });

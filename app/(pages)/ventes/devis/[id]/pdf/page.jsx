@@ -5,7 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
 import axios from "axios";
 import { useState } from "react";
-import { Table, TableCell, TableHead, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Phone, MapPin, Smartphone } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -15,15 +23,13 @@ import LoadingDeviPdf from "@/components/loading-devi-pdf";
 export default function DevisPDFPage() {
   const [devi, setDevi] = useState();
 
-  const getInfoEntreprise = async () => {
-    const response = await axios.get("/api/infoEntreprise");
-    const infoEntreprise = response.data.infoEntreprise;
-    return infoEntreprise;
-  };
-
-  const query = useQuery({
+  const info = useQuery({
     queryKey: ["infoEntreprise"],
-    queryFn: getInfoEntreprise,
+    queryFn: async () => {
+      const response = await axios.get("/api/infoEntreprise");
+      const infoEntreprise = response.data.infoEntreprise;
+      return infoEntreprise;
+    },
   });
 
   useEffect(() => {
@@ -37,48 +43,54 @@ export default function DevisPDFPage() {
     window.print();
   };
 
+  function formatDate(dateString) {
+    return dateString.split("T")[0].split("-").reverse().join("-");
+  }
+
   return (
     <>
       {devi ? (
-        <div className="container mx-auto p-8 max-w-4xl bg-white min-h-screen print:p-0 print:max-w-none">
+        <div className="container mx-auto p-8 max-w-4xl bg-white min-h-screen print:p-0 print:max-w-none mb-10">
           {/* Document Content */}
           <div id="print-area" className="space-y-6">
             {/* Header */}
-            <div className="flex justify-between items-end border-b border-purple-500 pb-4">
+            <div className="flex justify-between items-center border-b border-purple-500 pb-4">
               <h1 className="text-3xl font-bold text-purple-600">
                 DEVIS N° : {devi?.numero}
               </h1>
 
-              <Avatar className="w-24 h-24">
-                <AvatarImage src="" />
+              <Avatar className="w-24 h-24 shadow-md border ">
+                <AvatarImage src={info.data?.logoUrl} />
                 <AvatarFallback>Logo</AvatarFallback>
               </Avatar>
             </div>
-
-            {/* Title */}
 
             {/* Company and Client Info */}
             <div className="grid grid-cols-2 gap-8">
               {/* Company Info */}
               <div className="space-y-1">
                 <h2 className="font-bold text-xl text-gray-900">
-                  {query.data?.[0].nom.toUpperCase()}
+                  {info.data?.nom.toUpperCase()}
                 </h2>
                 <p className="font-small font-bold text-slate-700 text-sm">
-                  {query.data?.[0].slogan.toUpperCase()}
+                  {info.data?.slogan.toUpperCase()}
                 </p>
-                <div className="flex items-center gap-2 ">
-                  <MapPin className="h-4 w-4" />
-                  <p>{query.data?.[0].adresse}</p>
-                </div>
-                <div className="flex items-center gap-2 ">
-                  <Phone className="h-4 w-4" />
-                  <p>{query.data?.[0].telephone}</p>
-                </div>
-                {query.data?.[0].mobile && (
+                {info.data?.adresse && (
+                  <div className="flex items-center gap-2 ">
+                    <MapPin className="h-4 w-4" />
+                    <p>{info.data?.adresse}</p>
+                  </div>
+                )}
+                {info.data?.telephone && (
+                  <div className="flex items-center gap-2 ">
+                    <Phone className="h-4 w-4" />
+                    <p>{info.data?.telephone}</p>
+                  </div>
+                )}
+                {info.data?.mobile && (
                   <div className="flex items-center gap-2 ">
                     <Smartphone className="h-4 w-4" />
-                    <p>{query.data?.[0].mobile}</p>
+                    <p>{info.data?.mobile}</p>
                   </div>
                 )}
               </div>
@@ -102,73 +114,73 @@ export default function DevisPDFPage() {
             <div className="space-y-1">
               <p>
                 <span className="font-medium">Date de création:</span>{" "}
-                {devi?.createdAt.split("T")[0]}{" "}
-              </p>
-              <p>
-                <span className="font-medium">Référence du devis:</span>{" "}
-                {devi?.createdAt}
-              </p>
-              <p>
-                <span className="font-medium">Date de validité du devis:</span>{" "}
-                20/6/2025
+                {formatDate(devi?.createdAt)}{" "}
               </p>
               <p>
                 <span className="font-medium">Statut :</span> {devi?.statut}
               </p>
               <p>
-                <span className="font-medium">Émis par:</span> John Doe
+                <span className="font-medium">Émis par:</span> commerçant 1
               </p>
             </div>
 
             {/* Items Table */}
-            <div className="border rounded-md">
-              <Table>
-                <thead className="text-zinc-700 text-[1rem]">
+            <div className="overflow-hidden rounded-lg border border-black">
+              <Table className="w-full border-collapse">
+                <TableHeader className="text-[1rem] border-black">
                   <TableRow>
-                    <TableHead className=" text-left">Désignation</TableHead>
-                    <TableHead className="border-l text-left">
+                    <TableHead className="text-black font-bold text-left border-b border-black">
+                      Désignation
+                    </TableHead>
+                    <TableHead className="text-black font-bold border-l border-b border-black text-left">
                       Quantité
                     </TableHead>
-                    <TableHead className="border-l p-2 text-left">
+                    <TableHead className="text-black font-bold border-l border-b border-black p-2 text-left">
                       Prix unitaire
                     </TableHead>
-                    <TableHead className="border-l p-2 text-right">
+                    <TableHead className="text-black font-bold border-l border-b border-black p-2 text-right">
                       Montant
                     </TableHead>
                   </TableRow>
-                </thead>
-                <tbody>
+                </TableHeader>
+                <TableBody>
                   {devi?.articls?.map((articl) => (
                     <TableRow key={articl.id}>
-                      <TableCell className=" p-2 text-left">
+                      <TableCell className=" p-2 text-left border-b border-black">
                         {articl.designation}{" "}
                       </TableCell>
-                      <TableCell className="border-l p-2 text-left">
+                      <TableCell className="border-l border-b border-black p-2 text-left">
                         {articl.quantite}
                       </TableCell>
-                      <TableCell className="border-l p-2 text-left">
+                      <TableCell className="border-l border-b  border-black p-2 text-left">
                         {articl.prixUnite} DH
                       </TableCell>
-                      <TableCell className="border-l p-2 text-right">
+                      <TableCell className="border-l border-b border-black p-2 text-right font-bold">
                         {articl.montant} DH
                       </TableCell>
                     </TableRow>
                   ))}
-                </tbody>
-                <tfoot className="font-medium bg-zinc-100">
+                </TableBody>
+                <TableFooter className="font-medium  border-black bg-zinc-100 ">
                   <TableRow>
-                    <TableCell colSpan={3} className="border-b p-2 text-right">
+                    <TableCell
+                      colSpan={3}
+                      className="border-b border-black p-2 text-right font-bold"
+                    >
                       Frais de transport :
                     </TableCell>
-                    <TableCell className="border-l border-b p-2 text-right">
+                    <TableCell className="border-l border-b border-black p-2 text-right font-bold">
                       {devi?.fraisLivraison} DH
                     </TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell colSpan={3} className="border-b p-2 text-right">
+                    <TableCell
+                      colSpan={3}
+                      className="border-b border-black p-2 text-right font-bold"
+                    >
                       Sous-total :
                     </TableCell>
-                    <TableCell className="border-l border-b p-2 text-right">
+                    <TableCell className="border-l border-b border-black p-2 text-right font-bold">
                       {devi?.sousTotal} DH
                     </TableCell>
                   </TableRow>
@@ -176,11 +188,11 @@ export default function DevisPDFPage() {
                     <TableRow>
                       <TableCell
                         colSpan={3}
-                        className=" border-b p-2 text-right"
+                        className=" border-b border-black p-2 text-right font-bold"
                       >
                         Réduction :
                       </TableCell>
-                      <TableCell className="border-l border-b p-2 text-right">
+                      <TableCell className="border-l border-b border-black p-2 text-right font-bold">
                         {devi?.reduction} {devi?.typeReduction}
                       </TableCell>
                     </TableRow>
@@ -190,15 +202,15 @@ export default function DevisPDFPage() {
                   <TableRow>
                     <TableCell
                       colSpan={3}
-                      className="text-xl text-gray-900 p-2 text-right"
+                      className="text-xl text-gray-900 p-2 text-right font-extrabold"
                     >
                       Total :
                     </TableCell>
-                    <TableCell className="border-l p-2 text-xl text-gray-900 text-right">
+                    <TableCell className="border-l border-black p-2 text-xl text-gray-900 text-right font-extrabold">
                       {devi?.total} DH
                     </TableCell>
                   </TableRow>
-                </tfoot>
+                </TableFooter>
               </Table>
             </div>
             <div className="flex justify-between text-sm text-gray-600 pt-4">

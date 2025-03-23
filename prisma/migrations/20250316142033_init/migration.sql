@@ -10,6 +10,20 @@ CREATE TABLE "Clients" (
 );
 
 -- CreateTable
+CREATE TABLE "Employes" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "nom" TEXT NOT NULL,
+    "cin" TEXT,
+    "rib" TEXT,
+    "telephone" TEXT,
+    "adresse" TEXT,
+    "role" TEXT,
+    "salaire" REAL,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL
+);
+
+-- CreateTable
 CREATE TABLE "Produits" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "designation" TEXT NOT NULL,
@@ -64,6 +78,7 @@ CREATE TABLE "Commandes" (
     "note" TEXT,
     "typeReduction" TEXT NOT NULL DEFAULT '%',
     "avance" INTEGER,
+    "totalPaye" REAL,
     "echeance" DATETIME,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL,
@@ -119,18 +134,74 @@ CREATE TABLE "Devis" (
 -- CreateTable
 CREATE TABLE "Factures" (
     "id" TEXT NOT NULL PRIMARY KEY,
-    "nom" TEXT NOT NULL,
+    "lable" TEXT NOT NULL,
     "numero" TEXT NOT NULL,
-    "categorie" TEXT NOT NULL,
+    "type" TEXT NOT NULL,
+    "montant" REAL,
+    "payer" BOOLEAN NOT NULL DEFAULT false,
+    "dateEmission" INTEGER,
+    "description" TEXT,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL
+);
+
+-- CreateTable
+CREATE TABLE "Transactions" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "type" TEXT NOT NULL,
     "montant" REAL NOT NULL,
-    "statut" TEXT NOT NULL,
-    "echeance" DATETIME NOT NULL,
+    "compte" TEXT,
+    "lable" TEXT,
+    "reference" TEXT,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL
+);
+
+-- CreateTable
+CREATE TABLE "TachesEmployes" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "tache" TEXT NOT NULL
+);
+
+-- CreateTable
+CREATE TABLE "CategoriesProduits" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "categorie" TEXT NOT NULL
+);
+
+-- CreateTable
+CREATE TABLE "ComptesBancaires" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "compte" TEXT NOT NULL
+);
+
+-- CreateTable
+CREATE TABLE "ModesPaiement" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "modePaiement" TEXT NOT NULL
+);
+
+-- CreateTable
+CREATE TABLE "InfoEntreprise" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT DEFAULT 1,
+    "nom" TEXT NOT NULL,
+    "telephone" TEXT NOT NULL,
+    "mobile" TEXT,
+    "email" TEXT,
+    "adresse" TEXT NOT NULL,
+    "slogan" TEXT,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL
 );
 
 -- CreateIndex
+CREATE UNIQUE INDEX "CommandesProduits_commandeId_produitId_key" ON "CommandesProduits"("commandeId", "produitId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Commandes_numero_key" ON "Commandes"("numero");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "AchatsCommandes_commandeId_produitId_key" ON "AchatsCommandes"("commandeId", "produitId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Devis_numero_key" ON "Devis"("numero");

@@ -84,7 +84,8 @@ export async function GET(req) {
   const maxPrixAchats = searchParams.get("maxPrixAchats");
   const minPrixVentes = searchParams.get("minPrixVentes");
   const maxPrixVentes = searchParams.get("maxPrixVentes");
-
+  const minimumStock = searchParams.get("minimumStock");
+  const maximumStock = searchParams.get("maximumStock");
   const filters = {};
 
   const produitsPerPage = 10;
@@ -96,36 +97,16 @@ export async function GET(req) {
     { description: { contains: searchQuery } },
   ];
 
-  // Statut filter
-  if (statut !== "all") {
-    switch (statut) {
-      case "En stock":
-        filters.stock = {
-          gte: 20,
-        };
-        break;
-      case "Limité":
-        filters.stock = {
-          gt: 0,
-          lt: 20,
-        };
-        break;
-      case "En rupture":
-        filters.stock = 0;
-        break;
-      default:
-        break;
-    }
-  }
+
 
  // Filtre par catégorie
 if (categorie !== "all") {  
-  filters.categorie = { equals: categorie.trim() }; // Utilisez "equals" pour une correspondance exacte
+  filters.categorie = { equals: categorie }; // Utilisez "equals" pour une correspondance exacte
 }
 
   // prixVente range filter
   if (minPrixVentes && maxPrixVentes) {
-    filters.prixAchat = {
+    filters.prixVente = {
       gte: Number(minPrixVentes),
       lte: Number(maxPrixVentes),
     };
@@ -138,6 +119,36 @@ if (categorie !== "all") {
       lte: Number(maxPrixAchats),
     };
   }
+
+   // stock range filter
+   if (minimumStock && maximumStock ) {
+    filters.stock = {
+      gte: Number(minimumStock),
+      lte: Number(maximumStock),
+    };
+  }
+
+    // Statut filter
+    if (statut !== "all") {
+      switch (statut) {
+        case "En stock":
+          filters.stock = {
+            gte: 20,
+          };
+          break;
+        case "Limité":
+          filters.stock = {
+            gt: 0,
+            lt: 20,
+          };
+          break;
+        case "En rupture":
+          filters.stock = 0;
+          break;
+        default:
+          break;
+      }
+    }
 
   // Fetch filtered commandes with pagination and related data
   const [produits, totalProduits, maxPrixAchat, maxPrixVente, maxStock] =
@@ -186,9 +197,9 @@ if (categorie !== "all") {
   return NextResponse.json({
     produits,
     totalProduits,
-    maxPrixAchat: maxPrixAchat.prixAchat,
-    maxPrixVente: maxPrixVente.prixVente,
-    maxStock: maxStock.stock,
+    maxPrixAchat: maxPrixAchat.prixAchat || 0,
+    maxPrixVente: maxPrixVente.prixVente || 0,
+    maxStock: maxStock.stock || 0,
     totalPages,
   });
 }
