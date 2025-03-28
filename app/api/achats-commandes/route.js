@@ -73,27 +73,120 @@ export async function PUT(req) {
   }
 }
 
-export async function GET() {
-  const commandes = await prisma.achatsCommandes.findMany({
-    orderBy: {
-      updatedAt: "desc",
-    },
-    include: {
-      produit: {
-        include: {
-          fournisseur: {
-            select: {
-              nom: true, 
+// export async function GET() {
+//   const commandes = await prisma.achatsCommandes.findMany({
+//     orderBy: {
+//       updatedAt: "desc",
+//     },
+//     include: {
+//       produit: {
+//         include: {
+//           fournisseur: {
+//             select: {
+//               nom: true,
+//             },
+//           },
+//         },
+//       },
+//       commandeClient : {
+//         select: {
+//           numero: true,
+//         },
+//       },
+//     },
+//   });
+//   return NextResponse.json({ commandes });
+// }
+
+export async function GET(req) {
+  const { searchParams } = new URL(req.url);
+  const page = parseInt(searchParams.get("page") || "1");
+  const searchQuery = searchParams.get("query") || "";
+  const statutPaiement = searchParams.get("statutPaiement");
+  const categorie = searchParams.get("categorie") ? decodeURIComponent(searchParams.get("categorie").trim()) : null
+  const from = searchParams.get("from"); // Start date
+  const to = searchParams.get("to"); // End date
+  const minTotal = searchParams.get("minTotal");
+  const maxTotal = searchParams.get("maxTotal");
+
+  console.log("categorie", categorie);
+
+  const filters = {};
+
+  const commandesPerPage = 10;
+
+  // Search filter by produit designation , fournisseur
+  filters.OR = [
+    { produit: { designation: { contains: searchQuery } } },
+    { produit: { fournisseur: { nom: { contains: searchQuery } } } },
+  ];
+
+  // Filters par statutPaiement : "payé" ou "impayé"
+  if (statutPaiement !== "all") {
+    if (statutPaiement === "true") {
+      filters.payer = true;
+    } else if (statutPaiement === "false") {
+      filters.payer = false;
+    }
+  }
+
+  // Filters par categorie
+  if (categorie !== "all") {
+    filters.produit = {
+      categorie: {
+        equals: categorie,
+      },
+    };
+  }
+  // // Date range filter
+  // if (from && to) {
+  //   filters.createdAt = {
+  //     gte: new Date(from), // Greater than or equal to "from"
+  //     lte: new Date(to), // Less than or equal to "to"
+  //   };
+  // }
+
+  // // total range filter
+  // if (minTotal && maxTotal) {
+  //   filters.total = {
+  //     gte: Number(minTotal),
+  //     lte: Number(maxTotal),
+  //   };
+  // }
+
+  // Fetch filtered commandes with pagination and related data
+  const [commandes, totalCommandes] = await Promise.all([
+    prisma.achatsCommandes.findMany({
+      where: filters,
+      skip: (page - 1) * commandesPerPage,
+      take: commandesPerPage,
+      orderBy: { createdAt: "desc" },
+      include: {
+        produit: {
+          include: {
+            fournisseur: {
+              select: {
+                nom: true,
+              },
             },
           },
         },
-      },
-      commandeClient : {
-        select: {
-          numero: true, 
+        commandeClient: {
+          select: {
+            numero: true,
+          },
         },
       },
-    },
+    }),
+    prisma.achatsCommandes.count({ where: filters }), // Get total count for pagination
+  ]);
+
+  // Calculate total pages for pagination
+  const totalPages = Math.ceil(totalCommandes / commandesPerPage);
+
+  // Return the response
+  return NextResponse.json({
+    commandes,
+    totalPages,
   });
-  return NextResponse.json({ commandes });
 }

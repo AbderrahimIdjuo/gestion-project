@@ -101,6 +101,8 @@ export async function GET(req) {
 
  // Filtre par catégorie
 if (categorie !== "all") {  
+  console.log("categorie", categorie);
+  
   filters.categorie = { equals: categorie }; // Utilisez "equals" pour une correspondance exacte
 }
 

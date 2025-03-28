@@ -12,6 +12,13 @@ import {
   CircleDollarSign,
   HandCoins,
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { PerformanceChart } from "@/components/performance-chart";
 import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
@@ -41,6 +48,18 @@ export default function DashboardPage() {
       <div className="h-full flex flex-col space-y-4">
         <h1 className="text-3xl font-bold">Tableau de bord</h1>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="flex gap-2 justify-between">
+            <Select>
+              <SelectTrigger className="w-full bg-white focus:ring-purple-500">
+                <SelectValue placeholder="Date" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="light">cet mois</SelectItem>
+                <SelectItem value="dark">les 3 derniers mois</SelectItem>
+                <SelectItem value="system">les 6 derniers mois</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div className="flex gap-2 justify-between">
             <CustomDateRangePicker
               startDate={startDate}

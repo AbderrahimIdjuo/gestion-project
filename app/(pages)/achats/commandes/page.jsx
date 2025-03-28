@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import toast, { Toaster } from "react-hot-toast";
 import CustomPagination from "@/components/customUi/customPagination";
 import { Label } from "@/components/ui/label";
+import { LoadingDots } from "@/components/loading-dots";
 import {
   Sheet,
   SheetContent,
@@ -30,91 +31,122 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Search, Plus, X, Pen, Trash2, Filter } from "lucide-react";
-import { AchatCommandeForm } from "@/components/achat-commande-form";
+import { UpdateAchatCommandeForm } from "@/components/update-achat-commande-form";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import { ModifyClientDialog } from "@/components/modify-client-dialog";
 import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { PriceRangeSlider } from "@/components/customUi/customSlider";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 
 export default function CommandesAchats() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
   const [isDialogOpen, setIsDialogOpen] = useState(false); // Delete dialog
   const [currCommande, setCurrCommande] = useState("");
   const [isAddingCommande, setIsAddingCommande] = useState(false);
   const [isUpdatingCommande, setIsUpdatingCommande] = useState(false);
   const [maxMontant, setMaxMontant] = useState();
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [startDate, setStartDate] = useState();
+  const [endDate, setEndDate] = useState();
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState();
+  const queryClient = useQueryClient();
   const [filters, setFilters] = useState({
     categorie: "all",
-    status: "all",
-    statusPaiement: "all",
+    statut: "all",
+    statutPaiement: "all",
     montant: [0, maxMontant],
   });
-  const itemsPerPage = 10;
+
   useEffect(() => {
     setFilters({
       ...filters,
       montant: [0, maxMontant],
     });
   }, [maxMontant]);
-  const { data, isLoading } = useQuery({
-    queryKey: ["commandesAchats"],
-    queryFn: async () => {
-      const response = await axios.get("/api/achats-commandes");
-      const commandes = response.data.commandes;
-      const montantList = commandes.map((commande) =>
-        (commande.prixUnite * commande.quantite).toFixed(2)
-      );
-      //console.log("montantList :", montantList);
-      setMaxMontant(Math.max(...montantList));
-      return commandes;
-    },
-  });
-  console.log("commandes List : ", data);
-  const filteredCommandes = data?.filter(
-    (commande) =>
-      commande.produit.designation
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase()) &&
-      (filters.categorie === "all" ||
-        commande.produit.categorie === filters.categorie) &&
-      (filters.status === "all" || commande.statut === filters.status) &&
-      (filters.statusPaiement === "all" ||
-        commande.payer === filters.statusPaiement) &&
-      (commande.prixUnite * commande.quantite).toFixed(2) >=
-        filters.montant[0] &&
-      (commande.prixUnite * commande.quantite).toFixed(2) <= filters.montant[1]
-  );
-
-  const totalPages = Math.ceil(filteredCommandes?.length / itemsPerPage);
-  const currentCommandes = filteredCommandes?.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  const deleteCommande = async () => {
-    try {
-      await axios.delete(`/api/achats-commandes/${currCommande.id}`);
-      toast(
-        <span>
-          La commande <b>{currCommande?.numero}</b> a été supprimé avec succès!
-        </span>,
-        {
-          icon: "🗑️",
-        }
-      );
-      getCommandes();
-    } catch (e) {
-      console.log(e);
-    }
-  };
 
   useEffect(() => {
-    setCurrentPage(1);
+    const handler = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+      setPage(1);
+    }, 500); // Adjust delay as needed
+
+    return () => {
+      clearTimeout(handler);
+    };
   }, [searchQuery]);
+
+  const categories = useQuery({
+    queryKey: ["categories"],
+    queryFn: async () => {
+      const response = await axios.get("/api/categoriesProduits");
+      return response.data.categories;
+    },
+  });
+
+  const commandes = useQuery({
+    queryKey: [
+      "commandesAchats",
+      filters.statut,
+      debouncedQuery,
+      page,
+      startDate,
+      endDate,
+      filters.montant,
+      filters.categorie,
+      filters.statutPaiement,
+    ],
+    queryFn: async () => {
+      const response = await axios.get("/api/achats-commandes", {
+        params: {
+          query: debouncedQuery,
+          page,
+          statut: filters.statut,
+          from: startDate,
+          to: endDate,
+          minTotal: filters.montant[0],
+          maxTotal: filters.montant[1],
+          categorie: encodeURIComponent(filters.categorie),
+          statutPaiement: filters.statutPaiement,
+        },
+      });
+
+      console.log("commandes", response.data.commandes);
+      setTotalPages(response.data.totalPages);
+      return response.data.commandes;
+    },
+    keepPreviousData: true, // Keeps old data visible while fetching new page
+    refetchOnWindowFocus: false,
+  });
+
+  const deleteCommande = useMutation({
+    mutationFn: async () => {
+      const loadingToast = toast.loading("Suppression...");
+      try {
+        await axios.delete(`/api/commandes/$${currCommande.id}`);
+        toast(
+          <span>
+            La commande numéro : <b>{currCommande?.numero.toUpperCase()}</b> a
+            été supprimé avec succès!
+          </span>,
+          {
+            icon: "🗑️",
+          }
+        );
+      } catch (error) {
+        console.log("error :", error);
+        toast.error("Échec de la suppression");
+        throw error;
+      } finally {
+        toast.dismiss(loadingToast);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["commandesAchats"]);
+    },
+  });
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -144,15 +176,8 @@ export default function CommandesAchats() {
   ];
   const statusPaiement = [
     { value: "all", lable: "Tous les statut" },
-    { value: true, lable: "Payer" },
+    { value: true, lable: "Payé" },
     { value: false, lable: "Impayé" },
-  ];
-  const categories = [
-    { value: "all", lable: "Toutes les catégories" },
-    { value: "Électronique", lable: "Électronique" },
-    { value: "Vêtements", lable: "Vêtements" },
-    { value: "Alimentation", lable: "Alimentation" },
-    { value: "Bureautique", lable: "Bureautique" },
   ];
 
   return (
@@ -171,7 +196,11 @@ export default function CommandesAchats() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 w-full rounded-full bg-gray-50 focus-visible:ring-purple-500 focus-visible:ring-offset-0"
+              spellCheck={false}
             />
+            <div className="absolute right-6 top-1/3 h-4 w-4 -translate-y-1/2 text-muted-foreground">
+              {commandes.isFetching && !commandes.isLoading && <LoadingDots />}
+            </div>
           </div>
           <div className="flex space-x-2">
             <Sheet>
@@ -210,12 +239,15 @@ export default function CommandesAchats() {
                         <SelectValue placeholder="Toutes les catégories" />
                       </SelectTrigger>
                       <SelectContent className="bg-white">
-                        {categories.map((categorie) => (
+                        <SelectItem key="all" value="all">
+                          Toutes les catégories
+                        </SelectItem>
+                        {categories.data?.map((element) => (
                           <SelectItem
-                            key={categorie.value}
-                            value={categorie.value}
+                            key={element.id}
+                            value={element.categorie}
                           >
-                            {categorie.lable}
+                            {element.categorie}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -226,10 +258,10 @@ export default function CommandesAchats() {
                       Statut de paiement
                     </Label>
                     <Select
-                      value={filters.statusPaiement}
+                      value={filters.statutPaiement}
                       name="statut"
                       onValueChange={(value) =>
-                        setFilters({ ...filters, statusPaiement: value })
+                        setFilters({ ...filters, statutPaiement: value })
                       }
                     >
                       <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
@@ -249,10 +281,10 @@ export default function CommandesAchats() {
                       Statut de livraison
                     </Label>
                     <Select
-                      value={filters.status}
+                      value={filters.statut}
                       name="statut"
                       onValueChange={(value) =>
-                        setFilters({ ...filters, status: value })
+                        setFilters({ ...filters, statut: value })
                       }
                     >
                       <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
@@ -327,7 +359,7 @@ export default function CommandesAchats() {
         <div
           className={`grid ${
             isAddingCommande || isUpdatingCommande
-              ? "grid-cols-3 gap-6"
+              ? "grid-cols-2 gap-6"
               : "grid-cols-1"
           }`}
         >
@@ -354,7 +386,7 @@ export default function CommandesAchats() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {isLoading ? (
+                  {commandes?.isLoading ? (
                     [...Array(10)].map((_, index) => (
                       <TableRow
                         className="h-[2rem] MuiTableRow-root"
@@ -363,31 +395,31 @@ export default function CommandesAchats() {
                         key={index}
                       >
                         <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-[100px]" />
+                          <Skeleton className="h-4 w-full" />
                         </TableCell>
                         <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-[100px]" />
+                          <Skeleton className="h-4 w-full" />
                         </TableCell>
                         <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-[100px]" />
+                          <Skeleton className="h-4 w-full" />
                         </TableCell>
                         <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-[100px]" />
+                          <Skeleton className="h-4 w-full" />
                         </TableCell>
                         <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-[100px]" />
+                          <Skeleton className="h-4 w-full" />
                         </TableCell>
                         <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-[100px]" />
+                          <Skeleton className="h-4 w-full" />
                         </TableCell>
                         <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-[100px]" />
+                          <Skeleton className="h-4 w-full" />
                         </TableCell>
                         <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-[100px]" />
+                          <Skeleton className="h-4 w-full" />
                         </TableCell>
                         <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-[100px]" />
+                          <Skeleton className="h-4 w-full" />
                         </TableCell>
                         <TableCell className="!py-2">
                           <div className="flex gap-2 justify-end">
@@ -397,8 +429,8 @@ export default function CommandesAchats() {
                         </TableCell>
                       </TableRow>
                     ))
-                  ) : currentCommandes?.length > 0 ? (
-                    currentCommandes?.map((commande) => (
+                  ) : commandes.data?.length > 0 ? (
+                    commandes.data?.map((commande) => (
                       <TableRow key={commande.id}>
                         <TableCell className="text-md">
                           {commande.createdAt.split("T")[0]}
@@ -439,11 +471,11 @@ export default function CommandesAchats() {
                         </TableCell>
                         <TableCell className="text-md">
                           <span
-                            className={`text-sm text-muted-foreground p-[1px] px-3 rounded-full  ${getStatusPaiemenetColor(
+                            className={`text-sm p-[1px] px-3 rounded-full  ${getStatusPaiemenetColor(
                               commande.payer
                             )}`}
                           >
-                            {commande.payer ? "Payer" : "Non payer"}
+                            {commande.payer ? "Payé" : "Impayé"}
                           </span>
                         </TableCell>
 
@@ -481,7 +513,7 @@ export default function CommandesAchats() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={8} align="center">
+                      <TableCell colSpan={10} align="center">
                         Aucune commande trouvé
                       </TableCell>
                     </TableRow>
@@ -492,12 +524,12 @@ export default function CommandesAchats() {
 
             {/* the half table with the name and Action columns */}
             <ScrollArea
-              className={`h-[35rem] w-full  grid gap-3  border mb-3 rounded-lg ${
+              className={`h-[35rem] w-full gap-3 col-span-2  border mb-3 rounded-lg ${
                 !isAddingCommande && !isUpdatingCommande ? "hidden" : ""
               } `}
             >
-              <div className="col-span-1">
-                {/* <Table>
+              <div className="col-span-2">
+                <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Commande</TableHead>
@@ -505,7 +537,7 @@ export default function CommandesAchats() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {isLoading ? (
+                    {commandes?.isLoading ? (
                       [...Array(10)].map((_, index) => (
                         <TableRow
                           className="h-[2rem] MuiTableRow-root"
@@ -527,10 +559,32 @@ export default function CommandesAchats() {
                           </TableCell>
                         </TableRow>
                       ))
-                    ) : currentCommandes.length > 0 ? (
-                      currentCommandes?.map((commande) => (
+                    ) : commandes.data?.length > 0 ? (
+                      commandes.data?.map((commande) => (
                         <TableRow key={commande.id}>
-                          <TableCell>{commande.numero}</TableCell>
+                          <TableCell>
+                            <div className="grid grid-cols-2 grid-rows-2 items-center gap-2">
+                              <span className="text-md font-medium text-gray-900 col-span-2">
+                                {commande.produit.designation}
+                              </span>
+                              <div className="flex items-center gap-1">
+                                <span className="text-xs text-gray-500">
+                                  Quantité:
+                                </span>
+                                <span className="text-sm font-medium text-gray-700">
+                                  {commande.quantite}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1 justify-end">
+                                <span className="text-xs text-gray-500">
+                                  Montant:
+                                </span>
+                                <span className="text-sm font-medium text-gray-700">
+                                  {commande.prixUnite * commande.quantite} DH
+                                </span>
+                              </div>
+                            </div>
+                          </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
                               <Button
@@ -564,35 +618,48 @@ export default function CommandesAchats() {
                         </TableRow>
                       ))
                     ) : (
-                      <TableCell colSpan={2} align="center">
-                        Aucune commande trouvé
-                      </TableCell>
+                      <TableRow>
+                        <TableCell colSpan={2} align="center">
+                          Aucune commande trouvé
+                        </TableCell>
+                      </TableRow>
                     )}
                   </TableBody>
-                </Table> */}
+                </Table>
               </div>
             </ScrollArea>
-            {filteredCommandes?.length > 0 ? (
+            {commandes.data?.length > 0 ? (
               <CustomPagination
-                currentPage={currentPage}
-                setCurrentPage={setCurrentPage}
+                currentPage={page}
+                setCurrentPage={setPage}
                 totalPages={totalPages}
               />
             ) : (
               ""
             )}
           </div>
-          {isUpdatingCommande && (
+          {/* {isUpdatingCommande && (
             <ModifyClientDialog
               currCommande={currCommande}
               getCommandes={getCommandes}
             />
-          )}
-          {isAddingCommande && (
-            <div className="col-span-2">
-              <AchatCommandeForm />
+          )} */}
+          {/* {isUpdatingCommande && (
+            <div className="col-span-1">
+              <UpdateAchatCommandeForm currCommande={currCommande} />
             </div>
-          )}
+          )} */}
+          <div
+            className={`${
+              !isUpdatingCommande && "hidden"
+            } col-span-1 mb-[5rem]`}
+          >
+            <ScrollArea className="w-full h-[85vh]">
+              {isUpdatingCommande && (
+                <UpdateAchatCommandeForm currCommande={currCommande} />
+              )}
+            </ScrollArea>
+          </div>
         </div>
       </div>
       <DeleteConfirmationDialog
@@ -600,9 +667,8 @@ export default function CommandesAchats() {
         isOpen={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
         onConfirm={() => {
-          deleteCommande();
+          deleteCommande.mutate();
           setIsDialogOpen(false);
-          getCommandes();
         }}
         itemType="client"
       ></DeleteConfirmationDialog>

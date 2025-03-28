@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/select";
 import CustomTooltip from "@/components/customUi/customTooltip";
 import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
+import { Card } from "@/components/ui/card";
 import {
   Sheet,
   SheetContent,
@@ -69,6 +70,7 @@ export default function CommandesPage() {
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [startDate, setStartDate] = useState();
   const [endDate, setEndDate] = useState();
+  const [expandedCommande, setExpandedCommande] = useState(null);
   const [filters, setFilters] = useState({
     client: "all",
     dateStart: "",
@@ -79,7 +81,9 @@ export default function CommandesPage() {
   });
 
   const queryClient = useQueryClient();
-
+  const toggleExpand = (commandeId) => {
+    setExpandedCommande(expandedCommande === commandeId ? null : commandeId);
+  };
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedQuery(searchQuery);
@@ -255,7 +259,7 @@ export default function CommandesPage() {
           <div className="relative w-full sm:w-96">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Rechercher des clients..."
+              placeholder="Rechercher des commandes..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 w-full rounded-full bg-gray-50 focus-visible:ring-purple-500 focus-visible:ring-offset-0"
@@ -467,152 +471,225 @@ export default function CommandesPage() {
                 ))
               ) : commandes?.data?.length > 0 ? (
                 commandes?.data?.map((commande) => (
-                  <TableRow key={commande.id}>
-                    <TableCell className="!py-2">
-                      {formatDate(commande.createdAt)}
-                    </TableCell>
-                    <TableCell
-                      onClick={() => {
-                        if (commande.totalPaye !== 0) {
-                          if (currentCommande?.id === commande.id) {
-                            setInfo(!info);
-                          } else setInfo(true);
-                          setCurrentCommande(commande);
-                          //setNumeroCommande(commande.numero);
-                        }
-                      }}
-                      className={`font-medium !py-2  ${
-                        (commande.totalPaye === commande.totalDevi ||
-                          commande.totalPaye > commande.totalDevi) &&
-                        "cursor-pointer hover:text-green-400"
-                      } ${
-                        commande.totalPaye !== 0 &&
-                        commande.totalPaye < commande.totalDevi &&
-                        "cursor-pointer hover:text-orange-400"
-                      }`}
+                  <>
+                    <TableRow
+                      onClick={() => toggleExpand(commande.id)}
+                      key={commande.id}
                     >
-                      {commande.numero}
-                    </TableCell>
-                    <TableCell className="!py-2">
-                      {commande.client.nom.toUpperCase()}
-                    </TableCell>
-                    <TableCell className="!py-2">{commande.total} DH</TableCell>
-                    <TableCell className="!py-2">
-                      {commande.totalDevi} DH
-                    </TableCell>
-                    <TableCell className="!py-2">
-                      {commande.totalDevi - commande.total} DH
-                    </TableCell>
-                    <TableCell className="!py-2">
-                      {commande.totalDevi - commande.totalPaye} DH
-                    </TableCell>
-                    <TableCell className="!py-2">
-                      {etatPaiement(commande)}
-                      {info && commande.id === currentCommande?.id && (
-                        <ul>
-                          {transactionPerCommande(commande.numero)?.map(
-                            (trans) => (
-                              <li
-                                key={trans.id}
-                                className="flex w-full bg-slate-200 text-sky-800 font-medium my-1 px-2 rounded-full"
+                      <TableCell className="!py-2">
+                        {formatDate(commande.createdAt)}
+                      </TableCell>
+                      <TableCell
+                        onClick={() => {
+                          if (commande.totalPaye !== 0) {
+                            if (currentCommande?.id === commande.id) {
+                              setInfo(!info);
+                            } else setInfo(true);
+                            setCurrentCommande(commande);
+                            //setNumeroCommande(commande.numero);
+                          }
+                        }}
+                        className={`font-medium !py-2  ${
+                          (commande.totalPaye === commande.totalDevi ||
+                            commande.totalPaye > commande.totalDevi) &&
+                          "cursor-pointer hover:text-green-400"
+                        } ${
+                          commande.totalPaye !== 0 &&
+                          commande.totalPaye < commande.totalDevi &&
+                          "cursor-pointer hover:text-orange-400"
+                        }`}
+                      >
+                        {commande.numero}
+                      </TableCell>
+                      <TableCell className="!py-2">
+                        {commande.client.nom.toUpperCase()}
+                      </TableCell>
+                      <TableCell className="!py-2">
+                        {commande.total} DH
+                      </TableCell>
+                      <TableCell className="!py-2">
+                        {commande.totalDevi} DH
+                      </TableCell>
+                      <TableCell className="!py-2">
+                        {commande.totalDevi - commande.total} DH
+                      </TableCell>
+                      <TableCell className="!py-2">
+                        {commande.totalDevi - commande.totalPaye} DH
+                      </TableCell>
+                      <TableCell className="!py-2">
+                        {etatPaiement(commande)}
+                      </TableCell>
+                      <TableCell className="!py-2">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`h-2 w-2 rounded-full ${getStatusColor(
+                              commande.statut
+                            )}`}
+                          />
+                          <span className="text-sm text-muted-foreground">
+                            {commande.statut}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right !py-2">
+                        <div className="flex justify-end gap-2">
+                          <Link
+                            href={`/ventes/commandes/${commande.id}/update`}
+                          >
+                            <CustomTooltip message="Modifier">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
                               >
-                                <span className="flex gap-1 items-center">
-                                  <CalendarDays className="h-4 w-4" />{" "}
-                                  {formatDate(trans.createdAt)}
-                                </span>
-                                <span className="flex gap-1 items-center ml-4">
-                                  <CircleDollarSign className="h-4 w-4" />{" "}
-                                  {trans.montant} DH
-                                </span>
-                                <span className="flex gap-1 items-center ml-4">
-                                  <Landmark className="h-4 w-4" />{" "}
-                                  {trans.compte}
-                                </span>
-                              </li>
-                            )
-                          )}
-                        </ul>
-                      )}
-                    </TableCell>
-                    <TableCell className="!py-2">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`h-2 w-2 rounded-full ${getStatusColor(
-                            commande.statut
-                          )}`}
-                        />
-                        <span className="text-sm text-muted-foreground">
-                          {commande.statut}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right !py-2">
-                      <div className="flex justify-end gap-2">
-                        <Link href={`/ventes/commandes/${commande.id}/update`}>
-                          <CustomTooltip message="Modifier">
+                                <Pen className="h-4 w-4" />
+                              </Button>
+                            </CustomTooltip>
+                          </Link>
+                          <CustomTooltip message="Supprimer">
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
+                              className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
+                              onClick={() => {
+                                setDeleteDialogOpen(true);
+                                setCurrentCommande(commande);
+                              }}
                             >
-                              <Pen className="h-4 w-4" />
+                              <Trash2 className="h-4 w-4" />
                             </Button>
                           </CustomTooltip>
-                        </Link>
-                        <CustomTooltip message="Supprimer">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
-                            onClick={() => {
-                              setDeleteDialogOpen(true);
-                              setCurrentCommande(commande);
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </CustomTooltip>
-                        <CustomTooltip message="Payer">
-                          <Button
-                            onClick={() => {
-                              setIsBankDialogOpen(true);
-                              setCurrentCommande(commande);
-                              console.log(
-                                "montant payer : ",
-                                commande.totalPaye
-                              );
-                              console.log("total devi : ", commande.totalDevi);
-                            }}
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-full hover:bg-sky-100 hover:text-sky-600"
-                            disabled={commande.totalPaye === commande.totalDevi}
-                          >
-                            <CircleDollarSign className="h-4 w-4" />
-                          </Button>
-                        </CustomTooltip>
-                        <CustomTooltip message="Imprimer">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-full hover:bg-emerald-100 hover:text-emerald-600"
-                            onClick={() => {
-                              window.open(
-                                `/ventes/commandes/${commande.id}/pdf`,
-                                "_blank"
-                              );
-                              localStorage.setItem(
-                                "commande",
-                                JSON.stringify(commande)
-                              );
-                            }}
-                          >
-                            <Printer className="h-4 w-4" />
-                          </Button>
-                        </CustomTooltip>
-                      </div>
-                    </TableCell>
-                  </TableRow>
+                          <CustomTooltip message="Payer">
+                            <Button
+                              onClick={() => {
+                                setIsBankDialogOpen(true);
+                                setCurrentCommande(commande);
+                                console.log(
+                                  "montant payer : ",
+                                  commande.totalPaye
+                                );
+                                console.log(
+                                  "total devi : ",
+                                  commande.totalDevi
+                                );
+                              }}
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 rounded-full hover:bg-sky-100 hover:text-sky-600"
+                              disabled={
+                                commande.totalPaye === commande.totalDevi
+                              }
+                            >
+                              <CircleDollarSign className="h-4 w-4" />
+                            </Button>
+                          </CustomTooltip>
+                          <CustomTooltip message="Imprimer">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 rounded-full hover:bg-emerald-100 hover:text-emerald-600"
+                              onClick={() => {
+                                window.open(
+                                  `/ventes/commandes/${commande.id}/pdf`,
+                                  "_blank"
+                                );
+                                localStorage.setItem(
+                                  "commande",
+                                  JSON.stringify(commande)
+                                );
+                              }}
+                            >
+                              <Printer className="h-4 w-4" />
+                            </Button>
+                          </CustomTooltip>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                    {info && expandedCommande === commande.id && (
+                      <TableRow className="">
+                        <TableCell colSpan={10} className="p-0">
+                          <div className="px-8 py-4 animate-in slide-in-from-top-2 duration-200">
+                            <div className="">
+                              <h4 className="text-sm font-semibold mb-3">
+                                Historique des paiements
+                              </h4>
+                              <div className="space-y-2">
+                                {transactionPerCommande(commande.numero)?.map(
+                                  (trans) => (
+                                    <div
+                                      key={trans.id}
+                                      className="flex flex-wrap md:flex-nowrap items-center gap-3 p-1 bg-slate-100 rounded-full border border-border/50 hover:bg-slate-100 transition-colors w-[50%]"
+                                    >
+                                      <div className="flex items-center gap-2 min-w-[180px]">
+                                        <div className="bg-slate-700 text-white p-2 rounded-full">
+                                          <CalendarDays className="h-4 w-4" />
+                                        </div>
+                                        <span className="text-sm text-slate-800 font-medium">
+                                          {formatDate(trans.createdAt)}
+                                        </span>
+                                      </div>
+
+                                      <div className="flex items-center gap-2 min-w-[150px]">
+                                        <div className="bg-slate-700 text-white p-2 rounded-full">
+                                          <CircleDollarSign className="h-4 w-4" />
+                                        </div>
+                                        <span className="text-sm text-slate-800 font-semibold">
+                                          {trans.montant} DH
+                                        </span>
+                                      </div>
+
+                                      <div className="flex items-center gap-2">
+                                        <div className="bg-slate-700 text-white p-2 rounded-full">
+                                          <Landmark className="h-4 w-4" />
+                                        </div>
+                                        <span className="text-sm text-slate-800 font-medium">
+                                          {trans.compte}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  )
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    {/* {expandedCommande === commande.id && (
+                      <TableRow>
+                        <TableCell>Paiements </TableCell>
+                      
+                        
+                        <TableCell colSpan={9} className="p-0">
+                          <div className="px-8 py-4 animate-in slide-in-from-top-2 duration-200">
+                            <ul>
+                              {transactionPerCommande(commande.numero)?.map(
+                                (trans) => (
+                                  <li
+                                    key={trans.id}
+                                    className="flex justify-start w-[60%] bg-slate-200 text-sky-800 font-medium my-1 px-2 rounded-full"
+                                  >
+                                    <span className="flex gap-1 items-center">
+                                      <CalendarDays className="h-4 w-4" />{" "}
+                                      {formatDate(trans.createdAt)}
+                                    </span>
+                                    <span className="flex gap-1 items-center ml-6">
+                                      <CircleDollarSign className="h-4 w-4" />{" "}
+                                      {trans.montant} DH
+                                    </span>
+                                    <span className="flex gap-1 items-center ml-6">
+                                      <Landmark className="h-4 w-4" />{" "}
+                                      {trans.compte}
+                                    </span>
+                                  </li>
+                                )
+                              )}
+                            </ul>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )} */}
+                  </>
                 ))
               ) : (
                 <TableRow>
