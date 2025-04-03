@@ -33,7 +33,7 @@ import {
 import { Search, Plus, X, Pen, Trash2, Filter } from "lucide-react";
 import { UpdateAchatCommandeForm } from "@/components/update-achat-commande-form";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
-import { ModifyClientDialog } from "@/components/modify-client-dialog";
+import { AchatCommandesForm } from "@/components/achat-many-commande-form";
 import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -334,6 +334,7 @@ export default function CommandesAchats() {
                   setIsUpdatingCommande(false);
                   setIsAddingCommande(false);
                 }
+                console.log("isAddingCommande ##: ", isAddingCommande);
               }}
               className={`${
                 isAddingCommande || isUpdatingCommande
@@ -649,6 +650,15 @@ export default function CommandesAchats() {
               <UpdateAchatCommandeForm currCommande={currCommande} />
             </div>
           )} */}
+          <div
+            className={`${!isAddingCommande && "hidden"} col-span-1 mb-[5rem]`}
+          >
+            <ScrollArea className="w-full h-[85vh]">
+              {isAddingCommande && (
+                <AchatCommandesForm currCommande={currCommande} />
+              )}
+            </ScrollArea>
+          </div>
           <div
             className={`${
               !isUpdatingCommande && "hidden"

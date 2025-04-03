@@ -37,7 +37,7 @@ import axios from "axios";
 import { useInView } from "react-intersection-observer";
 import { useInfiniteQuery } from "@tanstack/react-query";
 
-export function AchatCommandeForm({ currProduct }) {
+export function AchatCommandesForm() {
   const [open, setOpen] = useState(false);
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const { ref, inView } = useInView();
@@ -49,15 +49,7 @@ export function AchatCommandeForm({ currProduct }) {
     handleSubmit,
     setValue,
     formState: { isSubmitting },
-  } = useForm({
-    defaultValues: {
-      prixUnite: currProduct?.prixAchat,
-      produit: currProduct,
-      description: currProduct?.description,
-      payer: false,
-      fournisseur: currProduct?.fournisseur,
-    },
-  });
+  } = useForm();
 
   const onSubmit = async (data) => {
     console.log("commandes data : ", data);
@@ -128,7 +120,7 @@ export function AchatCommandeForm({ currProduct }) {
   return (
     <Card className="w-full grid gap-2 h-full px-2">
       <CardHeader className="flex-col justify-start">
-        <CardTitle className="my-3">Commander des produits</CardTitle>
+        <CardTitle className="my-3">Commander des produits##</CardTitle>
         <CardDescription className="my-5">
           Remplissez les informations de la commande ici. Cliquez sur
           enregistrer lorsque vous avez terminé.
@@ -147,7 +139,7 @@ export function AchatCommandeForm({ currProduct }) {
                 Produit
               </Label>
               <span className="text-md text-left text-gray-900 rounded-lg p-2 pl-4 bg-slate-100 h-[2.5rem]">
-                {watch("produit").designation}
+                produit
               </span>
             </div>
             <div className="space-y-2">
