@@ -89,7 +89,7 @@ export default function Banques() {
   return (
     <>
       <Toaster position="top-center" />
-      <div className="space-y-6 caret-transparent">
+      <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Comptes Bancaires</h1>
         </div>
