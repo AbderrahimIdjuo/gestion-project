@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Toaster } from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -11,6 +11,22 @@ import { useQuery } from "@tanstack/react-query";
 
 export default function InfoEntreprise() {
   const [openDialog, setOpenDialog] = useState<boolean>(false);
+  const [infos, setInfos] = useState<any>();
+
+  const getInfoEntreprise = async () => {
+    const response = await axios.get("/api/infoEntreprise");
+    const infoEntreprise = response.data.infoEntreprise;
+    setInfos(infoEntreprise);
+  };
+
+  useEffect(() => {
+    getInfoEntreprise();
+    console.log("infos", infos);
+  }, []);
+
+  useEffect(() => {
+    console.log("infos", infos);
+  }, [infos]);
 
   const info = useQuery({
     queryKey: ["infoEntreprise"],
@@ -35,12 +51,12 @@ export default function InfoEntreprise() {
                 onClick={() => setOpenDialog(true)}
                 className="rounded-full bg-orange-400 hover:bg-emerald-400"
               >
-                {info.data
+                {infos
                   ? "Modifier les informations de la société"
                   : "Ajouter les informations de la société"}
               </Button>
             </div>
-            {info.data && (
+            {infos && (
               <div className="rounded-lg border h-full w-full flex-grow-3 p-5">
                 <div className="flex gap-3 justify-between">
                   <div className="w-full grid grid-cols-1 my-4">
@@ -48,7 +64,7 @@ export default function InfoEntreprise() {
                       Raison sociale
                     </Label>
                     <span className="text-md text-left text-gray-900 rounded-lg p-2 pl-4 bg-slate-100 h-[2.5rem]">
-                      {info.data?.nom}
+                      {infos?.nom}
                     </span>
                   </div>
                   <div className="w-full grid grid-cols-1 my-4">
@@ -56,7 +72,7 @@ export default function InfoEntreprise() {
                       Slogan
                     </Label>
                     <span className="text-md text-left text-gray-900 rounded-lg p-2 pl-4 bg-slate-100 h-[2.5rem]">
-                      {info.data?.slogan}
+                      {infos?.slogan}
                     </span>
                   </div>
                 </div>
@@ -66,7 +82,7 @@ export default function InfoEntreprise() {
                       Téléphone
                     </Label>
                     <span className="text-md text-left text-gray-900 rounded-lg p-2 pl-4 bg-slate-100 h-[2.5rem]">
-                      {info.data?.telephone}
+                      {infos?.telephone}
                     </span>
                   </div>
                   <div className="w-full grid grid-cols-1 my-4">
@@ -74,7 +90,7 @@ export default function InfoEntreprise() {
                       Mobile
                     </Label>
                     <span className="text-md text-left text-gray-900 rounded-lg p-2 pl-4 bg-slate-100 h-[2.5rem]">
-                      {info.data?.mobile}
+                      {infos?.mobile}
                     </span>
                   </div>
                 </div>
@@ -84,7 +100,7 @@ export default function InfoEntreprise() {
                       Email
                     </Label>
                     <span className="text-md text-left text-gray-900 rounded-lg p-2 pl-4 bg-slate-100 h-[2.5rem]">
-                      {info.data?.email}
+                      {infos?.email}
                     </span>
                   </div>
                   <div className="w-full grid grid-cols-1 my-4">
@@ -92,7 +108,7 @@ export default function InfoEntreprise() {
                       Adresse
                     </Label>
                     <span className="text-md text-left text-gray-900 rounded-lg p-2 pl-4 bg-slate-100 h-[2.5rem]">
-                      {info.data?.adresse}
+                      {infos?.adresse}
                     </span>
                   </div>
                 </div>
