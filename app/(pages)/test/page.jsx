@@ -36,6 +36,27 @@ export default function InfoEntreprise() {
       return infoEntreprise;
     },
   });
+  const [page, setPage] = useState(1);
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const clients = useQuery({
+    queryKey: ["clients", page , debouncedQuery],
+    queryFn: async () => {
+      const response = await axios.get("/api/clients", {
+        params: {
+          query: debouncedQuery,
+          page,
+        },
+      });
+      return response.data.clients;
+    },
+    keepPreviousData: true, // Keeps old data visible while fetching new page
+    refetchOnWindowFocus: false,
+  });
+
+  useEffect(() => {
+    console.log("clients", clients.data);
+  }, [clients]);
+
 
   return (
     <>
