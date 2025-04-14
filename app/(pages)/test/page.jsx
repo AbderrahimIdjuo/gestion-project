@@ -10,8 +10,8 @@ import SittingsSideBar from "@/components/sittingsSideBar";
 import { useQuery } from "@tanstack/react-query";
 
 export default function InfoEntreprise() {
-  const [openDialog, setOpenDialog] = useState<boolean>(false);
-  const [infos, setInfos] = useState<any>();
+  const [openDialog, setOpenDialog] = useState(false);
+  const [infos, setInfos] = useState();
 
   const getInfoEntreprise = async () => {
     const response = await axios.get("/api/infoEntreprise");
