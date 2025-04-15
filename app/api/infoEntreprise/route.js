@@ -2,15 +2,6 @@ import { NextResponse } from "next/server";
 import prisma from "../../../lib/prisma";
 export const dynamic = "force-dynamic";
 
-// export async function GET() {
-//   const infoEntreprise = await prisma.infoEntreprise.findMany();
-//   console.log("infoEntreprise : ", infoEntreprise[0]);
-
-//   return NextResponse.json({ infoEntreprise: infoEntreprise[0] });
-// }
-
-
-
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const page = parseInt(searchParams.get("page") || "1");

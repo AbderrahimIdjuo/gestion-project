@@ -12,7 +12,7 @@ import { Info } from "lucide-react";
 
 export default function InfoEntreprise() {
   const [openDialog, setOpenDialog] = useState<boolean>(false);
-  const [page, setPage] = useState(1);
+ // const [page, setPage] = useState(1);
 
   // const info = useQuery({
   //   queryKey: ["infoEntreprise"],
@@ -24,17 +24,12 @@ export default function InfoEntreprise() {
   // });
 
   const info = useQuery({
-    queryKey: ["infoEntreprise", page],
+    queryKey: ["infoEntreprise"],
     queryFn: async () => {
-      const response = await axios.get("/api/infoEntreprise", {
-        params: {
-          page,
-        },
-      });
-      return response.data.infoEntreprise;
+      const response = await axios.get("/api/infoEntreprise");
+      const infoEntreprise = response.data.infoEntreprise;
+      return infoEntreprise;
     },
-    keepPreviousData: true, // Keeps old data visible while fetching new page
-    refetchOnWindowFocus: false,
   });
 
   useEffect(() => {
