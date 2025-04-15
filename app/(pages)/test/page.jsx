@@ -12,7 +12,6 @@ import { useQuery } from "@tanstack/react-query";
 export default function InfoEntreprise() {
   const [openDialog, setOpenDialog] = useState(false);
   const [infos, setInfos] = useState();
-  const [categories, setCategories] = useState();
 
   const getInfoEntreprise = async () => {
     const response = await axios.get("/api/infoEntreprise");
@@ -20,25 +19,13 @@ export default function InfoEntreprise() {
     setInfos(infoEntreprise);
   };
 
-  const getCategories = async () => {
-    const response = await axios.get("/api/categoriesProduits");
-    const categories = response.data.categories;
-    console.log("categories : ", categories);
-    setCategories(categories);
-  };
-
   useEffect(() => {
     getInfoEntreprise();
-    getCategories();
   }, []);
 
   useEffect(() => {
     console.log("infos", infos);
   }, [infos]);
-
-  useEffect(() => {
-    console.log("categories", categories);
-  }, [categories]);
 
   const info = useQuery({
     queryKey: ["infoEntreprise"],
@@ -64,11 +51,27 @@ export default function InfoEntreprise() {
     keepPreviousData: true, // Keeps old data visible while fetching new page
     refetchOnWindowFocus: false,
   });
+  const categories = useQuery({
+    queryKey: ["categories", page],
+    queryFn: async () => {
+      const response = await axios.get("/api/categoriesProduitsTest", {
+        params: {
+          page,
+        },
+      });
+      return response.data.categories;
+    },
+    keepPreviousData: true, // Keeps old data visible while fetching new page
+    refetchOnWindowFocus: false,
+  });
 
   useEffect(() => {
     console.log("clients", clients.data);
   }, [clients]);
 
+  useEffect(() => {
+    console.log("categories", categories.data);
+  }, [categories]);
   return (
     <>
       <Toaster position="top-center" />
