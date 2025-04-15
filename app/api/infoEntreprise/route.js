@@ -3,16 +3,16 @@ import prisma from "../../../lib/prisma";
 export const dynamic = "force-dynamic";
 
 export async function GET(req) {
-  const { searchParams } = new URL(req.url);
-  const page = parseInt(searchParams.get("page") || "1");
-  const infosPerPage = 10;
+  // const { searchParams } = new URL(req.url);
+  // const page = parseInt(searchParams.get("page") || "1");
+  // const infosPerPage = 10;
   const filters = {};
   // Fetch filtered commandes with pagination and related data
   const [infoEntreprise, totalCategories] = await Promise.all([
     prisma.infoEntreprise.findMany({
       where: filters,
-      skip: (page - 1) * infosPerPage,
-      take: infosPerPage,
+      // skip: (page - 1) * infosPerPage,
+      // take: infosPerPage,
     }),
     prisma.infoEntreprise.count({ where: filters }), // Get total count for pagination
   ]);
@@ -22,7 +22,7 @@ export async function GET(req) {
 
   // Return the response
   return NextResponse.json({
-    infoEntreprise: infoEntreprise[0] ,
+    infoEntreprise: infoEntreprise[0],
     totalPages,
   });
 }
