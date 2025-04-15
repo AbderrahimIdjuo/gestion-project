@@ -12,6 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 export default function InfoEntreprise() {
   const [openDialog, setOpenDialog] = useState(false);
   const [infos, setInfos] = useState();
+  const [categories, setCategories] = useState();
 
   const getInfoEntreprise = async () => {
     const response = await axios.get("/api/infoEntreprise");
@@ -19,14 +20,25 @@ export default function InfoEntreprise() {
     setInfos(infoEntreprise);
   };
 
+  const getCategories = async () => {
+    const response = await axios.get("/api/categoriesProduits");
+    const categories = response.data.categories;
+    console.log("categories : ", categories);
+    setCategories(categories);
+  };
+
   useEffect(() => {
     getInfoEntreprise();
-    console.log("infos", infos);
+    getCategories();
   }, []);
 
   useEffect(() => {
     console.log("infos", infos);
   }, [infos]);
+
+  useEffect(() => {
+    console.log("categories", categories);
+  }, [categories]);
 
   const info = useQuery({
     queryKey: ["infoEntreprise"],
@@ -39,7 +51,7 @@ export default function InfoEntreprise() {
   const [page, setPage] = useState(1);
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const clients = useQuery({
-    queryKey: ["clients", page , debouncedQuery],
+    queryKey: ["clients", page, debouncedQuery],
     queryFn: async () => {
       const response = await axios.get("/api/clients", {
         params: {
@@ -56,7 +68,6 @@ export default function InfoEntreprise() {
   useEffect(() => {
     console.log("clients", clients.data);
   }, [clients]);
-
 
   return (
     <>

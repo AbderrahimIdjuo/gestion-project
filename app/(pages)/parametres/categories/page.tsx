@@ -42,7 +42,7 @@ export default function CategoriesProduits() {
     queryKey: ["categories"],
     queryFn: getCategories,
   });
-  console.log("data :", typeof query.data);
+
 
   const addCategorie = useMutation({
     mutationFn: async (categorie: string) => {

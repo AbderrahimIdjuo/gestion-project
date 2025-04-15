@@ -170,7 +170,7 @@ export default function UpdateCommandePage({ params }) {
     <>
       <Toaster position="top-center" />
       <form onSubmit={handleSubmit(onSubmit)}>
-        <div className="container mx-auto py-6 space-y-6 max-w-5xl">
+        <div className="container mx-auto py-6 space-y-6 max-w-5xl mb-10">
           <div className="flex justify-between items-center">
             <div className="flex gap-3 items-center">
               <Link href="/ventes/commandes">
