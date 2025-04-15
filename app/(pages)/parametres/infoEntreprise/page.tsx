@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Toaster } from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -8,18 +8,38 @@ import axios from "axios";
 import { AddInfoEntrepriseForm } from "@/components/add-info-entreprise-form";
 import SittingsSideBar from "@/components/sittingsSideBar";
 import { useQuery } from "@tanstack/react-query";
+import { Info } from "lucide-react";
 
 export default function InfoEntreprise() {
   const [openDialog, setOpenDialog] = useState<boolean>(false);
+  const [page, setPage] = useState(1);
+
+  // const info = useQuery({
+  //   queryKey: ["infoEntreprise"],
+  //   queryFn: async () => {
+  //     const response = await axios.get("/api/infoEntreprise");
+  //     const infoEntreprise = response.data.infoEntreprise;
+  //     return infoEntreprise;
+  //   },
+  // });
 
   const info = useQuery({
-    queryKey: ["infoEntreprise"],
+    queryKey: ["infoEntreprise", page],
     queryFn: async () => {
-      const response = await axios.get("/api/infoEntreprise");
-      const infoEntreprise = response.data.infoEntreprise;
-      return infoEntreprise;
+      const response = await axios.get("/api/infoEntreprise", {
+        params: {
+          page,
+        },
+      });
+      return response.data.infoEntreprise;
     },
+    keepPreviousData: true, // Keeps old data visible while fetching new page
+    refetchOnWindowFocus: false,
   });
+
+  useEffect(() => {
+    console.log("info", info.data);
+  }, [info]);
 
   return (
     <>

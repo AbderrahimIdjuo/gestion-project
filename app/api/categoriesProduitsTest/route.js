@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../lib/prisma";
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const page = parseInt(searchParams.get("page") || "1");
-  const categoriesPerPage = 10;
+  const categoriesPerPage = 100;
 const filters={}
   // Fetch filtered commandes with pagination and related data
   const [categories, totalCategories] = await Promise.all([
@@ -26,3 +26,5 @@ const filters={}
     totalPages,
   });
 }
+
+
