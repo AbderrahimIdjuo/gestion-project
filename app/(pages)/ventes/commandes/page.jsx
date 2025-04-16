@@ -122,11 +122,12 @@ export default function CommandesPage() {
           etat: filters.etat,
         },
       });
-      setDevisList(response.data.devisList);
+      //  setDevisList(response.data.devisList);
       setMaxMontant(response.data.maxMontant);
       setTransactions(response.data.transactionsList);
       setTotalPages(response.data.totalPages);
-      console.log("commandes", response.data.commandes);
+      console.log("trasactionsList ##", response.data.transactionsList);
+      console.log("commandes ##", response.data.commandes);
 
       return response.data.commandes;
     },

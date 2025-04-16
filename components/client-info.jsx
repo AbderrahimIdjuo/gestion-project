@@ -68,10 +68,10 @@ export function ClientInfoDialog({ client, children }) {
                 </div>
               )}
 
-              <div className="flex items-center">
+              {/* <div className="flex items-center">
                 <CreditCard className="w-5 h-5 mr-2 text-muted-foreground" />
                 <span>Crédit : 1500 DH</span>
-              </div>
+              </div> */}
             </div>
           </CardContent>
         </Card>
