@@ -1,13 +1,5 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../lib/prisma";
-
-export async function GET() {
-  const modesPaiement = await prisma.modesPaiement.findMany();
-  return NextResponse.json({ modesPaiement });
-}
-
-import { NextResponse } from "next/server";
-import prisma from "../../../lib/prisma";
 export const dynamic = "force-dynamic";
 
 export async function GET(req) {
