@@ -327,7 +327,7 @@ export default function CommandesAchats() {
                 </div>
               </SheetContent>
             </Sheet>
-            <Button
+            {/* <Button
               onClick={() => {
                 setIsAddingCommande(!isAddingCommande);
                 if (isUpdatingCommande) {
@@ -353,7 +353,7 @@ export default function CommandesAchats() {
                   Commander des produits
                 </>
               )}
-            </Button>
+            </Button> */}
           </div>
         </div>
 

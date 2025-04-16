@@ -62,11 +62,9 @@ export default function CommandesPage() {
   const [montant, setMontant] = useState(""); // montant de paiement
   const [isBankDialogOpen, setIsBankDialogOpen] = useState(false);
   const [info, setInfo] = useState(false);
-  const [devisList, setDevisList] = useState([]);
   const [transactions, setTransactions] = useState();
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState();
-  const [transactionCreated, setTransactionCreated] = useState(false);
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [startDate, setStartDate] = useState();
   const [endDate, setEndDate] = useState();
@@ -101,12 +99,10 @@ export default function CommandesPage() {
       filters.statut,
       debouncedQuery,
       page,
-      // numeroCommande,
       startDate,
       endDate,
       filters.montant,
       filters.etat,
-      transactionCreated,
     ],
     queryFn: async () => {
       const response = await axios.get("/api/commandes", {
@@ -114,7 +110,6 @@ export default function CommandesPage() {
           query: debouncedQuery,
           page,
           statut: filters.statut,
-          //numeroCommande,
           from: startDate,
           to: endDate,
           minTotal: filters.montant[0],
@@ -122,7 +117,6 @@ export default function CommandesPage() {
           etat: filters.etat,
         },
       });
-      //  setDevisList(response.data.devisList);
       setMaxMontant(response.data.maxMontant);
       setTransactions(response.data.transactionsList);
       setTotalPages(response.data.totalPages);
@@ -427,7 +421,6 @@ export default function CommandesPage() {
                   <TableRow
                     className="h-[2rem] MuiTableRow-root !py-2"
                     role="checkbox"
-                    tabIndex={-1}
                     key={index}
                   >
                     <TableCell
@@ -473,21 +466,22 @@ export default function CommandesPage() {
               ) : commandes?.data?.length > 0 ? (
                 commandes?.data?.map((commande) => (
                   <>
-                    <TableRow
-                      onClick={() => toggleExpand(commande.id)}
-                      key={commande.id}
-                    >
+                    <TableRow key={commande.id}>
                       <TableCell className="!py-2">
                         {formatDate(commande.createdAt)}
                       </TableCell>
                       <TableCell
                         onClick={() => {
+                          toggleExpand(commande.id);
                           if (commande.totalPaye !== 0) {
                             if (currentCommande?.id === commande.id) {
                               setInfo(!info);
                             } else setInfo(true);
                             setCurrentCommande(commande);
-                            //setNumeroCommande(commande.numero);
+                            console.log(
+                              "trasactionsList #####",
+                              transactionPerCommande(commande.numero)
+                            );
                           }
                         }}
                         className={`font-medium !py-2  ${
@@ -731,7 +725,6 @@ export default function CommandesPage() {
         onClose={() => setIsBankDialogOpen(false)}
         onConfirm={() => {
           createTransaction.mutate(data);
-          console.log("data : ", data);
         }}
       />
     </>

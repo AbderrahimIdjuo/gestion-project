@@ -359,8 +359,8 @@ function Page() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={5} align="center">
-                        Aucun facture trouvé
+                      <TableCell colSpan={6} align="center">
+                        Aucune facture trouvé
                       </TableCell>
                     </TableRow>
                   )}
@@ -470,8 +470,8 @@ function Page() {
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={2} align="center">
-                          Aucun facture trouvé
+                        <TableCell colSpan={4} align="center">
+                          Aucune facture trouvé
                         </TableCell>
                       </TableRow>
                     )}
