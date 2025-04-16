@@ -54,13 +54,13 @@ export default function DashboardPage() {
                 <SelectValue placeholder="Date" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="light">cet mois</SelectItem>
+                <SelectItem value="light">le mois dernier</SelectItem>
                 <SelectItem value="dark">les 3 derniers mois</SelectItem>
                 <SelectItem value="system">les 6 derniers mois</SelectItem>
               </SelectContent>
             </Select>
           </div>
-          <div className="flex gap-2 justify-between">
+          {/* <div className="flex gap-2 justify-between">
             <CustomDateRangePicker
               startDate={startDate}
               setStartDate={setStartDate}
@@ -73,7 +73,7 @@ export default function DashboardPage() {
             >
               Chercher
             </Button>
-          </div>
+          </div> */}
         </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <Card className="bg-gradient-to-tr from-fuchsia-400 via-purple-500 to-violet-600 overflow-hidden shadow-md border-0 col-span-full lg:col-span-1 order-first">
