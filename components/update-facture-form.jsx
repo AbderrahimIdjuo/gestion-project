@@ -137,27 +137,6 @@ export function UpdateFactureForm({ currFacture, setIsUpdatingfacture }) {
                 )}
               </div>
             </div>
-            <div className="w-full grid grid-cols-1">
-              <Label htmlFor="type" className="text-left mb-2 mb-2">
-                Type
-              </Label>
-              <Select
-                name="type"
-                onValueChange={(value) => setValue("type", value)}
-                value={watch("type")}
-              >
-                <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
-                  <SelectValue placeholder="Sélectionnez un type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {types.map((type, index) => (
-                    <SelectItem key={index} value={type.value}>
-                      {type.lable}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
             <div className="relative w-full grid grid-cols-1">
               <Label htmlFor="montant" className="text-left mb-2 mb-2">
                 Montant
@@ -181,19 +160,6 @@ export function UpdateFactureForm({ currFacture, setIsUpdatingfacture }) {
                   {errors.salaire.message}
                 </p>
               )}
-            </div>
-            <div className="flex items-center space-x-2">
-              <Switch
-                checked={watch("payer")}
-                onCheckedChange={() => {
-                  setValue("payer", !watch("payer"));
-                  console.log(watch("payer"));
-                }}
-                id="airplane-mode"
-              />
-              <Label htmlFor="airplane-mode">
-                {watch("payer") ? "Payer" : "Non payer"}
-              </Label>
             </div>
             <div className="relative w-full grid grid-cols-1">
               <Label htmlFor="description" className="text-left mb-2 mb-2">

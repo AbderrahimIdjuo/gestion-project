@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../lib/prisma";
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export async function POST(req) {
   try {
@@ -13,6 +13,8 @@ export async function POST(req) {
       prixVente,
       stock,
       description,
+      length,
+      width,
     } = resopns;
     const result = await prisma.produits.create({
       data: {
@@ -23,6 +25,8 @@ export async function POST(req) {
         prixVente,
         stock,
         description,
+        length,
+        width,
       },
     });
 
@@ -98,14 +102,12 @@ export async function GET(req) {
     { description: { contains: searchQuery } },
   ];
 
+  // Filtre par catégorie
+  if (categorie !== "all") {
+    console.log("categorie", categorie);
 
-
- // Filtre par catégorie
-if (categorie !== "all") {  
-  console.log("categorie", categorie);
-  
-  filters.categorie = { equals: categorie }; // Utilisez "equals" pour une correspondance exacte
-}
+    filters.categorie = { equals: categorie }; // Utilisez "equals" pour une correspondance exacte
+  }
 
   // prixVente range filter
   if (minPrixVentes && maxPrixVentes) {
@@ -123,35 +125,35 @@ if (categorie !== "all") {
     };
   }
 
-   // stock range filter
-   if (minimumStock && maximumStock ) {
+  // stock range filter
+  if (minimumStock && maximumStock) {
     filters.stock = {
       gte: Number(minimumStock),
       lte: Number(maximumStock),
     };
   }
 
-    // Statut filter
-    if (statut !== "all") {
-      switch (statut) {
-        case "En stock":
-          filters.stock = {
-            gte: 20,
-          };
-          break;
-        case "Limité":
-          filters.stock = {
-            gt: 0,
-            lt: 20,
-          };
-          break;
-        case "En rupture":
-          filters.stock = 0;
-          break;
-        default:
-          break;
-      }
+  // Statut filter
+  if (statut !== "all") {
+    switch (statut) {
+      case "En stock":
+        filters.stock = {
+          gte: 20,
+        };
+        break;
+      case "Limité":
+        filters.stock = {
+          gt: 0,
+          lt: 20,
+        };
+        break;
+      case "En rupture":
+        filters.stock = 0;
+        break;
+      default:
+        break;
     }
+  }
 
   // Fetch filtered commandes with pagination and related data
   const [produits, totalProduits, maxPrixAchat, maxPrixVente, maxStock] =

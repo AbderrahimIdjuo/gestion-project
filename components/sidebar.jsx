@@ -14,7 +14,8 @@ import {
   ChevronRight,
   ContactRound,
   Settings,
-  Landmark
+  Landmark,
+  Grid2X2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +31,11 @@ const menuItems = [
     icon: Package,
     label: "Produits",
     href: "/produits",
+  },
+  {
+    icon: Grid2X2,
+    label: "Articls",
+    href: "/articls",
   },
   {
     icon: ContactRound,

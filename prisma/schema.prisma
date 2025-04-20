@@ -40,6 +40,8 @@ model Produits {
   prixAchat         Float?
   prixVente         Float?
   stock             Int?
+  length            Float
+  width             Float?
   fournisseurId     String?
   description       String?
   createdAt         DateTime            @default(now())
@@ -48,7 +50,13 @@ model Produits {
   CommandesProduits CommandesProduits[]
   fournisseur       Fournisseurs?       @relation(fields: [fournisseurId], references: [id], onDelete: Cascade)
 }
-
+//Items sont les articles du devis
+model Items {
+  id                String              @id @default(uuid())
+  designation       String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
 model CommandesProduits {
   id         String    @id @default(uuid())
   commandeId String
@@ -154,6 +162,17 @@ model Factures {
   payer        Boolean  @default(false)
   dateEmission Int?
   dateReglement DateTime?
+  description  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model DepensesVariantes {
+  id           String   @id @default(uuid())
+  label        String
+  montant      Float
+  compte       String
+  numero       String  @unique
   description  String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

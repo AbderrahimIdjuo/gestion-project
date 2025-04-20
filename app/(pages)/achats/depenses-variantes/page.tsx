@@ -1,20 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import toast, { Toaster } from "react-hot-toast";
 import CustomPagination from "@/components/customUi/customPagination";
 import CustomTooltip from "@/components/customUi/customTooltip";
 import { deleteManyFactures } from "@/app/api/actions";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -23,25 +15,26 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, Plus, X, Pen, Trash2, EllipsisVertical } from "lucide-react";
+import { LoadingDots } from "@/components/loading-dots";
+import { Search, Plus, X, Pen, Trash2 } from "lucide-react";
 import { AddFactureVarianteForm } from "@/components/add-facture-variante-form";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import { DeleteManyConfirmation } from "@/components/delete-many-confirmation";
-import { UpdateFactureForm } from "@/components/update-facture-form";
+import { UpdateDepenseVariante } from "@/components/update-depense-variante";
 import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Checkbox } from "@/components/ui/checkbox";
 type Facture = {
   date: Date;
   numero: string;
   id: string;
-  lable: string;
+  label: string;
   montant: number;
   type: string;
   payer: boolean;
   description: string;
+  compte: string;
 };
 function Page() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -51,57 +44,40 @@ function Page() {
   const [isManyDialogOpen, setIsManyDialogOpen] = useState(false);
   const [isAddingfacture, setIsAddingfacture] = useState(false);
   const [isUpdatingfacture, setIsUpdatingfacture] = useState(false);
-  const itemsPerPage = 10;
+  const [page, setPage] = useState(1);
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [totalPages, setTotalPages] = useState();
   const [selectedFactures, setSelectedFactures] = useState<Set<string>>(
     new Set()
   );
 
-  const getFactures = async () => {
-    const response = await axios.get("/api/factures");
-    const factures = response.data.factures;
-    console.log("factures : ", factures);
-    return factures;
-  };
   const queryClient = useQueryClient();
-  const query = useQuery({ queryKey: ["factures"], queryFn: getFactures });
+  const factures = useQuery({
+    queryKey: ["depensesVariantes", page, debouncedQuery],
+    queryFn: async () => {
+      const response = await axios.get("/api/depensesVariantes", {
+        params: {
+          query: debouncedQuery,
+          page,
+        },
+      });
+      setTotalPages(response.data.totalPages);
+      return response.data.factures;
+    },
+    keepPreviousData: true, // Keeps old data visible while fetching new page
+    refetchOnWindowFocus: false,
+  });
 
-  const toggleFacture = (id: string) => {
-    const newSelected = new Set(selectedFactures);
-    if (newSelected.has(id)) {
-      newSelected.delete(id);
-    } else {
-      newSelected.add(id);
-    }
-    setSelectedFactures(newSelected);
-  };
-  const facturesVariantes = query.data?.filter(
-    (facture: Facture) => facture.type === "variantes"
-  );
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+      setPage(1);
+    }, 500); // Adjust delay as needed
 
-  const toggleAll = () => {
-    if (selectedFactures.size === facturesVariantes?.length) {
-      setSelectedFactures(new Set());
-    } else {
-      setSelectedFactures(
-        new Set(facturesVariantes.map((facture: Facture) => facture.id))
-      );
-    }
-  };
-
-  const filteredFactures = query.data?.filter(
-    (facture: Facture) =>
-      (facture.lable.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        facture.description
-          ?.toLowerCase()
-          .includes(searchQuery.toLowerCase())) &&
-      facture.type === "variante"
-  );
-
-  const totalPages = Math.ceil(filteredFactures?.length / itemsPerPage);
-  const currentFactures = filteredFactures?.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchQuery]);
 
   const handleDeleteMany = useMutation({
     mutationFn: async (selectedFactures: Set<string>) => {
@@ -125,10 +101,12 @@ function Page() {
     mutationFn: async () => {
       const loadingToast = toast.loading("Suppression de la facture...");
       try {
-        const response = await axios.delete(`/api/factures/${currfacture?.id}`);
+        const response = await axios.delete(`/api/depensesVariantes`, {
+          params: { id: currfacture?.id, numero: currfacture?.numero },
+        });
         toast(
           <span>
-            La facture <b>{currfacture?.lable.toUpperCase()}</b> a été supprimé
+            La facture <b>{currfacture?.label.toUpperCase()}</b> a été supprimé
             avec succès!
           </span>,
           {
@@ -144,13 +122,13 @@ function Page() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["factures"] });
+      queryClient.invalidateQueries({ queryKey: ["depensesVariantes"] });
     },
   });
   return (
     <>
       <Toaster position="top-center" />
-      <div className="space-y-6 caret-transparent">
+      <div className="space-y-6">
         <div className="flex justify-start gap-2 items-center">
           <span className="text-3xl font-bold">Dépenses variantes </span>
         </div>
@@ -159,12 +137,15 @@ function Page() {
           <div className="relative w-full sm:w-96">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Rechercher des factures..."
+              placeholder="Recherche..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 w-full rounded-full bg-gray-50 focus-visible:ring-purple-500 focus-visible:ring-offset-0"
               spellCheck={false}
             />
+            <div className="absolute right-6 top-1/3 h-4 w-4 -translate-y-1/2 text-muted-foreground">
+              {factures.isFetching && !factures.isLoading && <LoadingDots />}
+            </div>
           </div>
 
           <Button
@@ -213,53 +194,18 @@ function Page() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[50px]">
-                      <Checkbox
-                        checked={
-                          selectedFactures.size === facturesVariantes?.length
-                        }
-                        onCheckedChange={toggleAll}
-                      />
-                    </TableHead>
+                    <TableHead>Numéro</TableHead>
                     <TableHead>Label</TableHead>
                     <TableHead>Montant</TableHead>
-                    <TableHead>Statut de Paiement</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead className="text-right">
-                      <div className="flex gap-2 items-center justify-end">
-                        Actions
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="focus:!ring-0 focus:!ring-offset-0"
-                              disabled={
-                                selectedFactures.size > 0 ? false : true
-                              }
-                            >
-                              <EllipsisVertical className="h-5 w-5" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setIsManyDialogOpen(true);
-                                console.log("delete factures");
-                              }}
-                            >
-                              Supprimer les factures sélectionnées.
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
+                    <TableHead>Compte</TableHead>
+                    <TableHead className="w-[600px] truncate">
+                      Description
                     </TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {query.isLoading ? (
+                  {factures.isLoading ? (
                     [...Array(10)].map((_, index) => (
                       <TableRow
                         className="h-[2rem] MuiTableRow-root"
@@ -268,7 +214,7 @@ function Page() {
                         key={index}
                       >
                         <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-[20px]" />
+                          <Skeleton className="h-4 w-[150px]" />
                         </TableCell>
                         <TableCell className="!py-2" align="left">
                           <Skeleton className="h-4 w-[150px]" />
@@ -291,35 +237,21 @@ function Page() {
                         </TableCell>
                       </TableRow>
                     ))
-                  ) : currentFactures?.length > 0 ? (
-                    currentFactures?.map((facture: Facture) => (
+                  ) : factures.data?.length > 0 ? (
+                    factures.data?.map((facture: Facture) => (
                       <TableRow key={facture.id}>
-                        <TableCell className="text-md">
-                          <Checkbox
-                            checked={selectedFactures.has(facture.id)}
-                            onCheckedChange={() => {
-                              toggleFacture(facture.id);
-                            }}
-                          />
+                         <TableCell className="text-md font-semibold">
+                          {facture.numero}
                         </TableCell>
-                        <TableCell className="text-md">
-                          {facture.lable}
+                        <TableCell className="text-md font-semibold">
+                          {facture.label}
                         </TableCell>
                         <TableCell className="text-md">
                           {facture.montant} DH
                         </TableCell>
                         <TableCell className="text-md">
-                          <span
-                            className={`text-sm p-[1px] px-3 rounded-full  ${
-                              facture.payer
-                                ? "bg-green-100 text-green-600 font-medium"
-                                : "bg-red-100 text-red-600 font-medium"
-                            }`}
-                          >
-                            {facture.payer ? "Payé" : "Impayé"}
-                          </span>
+                          {facture.compte}
                         </TableCell>
-
                         <TableCell className="text-md">
                           {facture.description}
                         </TableCell>
@@ -359,7 +291,7 @@ function Page() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={6} align="center">
+                      <TableCell colSpan={5} align="center">
                         Aucune facture trouvé
                       </TableCell>
                     </TableRow>
@@ -379,13 +311,11 @@ function Page() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Facture</TableHead>
-                      <TableHead>Montant</TableHead>
-                      <TableHead>Statut de paiement</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {query.isLoading ? (
+                    {factures.isLoading ? (
                       [...Array(10)].map((_, index) => (
                         <TableRow
                           className="h-[2rem] MuiTableRow-root"
@@ -407,32 +337,18 @@ function Page() {
                           </TableCell>
                         </TableRow>
                       ))
-                    ) : currentFactures?.length > 0 ? (
-                      currentFactures?.map((facture: Facture) => (
+                    ) : factures.data?.length > 0 ? (
+                      factures.data?.map((facture: Facture) => (
                         <TableRow key={facture.id}>
                           <TableCell className="font-medium cursor-pointer hover:text-purple-600">
                             <div className="flex flex-row gap-2 justify-start items-center">
                               <div className="grid grid-rows-2">
-                                <h1>{facture.lable.toUpperCase()}</h1>
+                                <h1>{facture.label.toUpperCase()}</h1>
                                 <p className="text-sm text-muted-foreground">
-                                  {facture.numero}
+                                  {facture.montant} DH
                                 </p>
                               </div>
                             </div>
-                          </TableCell>
-                          <TableCell className="text-md">
-                            {facture.montant} DH
-                          </TableCell>
-                          <TableCell className="text-md">
-                            <span
-                              className={`text-sm  p-[1px] px-3 rounded-full  ${
-                                facture.payer
-                                  ? "bg-green-100 text-green-600 font-medium"
-                                  : "bg-red-100 text-red-600 font-medium"
-                              }`}
-                            >
-                              {facture.payer ? "Payé" : "Impayé"}
-                            </span>
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
@@ -470,7 +386,7 @@ function Page() {
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={4} align="center">
+                        <TableCell colSpan={3} align="center">
                           Aucune facture trouvé
                         </TableCell>
                       </TableRow>
@@ -479,7 +395,7 @@ function Page() {
                 </Table>
               </div>
             </ScrollArea>
-            {filteredFactures?.length > 0 ? (
+            {factures.data?.length > 0 ? (
               <CustomPagination
                 currentPage={currentPage}
                 setCurrentPage={setCurrentPage}
@@ -492,7 +408,7 @@ function Page() {
           <div className={`${!isUpdatingfacture && "hidden"} `}>
             <ScrollArea className="w-full h-[75vh]">
               {isUpdatingfacture && (
-                <UpdateFactureForm
+                <UpdateDepenseVariante
                   currFacture={currfacture}
                   setIsUpdatingfacture={setIsUpdatingfacture}
                 />
@@ -507,7 +423,7 @@ function Page() {
         </div>
       </div>
       <DeleteConfirmationDialog
-        recordName={currfacture?.lable}
+        recordName={currfacture?.label}
         isOpen={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
         onConfirm={() => {

@@ -54,6 +54,14 @@ export function ProductFormDialog() {
   const productSchema = z.object({
     designation: z.string().min(1, "Champ obligatoire"),
     categorie: z.string().optional(),
+    length: z.preprocess((value) => {
+      if (value === "" || value === undefined) return undefined; // Handle empty input
+      return typeof value === "string" ? parseFloat(value) : value;
+    }, z.number({ invalid_type_error: "La longueur doit être un nombre" })),
+    width: z.preprocess((value) => {
+      if (value === "" || value === undefined) return undefined; // Handle empty input
+      return typeof value === "string" ? parseFloat(value) : value;
+    }, z.number({ invalid_type_error: "La largeur doit être un nombre" }).optional().default(0)),
     fournisseur: z
       .object({
         id: z.string().uuid(),
@@ -133,7 +141,7 @@ export function ProductFormDialog() {
     },
     onSuccess: () => {
       reset();
-      setValue("categorie", "")
+      setValue("categorie", "");
       queryClient.invalidateQueries(["produits"]);
     },
   });
@@ -254,9 +262,7 @@ export function ProductFormDialog() {
                         </CommandEmpty>
                       ) : (
                         <>
-                          <ScrollArea
-                            className="h-72 w-full"
-                          >
+                          <ScrollArea className="h-72 w-full">
                             <CommandGroup>
                               {fournisseurs.map((fournisseur) => (
                                 <CommandItem
@@ -309,6 +315,54 @@ export function ProductFormDialog() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="relative w-full grid grid-cols-1">
+              <Label htmlFor="length" className="text-left mb-2 mb-2">
+                Longueur
+              </Label>
+              <div className="relative grid grid-cols-1 items-center gap-4">
+                <Input
+                  id="length"
+                  name="length"
+                  {...register("length")}
+                  className={`col-span-3 focus-visible:ring-purple-300 focus-visible:ring-purple-500 ${
+                    errors.length && "border-red-500 border-2"
+                  }`}
+                />
+                <div className="absolute z-0 inset-y-0 right-0 w-12 flex items-center justify-center bg-slate-100 border rounded-r-md">
+                  <span className="text-sm text-gray-600">m</span>
+                </div>
+              </div>
+              {errors.prixAchat && (
+                <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
+                  <CircleX className="h-4 w-4" />
+                  {errors.prixAchat.message}
+                </p>
+              )}
+            </div>
+            <div className="relative w-full grid grid-cols-1">
+              <Label htmlFor="width" className="text-left mb-2 mb-2">
+                Largeur
+              </Label>
+              <div className="relative grid grid-cols-1 items-center gap-4">
+                <Input
+                  id="width"
+                  name="width"
+                  {...register("width")}
+                  className={`col-span-3 focus-visible:ring-purple-300 focus-visible:ring-purple-500 ${
+                    errors.width && "border-red-500 border-2"
+                  }`}
+                />
+               <div className="absolute z-0 inset-y-0 right-0 w-12 flex items-center justify-center bg-slate-100 border rounded-r-md">
+                  <span className="text-sm text-gray-600">m</span>
+                </div>
+              </div>
+              {errors.prixAchat && (
+                <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
+                  <CircleX className="h-4 w-4" />
+                  {errors.prixAchat.message}
+                </p>
+              )}
             </div>
             <div className="relative w-full grid grid-cols-1">
               <Label htmlFor="prixAchat" className="text-left mb-2 mb-2">

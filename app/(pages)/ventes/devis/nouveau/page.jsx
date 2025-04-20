@@ -129,7 +129,7 @@ export default function NouveauDevisPage() {
     ]);
   };
 
-  const calculateSubTotal = () => {
+  const calculateSubTotal = () => {    
     return watch("articls").reduce((sum, item) => {
       const amount = item.quantite * item.prixUnite;
       return sum + amount;
@@ -137,12 +137,13 @@ export default function NouveauDevisPage() {
   };
 
   const calculateTotal = () => {
+    const TVA = calculateSubTotal() * 0.2
     const subtotal = calculateSubTotal();
     const discountAmount =
       watch("typeReduction") === "%"
         ? subtotal * (watch("reduction") / 100)
         : Number(watch("reduction"));
-    const total = subtotal - discountAmount + Number(watch("fraisLivraison"));
+    const total = subtotal - discountAmount + TVA;
     return total.toFixed(2);
   };
 
@@ -421,14 +422,14 @@ export default function NouveauDevisPage() {
               <div className="space-y-4 bg-purple-50 p-4 rounded-lg">
                 <div className="space-y-4">
                   <div className="flex justify-between py-2 border-b">
-                    <span>Sous-total</span>
+                    <span>Total H.T</span>
                     <span>{calculateSubTotal().toFixed(2)} MAD</span>
                   </div>
 
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
                       <Label htmlFor="shippingCharges">
-                        Frais de livraison
+                        TVA 20%
                       </Label>
                       <div className="relative w-40 flex">
                         <div className="absolute inset-y-0 right-0 w-12 flex items-center justify-center bg-white border-l rounded-r-md">
@@ -437,6 +438,8 @@ export default function NouveauDevisPage() {
                         <Input
                           id="shippingCharges"
                           name="shippingCharges"
+                          value={
+                            (calculateSubTotal() * 0.2).toFixed(2)}
                           {...register("fraisLivraison")}
                           className="pr-14 text-left rounded-r-md focus:!ring-purple-500"
                         />
@@ -475,7 +478,7 @@ export default function NouveauDevisPage() {
                   </div>
 
                   <div className="flex justify-between py-2 border-t font-bold">
-                    <span>Total</span>
+                    <span>Total TTC</span>
                     <span>{calculateTotal()} MAD</span>
                   </div>
                 </div>

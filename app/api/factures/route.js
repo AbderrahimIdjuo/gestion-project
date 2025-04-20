@@ -28,6 +28,18 @@ export async function POST(req) {
         },
       });
       // Si une facture est payer créer une transaction
+      if (type === "variante") {
+        await tx.transactions.create({
+          data: {
+            reference: "Dépense variante",
+            type: "dépense",
+            montant,
+            compte,
+            lable,
+          },
+        });
+      }
+      // Si une facture est du type "variante" créer une transaction
       if (payer) {
         await tx.transactions.create({
           data: {
@@ -84,5 +96,3 @@ export async function GET() {
   });
   return NextResponse.json({ factures });
 }
-
-

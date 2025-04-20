@@ -58,11 +58,13 @@ export default function CommandesPage() {
   const [maxMontant, setMaxMontant] = useState();
   const [currentCommande, setCurrentCommande] = useState();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteTransDialog, setDeleteTransDialog] = useState(false);
   const [compte, setCompte] = useState("");
   const [montant, setMontant] = useState(""); // montant de paiement
   const [isBankDialogOpen, setIsBankDialogOpen] = useState(false);
   const [info, setInfo] = useState(false);
   const [transactions, setTransactions] = useState();
+  const [deletedTrans, setDeletedTrans] = useState();
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState();
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -241,6 +243,32 @@ export default function CommandesPage() {
     { value: "Livrée", lable: "Livrée", color: "green-500" },
     { value: "Annulé", lable: "Annulé", color: "red-500" },
   ];
+  const deleteTrans = useMutation({
+    mutationFn: async (id) => {
+      const loadingToast = toast.loading("Suppression...");
+      try {
+        await axios.delete("/api/tresorie", {
+          params: {
+            id,
+          },
+        });
+        toast(<span>Transaction supprimé avec succée!</span>, {
+          icon: "🗑️",
+        });
+      } catch (error) {
+        toast.error("Échec de la suppression");
+        throw error;
+      } finally {
+        toast.dismiss(loadingToast);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["factures"] });
+      queryClient.invalidateQueries({ queryKey: ["depensesVariantes"] });
+      queryClient.invalidateQueries({ queryKey: ["commandes"] });
+    },
+  });
 
   return (
     <>
@@ -605,15 +633,41 @@ export default function CommandesPage() {
                         <TableCell colSpan={10} className="p-0">
                           <div className="px-8 py-4 animate-in slide-in-from-top-2 duration-200">
                             <div className="">
-                              <h4 className="text-sm font-semibold mb-3">
-                                Historique des paiements
-                              </h4>
+                              <div                               
+                                className="flex justify-between items-center gap-3 p-1 w-[50%] min-w-[500]"
+                              >
+                                <h4 className="text-sm font-semibold mb-3">
+                                  Historique des paiements
+                                </h4>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 rounded-full hover:bg-emerald-100 hover:text-emerald-600"
+                                  onClick={() => {
+                                    window.open(
+                                      `/ventes/commandes/${commande.id}/historiquePaiements`,
+                                      "_blank"
+                                    );
+                                    localStorage.setItem(
+                                      "commande",
+                                      JSON.stringify(commande)
+                                    );
+                                    localStorage.setItem(
+                                      "transactions",
+                                      JSON.stringify(transactionPerCommande(commande.numero))
+                                    );
+                                  }}
+                                >
+                                  <Printer className="h-4 w-4" />
+                                </Button>
+                              </div>
+
                               <div className="space-y-2">
                                 {transactionPerCommande(commande.numero)?.map(
                                   (trans) => (
                                     <div
                                       key={trans.id}
-                                      className="flex flex-wrap md:flex-nowrap items-center gap-3 p-1 bg-slate-100 rounded-full border border-border/50 hover:bg-slate-100 transition-colors w-[50%]"
+                                      className="flex justify-between items-center gap-3 p-1 bg-slate-100 rounded-full border border-border/50 hover:bg-slate-100 transition-colors w-[50%] min-w-[500]"
                                     >
                                       <div className="flex items-center gap-2 min-w-[180px]">
                                         <div className="bg-slate-700 text-white p-2 rounded-full">
@@ -641,6 +695,17 @@ export default function CommandesPage() {
                                           {trans.compte}
                                         </span>
                                       </div>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
+                                        onClick={() => {
+                                          setDeleteTransDialog(true);
+                                          setDeletedTrans(trans);
+                                        }}
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
                                     </div>
                                   )
                                 )}
@@ -650,40 +715,6 @@ export default function CommandesPage() {
                         </TableCell>
                       </TableRow>
                     )}
-                    {/* {expandedCommande === commande.id && (
-                      <TableRow>
-                        <TableCell>Paiements </TableCell>
-                      
-                        
-                        <TableCell colSpan={9} className="p-0">
-                          <div className="px-8 py-4 animate-in slide-in-from-top-2 duration-200">
-                            <ul>
-                              {transactionPerCommande(commande.numero)?.map(
-                                (trans) => (
-                                  <li
-                                    key={trans.id}
-                                    className="flex justify-start w-[60%] bg-slate-200 text-sky-800 font-medium my-1 px-2 rounded-full"
-                                  >
-                                    <span className="flex gap-1 items-center">
-                                      <CalendarDays className="h-4 w-4" />{" "}
-                                      {formatDate(trans.createdAt)}
-                                    </span>
-                                    <span className="flex gap-1 items-center ml-6">
-                                      <CircleDollarSign className="h-4 w-4" />{" "}
-                                      {trans.montant} DH
-                                    </span>
-                                    <span className="flex gap-1 items-center ml-6">
-                                      <Landmark className="h-4 w-4" />{" "}
-                                      {trans.compte}
-                                    </span>
-                                  </li>
-                                )
-                              )}
-                            </ul>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )} */}
                   </>
                 ))
               ) : (
@@ -725,6 +756,17 @@ export default function CommandesPage() {
         onClose={() => setIsBankDialogOpen(false)}
         onConfirm={() => {
           createTransaction.mutate(data);
+        }}
+      />
+      <DeleteConfirmationDialog
+        recordName={"le paiement"}
+        isOpen={deleteTransDialog}
+        onClose={() => {
+          setDeleteTransDialog(false);
+        }}
+        onConfirm={() => {
+          deleteTrans.mutate(deletedTrans.id);
+          setDeleteTransDialog(false);
         }}
       />
     </>

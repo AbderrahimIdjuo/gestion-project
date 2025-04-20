@@ -129,6 +129,9 @@ export default function Banques() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["factures"] });
+      queryClient.invalidateQueries({ queryKey: ["depensesVariantes"] });
+      queryClient.invalidateQueries({ queryKey: ["commandes"] });
     },
   });
 
@@ -412,13 +415,15 @@ export default function Banques() {
                 </TableBody>
               </Table>
             </div>
-            {(totalPages && totalPages > 1) ? (
+            {totalPages && totalPages > 1 ? (
               <CustomPagination
                 currentPage={page}
                 setCurrentPage={setPage}
                 totalPages={totalPages}
               />
-            ) : ""}
+            ) : (
+              ""
+            )}
           </div>
         </div>
       </div>

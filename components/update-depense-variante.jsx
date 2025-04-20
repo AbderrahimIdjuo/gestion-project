@@ -18,9 +18,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { CircleX } from "lucide-react";
 import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { customAlphabet } from "nanoid";
-
 import {
   Select,
   SelectContent,
@@ -30,101 +27,84 @@ import {
 } from "@/components/ui/select";
 import axios from "axios";
 
-const generateNumero = () => {
-  const digits = "1234567890";
-  const nanoidCustom = customAlphabet(digits, 8);
-  const customId = nanoidCustom();
-  return `FR-${customId}`;
-};
-
-export function AddFactureForm() {
+export function UpdateDepenseVariante({ currFacture, setIsUpdatingfacture }) {
   const factureSchema = z.object({
-    numero: z.string(),
-    lable: z.string().min(1, "Veuillez insérer un label de l'employé"),
-    montant: z
-      .preprocess(
-        (value) =>
-          value === "" || value === undefined || value === null
-            ? null
-            : Number(value),
-        z
-          .number({ invalid_type_error: "Le salaire doit être un nombre" })
-          .nullable()
-      )
-      .optional(),
-    type: z.string(),
-    payer: z.boolean(),
-    description: z.string().optional(),
-    dateEmission: z.preprocess(
-      (value) => Number(value),
-      z.number().int().min(1).max(28)
+    id: z.string(),
+    compte: z.string(),
+    label: z.string().min(1, "Champ oligatoire"),
+    montant: z.preprocess(
+      (value) =>
+        value === "" || value === undefined ? undefined : Number(value),
+      z
+        .number({ invalid_type_error: "Le salaire doit être un nombre" })
+        .optional()
     ),
-    compte: z.string().optional(),
+    description: z.string().optional(),
   });
+  console.log("currFacture", currFacture);
 
   const {
     register,
-    reset,
     watch,
     setValue,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm({
     defaultValues: {
-      payer: false,
-      type: "récurrente",
+      id: currFacture.id,
+      label: currFacture.label,
+      compte: currFacture.compte,
+      description: currFacture.description,
+      montant: currFacture.montant,
     },
     resolver: zodResolver(factureSchema),
   });
 
   const queryClient = useQueryClient();
-  const createNewFacture = useMutation({
+  const updateFacture = useMutation({
     mutationFn: async (data) => {
-      const loadingToast = toast.loading("Ajout de la facture...");
+      const loadingToast = toast.loading("Modification de la facture...");
       try {
-        const response = await axios.post("/api/factures", data);
-        toast.success("facture ajouté avec succès");
+        const response = await axios.put("/api/depensesVariantes", data , {
+          params: { id: currFacture?.id, numero: currFacture?.numero },
+        });
+        toast.success("facture modifier avec succès");
 
         return response.data;
       } catch (error) {
-        toast.error("Échec de l'ajout de la facture");
+        toast.error("Échec de la modification de la facture");
         throw error;
       } finally {
         toast.dismiss(loadingToast);
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["factures"] });
-      reset();
-      setValue("dateEmission", null);
+      queryClient.invalidateQueries({ queryKey: ["depensesVariantes"] });
+      setIsUpdatingfacture(false);
     },
   });
   const onSubmit = async (data) => {
-    console.log(data);
+    console.log("Data : ", data);
 
-    createNewFacture.mutate(data);
+    updateFacture.mutate(data);
   };
-
-  const dayList = Array.from({ length: 28 }, (_, i) => i + 1);
-  const getComptes = async () => {
-    const response = await axios.get("/api/comptesBancaires");
-    const transactions = response.data.transactions;
-    console.log("transactions : ", transactions);
-    return transactions;
-  };
-
-  const query = useQuery({
+  const comptes = useQuery({
     queryKey: ["comptes"],
-    queryFn: getComptes,
+    queryFn: async () => {
+      const response = await axios.get("/api/comptesBancaires");
+      const comptes = response.data.comptes;
+      console.log("comptes : ", comptes);
+      return comptes;
+    },
   });
 
   return (
     <Card className="w-full grid gap-2 h-full px-2">
       <CardHeader className="flex-col justify-start">
-        <CardTitle className="my-3">Ajouter une nouvelle facture</CardTitle>
+        <CardTitle className="my-3">Modifier une facture</CardTitle>
         <CardDescription className="my-5">
-          Remplissez les informations de la nouvelle facture ici. Cliquez sur
-          enregistrer lorsque vous avez terminé.
+          Modifier les informations de la facture ici. Cliquez sur enregistrer
+          lorsque vous avez terminé.
         </CardDescription>
         <Separator className=" mb-5 w-[95%]" />
       </CardHeader>
@@ -136,23 +116,23 @@ export function AddFactureForm() {
         >
           <div className="w-full grid gap-6 ">
             <div className="w-full grid grid-cols-1">
-              <Label htmlFor="lable" className="text-left mb-2 mb-2">
+              <Label htmlFor="label" className="text-left mb-2 mb-2">
                 Label
               </Label>
               <div className="w-full">
                 <Input
-                  id="lable"
-                  name="lable"
-                  {...register("lable")}
+                  id="label"
+                  name="label"
+                  {...register("label")}
                   className={`w-full focus-visible:ring-purple-500 ${
-                    errors.lable && "border-red-500 border-2"
+                    errors.label && "border-red-500 border-2"
                   }`}
                   spellCheck={false}
                 />
-                {errors.lable && (
+                {errors.label && (
                   <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
                     <CircleX className="h-4 w-4" />
-                    {errors.lable.message}
+                    {errors.label.message}
                   </p>
                 )}
               </div>
@@ -174,70 +154,34 @@ export function AddFactureForm() {
                   <span className="text-sm text-gray-600">MAD</span>
                 </div>
               </div>
-              {errors.montant && (
+              {errors.salaire && (
                 <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
                   <CircleX className="h-4 w-4" />
-                  {errors.montant.message}
+                  {errors.salaire.message}
                 </p>
               )}
             </div>
             <div className="w-full grid grid-cols-1">
-              <Label htmlFor="dateEmission" className="text-left mb-2 mb-2">
-                Date d&apos;émission
+              <Label htmlFor="compte" className="text-left mb-2 mb-2">
+                Compte bancaire
               </Label>
               <Select
-                name="dateEmission"
-                onValueChange={(value) => setValue("dateEmission", value)}
-                value={watch("dateEmission")}
+                name="compte"
+                onValueChange={(value) => setValue("compte", value)}
+                value={watch("compte")}
               >
                 <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
                   <SelectValue placeholder="Sélectionnez ..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {dayList.map((day, index) => (
-                    <SelectItem key={index} value={day.toString()}>
-                      {day}
+                  {comptes.data?.map((compte) => (
+                    <SelectItem key={compte.id} value={compte.compte}>
+                      {compte.compte}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-center space-x-2">
-              <Switch
-                checked={watch("payer")}
-                onCheckedChange={() => {
-                  setValue("payer", !watch("payer"));
-                  console.log(watch("payer"));
-                }}
-                id="airplane-mode"
-              />
-              <Label htmlFor="airplane-mode">
-                {watch("payer") ? "Payer" : "Non payer"}
-              </Label>
-            </div>
-            {watch("payer") && (
-              <div className="w-full grid grid-cols-1">
-                <Label htmlFor="compte" className="text-left mb-2 mb-2">
-                  Compte bancaire
-                </Label>
-                <Select
-                  name="compte"
-                  onValueChange={(value) => setValue("compte", value)}
-                  value={watch("compte")}
-                >
-                  <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
-                    <SelectValue placeholder="Sélectionnez ..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {query.data.map((element) => (
-                      <SelectItem key={element.id} value={element.compte}>
-                        {element.compte}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
             <div className="relative w-full grid grid-cols-1">
               <Label htmlFor="description" className="text-left mb-2 mb-2">
                 Description
@@ -249,8 +193,6 @@ export function AddFactureForm() {
             </div>
             <SaveButton
               onClick={() => {
-                setValue("numero", generateNumero());
-                console.log(watch());
                 console.log(factureSchema.parse(watch()));
               }}
               disabled={isSubmitting}

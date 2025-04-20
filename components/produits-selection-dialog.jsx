@@ -151,7 +151,7 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[1000px] p-0 gap-0">
+      <DialogContent className="sm:max-w-[1000px] p-0 gap-0 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle></DialogTitle>
           <DialogDescription></DialogDescription>
