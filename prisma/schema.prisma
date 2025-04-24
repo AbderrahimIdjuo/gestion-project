@@ -126,10 +126,13 @@ model AchatsCommandes {
 
 model Articls {
   id          String   @id @default(uuid())
+  key        String   @unique
   deviId      String
   designation String
   montant     Float
   quantite    Int
+  length      Float
+  width      Float?
   prixUnite   Float
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -142,7 +145,7 @@ model Devis {
   clientId       String
   statut         String
   sousTotal      Float
-  fraisLivraison Float
+  tva Float
   reduction      Int
   total          Float
   note           String?

@@ -12,11 +12,11 @@ export async function GET(req) {
 
     if (searchQuery) {
       filters.designation = {
-        contains: searchQuery,
+        contains: searchQuery, mode: "insensitive" 
       };
     }
  
-    const produits = await prisma.produits.findMany({
+    const articls = await prisma.items.findMany({
       where: filters,
       orderBy: { updatedAt: "desc" },
       take: limit,
@@ -24,14 +24,14 @@ export async function GET(req) {
       cursor: cursor ? { id: cursor } : undefined,
     });
 
-    const lastProduit = produits[produits.length - 1];
-    const nextCursor = lastProduit ? lastProduit.id : null;
+    const lastArticl = articls[articls.length - 1];
+    const nextCursor = lastArticl ? lastArticl.id : null;
 
-    return NextResponse.json({ produits, nextCursor });
+    return NextResponse.json({ articls, nextCursor });
   } catch (error) {
-    console.error("Error fetching produits:", error);
+    console.error("Error fetching articls:", error);
     return NextResponse.json(
-      { error: "Failed to fetch produits" },
+      { error: "Failed to fetch articls" },
       { status: 500 }
     );
   }

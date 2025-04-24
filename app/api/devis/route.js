@@ -10,7 +10,7 @@ export async function POST(req) {
       articls,
       statut,
       sousTotal,
-      fraisLivraison,
+      tva,
       reduction,
       total,
       typeReduction,
@@ -22,16 +22,19 @@ export async function POST(req) {
         clientId,
         statut,
         sousTotal,
-        fraisLivraison,
+        tva: parseFloat(tva),
         reduction,
         total,
         typeReduction,
         note,
         articls: {
           create: articls.map((articl) => ({
+            key: articl.key,
+            length: articl.length,
+            width: articl.width || 0,
             designation: articl.designation,
-            quantite: parseInt(articl.quantite),
-            prixUnite: parseFloat(articl.prixUnite),
+            quantite: articl.quantite,
+            prixUnite: articl.prixUnite,
             montant: articl.quantite * articl.prixUnite,
           })),
         },
@@ -57,7 +60,7 @@ export async function PUT(req) {
       articls,
       statut,
       sousTotal,
-      fraisLivraison,
+      tva,
       reduction,
       total,
       typeReduction,
@@ -106,7 +109,7 @@ export async function PUT(req) {
           clientId,
           statut,
           sousTotal,
-          fraisLivraison,
+          tva,
           reduction,
           total,
           typeReduction,
@@ -115,6 +118,9 @@ export async function PUT(req) {
             update: existingArticls.map((articl) => ({
               where: { id: articl.id },
               data: {
+                key: articl.key,
+                length: articl.length,
+                width: articl.width || 0,
                 designation: articl.designation,
                 quantite: articl.quantite,
                 prixUnite: articl.prixUnite,
@@ -122,6 +128,9 @@ export async function PUT(req) {
               },
             })),
             create: newArticls.map((articl) => ({
+              key: articl.key,
+              length: articl.length,
+              width: articl.width || 0,
               designation: articl.designation,
               quantite: articl.quantite,
               prixUnite: articl.prixUnite,
@@ -175,7 +184,7 @@ export async function GET(req) {
 
   // Statut filter
   if (statut !== "all") {
-    filters.statut = statut; 
+    filters.statut = statut;
   }
 
   // Date range filter

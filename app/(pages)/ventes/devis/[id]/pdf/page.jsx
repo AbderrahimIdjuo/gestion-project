@@ -46,7 +46,26 @@ export default function DevisPDFPage() {
   function formatDate(dateString) {
     return dateString.split("T")[0].split("-").reverse().join("-");
   }
-
+  const modesPaiement = [
+    {
+      pourcentage: "50% à l'avance",
+      montantHT: devi?.sousTotal * 0.5,
+      tva: devi?.sousTotal * 0.5 * 0.2,
+      montantTTC: devi?.sousTotal * 0.5 + devi?.sousTotal * 0.5 * 0.2,
+    },
+    {
+      pourcentage: "25% à la livraison",
+      montantHT: devi?.sousTotal * 0.25,
+      tva: devi?.sousTotal * 0.25 * 0.2,
+      montantTTC: devi?.sousTotal * 0.25 + devi?.sousTotal * 0.25 * 0.2,
+    },
+    {
+      pourcentage: "25% à la récéption",
+      montantHT: devi?.sousTotal * 0.25,
+      tva: devi?.sousTotal * 0.25 * 0.2,
+      montantTTC: devi?.sousTotal * 0.25 + devi?.sousTotal * 0.25 * 0.2,
+    },
+  ];
   return (
     <>
       {devi ? (
@@ -84,7 +103,7 @@ export default function DevisPDFPage() {
                 {info.data?.telephone && (
                   <div className="flex items-center gap-2 ">
                     <Phone className="h-4 w-4" />
-                    <p>{info.data?.telephone}</p>
+                    <p className="text-s">{info.data?.telephone}</p>
                   </div>
                 )}
                 {info.data?.mobile && (
@@ -116,12 +135,12 @@ export default function DevisPDFPage() {
                 <span className="font-medium">Date de création:</span>{" "}
                 {formatDate(devi?.createdAt)}{" "}
               </p>
-              <p>
+              {/* <p>
                 <span className="font-medium">Statut :</span> {devi?.statut}
               </p>
               <p>
                 <span className="font-medium">Émis par:</span> commerçant 1
-              </p>
+              </p> */}
             </div>
 
             {/* Items Table */}
@@ -129,30 +148,62 @@ export default function DevisPDFPage() {
               <Table className="w-full border-collapse">
                 <TableHeader className="text-[1rem] border-black">
                   <TableRow>
-                    <TableHead className="text-black font-bold text-left border-b border-black">
+                    <TableHead
+                      rowSpan="2"
+                      className="w-[40%] max-w-[45%] text-black font-bold text-center border-b border-black"
+                    >
                       Désignation
                     </TableHead>
-                    <TableHead className="text-black font-bold border-l border-b border-black text-left">
-                      Quantité
+                    <TableHead
+                      colSpan="2"
+                      className="text-black font-bold border-l border-b border-black text-center p-1"
+                    >
+                      Dimension
                     </TableHead>
-                    <TableHead className="text-black font-bold border-l border-b border-black p-2 text-left">
-                      Prix unitaire
+                    <TableHead
+                      rowSpan="2"
+                      className="text-black font-bold border-l border-b border-black text-center p-1"
+                    >
+                      Qté
                     </TableHead>
-                    <TableHead className="text-black font-bold border-l border-b border-black p-2 text-right">
+                    <TableHead
+                      rowSpan="2"
+                      className="text-black font-bold border-l border-b border-black p-2 text-center p-1"
+                    >
+                      P.U/m²
+                    </TableHead>
+                    <TableHead
+                      rowSpan="2"
+                      className="text-black font-bold border-l border-b border-black p-2 text-center"
+                    >
                       Montant
+                    </TableHead>
+                  </TableRow>
+                  <TableRow>
+                    <TableHead className="text-black font-semibold text-center border-b border-l border-black p-1">
+                      Longueur
+                    </TableHead>
+                    <TableHead className="text-black font-semibold border-l border-b border-black text-center p-1">
+                      Largeur
                     </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {devi?.articls?.map((articl) => (
                     <TableRow key={articl.id}>
-                      <TableCell className=" p-2 text-left border-b border-black">
+                      <TableCell className=" p-2 text-left border-b border-black text-md font-semibold">
                         {articl.designation}{" "}
                       </TableCell>
-                      <TableCell className="border-l border-b border-black p-2 text-left">
+                      <TableCell className="border-l border-b border-black p-2 text-center">
+                        {articl.length}
+                      </TableCell>
+                      <TableCell className="border-l border-b border-black p-2 text-center">
+                        {articl.width === 0 ? "-" : articl.width}
+                      </TableCell>
+                      <TableCell className="border-l border-b border-black p-2 text-center">
                         {articl.quantite}
                       </TableCell>
-                      <TableCell className="border-l border-b  border-black p-2 text-left">
+                      <TableCell className="border-l border-b  border-black p-2 text-center">
                         {articl.prixUnite} DH
                       </TableCell>
                       <TableCell className="border-l border-b border-black p-2 text-right font-bold">
@@ -164,35 +215,44 @@ export default function DevisPDFPage() {
                 <TableFooter className="font-medium  border-black bg-zinc-100 ">
                   <TableRow>
                     <TableCell
-                      colSpan={3}
+                      colSpan={4}
                       className="border-b border-black p-2 text-right font-bold"
                     >
-                      Frais de transport :
+                      Total H.T :
                     </TableCell>
-                    <TableCell className="border-l border-b border-black p-2 text-right font-bold">
-                      {devi?.fraisLivraison} DH
+                    <TableCell
+                      colSpan={2}
+                      className="border-l border-b border-black p-2 text-left font-bold"
+                    >
+                      {devi?.sousTotal} DH
                     </TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell
-                      colSpan={3}
+                      colSpan={4}
                       className="border-b border-black p-2 text-right font-bold"
                     >
-                      Sous-total :
+                      TVA :
                     </TableCell>
-                    <TableCell className="border-l border-b border-black p-2 text-right font-bold">
-                      {devi?.sousTotal} DH
+                    <TableCell
+                      colSpan={2}
+                      className="border-l border-b border-black p-2 text-left font-bold"
+                    >
+                      {devi?.tva} DH
                     </TableCell>
                   </TableRow>
                   {devi?.reduction > 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={3}
+                        colSpan={4}
                         className=" border-b border-black p-2 text-right font-bold"
                       >
                         Réduction :
                       </TableCell>
-                      <TableCell className="border-l border-b border-black p-2 text-right font-bold">
+                      <TableCell
+                        colSpan={2}
+                        className="border-l border-b border-black p-2 text-left font-bold"
+                      >
                         {devi?.reduction} {devi?.typeReduction}
                       </TableCell>
                     </TableRow>
@@ -201,19 +261,74 @@ export default function DevisPDFPage() {
                   )}
                   <TableRow>
                     <TableCell
-                      colSpan={3}
+                      colSpan={4}
                       className="text-xl text-gray-900 p-2 text-right font-extrabold"
                     >
-                      Total :
+                      Total TTC:
                     </TableCell>
-                    <TableCell className="border-l border-black p-2 text-xl text-gray-900 text-right font-extrabold">
+                    <TableCell
+                      colSpan={2}
+                      className="border-l border-black p-2 text-xl text-gray-900 text-left font-extrabold"
+                    >
                       {devi?.total} DH
                     </TableCell>
                   </TableRow>
                 </TableFooter>
               </Table>
             </div>
-            <div className="flex justify-between text-sm text-gray-600 pt-4">
+
+            <div className="flex flex-col gap-2">
+            <h3 className="text-sm font-medium mb-0">Validité du devis : 30 jours </h3>
+              <h3 className="text-sm font-medium mb-0">Modes de paiements :</h3>
+              <div className="flex justify-center">
+                <div className="w-[70%] overflow-hidden rounded-lg border border-black my-auto">
+                  <Table className="w-full border-collapse">
+                    <TableHeader className="text-[1rem] border-black">
+                      <TableRow>
+                        <TableHead className="text-sm text-black font-medium text-center">
+                          Paiements
+                        </TableHead>
+                        <TableHead className="text-sm text-black font-medium border-l text-center p-1">
+                          Montant H.T
+                        </TableHead>
+                        <TableHead className="text-sm text-black font-medium border-l text-center p-1">
+                          TVA 20%
+                        </TableHead>
+                        <TableHead className="text-sm text-black font-medium border-l text-center p-1">
+                          Montant TTC
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {modesPaiement.map((mode) => (
+                        <TableRow key={mode.pourcentage}>
+                          <TableCell className="p-1 text-center border-b text-md font-semibold">
+                            {mode.pourcentage}
+                          </TableCell>
+                          <TableCell className="border-l border-b p-1 text-center">
+                            {mode.montantHT} DH
+                          </TableCell>
+                          <TableCell className="border-l border-b p-1 text-center">
+                            {mode.tva} DH
+                          </TableCell>
+                          <TableCell className="border-l border-b p-1 text-center">
+                            {mode.montantTTC} DH
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold mb-0 italic underline">
+                  En signant ce devis, le client confirme son accord et valide
+                  une commande ferme et définitive.
+                </h3>
+              </div>
+            </div>
+
+            {/* <div className="flex justify-between text-sm text-gray-600 pt-4">
               <div>
                 {" "}
                 {new Date().toLocaleString("fr-FR", {
@@ -224,7 +339,7 @@ export default function DevisPDFPage() {
                   minute: "2-digit",
                 })}
               </div>
-            </div>
+            </div> */}
           </div>
           <div className="print:hidden mt-8 flex justify-end">
             <Button

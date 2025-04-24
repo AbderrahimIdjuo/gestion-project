@@ -65,7 +65,7 @@ function LoadingDeviPdf() {
         </div>
 
         {/* Quote Details */}
-        <div className="space-y-1">
+        {/* <div className="space-y-1">
           <div className="flex gap-2 items-center">
             <p className="font-medium">Date de création:</p>
             <Skeleton className="h-4 w-[200px] " />
@@ -82,7 +82,7 @@ function LoadingDeviPdf() {
             <p className="font-medium">Émis par:</p>
             <Skeleton className="h-4 w-[200px] " />
           </div>
-        </div>
+        </div> */}
 
         {/* Items Table */}
         <div className="border rounded-md">

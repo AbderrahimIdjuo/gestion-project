@@ -22,6 +22,7 @@ const validateFloat = (value) => {
 
 const articlSchema = z.object({
   designation: z.string().nonempty({ message: "La désignation est requise" }),
+  key: z.string(),
   quantite: z.preprocess(
     (value) =>
       value === "" || value === undefined ? undefined : validateInt(value),
@@ -37,45 +38,54 @@ const articlSchema = z.object({
       .number({ invalid_type_error: "Le prix d'unite doit être un nombre" })
       .min(1, { message: "Le prix d'unite doit être au moins 1" })
   ),
+  length: z.preprocess(
+    (value) =>
+      value === "" || value === undefined ? undefined : validateFloat(value),
+    z
+      .number({ invalid_type_error: "Le prix d'unite doit être un nombre" })
+      .min(1, { message: "ce champ doit contenire un nombre" })
+  ),
+  width: z.preprocess((value) => {
+    // Convert "" or undefined to undefined
+    if (value === "" || value === undefined) return undefined;
+    return parseFloat(value);
+  }, z.number({ invalid_type_error: "Ce champ doit contenir un nombre" }).optional()),
   id: z.string(),
 });
 const newDeviSchema = z.object({
   clientId: z.string({ required_error: "Champ obligatoir" }),
   numero: z.string(),
   statut: z.string(),
-  fraisLivraison: z.preprocess(
-    (value) =>
-      value === "" || value === undefined ? 0 : validateInt(value),
+  tva: z.preprocess(
+    (value) => (value === "" || value === undefined ? 0 : validateInt(value)),
     z.number().optional()
   ),
   reduction: z.preprocess(
-    (value) =>
-      value === "" || value === undefined ? 0 : validateInt(value),
+    (value) => (value === "" || value === undefined ? 0 : validateInt(value)),
     z.number().optional()
   ),
   typeReduction: z.string().default("%"),
   note: z.string(),
   sousTotal: z.preprocess(
-    (value) =>
-      value === "" || value === undefined ? 0 : validateFloat(value),
+    (value) => (value === "" || value === undefined ? 0 : validateFloat(value)),
     z
       .number({ invalid_type_error: "Le sousTotal doit être un nombre" })
       .optional()
   ),
   total: z.preprocess(
-    (value) =>
-      value === "" || value === undefined ? 0 : validateFloat(value),
+    (value) => (value === "" || value === undefined ? 0 : validateFloat(value)),
     z.number({ invalid_type_error: "Le total doit être un nombre" }).optional()
   ),
   articls: z
     .array(articlSchema)
     .min(1, { message: "La commande doit contenir au moins un articl" })
     .refine(
-      (articles) => articles.every((article) => articlSchema.safeParse(article).success),
+      (articles) =>
+        articles.every((article) => articlSchema.safeParse(article).success),
       {
         message: "Un ou plusieurs articles sont invalides",
       }
-    )
+    ),
 });
 
 export default newDeviSchema;

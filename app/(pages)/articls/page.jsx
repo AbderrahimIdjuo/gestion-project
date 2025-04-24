@@ -5,8 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import toast, { Toaster } from "react-hot-toast";
 import CustomTooltip from "@/components/customUi/customTooltip";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { AchatCommandeForm } from "@/components/achat-commande-form";
 import {
   Table,
   TableBody,
@@ -21,42 +19,22 @@ import {
   Search,
   Pen,
   Trash2,
-  Filter,
   X,
-  ShoppingBag,
-  Upload,
 } from "lucide-react";
-import { ProductFormDialog } from "@/components/product-form-dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import { Label } from "@/components/ui/label";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
-import { ModifyProductDialog } from "@/components/modify-product-dialog";
 import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
-import { PriceRangeSlider } from "@/components/customUi/customSlider";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { LoadingDots } from "@/components/loading-dots";
-import ImportProduits from "@/components/importer-produits";
 import { ArticlForm } from "@/components/add-articl-form";
+import { UpdateArticlForm } from "@/components/update-articl-form";
 
 export default function ProduitsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
+  const [currArticl, setCurrArticl] = useState();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [debouncedQuery, setDebouncedQuery] = useState();
   const [debouncedValues, setDebouncedValues] = useState({
@@ -135,19 +113,19 @@ export default function ProduitsPage() {
     refetchOnWindowFocus: false,
   });
 
-  const deleteProduct = async () => {
+  const deleteArticl = async () => {
     try {
-      await axios.delete(`/api/produits/${currProduct.id}`);
+      await axios.delete(`/api/articls/${currArticl.id}`);
       toast(
         <span>
-          Le produit <b>{currProduct?.designation.toUpperCase()}</b> a été
+          Le produit <b>{currArticl?.designation.toUpperCase()}</b> a été
           supprimé avec succès!
         </span>,
         {
           icon: "🗑️",
         }
       );
-      queryClient.invalidateQueries(["produits"]);
+      queryClient.invalidateQueries(["articls"]);
     } catch (e) {
       console.log(e);
     }
@@ -447,9 +425,9 @@ export default function ProduitsPage() {
                                 size="icon"
                                 className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
                                 onClick={() => {
-                                  setCurrProduct(product);
-                                  setIsUpdatingProduct(true);
-                                  setIsAddingProduct(false);
+                                  setCurrArticl(articl);
+                                  setUpdateDialogOpen(true)
+                                  console.log("modifier un articl", articl);                
                                 }}
                               >
                                 <Pen className="h-4 w-4" />
@@ -461,9 +439,10 @@ export default function ProduitsPage() {
                                 size="icon"
                                 className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
                                 onClick={() => {
-                                  setDeleteDialogOpen(true);
-                                  setCurrProduct(product);
-                                }}
+                                  setCurrArticl(articl);
+                                  setDeleteDialogOpen(true)
+                                  console.log("delete un articl", articl);                
+                                }}                              
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -493,12 +472,12 @@ export default function ProduitsPage() {
         </div>
 
         <DeleteConfirmationDialog
-          recordName={currProduct?.designation}
+          recordName={currArticl?.designation}
           isOpen={deleteDialogOpen}
           onClose={() => setDeleteDialogOpen(false)}
           onConfirm={() => {
             setDeleteDialogOpen(false);
-            deleteProduct();
+            deleteArticl();
           }}
         />
 
@@ -507,6 +486,14 @@ export default function ProduitsPage() {
           onClose={() => setAddDialogOpen(false)}
           onConfirm={() => {
             setAddDialogOpen(false);
+          }}
+        />
+           <UpdateArticlForm
+           articl={currArticl}
+          isOpen={updateDialogOpen}
+          onClose={() => setUpdateDialogOpen(false)}
+          onConfirm={() => {
+            setUpdateDialogOpen(false);
           }}
         />
       </div>

@@ -22,11 +22,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Trash2, MoveLeftIcon } from "lucide-react";
+import { Trash2, MoveLeftIcon } from "lucide-react";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChevronDown } from "lucide-react";
+import { ArticleSelectionDialog } from "@/components/articls-selection-dialog";
+
 import {
   Command,
   CommandEmpty,
@@ -35,13 +37,14 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { AddButton } from "@/components/customUi/styledButton";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 import Link from "next/link";
-import { useForm, Controller, useFieldArray } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CircleX } from "lucide-react";
 import newDeviSchema from "@/app/zodSchemas/newDeviSchema";
@@ -50,9 +53,12 @@ import { useInView } from "react-intersection-observer";
 
 export default function NouveauDevisPage() {
   const [open, setOpen] = useState(false);
+  const [items, setItems] = useState([]);
   const scrollAreaRef = useRef(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [isArticleDialogOpen, setIsArticleDialogOpen] = useState(false);
+
   const { ref, inView } = useInView();
   const {
     register,
@@ -66,18 +72,17 @@ export default function NouveauDevisPage() {
     defaultValues: {
       client: null,
       statut: "En attente",
-      fraisLivraison: 0,
       reduction: 0,
       typeReduction: "%",
       articls: [],
     },
     resolver: zodResolver(newDeviSchema),
   });
-  const { fields, remove } = useFieldArray({
-    control,
-    name: "articls",
-  });
-  const articls = watch("articls");
+  // const { fields, remove } = useFieldArray({
+  //   control,
+  //   name: "articls",
+  // });
+  // const articls = watch("articls");
   const status = [
     { lable: "En attente", color: "amber-500" },
     { lable: "Accepté", color: "green-500" },
@@ -92,13 +97,15 @@ export default function NouveauDevisPage() {
   };
 
   const onSubmit = async (data) => {
+    console.log("data######", data);
+
     toast.promise(
       (async () => {
         try {
           const response = await axios.post("/api/devis", data);
           console.log("Devi ajouté avec succès");
           reset();
-          setItems([{ id: 1, designation: "", quantite: 1, prixUnite: 0 }]);
+          setItems([]);
           if (response.status === 200) {
             console.log("Devi ajouté avec succès");
           } else {
@@ -116,28 +123,37 @@ export default function NouveauDevisPage() {
     );
   };
 
-  const addNewItem = () => {
-    const currentItems = watch("articls") || [];
-    setValue("articls", [
-      ...currentItems,
-      {
-        id: Date.now().toString(),
-        designation: "",
-        quantite: 1,
-        prixUnite: 1,
-      },
-    ]);
+  const handleItemChange = (id, field, value) => {
+    setItems((prevItems) =>
+      prevItems.map((item) =>
+        item.id === id ? { ...item, [field]: value } : item
+      )
+    );
   };
-
-  const calculateSubTotal = () => {    
-    return watch("articls").reduce((sum, item) => {
+  const handleAddArticles = (newArticles) => {
+    setItems((prevItems) => [
+      ...prevItems,
+      ...newArticles.map((article) => ({
+        ...article,
+      })),
+    ]);
+    console.log("newArticles", newArticles);
+    console.log("items ", items);
+  };
+  const removeItem = (deletedItem) => {
+    console.log("deletedItem", deletedItem);
+    console.log("items", items);
+    setItems((prev) => prev.filter((item) => item.key !== deletedItem.key));
+  };
+  const calculateSubTotal = () => {
+    return items.reduce((sum, item) => {
       const amount = item.quantite * item.prixUnite;
       return sum + amount;
     }, 0);
   };
 
   const calculateTotal = () => {
-    const TVA = calculateSubTotal() * 0.2
+    const TVA = calculateSubTotal() * 0.2;
     const subtotal = calculateSubTotal();
     const discountAmount =
       watch("typeReduction") === "%"
@@ -183,8 +199,8 @@ export default function NouveauDevisPage() {
   return (
     <>
       <Toaster position="top-center" />
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <div className="container mb-10 mx-auto py-6 space-y-6 max-w-5xl caret-transparent">
+      <form className="m-0 p-0" onSubmit={handleSubmit(onSubmit)}>
+        <div className="container mb-10 mx-auto py-6 space-y-6 w-full">
           <div className="flex justify-between items-center">
             <div className="flex gap-3 items-center">
               <Link href=".">
@@ -200,7 +216,7 @@ export default function NouveauDevisPage() {
               <h1 className="text-3xl font-bold">Nouveau devi</h1>
             </div>
           </div>
-          <Card>
+          <Card className="w-full">
             <CardContent className="p-6 space-y-6">
               {/* Header Section */}
               <div className="grid grid-cols-2 gap-6">
@@ -281,6 +297,12 @@ export default function NouveauDevisPage() {
                       </PopoverContent>
                     </Popover>
                   </div>
+                  {errors.clientId && (
+                    <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
+                      <CircleX className="h-4 w-4" />
+                      {errors.clientId.message}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="statut" className="text-right text-black">
@@ -312,100 +334,145 @@ export default function NouveauDevisPage() {
 
               {/* Items Table */}
               <div className="space-y-4">
-                {watch("articls").length > 0 && (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[35%]">Désignation</TableHead>
-                        <TableHead className="w-[15%]">Quantité</TableHead>
-                        <TableHead className="w-[20%]">
-                          Prix d&apos;unité
-                        </TableHead>
-                        <TableHead>Montant</TableHead>
-                        <TableHead></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {fields.map((item, index) => (
-                        <TableRow key={item.id}>
-                          <TableCell>
-                            <Controller
-                              control={control}
-                              name={`articls.${index}.designation`}
-                              render={({ field }) => (
+                {items.length > 0 && (
+                  <>
+                    <div className="overflow-hidden border rounded-lg">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-[40%]">Produits</TableHead>
+                            <TableHead className="w-[10%] text-center">
+                              Longueur
+                            </TableHead>
+                            <TableHead className="w-[10%] text-center">
+                              Largeur
+                            </TableHead>
+                            <TableHead>Quantité</TableHead>
+                            <TableHead>Prix d&apos;unité</TableHead>
+                            <TableHead colSpan={2} className="text-left">
+                              Montant
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {items.map((item) => (
+                            <TableRow key={item.id}>
+                              <TableCell>
+                                <span className="focus:!ring-purple-500 text-md font-semibold ">
+                                  {item.designation}
+                                </span>
+                              </TableCell>
+                              <TableCell>
                                 <Input
+                                  onChange={(e) =>
+                                    handleItemChange(
+                                      item.id,
+                                      "length",
+                                      Number(e.target.value)
+                                    )
+                                  }
                                   className="focus:!ring-purple-500 w-full"
-                                  {...field}
-                                  placeholder="Description de l'article"
-                                  spellCheck="false"
                                 />
-                              )}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Controller
-                              control={control}
-                              name={`articls.${index}.quantite`}
-                              render={({ field }) => (
+                              </TableCell>
+                              <TableCell>
                                 <Input
-                                  {...field}
+                                  onChange={(e) =>
+                                    handleItemChange(
+                                      item.id,
+                                      "width",
+                                      Number(e.target.value)
+                                    )
+                                  }
+                                  className="focus:!ring-purple-500 w-full"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Input
                                   type="number"
                                   min={1}
-                                  className="focus:!ring-purple-500 w-full"
+                                  value={item.quantite}
+                                  onChange={(e) =>
+                                    handleItemChange(
+                                      item.id,
+                                      "quantite",
+                                      Number(e.target.value)
+                                    )
+                                  }
+                                  className="focus:!ring-purple-500 w-20"
                                 />
-                              )}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Controller
-                              control={control}
-                              name={`articls.${index}.prixUnite`}
-                              render={({ field }) => (
+                              </TableCell>
+                              <TableCell>
                                 <Input
-                                  className="focus:!ring-purple-500 w-full"
-                                  {...field}
-                                  type="number"
+                                  value={item.prixUnite}
+                                  onChange={(e) => {
+                                    console.log(
+                                      "item.prixUnite",
+                                      item.prixUnite
+                                    );
+
+                                    handleItemChange(
+                                      item.id,
+                                      "prixUnite",
+                                      Number(e.target.value)
+                                    );
+
+                                    handleItemChange(
+                                      item.id,
+                                      "key",
+                                      item.key
+                                    );
+                                  }}
+                                  className="focus:!ring-purple-500 w-24"
                                 />
-                              )}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            {(
-                              articls[index].quantite * articls[index].prixUnite
-                            ).toFixed(2)}{" "}
-                            MAD
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => remove(index)}
-                              className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                              </TableCell>
+                              <TableCell>
+                                {!isNaN(item.quantite * item.prixUnite)
+                                  ? (item.quantite * item.prixUnite).toFixed(2)
+                                  : 0}{" "}
+                                DH
+                              </TableCell>
+                              <TableCell>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => removeItem(item)}
+                                  className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                    {/* <div className="space-y-4 bg-violet-50 p-4 rounded-lg">
+                      <div className="space-y-4">
+                        <div className="flex justify-between py-2 font-bold">
+                          <span>Total</span>
+                          <span>{calculateTotal()} DH</span>
+                        </div>
+                      </div>
+                    </div> */}
+                  </>
                 )}
 
-                <Button
+                <AddButton
                   type="button"
-                  variant="outline"
-                  onClick={addNewItem}
-                  className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 hover:scale-105 text-white hover:!text-white font-semibold transition-all duration-300 transform rounded-full"
-                >
-                  <Plus className="h-4 w-4" />
-                  Ajouter un article
-                </Button>
-                {errors.articls && (
+                  onClick={() => setIsArticleDialogOpen(true)}
+                  title="Ajouter des articls"
+                />
+                {errors.produits && (
                   <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
                     <CircleX className="h-4 w-4" />
-                    {errors.articls.message}
+                    {errors.produits.message}
                   </p>
                 )}
+                <ArticleSelectionDialog
+                  open={isArticleDialogOpen}
+                  onOpenChange={setIsArticleDialogOpen}
+                  onArticlesAdd={handleAddArticles}
+                />
               </div>
               <div className="grid gap-6 w-full p-5">
                 <Label htmlFor="noteClient" className="text-left text-black">
@@ -428,19 +495,16 @@ export default function NouveauDevisPage() {
 
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
-                      <Label htmlFor="shippingCharges">
-                        TVA 20%
-                      </Label>
+                      <Label htmlFor="tva">TVA 20%</Label>
                       <div className="relative w-40 flex">
                         <div className="absolute inset-y-0 right-0 w-12 flex items-center justify-center bg-white border-l rounded-r-md">
                           <span className="text-sm text-gray-600">MAD</span>
                         </div>
                         <Input
-                          id="shippingCharges"
-                          name="shippingCharges"
-                          value={
-                            (calculateSubTotal() * 0.2).toFixed(2)}
-                          {...register("fraisLivraison")}
+                          id="tva"
+                          name="tva"
+                          value={(calculateSubTotal() * 0.2).toFixed(2)}
+                          {...register("tva")}
                           className="pr-14 text-left rounded-r-md focus:!ring-purple-500"
                         />
                       </div>
@@ -504,12 +568,20 @@ export default function NouveauDevisPage() {
                     "sousTotal",
                     parseFloat(calculateSubTotal().toFixed(2))
                   );
+                  setValue(
+                    "tva",
+                    parseFloat(calculateSubTotal() * 0.2).toFixed(2)
+                  );
                   setValue("total", parseFloat(calculateTotal()));
+                  // items.map((item) =>
+                  //   handleItemChange(item.id, "key", item.key)
+                  // );
+                  setValue("articls", items);
                   console.log(
                     "form data validation :",
                     newDeviSchema.parse(watch())
                   );
-                  console.log("data :", watch());
+                  console.log("data details:", watch());
                 }}
                 type="submit"
                 className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 hover:scale-105 text-white hover:!text-white font-semibold transition-all duration-300 transform rounded-full"
