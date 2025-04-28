@@ -16,7 +16,6 @@ import {
 import { Phone, Calendar } from "lucide-react";
 import PiedFacture from "@/components/pied-facture";
 import LoadingDeviPdf from "@/components/loading-devi-pdf";
-import {Image} from "next/image";
 
 function formatPhoneNumber(phone) {
   return phone.replace(/(\d{2})(?=\d)/g, "$1 ").trim();
@@ -142,8 +141,8 @@ export default function DevisPDFPage() {
           <div id="print-area" className="space-y-3">
             {/* Header */}
             <div className="flex justify-between items-center border-b border-[#228B8B] pb-1">
-              <Image src="/images/LOGO-tete.jpg" alt="Logo" width={300} />
-              <Image src="/images/LOGO-OUDAOUD.jpg" className="h-24 w-24" />
+            <img src="/images/LOGO-tete.jpg" alt="Logo" width={300} />
+            <img src="/images/LOGO-OUDAOUD.jpg" className="h-24 w-24" />
             </div>
 
             {/* Company and Client Info */}

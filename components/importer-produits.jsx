@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import toast from "react-hot-toast";
 import { Upload, FileText, File } from "lucide-react";
-
+import { useQueryClient } from "@tanstack/react-query";
 export default function ImportProduits({ children }) {
   const [file, setFile] = useState(null);
   const [open, setOpen] = useState(false);
@@ -24,7 +24,7 @@ export default function ImportProduits({ children }) {
     setFile(e.target.files[0]);
     setFileName(e.target.files[0].name);
   };
-
+  const queryClient = useQueryClient();
   const handleUpload = async () => {
     if (!file) {
       toast.error("Please select a file");
@@ -43,6 +43,8 @@ export default function ImportProduits({ children }) {
       const result = await res.json();
       if (res.ok) {
         toast.success(result.message);
+        queryClient.invalidateQueries(["produits"]);
+        setOpen(false);
       } else {
         toast.error(result.error);
       }
@@ -80,9 +82,7 @@ export default function ImportProduits({ children }) {
                   ) : (
                     <>
                       <File className="h-5 w-5 text-muted-foreground" />
-                      <span className="truncate">
-                        Choisir un fichier
-                      </span>
+                      <span className="truncate">Choisir un fichier</span>
                     </>
                   )}
                 </div>

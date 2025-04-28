@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Phone, MapPin, Smartphone, Calendar } from "lucide-react";
+import { Phone , Calendar } from "lucide-react";
 
 export default function LoadingDeviPdf() {
   return (
