@@ -49,10 +49,10 @@ export async function GET(req) {
 
   // Search filter by numero and client name
   filters.OR = [
-    { nom: { contains: searchQuery } },
-    { adresse: { contains: searchQuery } },
+    { nom: { contains: searchQuery , mode: "insensitive" } },
+    { adresse: { contains: searchQuery , mode: "insensitive"} },
     { telephone: { contains: searchQuery } },
-    { cin: { contains: searchQuery } },
+    { cin: { contains: searchQuery , mode: "insensitive" } },
   ];
 
   // Fetch filtered commandes with pagination and related data

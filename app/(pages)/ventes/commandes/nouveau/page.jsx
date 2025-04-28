@@ -21,8 +21,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  TableFooter,
-} from "@/components/ui/table";
+  } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
 import { Trash2, MoveLeft } from "lucide-react";
 import { ArticleSelectionDialog } from "@/components/produits-selection-dialog";
@@ -38,7 +37,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useInView } from "react-intersection-observer";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CircleX } from "lucide-react";

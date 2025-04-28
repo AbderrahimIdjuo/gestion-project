@@ -43,7 +43,6 @@ export async function POST(req) {
 
 export async function PUT(req) {
   const { searchParams } = new URL(req.url);
-  const id = searchParams.get("id");
   const numero = searchParams.get("numero");
   const transactionDeleted = await prisma.transactions.findFirst({
     where: { reference: numero }

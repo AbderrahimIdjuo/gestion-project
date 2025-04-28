@@ -27,6 +27,7 @@ export function ArticlForm({ isOpen, onClose, onConfirm }) {
   const {
     register,
     watch,
+    reset,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm({
@@ -49,6 +50,7 @@ export function ArticlForm({ isOpen, onClose, onConfirm }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["articls"]);
+      reset()
     },
   });
 

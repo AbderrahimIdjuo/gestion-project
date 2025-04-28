@@ -3,7 +3,6 @@
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
-import axios from "axios";
 import { useState } from "react";
 import {
   Table,
@@ -14,24 +13,93 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Phone, MapPin, Smartphone } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
+import { Phone, Calendar } from "lucide-react";
+import PiedFacture from "@/components/pied-facture";
 import LoadingDeviPdf from "@/components/loading-devi-pdf";
+import {Image} from "next/image";
+
+function formatPhoneNumber(phone) {
+  return phone.replace(/(\d{2})(?=\d)/g, "$1 ").trim();
+}
+function nombreEnLettres(n) {
+  const unites = [
+    "",
+    "un",
+    "deux",
+    "trois",
+    "quatre",
+    "cinq",
+    "six",
+    "sept",
+    "huit",
+    "neuf",
+  ];
+  const dizaines = [
+    "",
+    "dix",
+    "vingt",
+    "trente",
+    "quarante",
+    "cinquante",
+    "soixante",
+  ];
+  const dizainesSpeciales = [
+    "dix",
+    "onze",
+    "douze",
+    "treize",
+    "quatorze",
+    "quinze",
+    "seize",
+  ];
+
+  function convertMoinsDeCent(n) {
+    if (n < 10) return unites[n];
+    if (n < 17) return dizainesSpeciales[n - 10];
+    if (n < 20) return "dix-" + unites[n - 10];
+    if (n < 70) {
+      const dizaine = Math.floor(n / 10);
+      const unite = n % 10;
+      return (
+        dizaines[dizaine] +
+        (unite === 1 ? "-et-un" : unite > 0 ? "-" + unites[unite] : "")
+      );
+    }
+    if (n < 80) return "soixante-" + convertMoinsDeCent(n - 60);
+    if (n < 100)
+      return (
+        "quatre-vingt" + (n === 80 ? "s" : "-" + convertMoinsDeCent(n - 80))
+      );
+  }
+
+  function convertMoinsDeMille(n) {
+    if (n < 100) return convertMoinsDeCent(n);
+    const centaine = Math.floor(n / 100);
+    const reste = n % 100;
+    return (
+      (centaine === 1
+        ? "cent"
+        : unites[centaine] + " cent" + (reste === 0 ? "s" : "")) +
+      (reste > 0 ? " " + convertMoinsDeCent(reste) : "")
+    );
+  }
+
+  function convertir(n) {
+    if (n === 0) return "zéro";
+    if (n < 1000) return convertMoinsDeMille(n);
+    const mille = Math.floor(n / 1000);
+    const reste = n % 1000;
+    return (
+      (mille === 1 ? "mille" : convertMoinsDeMille(mille) + " mille") +
+      (reste > 0 ? " " + convertMoinsDeMille(reste) : "")
+    );
+  }
+
+  return convertir(n).trim();
+}
 
 export default function DevisPDFPage() {
   const [devi, setDevi] = useState();
-
-  const info = useQuery({
-    queryKey: ["infoEntreprise"],
-    queryFn: async () => {
-      const response = await axios.get("/api/infoEntreprise");
-      const infoEntreprise = response.data.infoEntreprise;
-      return infoEntreprise;
-    },
-  });
-
   useEffect(() => {
     const storedData = localStorage.getItem("devi");
     if (storedData) {
@@ -69,83 +137,50 @@ export default function DevisPDFPage() {
   return (
     <>
       {devi ? (
-        <div className="container mx-auto p-8 max-w-4xl bg-white min-h-screen print:p-0 print:max-w-none mb-10">
+        <div className="container mx-auto p-4 max-w-4xl bg-white min-h-screen print:p-0 print:max-w-none mb-10">
           {/* Document Content */}
-          <div id="print-area" className="space-y-6">
+          <div id="print-area" className="space-y-3">
             {/* Header */}
-            <div className="flex justify-between items-center border-b border-purple-500 pb-4">
-              <h1 className="text-3xl font-bold text-purple-600">
-                DEVIS N° : {devi?.numero}
-              </h1>
-
-              <Avatar className="w-24 h-24 shadow-md border ">
-                <AvatarImage src={info.data?.logoUrl} />
-                <AvatarFallback>Logo</AvatarFallback>
-              </Avatar>
+            <div className="flex justify-between items-center border-b border-[#228B8B] pb-1">
+              <Image src="/images/LOGO-tete.jpg" alt="Logo" width={300} />
+              <Image src="/images/LOGO-OUDAOUD.jpg" className="h-24 w-24" />
             </div>
 
             {/* Company and Client Info */}
             <div className="grid grid-cols-2 gap-8">
               {/* Company Info */}
-              <div className="space-y-1">
-                <h2 className="font-bold text-xl text-gray-900">
-                  {info.data?.nom.toUpperCase()}
-                </h2>
-                <p className="font-small font-bold text-slate-700 text-sm">
-                  {info.data?.slogan.toUpperCase()}
-                </p>
-                {info.data?.adresse && (
-                  <div className="flex items-center gap-2 ">
-                    <MapPin className="h-4 w-4" />
-                    <p>{info.data?.adresse}</p>
-                  </div>
-                )}
-                {info.data?.telephone && (
-                  <div className="flex items-center gap-2 ">
-                    <Phone className="h-4 w-4" />
-                    <p className="text-s">{info.data?.telephone}</p>
-                  </div>
-                )}
-                {info.data?.mobile && (
-                  <div className="flex items-center gap-2 ">
-                    <Smartphone className="h-4 w-4" />
-                    <p>{info.data?.mobile}</p>
-                  </div>
-                )}
+              <div className="col-span-1">
+                <h1 className="font-bold text-lg text-gray-900">
+                  DEVIS N° : {devi?.numero}
+                </h1>
+                <div className="flex items-center gap-2 mt-2 ">
+                  <Calendar className="h-3 w-3" />
+                  <p className="font-medium text-sm">
+                    <span>Date de création:</span> {formatDate(devi?.createdAt)}{" "}
+                  </p>
+                </div>
               </div>
 
               {/* Client Info */}
-              <div className="space-y-1">
-                <h2 className="font-bold text-xl text-gray-900">Client</h2>
-                <p>{devi?.client.nom.toUpperCase()}</p>
-                <div className="flex items-center gap-2 ">
-                  <MapPin className="h-4 w-4" />
-                  <p>{devi?.client.adresse}</p>
+              <div className="col-span-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <h2 className="font-bold text-lg text-gray-900">Client : </h2>
+                  <p className="font-bold text-lg text-gray-900">
+                    {devi?.client.civilite && devi?.client.civilite}
+                    {"."} {devi?.client.nom.toUpperCase()}
+                  </p>
                 </div>
                 <div className="flex items-center gap-2 ">
-                  <Phone className="h-4 w-4" />
-                  <p>{devi?.client.telephone}</p>
+                  <Phone className="h-3 w-3" />
+                  <p className="font-medium text-sm">
+                    {formatPhoneNumber(devi?.client.telephone)}
+                  </p>
                 </div>
               </div>
             </div>
-
-            {/* Quote Details */}
-            <div className="space-y-1">
-              <p>
-                <span className="font-medium">Date de création:</span>{" "}
-                {formatDate(devi?.createdAt)}{" "}
-              </p>
-              {/* <p>
-                <span className="font-medium">Statut :</span> {devi?.statut}
-              </p>
-              <p>
-                <span className="font-medium">Émis par:</span> commerçant 1
-              </p> */}
-            </div>
-
             {/* Items Table */}
-            <div className="overflow-hidden rounded-lg border border-black">
-              <Table className="w-full border-collapse">
+            <div className="overflow-hidden rounded-md border border-black mt-0">
+              <Table className="w-full border-collapse print:w-full print:min-w-full">
                 <TableHeader className="text-[1rem] border-black">
                   <TableRow>
                     <TableHead
@@ -159,6 +194,12 @@ export default function DevisPDFPage() {
                       className="text-black font-bold border-l border-b border-black text-center p-1"
                     >
                       Dimension
+                    </TableHead>
+                    <TableHead
+                      rowSpan="2"
+                      className="text-black font-bold border-l border-b border-black text-center p-1"
+                    >
+                      U
                     </TableHead>
                     <TableHead
                       rowSpan="2"
@@ -191,31 +232,34 @@ export default function DevisPDFPage() {
                 <TableBody>
                   {devi?.articls?.map((articl) => (
                     <TableRow key={articl.id}>
-                      <TableCell className=" p-2 text-left border-b border-black text-md font-semibold">
+                      <TableCell className=" p-1 text-left border-b border-black text-md font-semibold">
                         {articl.designation}{" "}
                       </TableCell>
-                      <TableCell className="border-l border-b border-black p-2 text-center">
+                      <TableCell className="border-l border-b border-black p-1 text-center">
                         {articl.length}
                       </TableCell>
-                      <TableCell className="border-l border-b border-black p-2 text-center">
+                      <TableCell className="border-l border-b border-black p-1 text-center">
                         {articl.width === 0 ? "-" : articl.width}
                       </TableCell>
-                      <TableCell className="border-l border-b border-black p-2 text-center">
+                      <TableCell className="border-l border-b border-black p-1 text-center">
+                        {articl.unite}
+                      </TableCell>
+                      <TableCell className="border-l border-b border-black p-1 text-center">
                         {articl.quantite}
                       </TableCell>
-                      <TableCell className="border-l border-b  border-black p-2 text-center">
+                      <TableCell className="border-l border-b  border-black p-1 text-center">
                         {articl.prixUnite} DH
                       </TableCell>
-                      <TableCell className="border-l border-b border-black p-2 text-right font-bold">
+                      <TableCell className="border-l border-b border-black p-1 text-center font-bold">
                         {articl.montant} DH
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
-                <TableFooter className="font-medium  border-black bg-zinc-100 ">
+                <TableFooter className="font-medium border-black bg-[#228b8b1d] ">
                   <TableRow>
                     <TableCell
-                      colSpan={4}
+                      colSpan={6}
                       className="border-b border-black p-2 text-right font-bold"
                     >
                       Total H.T :
@@ -229,7 +273,7 @@ export default function DevisPDFPage() {
                   </TableRow>
                   <TableRow>
                     <TableCell
-                      colSpan={4}
+                      colSpan={6}
                       className="border-b border-black p-2 text-right font-bold"
                     >
                       TVA :
@@ -244,7 +288,7 @@ export default function DevisPDFPage() {
                   {devi?.reduction > 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={4}
+                        colSpan={6}
                         className=" border-b border-black p-2 text-right font-bold"
                       >
                         Réduction :
@@ -261,14 +305,14 @@ export default function DevisPDFPage() {
                   )}
                   <TableRow>
                     <TableCell
-                      colSpan={4}
-                      className="text-xl text-gray-900 p-2 text-right font-extrabold"
+                      colSpan={6}
+                      className="text-lg text-gray-900 p-2 text-right font-extrabold"
                     >
-                      Total TTC:
+                      Total TTC :
                     </TableCell>
                     <TableCell
                       colSpan={2}
-                      className="border-l border-black p-2 text-xl text-gray-900 text-left font-extrabold"
+                      className="border-l border-black p-2 text-lg text-gray-900 text-left font-extrabold"
                     >
                       {devi?.total} DH
                     </TableCell>
@@ -278,46 +322,59 @@ export default function DevisPDFPage() {
             </div>
 
             <div className="flex flex-col gap-2">
-            <h3 className="text-sm font-medium mb-0">Validité du devis : 30 jours </h3>
-              <h3 className="text-sm font-medium mb-0">Modes de paiements :</h3>
-              <div className="flex justify-center">
-                <div className="w-[70%] overflow-hidden rounded-lg border border-black my-auto">
-                  <Table className="w-full border-collapse">
-                    <TableHeader className="text-[1rem] border-black">
-                      <TableRow>
-                        <TableHead className="text-sm text-black font-medium text-center">
-                          Paiements
-                        </TableHead>
-                        <TableHead className="text-sm text-black font-medium border-l text-center p-1">
-                          Montant H.T
-                        </TableHead>
-                        <TableHead className="text-sm text-black font-medium border-l text-center p-1">
-                          TVA 20%
-                        </TableHead>
-                        <TableHead className="text-sm text-black font-medium border-l text-center p-1">
-                          Montant TTC
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {modesPaiement.map((mode) => (
-                        <TableRow key={mode.pourcentage}>
-                          <TableCell className="p-1 text-center border-b text-md font-semibold">
-                            {mode.pourcentage}
-                          </TableCell>
-                          <TableCell className="border-l border-b p-1 text-center">
-                            {mode.montantHT} DH
-                          </TableCell>
-                          <TableCell className="border-l border-b p-1 text-center">
-                            {mode.tva} DH
-                          </TableCell>
-                          <TableCell className="border-l border-b p-1 text-center">
-                            {mode.montantTTC} DH
-                          </TableCell>
+              <h3 className="text-sm font-medium mb-0">
+                Arrêter le devis à :{" "}
+                <span className="text-sm font-bold mb-0 ">
+                  {nombreEnLettres(devi?.total)}{" "}
+                </span>{" "}
+                Dirhams TTC{" "}
+              </h3>
+              <h3 className="text-sm font-medium mb-0">
+                Validité du devis : 30 jours{" "}
+              </h3>
+              <div className="print-block">
+                <h3 className="text-sm font-medium mb-0">
+                  Modes de paiements :
+                </h3>
+                <div className="flex justify-center">
+                  <div className="w-[70%] overflow-hidden rounded-md border border-black my-auto">
+                    <Table className="w-full border-collapse">
+                      <TableHeader className="text-[1rem] border-black">
+                        <TableRow>
+                          <TableHead className="text-sm text-black font-medium text-center p-0">
+                            Paiements
+                          </TableHead>
+                          <TableHead className="text-sm text-black font-medium border-l text-center p-0">
+                            Montant H.T
+                          </TableHead>
+                          <TableHead className="text-sm text-black font-medium border-l text-center p-0">
+                            TVA 20%
+                          </TableHead>
+                          <TableHead className="text-sm text-black font-medium border-l text-center p-0">
+                            Montant TTC
+                          </TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {modesPaiement.map((mode) => (
+                          <TableRow key={mode.pourcentage}>
+                            <TableCell className="p-1 text-center border-b text-md font-semibold p-0">
+                              {mode.pourcentage}
+                            </TableCell>
+                            <TableCell className="border-l border-b p-1 text-center p-0">
+                              {mode.montantHT} DH
+                            </TableCell>
+                            <TableCell className="border-l border-b p-1 text-center p-0">
+                              {mode.tva} DH
+                            </TableCell>
+                            <TableCell className="border-l border-b p-1 text-center p-0">
+                              {mode.montantTTC} DH
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
               </div>
               <div>
@@ -326,20 +383,8 @@ export default function DevisPDFPage() {
                   une commande ferme et définitive.
                 </h3>
               </div>
+              <PiedFacture />
             </div>
-
-            {/* <div className="flex justify-between text-sm text-gray-600 pt-4">
-              <div>
-                {" "}
-                {new Date().toLocaleString("fr-FR", {
-                  year: "numeric",
-                  month: "2-digit",
-                  day: "2-digit",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </div>
-            </div> */}
           </div>
           <div className="print:hidden mt-8 flex justify-end">
             <Button

@@ -97,9 +97,9 @@ export async function GET(req) {
 
   // Search filter by numero and client name
   filters.OR = [
-    { designation: { contains: searchQuery } },
-    { categorie: { contains: searchQuery } },
-    { description: { contains: searchQuery } },
+    { designation: { contains: searchQuery , mode: "insensitive" } },
+    { categorie: { contains: searchQuery , mode: "insensitive" } },
+    { description: { contains: searchQuery , mode: "insensitive" } },
   ];
 
   // Filtre par catégorie
@@ -202,9 +202,9 @@ export async function GET(req) {
   return NextResponse.json({
     produits,
     totalProduits,
-    maxPrixAchat: maxPrixAchat.prixAchat || 0,
-    maxPrixVente: maxPrixVente.prixVente || 0,
-    maxStock: maxStock.stock || 0,
+    maxPrixAchat: maxPrixAchat?.prixAchat || 0,
+    maxPrixVente: maxPrixVente?.prixVente || 0,
+    maxStock: maxStock?.stock || 0,
     totalPages,
   });
 }

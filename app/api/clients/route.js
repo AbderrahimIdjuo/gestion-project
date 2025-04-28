@@ -5,13 +5,14 @@ export const dynamic = 'force-dynamic';
 export async function POST(req) {
   try {
     const resopns = await req.json();
-    const { nom, email, telephone, adresse } = resopns;
+    const { nom, email, telephone, adresse , civilite } = resopns;
     const result = await prisma.clients.create({
       data: {
         nom,
         email,
         telephone,
         adresse,
+        civilite
       },
     });
 
@@ -36,7 +37,7 @@ export async function POST(req) {
 export async function PUT(req) {
   try {
     const resopns = await req.json();
-    const { id, nom, email, telephone, adresse } = resopns;
+    const { id, nom, email, telephone, adresse , civilite } = resopns;
     const result = await prisma.clients.update({
       where: { id },
       data: {
@@ -44,6 +45,7 @@ export async function PUT(req) {
         email,
         telephone,
         adresse,
+        civilite
       },
     });
 
@@ -76,10 +78,10 @@ export async function GET(req) {
 
   // Search filter by numero and client name
   filters.OR = [
-    { nom: { contains: searchQuery } },
-    { adresse: { contains: searchQuery } },
+    { nom: { contains: searchQuery , mode: "insensitive"} },
+    { adresse: { contains: searchQuery , mode: "insensitive" } },
     { telephone: { contains: searchQuery } },
-    { email: { contains: searchQuery } },
+    { email: { contains: searchQuery , mode: "insensitive" } },
   ];
 
   // Fetch filtered commandes with pagination and related data

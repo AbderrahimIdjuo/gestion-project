@@ -64,7 +64,6 @@ export default function NouveauDevisPage() {
     register,
     reset,
     watch,
-    control,
     setValue,
     handleSubmit,
     formState: { errors, isSubmiting },
@@ -74,15 +73,12 @@ export default function NouveauDevisPage() {
       statut: "En attente",
       reduction: 0,
       typeReduction: "%",
+      unite: "U",
       articls: [],
     },
     resolver: zodResolver(newDeviSchema),
   });
-  // const { fields, remove } = useFieldArray({
-  //   control,
-  //   name: "articls",
-  // });
-  // const articls = watch("articls");
+
   const status = [
     { lable: "En attente", color: "amber-500" },
     { lable: "Accepté", color: "green-500" },
@@ -196,6 +192,8 @@ export default function NouveauDevisPage() {
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
+  const unites = ["U", "m²", "m"];
+
   return (
     <>
       <Toaster position="top-center" />
@@ -203,7 +201,7 @@ export default function NouveauDevisPage() {
         <div className="container mb-10 mx-auto py-6 space-y-6 w-full">
           <div className="flex justify-between items-center">
             <div className="flex gap-3 items-center">
-              <Link href=".">
+              <Link href="/ventes/devis">
                 <Button
                   type="button"
                   className="rounded-lg"
@@ -340,12 +338,15 @@ export default function NouveauDevisPage() {
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead className="w-[40%]">Produits</TableHead>
+                            <TableHead className="w-[30%]">Articls</TableHead>
                             <TableHead className="w-[10%] text-center">
                               Longueur
                             </TableHead>
                             <TableHead className="w-[10%] text-center">
                               Largeur
+                            </TableHead>
+                            <TableHead className="w-[10%] text-center">
+                              Unité
                             </TableHead>
                             <TableHead>Quantité</TableHead>
                             <TableHead>Prix d&apos;unité</TableHead>
@@ -356,7 +357,7 @@ export default function NouveauDevisPage() {
                         </TableHeader>
                         <TableBody>
                           {items.map((item) => (
-                            <TableRow key={item.id}>
+                            <TableRow key={item.key}>
                               <TableCell>
                                 <span className="focus:!ring-purple-500 text-md font-semibold ">
                                   {item.designation}
@@ -387,6 +388,26 @@ export default function NouveauDevisPage() {
                                 />
                               </TableCell>
                               <TableCell>
+                                <Select
+                                  defaultValue="U"
+                                  name="unites"
+                                  onValueChange={(value) =>
+                                    handleItemChange(item.id, "unite", value)
+                                  }
+                                >
+                                  <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
+                                    <SelectValue placeholder="Séléctionner un statut" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {unites.map((unite) => (
+                                      <SelectItem key={unite} value={unite}>
+                                        {unite}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </TableCell>
+                              <TableCell>
                                 <Input
                                   type="number"
                                   min={1}
@@ -405,21 +426,10 @@ export default function NouveauDevisPage() {
                                 <Input
                                   value={item.prixUnite}
                                   onChange={(e) => {
-                                    console.log(
-                                      "item.prixUnite",
-                                      item.prixUnite
-                                    );
-
                                     handleItemChange(
                                       item.id,
                                       "prixUnite",
                                       Number(e.target.value)
-                                    );
-
-                                    handleItemChange(
-                                      item.id,
-                                      "key",
-                                      item.key
                                     );
                                   }}
                                   className="focus:!ring-purple-500 w-24"
@@ -428,8 +438,7 @@ export default function NouveauDevisPage() {
                               <TableCell>
                                 {!isNaN(item.quantite * item.prixUnite)
                                   ? (item.quantite * item.prixUnite).toFixed(2)
-                                  : 0}{" "}
-                                DH
+                                  : 0}
                               </TableCell>
                               <TableCell>
                                 <Button
@@ -446,14 +455,6 @@ export default function NouveauDevisPage() {
                         </TableBody>
                       </Table>
                     </div>
-                    {/* <div className="space-y-4 bg-violet-50 p-4 rounded-lg">
-                      <div className="space-y-4">
-                        <div className="flex justify-between py-2 font-bold">
-                          <span>Total</span>
-                          <span>{calculateTotal()} DH</span>
-                        </div>
-                      </div>
-                    </div> */}
                   </>
                 )}
 
@@ -492,25 +493,10 @@ export default function NouveauDevisPage() {
                     <span>Total H.T</span>
                     <span>{calculateSubTotal().toFixed(2)} MAD</span>
                   </div>
-
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <Label htmlFor="tva">TVA 20%</Label>
-                      <div className="relative w-40 flex">
-                        <div className="absolute inset-y-0 right-0 w-12 flex items-center justify-center bg-white border-l rounded-r-md">
-                          <span className="text-sm text-gray-600">MAD</span>
-                        </div>
-                        <Input
-                          id="tva"
-                          name="tva"
-                          value={(calculateSubTotal() * 0.2).toFixed(2)}
-                          {...register("tva")}
-                          className="pr-14 text-left rounded-r-md focus:!ring-purple-500"
-                        />
-                      </div>
-                    </div>
+                  <div className="flex justify-between py-2 ">
+                    <span>TVA 20%</span>
+                    <span>{(calculateSubTotal() * 0.2).toFixed(2)} MAD</span>
                   </div>
-
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label htmlFor="discount">Réduction</Label>
@@ -573,9 +559,6 @@ export default function NouveauDevisPage() {
                     parseFloat(calculateSubTotal() * 0.2).toFixed(2)
                   );
                   setValue("total", parseFloat(calculateTotal()));
-                  // items.map((item) =>
-                  //   handleItemChange(item.id, "key", item.key)
-                  // );
                   setValue("articls", items);
                   console.log(
                     "form data validation :",

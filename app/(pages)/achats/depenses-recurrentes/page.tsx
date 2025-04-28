@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import toast, { Toaster } from "react-hot-toast";
@@ -33,7 +33,6 @@ import {
   CircleDollarSign,
   EllipsisVertical,
 } from "lucide-react";
-import { addtransaction } from "@/app/api/actions";
 import { AddFactureForm } from "@/components/add-facture-recurrente-form";
 import { PaymentDialog } from "@/components/payment-dialog-depenses-recurrentes";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
@@ -54,13 +53,7 @@ type Facture = {
   payer: boolean;
   description: string;
 };
-type Transaction = {
-  numero: string | undefined;
-  lable: string | undefined;
-  montant: number;
-  type: string;
-  compte: string;
-};
+
 function Page() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");

@@ -1,12 +1,16 @@
 {
-  "extends": ["next/core-web-vitals", "next/typescript"],
+  "extends": ["next/core-web-vitals"],
+  "plugins": ["@typescript-eslint"],
+  "parser": "@typescript-eslint/parser",
   "rules": {
     "@typescript-eslint/no-unused-vars": [
       "warn",
       {
-        "argsIgnorePattern": "^_" // This will allow "_" as a valid unused argument name
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_"
       }
     ]
   }
 }
+
 

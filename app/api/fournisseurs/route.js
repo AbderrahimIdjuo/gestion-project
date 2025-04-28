@@ -54,15 +54,6 @@ export async function PUT(req) {
   }
 }
 
-// export async function GET() {
-//   const Fournisseurs = await prisma.fournisseurs.findMany({
-//     orderBy: {
-//       updatedAt: "desc",
-//     },
-//   });
-//   return NextResponse.json({ Fournisseurs });
-// }
-
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const page = parseInt(searchParams.get("page") || "1");
@@ -74,10 +65,10 @@ export async function GET(req) {
 
   // Search filter by numero and client name
   filters.OR = [
-    { nom: { contains: searchQuery } },
-    { adresse: { contains: searchQuery } },
+    { nom: { contains: searchQuery , mode: "insensitive" } },
+    { adresse: { contains: searchQuery , mode: "insensitive" } },
     { telephone: { contains: searchQuery } },
-    { email: { contains: searchQuery } },
+    { email: { contains: searchQuery , mode: "insensitive" } },
     { ice: { contains: searchQuery } },
   ];
 

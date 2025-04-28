@@ -4,13 +4,14 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url  	    = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Clients {
   id        String      @id @default(uuid())
   nom       String
+  civilite String?
   email     String?
   telephone String?
   adresse   String?
@@ -40,23 +41,24 @@ model Produits {
   prixAchat         Float?
   prixVente         Float?
   stock             Int?
-  length            Float
-  width             Float?
   fournisseurId     String?
   description       String?
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
+  length            Float
+  width             Float?
   achatsCommandes   AchatsCommandes[]
   CommandesProduits CommandesProduits[]
   fournisseur       Fournisseurs?       @relation(fields: [fournisseurId], references: [id], onDelete: Cascade)
 }
-//Items sont les articles du devis
+
 model Items {
-  id                String              @id @default(uuid())
-  designation       String
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  id          String   @id @default(uuid())
+  designation String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
+
 model CommandesProduits {
   id         String    @id @default(uuid())
   commandeId String
@@ -66,8 +68,8 @@ model CommandesProduits {
   prixUnite  Float
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
-  produit    Produits  @relation(fields: [produitId], references: [id], onDelete: Cascade)
   commande   Commandes @relation(fields: [commandeId], references: [id], onDelete: Cascade)
+  produit    Produits  @relation(fields: [produitId], references: [id], onDelete: Cascade)
 
   @@unique([commandeId, produitId])
 }
@@ -126,59 +128,60 @@ model AchatsCommandes {
 
 model Articls {
   id          String   @id @default(uuid())
-  key        String   @unique
   deviId      String
   designation String
   montant     Float
   quantite    Int
-  length      Float
-  width      Float?
   prixUnite   Float
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  width       Float?
+  length      Float
+  unite      String @default("U")
+  key         String   @unique
   devi        Devis    @relation(fields: [deviId], references: [id], onDelete: Cascade)
 }
 
 model Devis {
-  id             String    @id @default(uuid())
-  numero         String    @unique
-  clientId       String
-  statut         String
-  sousTotal      Float
-  tva Float
-  reduction      Int
-  total          Float
-  note           String?
-  typeReduction  String    @default("%")
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  articls        Articls[]
-  client         Clients   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  id            String    @id @default(uuid())
+  numero        String    @unique
+  clientId      String
+  statut        String
+  sousTotal     Float
+  reduction     Int
+  total         Float
+  note          String?
+  typeReduction String    @default("%")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  tva           Float
+  articls       Articls[]
+  client        Clients   @relation(fields: [clientId], references: [id], onDelete: Cascade)
 }
 
 model Factures {
-  id           String   @id @default(uuid())
-  lable        String
-  numero       String   @unique
-  type         String
-  montant      Float?
-  payer        Boolean  @default(false)
-  dateEmission Int?
+  id            String    @id @default(uuid())
+  lable         String
+  numero        String    @unique
+  type          String
+  montant       Float?
+  payer         Boolean   @default(false)
+  dateEmission  Int?
   dateReglement DateTime?
-  description  String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  description   String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
 
 model DepensesVariantes {
-  id           String   @id @default(uuid())
-  label        String
-  montant      Float
-  compte       String
-  numero       String  @unique
-  description  String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id          String   @id @default(uuid())
+  label       String
+  montant     Float
+  compte      String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  numero      String   @unique
 }
 
 model Transactions {
@@ -219,7 +222,7 @@ model InfoEntreprise {
   mobile    String?
   email     String?
   adresse   String
-  logoUrl  String?
+  logoUrl   String?
   slogan    String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

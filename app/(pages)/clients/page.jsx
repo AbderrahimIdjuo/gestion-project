@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, Plus, X, Pen, Trash2} from "lucide-react";
+import { Search, Plus, X, Pen, Trash2 } from "lucide-react";
 import { ClientFormDialog } from "@/components/client-form-dialog";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import { ClientInfoDialog } from "@/components/client-info";
@@ -47,6 +47,8 @@ export default function ClientsPage() {
         },
       });
       setTotalPages(response.data.totalPages);
+      console.log("clients", response.data.clients);
+
       return response.data.clients;
     },
     keepPreviousData: true, // Keeps old data visible while fetching new page
@@ -85,7 +87,7 @@ export default function ClientsPage() {
         }
       );
 
-      queryClient.invalidateQueries(["clients"])
+      queryClient.invalidateQueries(["clients"]);
     } catch (e) {
       console.log(e);
     }
@@ -205,7 +207,10 @@ export default function ClientsPage() {
                     ))
                   ) : clients.data?.length > 0 ? (
                     clients.data?.map((client) => (
-                      <TableRow className="font-medium hover:text-emerald-400" key={client.id}>
+                      <TableRow
+                        className="font-medium hover:text-emerald-400"
+                        key={client.id}
+                      >
                         <ClientInfoDialog client={client}>
                           <TableCell className="font-medium cursor-pointer !py-2">
                             <div className="flex flex-row gap-2 justify-start items-center">
@@ -394,9 +399,7 @@ export default function ClientsPage() {
               setIsUpdatingClient={setIsUpdatingClient}
             />
           )}
-          {isAddingClient && (
-            <ClientFormDialog clientList={clients?.data} />
-          )}
+          {isAddingClient && <ClientFormDialog clientList={clients?.data} />}
         </div>
       </div>
       <DeleteConfirmationDialog

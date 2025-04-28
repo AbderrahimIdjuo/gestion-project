@@ -17,10 +17,17 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CircleX } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
-
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 export function ClientFormDialog({ clientList }) {
   const clientSchema = z.object({
     nom: z.string().min(1, "Veuillez insérer le nom du client"),
+    civilite: z.enum(["M", "Mme", "Mlle"]).optional(),
     email: z
       .preprocess((email) => {
         // If email is empty or undefined, return null
@@ -65,6 +72,8 @@ export function ClientFormDialog({ clientList }) {
   const {
     register,
     reset,
+    watch,
+    setValue,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm({
@@ -73,6 +82,8 @@ export function ClientFormDialog({ clientList }) {
 
   const queryClient = useQueryClient();
   const onSubmit = async (data) => {
+    console.log("data :" , data);
+    
     toast.promise(
       (async () => {
         try {
@@ -93,7 +104,6 @@ export function ClientFormDialog({ clientList }) {
             // Assuming 201 is the success status code
             console.log("Client ajouté avec succès");
             queryClient.invalidateQueries(["clients"]);
-
             reset();
           } else {
             throw new Error("Unexpected response status");
@@ -109,6 +119,7 @@ export function ClientFormDialog({ clientList }) {
       }
     );
   };
+  const civilites = ["M", "Mme", "Mlle"];
 
   return (
     <Card className="w-full grid gap-2 h-full px-2">
@@ -127,26 +138,58 @@ export function ClientFormDialog({ clientList }) {
           onSubmit={handleSubmit(onSubmit)}
         >
           <div className="w-full grid gap-6 ">
-            <div className="w-full grid grid-cols-1">
-              <Label htmlFor="nom" className="text-left mb-2 mb-2">
-                Nom
-              </Label>
-              <div className="w-full">
-                <Input
-                  id="nom"
-                  name="nom"
-                  {...register("nom")}
-                  className={`w-full  focus-visible:ring-purple-300 focus-visible:ring-offset-0 ${
-                    errors.nom && "border-red-500 border-2"
-                  }`}
-                  spellCheck={false}
-                />
-                {errors.nom && (
-                  <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
-                    <CircleX className="h-4 w-4" />
-                    {errors.nom.message}
-                  </p>
-                )}
+            <div className="grid grid-cols-4 gap-4">
+              <div className="w-full grid grid-cols-1 col-span-1">
+                <Label htmlFor="civilite" className="text-left mb-2 mb-2">
+                  Civilité
+                </Label>
+                <div className="w-full">
+                  <Select
+                    defaultValue="M"
+                    value={watch("civilite")}
+                    name="civilite"
+                    onValueChange={(value) => setValue("civilite", value)}
+                  >
+                    <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {civilites.map((civilite) => (
+                        <SelectItem key={civilite} value={civilite}>
+                          {civilite}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.civilite && (
+                    <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
+                      <CircleX className="h-4 w-4" />
+                      {errors.civilite.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="w-full grid grid-cols-1 col-span-3">
+                <Label htmlFor="nom" className="text-left mb-2 mb-2">
+                  Nom
+                </Label>
+                <div className="w-full">
+                  <Input
+                    id="nom"
+                    name="nom"
+                    {...register("nom")}
+                    className={`w-full  focus-visible:ring-purple-300 focus-visible:ring-offset-0 ${
+                      errors.nom && "border-red-500 border-2"
+                    }`}
+                    spellCheck={false}
+                  />
+                  {errors.nom && (
+                    <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
+                      <CircleX className="h-4 w-4" />
+                      {errors.nom.message}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 

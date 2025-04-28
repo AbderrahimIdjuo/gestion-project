@@ -39,8 +39,20 @@ CREATE TABLE "Produits" (
     "description" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "length" DOUBLE PRECISION NOT NULL,
+    "width" DOUBLE PRECISION,
 
     CONSTRAINT "Produits_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Items" (
+    "id" TEXT NOT NULL,
+    "designation" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Items_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -120,6 +132,9 @@ CREATE TABLE "Articls" (
     "prixUnite" DOUBLE PRECISION NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "width" DOUBLE PRECISION,
+    "length" DOUBLE PRECISION NOT NULL,
+    "key" TEXT NOT NULL,
 
     CONSTRAINT "Articls_pkey" PRIMARY KEY ("id")
 );
@@ -131,13 +146,13 @@ CREATE TABLE "Devis" (
     "clientId" TEXT NOT NULL,
     "statut" TEXT NOT NULL,
     "sousTotal" DOUBLE PRECISION NOT NULL,
-    "fraisLivraison" DOUBLE PRECISION NOT NULL,
     "reduction" INTEGER NOT NULL,
     "total" DOUBLE PRECISION NOT NULL,
     "note" TEXT,
     "typeReduction" TEXT NOT NULL DEFAULT '%',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "tva" DOUBLE PRECISION NOT NULL,
 
     CONSTRAINT "Devis_pkey" PRIMARY KEY ("id")
 );
@@ -157,6 +172,20 @@ CREATE TABLE "Factures" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Factures_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "DepensesVariantes" (
+    "id" TEXT NOT NULL,
+    "label" TEXT NOT NULL,
+    "montant" DOUBLE PRECISION NOT NULL,
+    "compte" TEXT NOT NULL,
+    "description" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "numero" TEXT NOT NULL,
+
+    CONSTRAINT "DepensesVariantes_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -231,19 +260,25 @@ CREATE UNIQUE INDEX "Commandes_numero_key" ON "Commandes"("numero");
 CREATE UNIQUE INDEX "AchatsCommandes_commandeId_produitId_key" ON "AchatsCommandes"("commandeId", "produitId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Articls_key_key" ON "Articls"("key");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Devis_numero_key" ON "Devis"("numero");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Factures_numero_key" ON "Factures"("numero");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "DepensesVariantes_numero_key" ON "DepensesVariantes"("numero");
+
 -- AddForeignKey
 ALTER TABLE "Produits" ADD CONSTRAINT "Produits_fournisseurId_fkey" FOREIGN KEY ("fournisseurId") REFERENCES "Fournisseurs"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "CommandesProduits" ADD CONSTRAINT "CommandesProduits_produitId_fkey" FOREIGN KEY ("produitId") REFERENCES "Produits"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "CommandesProduits" ADD CONSTRAINT "CommandesProduits_commandeId_fkey" FOREIGN KEY ("commandeId") REFERENCES "Commandes"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "CommandesProduits" ADD CONSTRAINT "CommandesProduits_commandeId_fkey" FOREIGN KEY ("commandeId") REFERENCES "Commandes"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "CommandesProduits" ADD CONSTRAINT "CommandesProduits_produitId_fkey" FOREIGN KEY ("produitId") REFERENCES "Produits"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Commandes" ADD CONSTRAINT "Commandes_clientId_fkey" FOREIGN KEY ("clientId") REFERENCES "Clients"("id") ON DELETE CASCADE ON UPDATE CASCADE;

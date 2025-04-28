@@ -51,6 +51,7 @@ const articlSchema = z.object({
     return parseFloat(value);
   }, z.number({ invalid_type_error: "Ce champ doit contenir un nombre" }).optional()),
   id: z.string(),
+  unite: z.string().optional(),
 });
 const newDeviSchema = z.object({
   clientId: z.string({ required_error: "Champ obligatoir" }),

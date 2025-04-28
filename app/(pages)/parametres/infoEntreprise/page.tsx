@@ -8,20 +8,10 @@ import axios from "axios";
 import { AddInfoEntrepriseForm } from "@/components/add-info-entreprise-form";
 import SittingsSideBar from "@/components/sittingsSideBar";
 import { useQuery } from "@tanstack/react-query";
-import { Info } from "lucide-react";
+
 
 export default function InfoEntreprise() {
   const [openDialog, setOpenDialog] = useState<boolean>(false);
- // const [page, setPage] = useState(1);
-
-  // const info = useQuery({
-  //   queryKey: ["infoEntreprise"],
-  //   queryFn: async () => {
-  //     const response = await axios.get("/api/infoEntreprise");
-  //     const infoEntreprise = response.data.infoEntreprise;
-  //     return infoEntreprise;
-  //   },
-  // });
 
   const info = useQuery({
     queryKey: ["infoEntreprise"],

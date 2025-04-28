@@ -79,118 +79,111 @@ body {
 
 @media print {
   @page {
-    margin: 2cm;
+    margin: 1cm;
     size: A4;
   }
+
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    background-color: white !important;
+  }
+
+  /* Hide everything except the print area */
   body * {
     visibility: hidden;
   }
+
   #print-area,
   #print-area * {
     visibility: visible;
   }
+
   #print-area {
     position: absolute;
-    top: 0;
     left: 0;
+    top: 0;
+    width: 100%;
+    padding: 0 !important;
   }
 
-  body {
-    print-color-adjust: exact;
-    -webkit-print-color-adjust: exact;
-  }
-
-  /* Hide navigation elements */
+  /* Hide UI elements */
+  .print\:hidden,
+  button,
   nav,
   .sidebar,
-  .navbar,
-  .print\:hidden {
+  .navbar {
     display: none !important;
   }
 
-  /* Reset main content layout */
-  main {
+  /* Table styling */
+  table {
     width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
+    page-break-inside: auto;
+    border-collapse: collapse !important;
   }
 
-  /* Container adjustments */
-  .container {
-    max-width: 100% !important;
-    padding: 0 !important;
-    margin: 0 !important;
+  thead {
+    display: table-header-group;
   }
 
-  /* Ensure colors print correctly */
-  .text-purple-600 {
-    color: #7c3aed !important;
-  }
-
-  .border-purple-500 {
-    border-color: #8b5cf6 !important;
-  }
-
-  /* Table styles */
-  /* table {
-    border-collapse: collapse;
-    width: 100% !important;
+  tr {
+    page-break-inside: avoid;
   }
 
   th,
   td {
-    border: 1px solid #e5e7eb !important;
-    padding: 0.5rem !important;
-  } */
-
-  /* Background colors */
-  .bg-gray-50 {
-    background-color: #f9fafb !important;
+    border-color: rgba(92, 92, 92, 0.776) !important;
   }
 
-  /* Font adjustments */
-  body {
-    font-size: 12pt;
-    line-height: 1.3;
+  /* Footer styling */
+  .print-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #228b8b !important;
+    padding: 10px;
+    text-align: center;
+    color: white !important;
+    font-family: "Times New Roman", serif;
   }
 
-  h1 {
-    font-size: 24pt;
-    margin-bottom: 1rem;
+  .footer-content {
+    width: 100%;
   }
 
-  @media print {
-    table {
-      page-break-inside: auto; /* Allow the table to break across pages */
-      width: 100%;
-    }
+  .footer-line-1 {
+    font-size: 14px;
+    font-weight: 500;
+  }
 
-    thead {
-      display: table-row-group; /* Ensure the header appears on each page */
-    }
+  .footer-line-2 {
+    margin-top: 5px;
+    font-size: 13px;
+  }
 
-    tbody {
-      border: 0;
-      display: table-row-group; /* Ensure body rows behave as expected */
-    }
+  .footer-divider {
+    width: 40%;
+    margin: 5px auto;
+    border: 0.5px solid white;
+  }
 
-    tfoot {
-      border-bottom: 0;
-      display: table-row-group; /* Ensures the footer appears only once */
-    }
+  .footer-line-3 {
+    font-size: 13px;
+  }
 
-    tr {
-      page-break-inside: avoid; /* Prevent splitting of rows across pages */
-    }
+  /* Prevent page breaks inside important sections */
+  .print-block {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
 
-    td,
-    th {
-      word-wrap: break-word; /* Handle long text gracefully */
-    }
+  /* Ensure background colors print correctly */
+  .bg-\[\#228b8b1d\] {
+    background-color: rgba(34, 139, 139, 0.1) !important;
   }
 }
-
-
 
 @layer base {
   * {

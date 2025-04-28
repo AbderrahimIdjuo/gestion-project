@@ -29,8 +29,9 @@ export async function POST(req) {
         note,
         articls: {
           create: articls.map((articl) => ({
-            key: articl.key,
+            key: articl.key, //permet de supprimer un articl doublon
             length: articl.length,
+            unite: articl.unite,
             width: articl.width || 0,
             designation: articl.designation,
             quantite: articl.quantite,
@@ -121,6 +122,7 @@ export async function PUT(req) {
                 key: articl.key,
                 length: articl.length,
                 width: articl.width || 0,
+                unite: articl.unite,
                 designation: articl.designation,
                 quantite: articl.quantite,
                 prixUnite: articl.prixUnite,
@@ -131,6 +133,7 @@ export async function PUT(req) {
               key: articl.key,
               length: articl.length,
               width: articl.width || 0,
+              unite: articl.unite,
               designation: articl.designation,
               quantite: articl.quantite,
               prixUnite: articl.prixUnite,
@@ -233,7 +236,7 @@ export async function GET(req) {
   return NextResponse.json({
     devis,
     totalPages,
-    maxMontant: deviMaxTotal.total || 0,
+    maxMontant: deviMaxTotal?.total || 0,
   });
 }
 
