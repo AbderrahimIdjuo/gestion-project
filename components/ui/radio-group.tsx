@@ -25,18 +25,18 @@ const RadioGroupItem = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Item>
 >(({ className, ...props }, ref) => {
   return (
-    <RadioGroupPrimitive.Item
-      ref={ref}
-      className={cn(
-        "aspect-square h-4 w-4 rounded-full border border-primary text-primary ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-        className
-      )}
-      {...props}
-    >
-      <RadioGroupPrimitive.Indicator className="flex items-center justify-center">
-        <Circle className="h-full w-full fill-[#00e701] text-[#00e701]" />
-      </RadioGroupPrimitive.Indicator>
-    </RadioGroupPrimitive.Item>
+<RadioGroupPrimitive.Item
+  ref={ref}
+  className={cn(
+    "aspect-square h-4 w-4 rounded-full border border-current text-current ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+    className
+  )}
+  {...props}
+>
+  <RadioGroupPrimitive.Indicator className="flex items-center justify-center text-inherit">
+    <Circle className="h-2 w-2 fill-current text-current" />
+  </RadioGroupPrimitive.Indicator>
+</RadioGroupPrimitive.Item>
   )
 })
 RadioGroupItem.displayName = RadioGroupPrimitive.Item.displayName

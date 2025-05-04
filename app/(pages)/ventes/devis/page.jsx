@@ -269,7 +269,7 @@ export default function DevisPage() {
               </SheetContent>
             </Sheet>
             <Link href="/ventes/devis/nouveau">
-              <AddButton title="Nouveau devi" />
+              <AddButton title="Nouveau devis" />
             </Link>
           </div>
         </div>

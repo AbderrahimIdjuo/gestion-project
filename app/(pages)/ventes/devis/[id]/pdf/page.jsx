@@ -147,7 +147,7 @@ export default function DevisPDFPage() {
 
             {/* Company and Client Info */}
             <div className="grid grid-cols-2 gap-8">
-              {/* Company Info */}
+              {/* Devis Info */}
               <div className="col-span-1">
                 <h1 className="font-bold text-lg text-gray-900">
                   DEVIS N° : {devi?.numero}
@@ -255,7 +255,7 @@ export default function DevisPDFPage() {
                     </TableRow>
                   ))}
                 </TableBody>
-                <TableFooter className="font-medium border-black bg-[#228b8b1d] ">
+                <TableFooter className="font-medium border-black ">
                   <TableRow>
                     <TableCell
                       colSpan={6}

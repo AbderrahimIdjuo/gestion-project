@@ -35,14 +35,14 @@ const articlSchema = z.object({
     (value) =>
       value === "" || value === undefined ? undefined : validateFloat(value),
     z
-      .number({ invalid_type_error: "Le prix d'unite doit être un nombre" })
+      .number({ invalid_type_error: "Ce champ doit contenir un nombre" })
       .min(1, { message: "Le prix d'unite doit être au moins 1" })
   ),
   length: z.preprocess(
     (value) =>
       value === "" || value === undefined ? undefined : validateFloat(value),
     z
-      .number({ invalid_type_error: "Le prix d'unite doit être un nombre" })
+      .number({ invalid_type_error: "Ce champ doit contenir un nombre" })
       .min(1, { message: "ce champ doit contenire un nombre" })
   ),
   width: z.preprocess((value) => {

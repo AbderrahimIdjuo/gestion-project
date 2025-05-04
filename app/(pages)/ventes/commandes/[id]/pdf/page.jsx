@@ -14,13 +14,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useQuery } from "@tanstack/react-query";
-import { Phone, MapPin, Smartphone } from "lucide-react";
+import { Phone, Calendar } from "lucide-react";
 import LoadingCommandePdf from "@/components/loading-commande-pdf";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import axios from "axios";
 
 function formatDate(dateString) {
   return dateString?.split("T")[0].split("-").reverse().join("-");
+}
+
+function formatPhoneNumber(phone) {
+  return phone.replace(/(\d{2})(?=\d)/g, "$1 ").trim();
 }
 
 export default function CommandesPDFPage() {
@@ -50,95 +53,58 @@ export default function CommandesPDFPage() {
           {/* Document Content */}
           <div id="print-area" className="space-y-6">
             {/* Header */}
-            <div className="flex justify-between items-center border-b border-purple-500 pb-4">
-              <h1 className="text-3xl font-bold text-purple-600">
-                COMMANDE N° : {commande?.numero}
-              </h1>
-
-              <Avatar className="w-24 h-24 shadow-md border ">
-                <AvatarImage src={info.data?.logoUrl} />
-                <AvatarFallback>Logo</AvatarFallback>
-              </Avatar>
+            <div className="flex justify-between items-center border-b border-[#228B8B] pb-1">
+              <img src="/images/LOGO-tete.jpg" alt="Logo" width={300} />
+              <img src="/images/LOGO-OUDAOUD.jpg" className="h-24 w-24" />
             </div>
-
             {/* Company and Client Info */}
             <div className="grid grid-cols-2 gap-8">
-              {/* Company Info */}
-              <div className="space-y-1">
-                <h2 className="font-bold text-xl text-gray-900">
-                  {info.data?.nom.toUpperCase()}
-                </h2>
-                <p className="font-small font-bold text-slate-700 text-sm">
-                  {info.data?.slogan.toUpperCase()}
-                </p>
-                {info.data?.adresse && (
-                  <div className="flex items-center gap-2 ">
-                    <MapPin className="h-4 w-4" />
-                    <p>{info.data?.adresse}</p>
-                  </div>
-                )}
-                {info.data?.telephone && (
-                  <div className="flex items-center gap-2 ">
-                    <Phone className="h-4 w-4" />
-                    <p>{info.data?.telephone}</p>
-                  </div>
-                )}
-                {info.data?.mobile && (
-                  <div className="flex items-center gap-2 ">
-                    <Smartphone className="h-4 w-4" />
-                    <p>{info.data?.mobile}</p>
-                  </div>
-                )}
+              {/* Devis Info */}
+              <div className="col-span-1">
+                <h1 className="font-bold text-lg text-gray-900">
+                  Commande N° : {commande?.numero}
+                </h1>
+                <div className="flex items-center gap-2 mt-2 ">
+                  <Calendar className="h-3 w-3" />
+                  <p className="font-medium text-sm">
+                    <span>Date limite de livraison:</span>{" "}
+                    {formatDate(commande?.echeance)}{" "}
+                  </p>
+                </div>
               </div>
 
               {/* Client Info */}
-              <div className="space-y-1">
-                <h2 className="font-bold text-xl text-gray-900">Client</h2>
-                <p>{commande?.client.nom.toUpperCase()}</p>
-                <div className="flex items-center gap-2 ">
-                  <MapPin className="h-4 w-4" />
-                  <p>{commande?.client.adresse}</p>
+              <div className="col-span-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <h2 className="font-bold text-lg text-gray-900">Client : </h2>
+                  <p className="font-bold text-lg text-gray-900">
+                    {commande?.client.civilite && commande?.client.civilite}
+                    {"."} {commande?.client.nom.toUpperCase()}
+                  </p>
                 </div>
                 <div className="flex items-center gap-2 ">
-                  <Phone className="h-4 w-4" />
-                  <p>{commande?.client.telephone}</p>
+                  <Phone className="h-3 w-3" />
+                  <p className="font-medium text-sm">
+                    {formatPhoneNumber(commande?.client.telephone)}
+                  </p>
                 </div>
               </div>
             </div>
-
-            {/* Quote Details */}
-            <div className="space-y-1">
-              <p>
-                <span className="font-medium">Date de création:</span>{" "}
-                {formatDate(commande?.createdAt)}{" "}
-              </p>
-              <p>
-                <span className="font-medium">Date limite de livraison :</span>{" "}
-                {formatDate(commande?.echeance)}
-              </p>
-              <p>
-                <span className="font-medium">Statut :</span> {commande?.statut}
-              </p>
-              <p>
-                <span className="font-medium">Émis par:</span> Commerçant 1
-              </p>
-            </div>
-
             {/* Items Table */}
             <div className="overflow-hidden rounded-lg border border-black">
               <Table className="w-full border-collapse">
                 <TableHeader className="text-[1rem] border-black">
                   <TableRow>
-                    <TableHead className="text-black font-bold text-left border-b border-black">
+                    <TableHead className="text-black font-bold text-center border-b border-black w-[50%]">
                       Désignation
                     </TableHead>
-                    <TableHead className="text-black font-bold border-l border-b border-black text-left">
-                      Quantité
+                    <TableHead className="text-black font-bold border-l border-b border-black text-center ">
+                      Qté
                     </TableHead>
-                    <TableHead className="text-black font-bold border-l border-b border-black text-left">
+                    <TableHead className="text-black font-bold border-l border-b border-black text-center">
                       Prix unitaire
                     </TableHead>
-                    <TableHead className="text-black font-bold border-l border-b border-black p-2 text-right">
+                    <TableHead className="text-black font-bold border-l border-b border-black p-2 text-center">
                       Montant
                     </TableHead>
                   </TableRow>
@@ -146,22 +112,22 @@ export default function CommandesPDFPage() {
                 <TableBody>
                   {commande?.commandeProduits.map((articl) => (
                     <TableRow key={articl.id}>
-                      <TableCell className=" p-2 text-left border-b border-black">
+                      <TableCell className=" p-1 text-left border-b border-black text-md font-semibold">
                         {articl.produit.designation}{" "}
                       </TableCell>
-                      <TableCell className="border-l border-b border-black p-2 text-left">
+                      <TableCell className="border-l border-b border-black p-2 text-center">
                         {articl.quantite}
                       </TableCell>
-                      <TableCell className="border-l border-b border-black p-2 text-left">
+                      <TableCell className="border-l border-b border-black p-2 text-center">
                         {articl.prixUnite} DH
                       </TableCell>
-                      <TableCell className="border-l border-b border-black p-2 text-right font-bold">
+                      <TableCell className="border-l border-b border-black p-2 text-center font-bold">
                         {articl.montant} DH
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
-                <TableFooter className="font-medium bg-zinc-100">
+                <TableFooter className="font-medium">
                   {!commande?.sousTotal === commande?.total && (
                     <TableRow>
                       <TableCell

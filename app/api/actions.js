@@ -93,41 +93,38 @@ export async function deleteModePaiementProduits(id) {
 }
 
 export async function addInfoEntreprise(info) {
-  const { nom, telephone, mobile, email, adresse, slogan , logoUrl } = info;
+  const { nom, telephone, mobile, email, adresse, slogan, logoUrl } = info;
 
   const result = await prisma.infoEntreprise.upsert({
     where: { id: 1 },
-    update: { nom, telephone, mobile, email, adresse, slogan , logoUrl },
-    create: { id: 1, nom, telephone, mobile, email, adresse, slogan , logoUrl },
+    update: { nom, telephone, mobile, email, adresse, slogan, logoUrl },
+    create: { id: 1, nom, telephone, mobile, email, adresse, slogan, logoUrl },
   });
   return result;
 }
 
 export async function addtransaction(data) {
-  const {numero , type , montant , compte , lable} = data
-    const result = await prisma.transactions.create({
+  const { numero, type, montant, compte, lable, description} = data;
+  const result = await prisma.$transaction(async (prisma) => {
+    await prisma.transactions.create({
       data: {
         reference: numero,
         type,
         montant,
         compte,
         lable,
+        description,
       },
     });
-   // const commandes = await prisma.commandes.findUnique({where: { numero : numero}})
-    const updateCommande = await prisma.commandes.update({
-      where: { numero : numero},
-      data:{
-        totalPaye: { increment: montant }
-      }
-    
-    })
-    return {result , updateCommande};
-  }
+    if (numero.slice(0, 3) === "CMD") {
+      await prisma.commandes.update({
+        where: { numero: numero },
+        data: {
+          totalPaye: { increment: montant },
+        },
+      });
+    }
+  });
 
-  // export async function deleteTransaction(id) {
-  //   const result = await prisma.transactions.delete({
-  //     where: { id },
-  //   });
-  //   return result;
-  // }
+  return { result };
+}

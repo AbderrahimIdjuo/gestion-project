@@ -48,10 +48,6 @@ const newCommandeSchema = z
     clientId: z.string({ required_error: "Champ obligatoir" }).uuid(),
     numero: z.string(),
     statut: z.string(),
-    fraisLivraison: z.preprocess(
-      (value) => (value === "" || value === undefined ? 0 : validateInt(value)),
-      z.number().optional()
-    ),
     reduction: z.preprocess(
       (value) => (value === "" || value === undefined ? 0 : validateInt(value)),
       z.number().optional()

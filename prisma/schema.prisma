@@ -91,7 +91,6 @@ model Commandes {
   clientId         String
   statut           String
   sousTotal        Float
-  fraisLivraison   Float
   reduction        Int
   total            Float
   note             String?
@@ -189,6 +188,7 @@ model Transactions {
   compte    String?
   lable     String?
   reference String?
+  description String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

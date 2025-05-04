@@ -9,9 +9,8 @@ import {
   TableFooter,
   TableRow,
 } from "@/components/ui/table";
-import { Phone, MapPin, Smartphone } from "lucide-react";
+import { Phone, Calendar, Smartphone } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 function LoadingCommandePdf() {
   return (
@@ -19,136 +18,113 @@ function LoadingCommandePdf() {
       {/* Document Content */}
       <div id="print-area" className="space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-center border-b border-purple-500 pb-4">
-          <h1 className="flex gap-2 items-center text-3xl font-bold text-purple-600">
-            COMMANDE N° :
-            <Skeleton className="bg-purple-200 h-6 w-[200px] my-4" />
-          </h1>
-
-          <Skeleton className="bg-gray-200 h-24 w-24 rounded-full my-4" />
+        <div className="flex justify-between items-center border-b border-[#228B8B] pb-1">
+          <img src="/images/LOGO-tete.jpg" alt="Logo" width={300} />
+          <img src="/images/LOGO-OUDAOUD.jpg" className="h-24 w-24" />
         </div>
-
         {/* Company and Client Info */}
         <div className="grid grid-cols-2 gap-8">
-          {/* Company Info */}
-          <div className="space-y-1">
-            <Skeleton className="h-4 w-[200px] my-4" />
-            <Skeleton className="h-4 w-[200px] my-4" />
-            <div className="flex items-center gap-2 ">
-              <MapPin className="h-4 w-4" />
-              <Skeleton className="h-4 w-[350px] my-2" />
+          {/* Devis Info */}
+          <div className="col-span-1">
+            <div className="flex items-center gap-2 mb-2">
+              <h1 className="font-bold text-lg text-gray-900">Commande N° :</h1>
+              <Skeleton className=" h-4 w-[150px]" />
             </div>
-            <div className="flex items-center gap-2 ">
-              <Phone className="h-4 w-4" />
-              <Skeleton className="h-4 w-[200px] my-2" />
-            </div>
-            <div className="flex items-center gap-2 ">
-              <Smartphone className="h-4 w-4" />
-              <Skeleton className="h-4 w-[200px] my-2" />
+
+            <div className="flex items-center gap-2 mt-2 ">
+              <Calendar className="h-3 w-3" />
+              <p className="font-medium text-sm">Date limite de livraison:</p>
+              <Skeleton className=" h-4 w-[150px]" />
             </div>
           </div>
 
           {/* Client Info */}
-          <div className="space-y-1">
-            <h2 className="font-bold text-xl text-gray-900">Client</h2>
-            <Skeleton className="h-4 w-[200px] my-4" />
-            <div className="flex items-center gap-2 ">
-              <MapPin className="h-4 w-4" />
-              <Skeleton className="h-4 w-[350px] my-4" />
+          <div className="col-span-1">
+            <div className="flex items-center gap-2 mb-2">
+              <h2 className="font-bold text-lg text-gray-900">Client : </h2>
+              <Skeleton className=" h-4 w-[150px]" />
             </div>
             <div className="flex items-center gap-2 ">
-              <Phone className="h-4 w-4" />
-              <Skeleton className="h-4 w-[200px] " />
+              <Phone className="h-3 w-3" />
+              <Skeleton className=" h-4 w-[150px]" />
             </div>
           </div>
         </div>
 
-        {/* Quote Details */}
-        <div className="space-y-1">
-          <div className="flex gap-2 items-center">
-            <p className="font-medium">Date de création:</p>
-            <Skeleton className="h-4 w-[200px] " />
-          </div>
-          {/* <div className="flex gap-2 items-center">
-            <p className="font-medium">Référence du devis:</p>
-            <Skeleton className="h-4 w-[200px] " />
-          </div> */}
-          <div className="flex gap-2 items-center">
-            <p className="font-medium">Date limite de livraison:</p>
-            <Skeleton className="h-4 w-[200px] " />
-          </div>
-          <div className="flex gap-2 items-center">
-            <p className="font-medium">Émis par:</p>
-            <Skeleton className="h-4 w-[200px] " />
-          </div>
-        </div>
-
-        {/* Items Table */}
-        <div className="border rounded-md">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className=" text-left">Désignation</TableHead>
-                <TableHead className="border-l text-left">Quantité</TableHead>
-                <TableHead className="border-l p-2 text-left">
-                  Prix unitaire
-                </TableHead>
-                <TableHead className="border-l p-2 text-right">
-                  Montant
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+          {/* Items Table */}
+          <div className="overflow-hidden rounded-lg border border-black">
+              <Table className="w-full border-collapse">
+                <TableHeader className="text-[1rem] border-black">
+                  <TableRow>
+                    <TableHead className="text-black font-bold text-center border-b border-black w-[50%]">
+                      Désignation
+                    </TableHead>
+                    <TableHead className="text-black font-bold border-l border-b border-black text-center ">
+                      Qté
+                    </TableHead>
+                    <TableHead className="text-black font-bold border-l border-b border-black text-center">
+                      Prix unitaire
+                    </TableHead>
+                    <TableHead className="text-black font-bold border-l border-b border-black p-2 text-center">
+                      Montant
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
               {[...Array(5)].map((_, index) => (
                 <TableRow key={index}>
-                  <TableCell className=" p-2 text-left">
+                  <TableCell className=" p-2 text-left border-b border-black">
                     <Skeleton className=" h-4 w-[50%]" />
                   </TableCell>
-                  <TableCell className="border-l p-2 text-left">
+                  <TableCell className="border-l border-b p-2 text-left border-black">
                     <Skeleton className=" h-4 w-[50%]" />
                   </TableCell>
-                  <TableCell className="border-l p-2 text-left">
+                  <TableCell className="border-l border-b p-2 text-left border-black">
                     <Skeleton className=" h-4 w-[50%]" />
                   </TableCell>
-                  <TableCell className="border-l p-2" align="right">
+                  <TableCell className="border-l border-b p-2 border-black" align="right">
                     <Skeleton className="right h-4 w-[50%]" />
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
-            <TableFooter className="font-medium bg-zinc-100">
-              <TableRow>
-                <TableCell colSpan={3} className="border-b p-2 text-right">
-                  Frais de transport :
-                </TableCell>
-                <TableCell className="border-l border-b p-2 text-right">
-                  <Skeleton className=" h-4 w-[80px]" />
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell colSpan={3} className="border-b p-2 text-right">
-                  Sous-total :
-                </TableCell>
-                <TableCell className="border-l border-b p-2 text-right">
-                  <Skeleton className=" h-6 w-[80px]" />
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell colSpan={3} className="p-2 text-right">
-                  Total :
-                </TableCell>
-                <TableCell className="border-l p-2 text-right">
-                  <Skeleton className=" h-6 w-[80px]" />
-                </TableCell>
-              </TableRow>
-            </TableFooter>
-          </Table>
-        </div>
-        {/* Print Button - Hidden when printing */}
-        {/* Footer */}
-        {/* <div className="flex justify-between text-sm text-gray-600 pt-4">
-          <div>www.oudaoudox.com</div>
-        </div> */}
+                <TableFooter className="font-medium">
+                  <TableRow>
+                    <TableCell
+                      colSpan={3}
+                      className=" border-b border-black p-2 text-right font-bold"
+                    >
+                      Coût de production :
+                    </TableCell>
+                    <TableCell className="border-l border-b border-black p-2 text-right font-bold">
+                    <Skeleton className=" h-6 w-[80px]" />
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell
+                      colSpan={3}
+                      className=" border-b border-black p-2 text-right font-bold"
+                    >
+                      Montant à payer :
+                    </TableCell>
+                    <TableCell className="border-l border-b border-black p-2 text-right font-bold">
+                    <Skeleton className=" h-6 w-[80px]" />
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell
+                      colSpan={3}
+                      className="text-xl text-gray-900 p-2 text-right font-extrabold"
+                    >
+                      Reste à payer :
+                    </TableCell>
+                    <TableCell className="border-l border-black p-2 text-xl text-gray-900 text-right font-extrabold">
+                    <Skeleton className=" h-6 w-[80px]" />
+                    </TableCell>
+                  </TableRow>
+                </TableFooter>
+              </Table>
+            </div>
       </div>
     </div>
   );

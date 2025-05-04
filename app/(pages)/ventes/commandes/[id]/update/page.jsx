@@ -79,7 +79,6 @@ export default function UpdateCommandePage({ params }) {
     setValue("numero", commande?.numero);
     setValue("clientId", commande?.client.id);
     setValue("clientNom", commande?.client.nom);
-    setValue("fraisLivraison", commande?.fraisLivraison);
     setValue("reduction", commande?.reduction);
     setValue("typeReduction", commande?.typeReduction);
     setValue("statut", commande?.statut);
@@ -156,7 +155,7 @@ export default function UpdateCommandePage({ params }) {
       watch("typeReduction") === "%"
         ? subtotal * (watch("reduction") / 100)
         : Number(watch("reduction"));
-    const total = subtotal - discountAmount + Number(watch("fraisLivraison"));
+    const total = subtotal - discountAmount;
     return total.toFixed(2);
   };
 
@@ -170,10 +169,10 @@ export default function UpdateCommandePage({ params }) {
     <>
       <Toaster position="top-center" />
       <form onSubmit={handleSubmit(onSubmit)}>
-        <div className="container mx-auto py-6 space-y-6 max-w-5xl mb-10">
+        <div className="container mb-10 mx-auto py-6 space-y-6 w-full">
           <div className="flex justify-between items-center">
             <div className="flex gap-3 items-center">
-              <Link href="/ventes/commandes">
+              {/* <Link href="/ventes/commandes">
                 <Button
                   type="button"
                   className="rounded-lg !p-0"
@@ -182,7 +181,7 @@ export default function UpdateCommandePage({ params }) {
                 >
                   <MoveLeft />
                 </Button>
-              </Link>
+              </Link> */}
 
               <h1 className="text-3xl font-bold mr-2">Modifier une commande</h1>
               {isLoading && <LoadingDots size={7} />}
@@ -207,7 +206,7 @@ export default function UpdateCommandePage({ params }) {
                   </Label>
 
                   <span className="text-md text-left text-gray-900 rounded-lg p-2 pl-4 bg-purple-50 h-[2.5rem]">
-                    {watch("clientNom")}
+                    {watch("clientNom")?.toUpperCase()}
                   </span>
                 </div>
               </div>
@@ -273,24 +272,10 @@ export default function UpdateCommandePage({ params }) {
                     </PopoverContent>
                   </Popover>
                 </div>
-                {/* <div className="space-y-1">
-                  <Label htmlFor="orderNumber">Avance :</Label>
-                  <div className="relative w-full flex">
-                    <div className="absolute border-2 border-gray-300 bg-white inset-y-0 right-0 w-12 flex items-center justify-center  rounded-r-md">
-                      <span className="text-sm text-gray-800">MAD</span>
-                    </div>
-                    <Input
-                      id="avance"
-                      name="avance"
-                      {...register("avance")}
-                      className="focus:!ring-purple-500 pr-14 text-left rounded-r-md"
-                    />
-                  </div>
-                </div> */}
               </div>
 
               {/* Items Table */}
-              <div className="space-y-4">
+              <div className="space-y-4 border rounded-lg">
                 {items.length > 0 ? (
                   <Table>
                     <TableHeader>
@@ -354,21 +339,37 @@ export default function UpdateCommandePage({ params }) {
                           </TableCell>
                         </TableRow>
                       ))}
+                      {calculateTotal() > 0 && (
+                        <TableRow>
+                          <TableCell
+                            colSpan={3}
+                            className="text-right text-lg font-bold"
+                          >
+                            Total :
+                          </TableCell>
+                          <TableCell
+                            colSpan={2}
+                            className="text-left text-lg font-bold"
+                          >
+                            {calculateTotal()} DH
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 ) : null}
 
-                <AddButton
-                  type="button"
-                  onClick={() => setIsArticleDialogOpen(true)}
-                  title="Ajouter un produit"
-                />
                 <ArticleSelectionDialog
                   open={isArticleDialogOpen}
                   onOpenChange={setIsArticleDialogOpen}
                   onArticlesAdd={handleAddArticles}
                 />
               </div>
+              <AddButton
+                type="button"
+                onClick={() => setIsArticleDialogOpen(true)}
+                title="Ajouter des produits"
+              />
               <div className="grid gap-6 w-full p-5">
                 <Label htmlFor="noteClient" className="text-left text-black">
                   Note :
@@ -380,69 +381,12 @@ export default function UpdateCommandePage({ params }) {
                 />
               </div>
               {/* Totals Section */}
-              <div className="space-y-4 bg-purple-50 p-4 rounded-lg">
-                <div className="space-y-4">
-                  <div className="flex justify-between py-2 border-b">
-                    <span>Sous-total</span>
-                    <span>{calculateSubTotal().toFixed(2)} DH</span>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <Label htmlFor="shippingCharges">
-                        Frais de livraison
-                      </Label>
-                      <div className="relative w-40 flex">
-                        <div className="absolute bg-white inset-y-0 right-0 w-12 flex items-center justify-center  border-l rounded-r-md">
-                          <span className="text-sm  text-gray-800">MAD</span>
-                        </div>
-                        <Input
-                          id="shippingCharges"
-                          name="shippingCharges"
-                          {...register("fraisLivraison")}
-                          className="focus:!ring-purple-500 pr-14 text-left rounded-r-md"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="reduction">Réduction</Label>
-                      <div className="flex items-center">
-                        <div className="relative flex items-center">
-                          <Input
-                            id="reduction"
-                            name="reduction"
-                            {...register("reduction")}
-                            className="focus:!ring-purple-500 w-40 pr-[60px]"
-                          />
-                          <Select
-                            value={watch("typeReduction")}
-                            name="typeReduction"
-                            onValueChange={(value) =>
-                              setValue("typeReduction", value)
-                            }
-                          >
-                            <SelectTrigger className="absolute right-0 w-[80px] rounded-l-none border-l-0 focus:ring-1 focus:!ring-purple-500">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="%">%</SelectItem>
-                              <SelectItem value="DH">MAD</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between py-2 border-t font-bold">
+              {/* <div className="space-y-4 bg-purple-50 p-4 rounded-lg">
+              <div className="flex justify-between py-2  font-bold">
                     <span>Total</span>
                     <span>{calculateTotal()} DH</span>
                   </div>
-                </div>
-              </div>
+              </div> */}
             </CardContent>
           </Card>
           <div className="flex justify-end items-center">

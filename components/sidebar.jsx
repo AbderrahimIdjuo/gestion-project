@@ -53,8 +53,8 @@ const menuItems = [
   },
   {
     icon: Landmark,
-    label: "Trésorie",
-    href: "/tresorie",
+    label: "Transactions",
+    href: "/transactions",
   },
   {
     icon: Truck,
@@ -67,7 +67,7 @@ const menuItems = [
       },
       { label: "Commandes", href: "/achats/commandes" },
       { label: "Dépenses récurrentes", href: "/achats/depenses-recurrentes" },
-      { label: "Dépenses variantes", href: "/achats/depenses-variantes" },
+     // { label: "Dépenses variantes", href: "/achats/depenses-variantes" },
     ],
   },
   {

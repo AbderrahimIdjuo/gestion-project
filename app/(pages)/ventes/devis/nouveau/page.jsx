@@ -58,6 +58,7 @@ export default function NouveauDevisPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [isArticleDialogOpen, setIsArticleDialogOpen] = useState(false);
+  const [formError, setFormError] = useState(false);
 
   const { ref, inView } = useInView();
   const {
@@ -102,6 +103,7 @@ export default function NouveauDevisPage() {
           console.log("Devi ajouté avec succès");
           reset();
           setItems([]);
+          setFormError(false);
           if (response.status === 200) {
             console.log("Devi ajouté avec succès");
           } else {
@@ -118,7 +120,10 @@ export default function NouveauDevisPage() {
       }
     );
   };
-
+  const onError = (errors) => {
+    console.log("Erreur de validation:", errors);
+    setFormError(true); // Si le formulaire échoue
+  };
   const handleItemChange = (id, field, value) => {
     setItems((prevItems) =>
       prevItems.map((item) =>
@@ -197,11 +202,11 @@ export default function NouveauDevisPage() {
   return (
     <>
       <Toaster position="top-center" />
-      <form className="m-0 p-0" onSubmit={handleSubmit(onSubmit)}>
+      <form className="m-0 p-0" onSubmit={handleSubmit(onSubmit, onError)}>
         <div className="container mb-10 mx-auto py-6 space-y-6 w-full">
           <div className="flex justify-between items-center">
             <div className="flex gap-3 items-center">
-              <Link href="/ventes/devis">
+              {/* <Link href="/ventes/devis">
                 <Button
                   type="button"
                   className="rounded-lg"
@@ -210,8 +215,8 @@ export default function NouveauDevisPage() {
                 >
                   <MoveLeftIcon />
                 </Button>
-              </Link>
-              <h1 className="text-3xl font-bold">Nouveau devi</h1>
+              </Link> */}
+              <h1 className="text-3xl font-bold">Nouveau devis</h1>
             </div>
           </div>
           <Card className="w-full">
@@ -356,7 +361,7 @@ export default function NouveauDevisPage() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {items.map((item) => (
+                          {items.map((item, index) => (
                             <TableRow key={item.key}>
                               <TableCell>
                                 <span className="focus:!ring-purple-500 text-md font-semibold ">
@@ -372,8 +377,14 @@ export default function NouveauDevisPage() {
                                       Number(e.target.value)
                                     )
                                   }
-                                  className="focus:!ring-purple-500 w-full"
+                                  className={`focus:!ring-purple-500 w-24 ${errors.articls?.[index]?.length && "!border-red-500"}`}
+
                                 />
+                                  {errors.articls?.[index]?.length && (
+                                  <p className="text-xs text-red-500 mt-1">
+                                    {errors.articls[index].length.message}
+                                  </p>
+                                )}
                               </TableCell>
                               <TableCell>
                                 <Input
@@ -384,8 +395,13 @@ export default function NouveauDevisPage() {
                                       Number(e.target.value)
                                     )
                                   }
-                                  className="focus:!ring-purple-500 w-full"
+                                  className={`focus:!ring-purple-500 w-24 ${errors.articls?.[index]?.width && "!border-red-500"}`}
                                 />
+                                 {errors.articls?.[index]?.width && (
+                                  <p className="text-xs text-red-500 mt-1">
+                                    {errors.articls[index].width.message}
+                                  </p>
+                                )}
                               </TableCell>
                               <TableCell>
                                 <Select
@@ -432,8 +448,13 @@ export default function NouveauDevisPage() {
                                       Number(e.target.value)
                                     );
                                   }}
-                                  className="focus:!ring-purple-500 w-24"
+                                  className={`focus:!ring-purple-500 w-24 ${errors.articls?.[index]?.prixUnite && "!border-red-500"}`}
                                 />
+                                 {errors.articls?.[index]?.prixUnite && (
+                                  <p className="text-xs text-red-500 mt-1">
+                                    {errors.articls[index].prixUnite.message}
+                                  </p>
+                                )}
                               </TableCell>
                               <TableCell>
                                 {!isNaN(item.quantite * item.prixUnite)
@@ -450,7 +471,7 @@ export default function NouveauDevisPage() {
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </TableCell>
-                            </TableRow>
+                            </TableRow>                          
                           ))}
                         </TableBody>
                       </Table>
@@ -463,10 +484,12 @@ export default function NouveauDevisPage() {
                   onClick={() => setIsArticleDialogOpen(true)}
                   title="Ajouter des articls"
                 />
-                {errors.produits && (
+                {errors.articls && (
                   <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
                     <CircleX className="h-4 w-4" />
-                    {errors.produits.message}
+                    {errors.articls.message
+                      ? errors.articls.message
+                      : "Veuillez corriger les erreurs dans le formulaire."}
                   </p>
                 )}
                 <ArticleSelectionDialog
@@ -535,7 +558,12 @@ export default function NouveauDevisPage() {
               </div>
             </CardContent>
           </Card>
-          <div className="flex justify-end items-center">
+          <div className="flex justify-end items-center gap-4">
+            {formError && (
+              <div className="text-red-500 text-sm mt-4 text-center">
+                Veuillez corriger les erreurs dans le formulaire.
+              </div>
+            )}
             <div className="space-x-2">
               <Link href="/ventes/devis">
                 <Button

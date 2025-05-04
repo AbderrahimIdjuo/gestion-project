@@ -13,7 +13,7 @@ import {
 import CustomPagination from "@/components/customUi/customPagination";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Trash2, Filter, Search, ChevronRight } from "lucide-react";
+import { Trash2, Filter, Search, ChevronRight, Plus } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
@@ -43,6 +43,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import TransactionDialog from "@/components/new-transaction";
+import { LoadingDots } from "@/components/loading-dots";
+
 type Transaction = {
   id: string;
   createdAt: string;
@@ -51,6 +54,7 @@ type Transaction = {
   compte: string;
   reference: string;
   lable: string;
+  description: string;
 };
 type Compte = {
   compte: string;
@@ -104,6 +108,8 @@ export default function Banques() {
         },
       });
       setTotalPages(response.data.totalPages);
+      console.log("transactions : ", response.data.transactions);
+
       return response.data.transactions;
     },
     keepPreviousData: true, // Keeps old data visible while fetching new page
@@ -145,6 +151,27 @@ export default function Banques() {
     },
   });
 
+  const handleTypeLableColor = (t: String) => {
+    if (t === "recette") {
+      return {
+        lable: "Recette",
+        color: "bg-green-100 text-green-600 font-medium",
+      };
+    } else if (t === "dépense") {
+      return { lable: "Dépense", color: "bg-red-100 text-red-600 font-medium" };
+    } else if (t === "vider") {
+      return {
+        lable: "Vider la caisse",
+        color: "bg-blue-100 text-blue-600 font-medium",
+      };
+    } else {
+      return {
+        lable: "inconue",
+        color: "bg-gray-100 text-gray-600 font-medium",
+      };
+    }
+  };
+
   return (
     <>
       <Toaster position="top-center" />
@@ -161,148 +188,167 @@ export default function Banques() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 w-full rounded-full bg-gray-50 focus-visible:ring-purple-500 focus-visible:ring-offset-0"
             />
+            <div className="absolute right-6 top-1/3 h-4 w-4 -translate-y-1/2 text-muted-foreground">
+              {transactions.isFetching && !transactions.isLoading && (
+                <LoadingDots />
+              )}
+            </div>
           </div>
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button
-                variant="outline"
-                className="border-purple-500 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900 rounded-full"
-              >
-                <Filter className="mr-2 h-4 w-4" />
-                Filtres
-              </Button>
-            </SheetTrigger>
-            <SheetContent className="border-l-purple-200 bg-white">
-              <SheetHeader>
-                <SheetTitle className="text-black">Filtres</SheetTitle>
-                <SheetDescription className="text-gray-600">
-                  Ajustez les filtres pour affiner votre recherche de
-                  transactions.
-                </SheetDescription>
-              </SheetHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4 my-2">
-                  <Label htmlFor="type" className="text-left text-black">
-                    Type :
-                  </Label>
-                  <Select
-                    value={filters.type}
-                    name="type"
-                    onValueChange={(value) =>
-                      setFilters({ ...filters, type: value })
-                    }
-                  >
-                    <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
-                      <SelectValue placeholder="Séléctionner un statut" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tous les types</SelectItem>
-                      <SelectItem value="recette">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`h-2 w-2 shadow-md rounded-full bg-green-500`}
-                          />
-                          Recette
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="dépense">
-                        <div className="flex items-center gap-2">
-                          <span className={`h-2 w-2 rounded-full bg-red-500`} />
-                          Dépense
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4 my-2">
-                  <Label htmlFor="compte" className="text-left text-black">
-                    Compte :
-                  </Label>
-                  <Select
-                    value={filters.compte}
-                    name="compte"
-                    onValueChange={(value) =>
-                      setFilters({ ...filters, compte: value })
-                    }
-                  >
-                    <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
-                      <SelectValue placeholder="Séléctionner un statut" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tous les comptes</SelectItem>
-                      {comptes.data?.map((element: Compte, index: number) => (
-                        <SelectItem key={index} value={element.compte}>
-                          {element.compte}
+          <div className="flex gap-2 items-center">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="border-purple-500 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900 rounded-full"
+                >
+                  <Filter className="mr-2 h-4 w-4" />
+                  Filtres
+                </Button>
+              </SheetTrigger>
+              <SheetContent className="border-l-purple-200 bg-white">
+                <SheetHeader>
+                  <SheetTitle className="text-black">Filtres</SheetTitle>
+                  <SheetDescription className="text-gray-600">
+                    Ajustez les filtres pour affiner votre recherche de
+                    transactions.
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4 my-2">
+                    <Label htmlFor="type" className="text-left text-black">
+                      Type :
+                    </Label>
+                    <Select
+                      value={filters.type}
+                      name="type"
+                      onValueChange={(value) =>
+                        setFilters({ ...filters, type: value })
+                      }
+                    >
+                      <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
+                        <SelectValue placeholder="Séléctionner un statut" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tous les types</SelectItem>
+                        <SelectItem value="recette">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`h-2 w-2 shadow-md rounded-full bg-green-500`}
+                            />
+                            Recette
+                          </div>
                         </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="date" className="text-left text-black">
-                    Date :
-                  </Label>
-                  <div className="flex gap-2 justify-center items-center">
-                    {/* date début */}
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "col-span-3 w-full justify-start text-left font-normal hover:text-purple-600 hover:bg-white hover:border-2 hover:border-purple-500",
-                            !startDate && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon />
-                          {startDate ? (
-                            format(startDate, "dd-MM-yyyy")
-                          ) : (
-                            <span>début</span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <Calendar
-                          mode="single"
-                          selected={startDate}
-                          onSelect={setStartDate}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <ChevronRight className="h-10 w-10" />
-                    {/* date fin */}
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "col-span-3 w-full justify-start text-left font-normal hover:text-purple-600 hover:bg-white hover:border-2 hover:border-purple-500",
-                            !endDate && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon />
-                          {endDate ? (
-                            format(endDate, "dd-MM-yyyy")
-                          ) : (
-                            <span>fin</span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <Calendar
-                          mode="single"
-                          selected={endDate}
-                          onSelect={setEndDate}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
+                        <SelectItem value="dépense">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`h-2 w-2 rounded-full bg-red-500`}
+                            />
+                            Dépense
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="vider">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`h-2 w-2 rounded-full bg-blue-500`}
+                            />
+                            Vider la caisse
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4 my-2">
+                    <Label htmlFor="compte" className="text-left text-black">
+                      Compte :
+                    </Label>
+                    <Select
+                      value={filters.compte}
+                      name="compte"
+                      onValueChange={(value) =>
+                        setFilters({ ...filters, compte: value })
+                      }
+                    >
+                      <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
+                        <SelectValue placeholder="Séléctionner un statut" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tous les comptes</SelectItem>
+                        {comptes.data?.map((element: Compte, index: number) => (
+                          <SelectItem key={index} value={element.compte}>
+                            {element.compte}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="date" className="text-left text-black">
+                      Date :
+                    </Label>
+                    <div className="flex gap-2 justify-center items-center">
+                      {/* date début */}
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "col-span-3 w-full justify-start text-left font-normal hover:text-purple-600 hover:bg-white hover:border-2 hover:border-purple-500",
+                              !startDate && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon />
+                            {startDate ? (
+                              format(startDate, "dd-MM-yyyy")
+                            ) : (
+                              <span>début</span>
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                          <Calendar
+                            mode="single"
+                            selected={startDate}
+                            onSelect={setStartDate}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <ChevronRight className="h-10 w-10" />
+                      {/* date fin */}
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "col-span-3 w-full justify-start text-left font-normal hover:text-purple-600 hover:bg-white hover:border-2 hover:border-purple-500",
+                              !endDate && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon />
+                            {endDate ? (
+                              format(endDate, "dd-MM-yyyy")
+                            ) : (
+                              <span>fin</span>
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                          <Calendar
+                            mode="single"
+                            selected={endDate}
+                            onSelect={setEndDate}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </SheetContent>
-          </Sheet>
+              </SheetContent>
+            </Sheet>
+
+            <TransactionDialog />
+          </div>
         </div>
         <div className="flex justify between gap-6 items-start">
           <div className="w-full col-span-1 sm:col-span-2 md:col-span-3">
@@ -311,12 +357,12 @@ export default function Banques() {
               <Table className="w-full">
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[150px]">Date</TableHead>
-                    <TableHead className="w-[150px]">Time</TableHead>
+                    <TableHead className="w-[150px]">Date-Time</TableHead>
                     <TableHead>Réference</TableHead>
                     <TableHead>Montant</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Compte</TableHead>
+                    <TableHead>Description</TableHead>
 
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -343,15 +389,14 @@ export default function Banques() {
                           <Skeleton className="h-4 w-[150px]" />
                         </TableCell>
                         <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-[150px]" />
-                        </TableCell>
-                        <TableCell className="!py-2" align="left">
                           <Skeleton className="h-4 w-[100px]" />
                         </TableCell>
                         <TableCell className="!py-2" align="left">
                           <Skeleton className="h-4 w-[100px]" />
                         </TableCell>
-
+                        <TableCell className="!py-2" align="left">
+                          <Skeleton className="h-4 w-[100px]" />
+                        </TableCell>
                         <TableCell className="!py-2 " align="right">
                           <Skeleton className="h-7 w-7 rounded-full" />
                         </TableCell>
@@ -360,34 +405,36 @@ export default function Banques() {
                   ) : transactions.data?.length > 0 ? (
                     transactions.data?.map((transaction: Transaction) => (
                       <TableRow key={transaction.id}>
-                        <TableCell className="font-medium">
+                        <TableCell className="font-medium py-1">
                           {format(transaction.createdAt, "dd-MM-yyyy")}
-                        </TableCell>
-                        <TableCell className="font-medium">
+                          <br />
+
                           {transaction.createdAt.split("T")[1].split(".")[0]}
                         </TableCell>
-                        <TableCell className="font-medium">
+
+                        <TableCell className="font-medium py-0">
                           {transaction.reference}
                         </TableCell>
-                        <TableCell className="font-medium">
+                        <TableCell className="font-medium py-0">
                           {transaction.montant} DH
                         </TableCell>
-                        <TableCell className="font-medium">
+                        <TableCell className="font-medium py-0">
                           <span
                             className={`text-sm p-[1px] px-3 rounded-full  ${
-                              transaction.type === "recette"
-                                ? "bg-green-100 text-green-600 font-medium"
-                                : "bg-red-100 text-red-600 font-medium"
+                              handleTypeLableColor(transaction.type).color
                             }`}
                           >
-                            {transaction.type}
+                            {handleTypeLableColor(transaction.type).lable}
                           </span>
                         </TableCell>
-                        <TableCell className="font-medium">
+                        <TableCell className="font-medium py-0">
                           {transaction.compte}
                         </TableCell>
+                        <TableCell className="font-medium py-0">
+                          {transaction.description}
+                        </TableCell>
 
-                        <TableCell className="text-right">
+                        <TableCell className="text-right py-2">
                           <div className="flex justify-end gap-2">
                             <Button
                               onClick={() => {

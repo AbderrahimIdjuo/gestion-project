@@ -26,13 +26,13 @@ export async function POST(req) {
     // Format data to match Prisma schema
     const produits = data.map((row) => ({
       id: row.id || undefined, // Prisma will generate a UUID if not provided
-      designation: row.designation || "",
-      categorie: row.categorie || null,
-      prixAchat: row.prixAchat || 0,
+      designation: row.Name || "",
+      categorie: row.ProductGroup || null,
+      prixAchat: row.Price || 0,
       prixVente: row.prixVente || 0,
-      stock: row.stock || 0,
+      stock: row.Quantity || 0,
       fournisseurId: row.fournisseurId || null,
-      description: row.description || null,
+    //  description: row.Description || null,
     }));
 
     // Insert into database

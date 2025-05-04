@@ -420,9 +420,9 @@ export default function CommandesPage() {
                 </div>
               </SheetContent>
             </Sheet>
-            <Link href="/ventes/commandes/nouvelleCommande">
+            {/* <Link href="/ventes/commandes/nouvelleCommande">
               <AddButton title="Nouvelle Commande" />
-            </Link>
+            </Link> */}
           </div>
         </div>
 

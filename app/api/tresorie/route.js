@@ -14,12 +14,15 @@ export async function GET(req) {
   const filters = {};
 
   // Search filter
-  if (searchQuery) {
-    filters.reference = {
-      contains: searchQuery,
-    };
-  }
-
+  // if (searchQuery) {
+  //   filters.reference = {
+  //     contains: searchQuery,
+  //   };
+  // }
+  filters.OR = [
+    { reference: { contains: searchQuery, mode: "insensitive" } },
+    { description: { contains: searchQuery, mode: "insensitive" } },
+  ];
   // Type filter
   if (type !== "all") {
     filters.type = type; // Filters by "depense" or "recette"
@@ -79,6 +82,8 @@ export async function DELETE(req) {
           },
         },
       });
+    } else {
+      console.log("Transaction reference not a valid found.");
     }
   });
   return NextResponse.json({ result });

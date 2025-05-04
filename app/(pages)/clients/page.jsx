@@ -184,8 +184,8 @@ export default function ClientsPage() {
                           align="left"
                         >
                           <div className="flex gap-2 items-center">
-                            <Skeleton className="h-12 w-12 rounded-full" />
-                            <Skeleton className="h-4 w-full" />
+                            <Skeleton className="h-10 w-10 rounded-full" />
+                            <Skeleton className="h-4 w-[80%]" />
                           </div>
                         </TableCell>
                         <TableCell className="!py-2" align="left">
@@ -208,11 +208,11 @@ export default function ClientsPage() {
                   ) : clients.data?.length > 0 ? (
                     clients.data?.map((client) => (
                       <TableRow
-                        className="font-medium hover:text-emerald-400"
+                        className="font-medium"
                         key={client.id}
                       >
                         <ClientInfoDialog client={client}>
-                          <TableCell className="font-medium cursor-pointer !py-2">
+                          <TableCell className="font-medium hover:text-purple-500 cursor-pointer !py-2">
                             <div className="flex flex-row gap-2 justify-start items-center">
                               <Avatar className="w-8 h-8">
                                 <AvatarImage

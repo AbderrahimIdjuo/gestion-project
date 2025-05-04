@@ -24,7 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
-import { Trash2, MoveLeftIcon, ChevronDown , CircleX } from "lucide-react";
+import { Trash2, MoveLeftIcon, ChevronDown, CircleX } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
@@ -206,7 +206,7 @@ export default function UpdateDevisPage({ params }) {
         <div className="container mb-10 mx-auto py-6 space-y-6 w-full">
           <div className="flex justify-between items-center">
             <div className="flex gap-3 items-center">
-              <Link href=".">
+              {/* <Link href="/ventes/devis/">
                 <Button
                   type="button"
                   className="rounded-lg"
@@ -215,8 +215,10 @@ export default function UpdateDevisPage({ params }) {
                 >
                   <MoveLeftIcon />
                 </Button>
-              </Link>
-              <h1 className="text-3xl font-bold">Modifier le devis : {watch("numero")} </h1>
+              </Link> */}
+              <h1 className="text-3xl font-bold">
+                Modifier le devis : {watch("numero")}{" "}
+              </h1>
               {LoadingDevis && <LoadingDots size={7} />}
             </div>
           </div>

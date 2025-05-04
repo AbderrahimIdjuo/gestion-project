@@ -13,6 +13,7 @@ export async function GET(req) {
     if (searchQuery) {
       filters.designation = {
         contains: searchQuery,
+        mode : "insensitive"
       };
     }
  

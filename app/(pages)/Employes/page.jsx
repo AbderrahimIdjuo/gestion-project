@@ -98,7 +98,6 @@ export default function EmployesPage() {
     },
   });
 
-
   function formatRIB(rib) {
     return `${rib.slice(0, 3)} ${rib.slice(3, 6)} ${rib.slice(
       6,
@@ -114,19 +113,19 @@ export default function EmployesPage() {
         </div>
 
         <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-6 ">
-            <div className="relative w-full sm:w-96">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Rechercher des employés..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 w-full rounded-full bg-gray-50 focus-visible:ring-purple-500 focus-visible:ring-offset-0"
-                spellCheck={false}
-              />
-              <div className="absolute right-6 top-1/3 h-4 w-4 -translate-y-1/2 text-muted-foreground">
-                {employes.isFetching && !employes.isLoading && <LoadingDots />}
-              </div>
+          <div className="relative w-full sm:w-96">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Rechercher des employés..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 w-full rounded-full bg-gray-50 focus-visible:ring-purple-500 focus-visible:ring-offset-0"
+              spellCheck={false}
+            />
+            <div className="absolute right-6 top-1/3 h-4 w-4 -translate-y-1/2 text-muted-foreground">
+              {employes.isFetching && !employes.isLoading && <LoadingDots />}
             </div>
+          </div>
           <Button
             onClick={() => {
               setIsAddingEmploye(!isAddingEmploye);
@@ -196,8 +195,8 @@ export default function EmployesPage() {
                           align="left"
                         >
                           <div className="flex gap-2 items-center">
-                            <Skeleton className="h-12 w-12 rounded-full" />
-                            <Skeleton className="h-4 w-[100px]" />
+                            <Skeleton className="h-10 w-10 rounded-full" />
+                            <Skeleton className="h-4 w-[80%]" />
                           </div>
                         </TableCell>
                         <TableCell className="!py-2" align="left">
@@ -228,9 +227,9 @@ export default function EmployesPage() {
                     ))
                   ) : employes.data?.length > 0 ? (
                     employes.data?.map((employe) => (
-                      <TableRow className="font-medium hover:text-emerald-400" key={employe.id}>
+                      <TableRow className="font-medium" key={employe.id}>
                         <EmployeInfoDialog employe={employe}>
-                          <TableCell className="font-medium cursor-pointer !py-2">
+                          <TableCell className="font-medium hover:text-purple-500 cursor-pointer !py-2">
                             <div className="flex flex-row gap-2 justify-start items-center">
                               <Avatar className="w-8 h-8">
                                 <AvatarImage
@@ -255,7 +254,9 @@ export default function EmployesPage() {
                         <TableCell className="text-md !py-2">
                           {employe.salaire}
                         </TableCell>
-                        <TableCell className="text-md !py-2">{employe.cin}</TableCell>
+                        <TableCell className="text-md !py-2">
+                          {employe.cin}
+                        </TableCell>
                         <TableCell className="text-md !py-2">
                           {employe.adresse}
                         </TableCell>

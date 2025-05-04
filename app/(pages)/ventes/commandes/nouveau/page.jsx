@@ -21,7 +21,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  } from "@/components/ui/table";
+} from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
 import { Trash2, MoveLeft } from "lucide-react";
 import { ArticleSelectionDialog } from "@/components/produits-selection-dialog";
@@ -60,7 +60,6 @@ export default function NouvelleCommandePage() {
   } = useForm({
     defaultValues: {
       statut: "En cours",
-      fraisLivraison: 0,
       avance: 0,
       reduction: 0,
       typeReduction: "%",
@@ -155,7 +154,7 @@ export default function NouvelleCommandePage() {
       watch("typeReduction") === "%"
         ? subtotal * (watch("reduction") / 100)
         : Number(watch("reduction"));
-    const total = subtotal - discountAmount + Number(watch("fraisLivraison"));
+    const total = subtotal - discountAmount;
     return total.toFixed(2);
   };
 
@@ -163,14 +162,14 @@ export default function NouvelleCommandePage() {
     <>
       <Toaster position="top-center" />
       <form onSubmit={handleSubmit(onSubmit)}>
-        <div className="container mx-auto py-6 space-y-6 max-w-5xl mb-10">
+        <div className="container mb-10 mx-auto py-6 space-y-6 w-full">
           <div className="flex justify-between items-center">
             <div className="flex gap-3 items-center">
-              <Link href="/ventes/commandes">
+              {/* <Link href="/ventes/commandes">
                 <Button type="button" size="icon" variant="ghost">
                   <MoveLeft />
                 </Button>
-              </Link>
+              </Link> */}
               <h1 className="text-3xl font-bold">Nouvelle Commande</h1>
             </div>
           </div>
@@ -191,7 +190,7 @@ export default function NouvelleCommandePage() {
                     Client :
                   </Label>
                   <span className="text-md text-left text-gray-900 rounded-lg p-2 pl-4 bg-violet-50 h-[2.5rem]">
-                    {devi?.client?.nom}
+                    {devi?.client?.nom.toUpperCase()}
                   </span>
                 </div>
                 <div className="w-full grid grid-cols-1">
@@ -317,89 +316,108 @@ export default function NouvelleCommandePage() {
               <div className="space-y-4">
                 {items.length > 0 && (
                   <>
-                  <div className="overflow-hidden border rounded-lg">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-[40%]">Produits</TableHead>
-                          <TableHead>Quantité</TableHead>
-                          <TableHead>Prix d&apos;unité</TableHead>
-                          <TableHead colSpan={2} className="text-left">
-                            Montant
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {items.map((item) => (
-                          <TableRow key={item.id}>
-                            <TableCell>
-                              <span className="focus:!ring-purple-500 text-md">
-                                {item.designation}
-                              </span>
-                            </TableCell>
-                            <TableCell>
-                              <Input
-                                type="number"
-                                min={1}
-                                value={item.quantite}
-                                onChange={(e) =>
-                                  handleItemChange(
-                                    item.id,
-                                    "quantite",
-                                    Number(e.target.value)
-                                  )
-                                }
-                                className="focus:!ring-purple-500 w-20"
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Input
-                                value={item.prixUnite}
-                                onChange={(e) => {
-                                  console.log("item.prixUnite", item.prixUnite);
-
-                                  handleItemChange(
-                                    item.id,
-                                    "prixUnite",
-                                    Number(e.target.value)
-                                  );
-                                }}
-                                className="focus:!ring-purple-500 w-24"
-                              />
-                            </TableCell>
-                            <TableCell>
-                              {(item.quantite * item.prixUnite).toFixed(2)} DH
-                            </TableCell>
-                            <TableCell>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => removeItem(item.id)}
-                                className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </TableCell>
+                    <div className="overflow-hidden border rounded-lg">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-[40%]">Produits</TableHead>
+                            <TableHead>Quantité</TableHead>
+                            <TableHead>Prix d&apos;unité</TableHead>
+                            <TableHead colSpan={2} className="text-left">
+                              Montant
+                            </TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                   <div className="space-y-4 bg-violet-50 p-4 rounded-lg">
-                   <div className="space-y-4">
-                     <div className="flex justify-between py-2 font-bold">
-                       <span>Total</span>
-                       <span>{calculateTotal()} DH</span>
-                     </div>
-                   </div>
-                 </div>
-                 </>
+                        </TableHeader>
+                        <TableBody>
+                          {items.map((item) => (
+                            <TableRow key={item.id}>
+                              <TableCell>
+                                <span className="focus:!ring-purple-500 text-md">
+                                  {item.designation}
+                                </span>
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  value={item.quantite}
+                                  onChange={(e) =>
+                                    handleItemChange(
+                                      item.id,
+                                      "quantite",
+                                      Number(e.target.value)
+                                    )
+                                  }
+                                  className="focus:!ring-purple-500 w-20"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  value={item.prixUnite}
+                                  onChange={(e) => {
+                                    console.log(
+                                      "item.prixUnite",
+                                      item.prixUnite
+                                    );
+
+                                    handleItemChange(
+                                      item.id,
+                                      "prixUnite",
+                                      Number(e.target.value)
+                                    );
+                                  }}
+                                  className="focus:!ring-purple-500 w-24"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                {(item.quantite * item.prixUnite).toFixed(2)} DH
+                              </TableCell>
+                              <TableCell>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => removeItem(item.id)}
+                                  className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                          {calculateTotal() > 0 && (
+                            <TableRow>
+                              <TableCell
+                                colSpan={3}
+                                className="text-right text-lg font-bold"
+                              >
+                                Total :
+                              </TableCell>
+                              <TableCell
+                                colSpan={2}
+                                className="text-left text-lg font-bold"
+                              >
+                                {calculateTotal()} DH
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                    {/* <div className="space-y-4 bg-violet-50 p-4 rounded-lg">
+                      <div className="space-y-4">
+                        <div className="flex justify-between py-2 font-bold">
+                          <span>Total</span>
+                          <span>{calculateTotal()} DH</span>
+                        </div>
+                      </div>
+                    </div> */}
+                  </>
                 )}
- 
+
                 <AddButton
                   type="button"
                   onClick={() => setIsArticleDialogOpen(true)}
-                  title="Ajouter un produit"
+                  title="Ajouter des produits"
                 />
                 {errors.produits && (
                   <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
