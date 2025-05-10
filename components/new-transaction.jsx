@@ -26,7 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus } from "lucide-react";
-import { useQuery, useMutation, QueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -37,7 +37,7 @@ export default function TransactionDialog() {
   const [open, setOpen] = useState(false);
   const newTransactionSchema = z
     .object({
-      type: z.enum(["recette", "dépense", "vider"]),
+      type: z.enum(["recette", "depense", "vider"]),
       lable: z.string().optional(),
       numero: z.string().optional(),
       montant: z
@@ -47,7 +47,7 @@ export default function TransactionDialog() {
       description: z.string().optional(),
     })
     .superRefine((data, ctx) => {
-      if (["recette", "dépense"].includes(data.type)) {
+      if (["recette", "depense"].includes(data.type)) {
         if (!data.lable || data.lable.trim() === "") {
           ctx.addIssue({
             path: ["lable"],
@@ -99,10 +99,13 @@ export default function TransactionDialog() {
   } = useForm({
     defaultValues: {
       type: "recette",
+      reference : "",
+      description: "",
+      compte: "",
     },
     resolver: zodResolver(newTransactionSchema),
   });
-  const queryClient = new QueryClient();
+  const queryClient = useQueryClient();
   const createTransaction = useMutation({
     mutationFn: async (data) => {
       const loadingToast = toast.loading("Paiement en cours...");
@@ -120,7 +123,8 @@ export default function TransactionDialog() {
       queryClient.invalidateQueries(["transactions"]);
       queryClient.invalidateQueries({ queryKey: ["commandes"] });
       queryClient.invalidateQueries({ queryKey: ["factures"] });
-      queryClient.invalidateQueries({ queryKey: ["depensesVariantes"] });
+      queryClient.invalidateQueries({ queryKey: ["statistiques"] });
+      
     },
   });
   const onSubmit = async (data) => {
@@ -179,12 +183,12 @@ export default function TransactionDialog() {
               </div>
               <div className="flex items-center space-x-2 rounded-md p-2">
                 <RadioGroupItem
-                  value="dépense"
-                  id="dépense"
+                  value="depense"
+                  id="depense"
                   className="text-red-600 "
                 />
                 <Label
-                  htmlFor="dépense"
+                  htmlFor="depense"
                   className="text-red-600 font-medium cursor-pointer"
                 >
                   Dépense
@@ -194,18 +198,18 @@ export default function TransactionDialog() {
                 <RadioGroupItem
                   value="vider"
                   id="vider"
-                  className="text-orange-600 "
+                  className="text-blue-600 "
                 />
                 <Label
                   htmlFor="vider"
-                  className="text-orange-600 font-medium cursor-pointer"
+                  className="text-blue-600 font-medium cursor-pointer"
                 >
                   Vider la caisse
                 </Label>
               </div>
             </RadioGroup>
 
-            {(watch("type") === "recette" || watch("type") === "dépense") && (
+            {(watch("type") === "recette" || watch("type") === "depense") && (
               <div className="space-y-4">
                 <div className="grid w-full items-center gap-1.5">
                   <Label htmlFor="label">Label</Label>
@@ -304,13 +308,9 @@ export default function TransactionDialog() {
           </div>
           <DialogFooter>
             <Button
-              onClick={() => {
-                //setValue("transactionType", transactionType)
-                newTransactionSchema.safeParse();
-              }}
               className="bg-[#00e701] hover:bg-[#00e701] shadow-lg hover:scale-105 text-white text-md rounded-full font-bold transition-all duration-300 transform"
               type="submit"
-              // isSubmiting={isSubmiting}
+              isSubmiting={isSubmiting}
               disabled={isSubmiting}
             >
               {isSubmiting ? "En cours..." : "Confirmer"}

@@ -165,8 +165,8 @@ export default function DevisPDFPage() {
                 <div className="flex items-center gap-2 mb-2">
                   <h2 className="font-bold text-lg text-gray-900">Client : </h2>
                   <p className="font-bold text-lg text-gray-900">
-                    {devi?.client.civilite && devi?.client.civilite}
-                    {"."} {devi?.client.nom.toUpperCase()}
+                    {devi?.client.civilite && devi?.client.civilite +". "}
+                     {devi?.client.nom.toUpperCase()}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 ">
@@ -210,7 +210,7 @@ export default function DevisPDFPage() {
                       rowSpan="2"
                       className="text-black font-bold border-l border-b border-black p-2 text-center p-1"
                     >
-                      P.U/m²
+                      P.U
                     </TableHead>
                     <TableHead
                       rowSpan="2"
@@ -267,7 +267,7 @@ export default function DevisPDFPage() {
                       colSpan={2}
                       className="border-l border-b border-black p-2 text-left font-bold"
                     >
-                      {devi?.sousTotal} DH
+                      {devi?.sousTotal.toFixed(2)} DH
                     </TableCell>
                   </TableRow>
                   <TableRow>
@@ -281,7 +281,7 @@ export default function DevisPDFPage() {
                       colSpan={2}
                       className="border-l border-b border-black p-2 text-left font-bold"
                     >
-                      {devi?.tva} DH
+                      {devi?.tva.toFixed(2)} DH
                     </TableCell>
                   </TableRow>
                   {devi?.reduction > 0 ? (
@@ -313,7 +313,7 @@ export default function DevisPDFPage() {
                       colSpan={2}
                       className="border-l border-black p-2 text-lg text-gray-900 text-left font-extrabold"
                     >
-                      {devi?.total} DH
+                      {devi?.total.toFixed(2)} DH
                     </TableCell>
                   </TableRow>
                 </TableFooter>
@@ -331,7 +331,7 @@ export default function DevisPDFPage() {
               <h3 className="text-sm font-medium mb-0">
                 Validité du devis : 30 jours{" "}
               </h3>
-              <div className="print-block">
+              <div className="print-block ">
                 <h3 className="text-sm font-medium mb-0">
                   Modes de paiements :
                 </h3>
@@ -361,13 +361,13 @@ export default function DevisPDFPage() {
                               {mode.pourcentage}
                             </TableCell>
                             <TableCell className="border-l border-b p-1 text-center p-0">
-                              {mode.montantHT} DH
+                              {mode.montantHT.toFixed(2)} DH
                             </TableCell>
                             <TableCell className="border-l border-b p-1 text-center p-0">
-                              {mode.tva} DH
+                              {mode.tva.toFixed(2)} DH
                             </TableCell>
                             <TableCell className="border-l border-b p-1 text-center p-0">
-                              {mode.montantTTC} DH
+                              {mode.montantTTC.toFixed(2)} DH
                             </TableCell>
                           </TableRow>
                         ))}

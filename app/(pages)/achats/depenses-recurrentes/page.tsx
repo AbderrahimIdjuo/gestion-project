@@ -693,7 +693,7 @@ function Page() {
         onConfirm={() => {
           const data = {
             numero: currfacture?.numero,
-            type: "dépense",
+            type: "depense",
             montant: Number(montant),
             compte,
             lable: currfacture?.lable,

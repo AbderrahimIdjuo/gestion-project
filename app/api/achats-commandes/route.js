@@ -12,7 +12,7 @@ export async function POST(req) {
         quantite: parseInt(quantite, 10),
         prixUnite: parseFloat(prixUnite),
         payer,
-        description,
+      //  description: description || null,
         statut: "En cours",
       },
     });
@@ -78,7 +78,9 @@ export async function GET(req) {
   const page = parseInt(searchParams.get("page") || "1");
   const searchQuery = searchParams.get("query") || "";
   const statutPaiement = searchParams.get("statutPaiement");
-  const categorie = searchParams.get("categorie") ? decodeURIComponent(searchParams.get("categorie").trim()) : null
+  const categorie = searchParams.get("categorie")
+    ? decodeURIComponent(searchParams.get("categorie").trim())
+    : null;
   const filters = {};
   const commandesPerPage = 10;
 

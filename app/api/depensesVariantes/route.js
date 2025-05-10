@@ -20,7 +20,7 @@ export async function POST(req) {
       await tx.transactions.create({
         data: {
           reference: numero,
-          type: "dépense",
+          type: "depense",
           montant,
           compte,
           lable: label,

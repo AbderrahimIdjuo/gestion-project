@@ -36,7 +36,7 @@ export async function POST(req) {
     }));
 
     // Insert into database
-    await prisma.produits.createMany({ data: produits});
+    await prisma.produits.createMany({ data: produits });
 
     return NextResponse.json({ message: "Import successful" }, { status: 200 });
   } catch (error) {

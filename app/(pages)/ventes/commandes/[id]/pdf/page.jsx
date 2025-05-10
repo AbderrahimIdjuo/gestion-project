@@ -64,13 +64,13 @@ export default function CommandesPDFPage() {
                 <h1 className="font-bold text-lg text-gray-900">
                   Commande N° : {commande?.numero}
                 </h1>
-                <div className="flex items-center gap-2 mt-2 ">
+               {commande?.echeance && <div className="flex items-center gap-2 mt-2 ">
                   <Calendar className="h-3 w-3" />
                   <p className="font-medium text-sm">
                     <span>Date limite de livraison:</span>{" "}
                     {formatDate(commande?.echeance)}{" "}
                   </p>
-                </div>
+                </div>}
               </div>
 
               {/* Client Info */}
@@ -78,8 +78,8 @@ export default function CommandesPDFPage() {
                 <div className="flex items-center gap-2 mb-2">
                   <h2 className="font-bold text-lg text-gray-900">Client : </h2>
                   <p className="font-bold text-lg text-gray-900">
-                    {commande?.client.civilite && commande?.client.civilite}
-                    {"."} {commande?.client.nom.toUpperCase()}
+                    {commande?.client.civilite && commande?.client.civilite + ". "}
+                     {commande?.client.nom.toUpperCase()}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 ">
@@ -148,7 +148,7 @@ export default function CommandesPDFPage() {
                     >
                       Coût de production :
                     </TableCell>
-                    <TableCell className="border-l border-b border-black p-2 text-right font-bold">
+                    <TableCell className="border-l border-b border-black p-2 text-center font-bold">
                       {commande?.total} DH
                     </TableCell>
                   </TableRow>
@@ -159,7 +159,7 @@ export default function CommandesPDFPage() {
                     >
                       Montant à payer :
                     </TableCell>
-                    <TableCell className="border-l border-b border-black p-2 text-right font-bold">
+                    <TableCell className="border-l border-b border-black p-2 text-center font-bold">
                       {commande?.totalDevi} DH
                     </TableCell>
                   </TableRow>
@@ -170,7 +170,7 @@ export default function CommandesPDFPage() {
                     >
                       Reste à payer :
                     </TableCell>
-                    <TableCell className="border-l border-black p-2 text-xl text-gray-900 text-right font-extrabold">
+                    <TableCell className="border-l border-black p-2 text-xl text-gray-900 text-center font-extrabold">
                       {(commande?.totalDevi - commande?.totalPaye).toFixed(2)}{" "}
                       DH
                     </TableCell>

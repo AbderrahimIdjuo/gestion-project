@@ -39,8 +39,8 @@ const productSchema = z.object({
   ),
   stock: z.number(),
   id: z.string(),
-  fournisseurId: z.string().nullable(),
-  description: z.string().optional(),
+  //fournisseurId: z.string().nullable(),
+ // description: z.string().optional(),
   categorie: z.string().nullable(),
 });
 const newCommandeSchema = z

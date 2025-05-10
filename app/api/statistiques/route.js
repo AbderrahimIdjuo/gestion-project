@@ -37,6 +37,7 @@ export async function GET(req) {
     nbrCommandes,
     transactionsRecettes,
     transactionsDepense,
+    comptabilite
   ] = await Promise.all([
     prisma.clients.count(),
     prisma.fournisseurs.count(),
@@ -50,10 +51,11 @@ export async function GET(req) {
     }),
     prisma.transactions.findMany({
       where: {
-        type: "dépense",
+        type: "depense",
         createdAt: filters.createdAt,
       },
     }),
+    prisma.comptabilite.findFirst(),
   ]);
 
   const recettes = transactionsRecettes.reduce(
@@ -71,5 +73,6 @@ export async function GET(req) {
     nbrCommandes,
     recettes,
     depenses,
+    caisse : comptabilite.caisse,
   });
 }

@@ -7,30 +7,24 @@ export async function GET(req) {
   const searchQuery = searchParams.get("query") || "";
   const compte = searchParams.get("compte") || "all";
   const type = searchParams.get("type") || "all";
-  const numeroCommande = searchParams.get("numeroCommande");
   const from = searchParams.get("from"); // Start date
   const to = searchParams.get("to"); // End date
   const transactionsPerPage = 10;
   const filters = {};
 
   // Search filter
-  // if (searchQuery) {
-  //   filters.reference = {
-  //     contains: searchQuery,
-  //   };
-  // }
   filters.OR = [
     { reference: { contains: searchQuery, mode: "insensitive" } },
     { description: { contains: searchQuery, mode: "insensitive" } },
   ];
   // Type filter
   if (type !== "all") {
-    filters.type = type; // Filters by "depense" or "recette"
+    filters.type = type;
   }
 
-  // Type filter
+  // Compt filter
   if (compte !== "all") {
-    filters.compte = compte; // Filters by "depense" or "recette"
+    filters.compte = compte;
   }
 
   // Date range filter
@@ -41,10 +35,6 @@ export async function GET(req) {
     };
   }
 
-  // Numero filter
-  if (numeroCommande) {
-    filters.reference = numeroCommande; // Filters by "depense" or "recette"
-  }
   // Fetch filtered transactions with pagination
   const transactions = await prisma.transactions.findMany({
     where: filters,
@@ -69,11 +59,11 @@ export async function DELETE(req) {
     await prisma.transactions.delete({
       where: { id },
     });
-    if (deletedTransaction.reference.slice(0, 2) === "FV") {
+    if (deletedTransaction.reference?.slice(0, 2) === "FV") {
       await prisma.depensesVariantes.delete({
         where: { numero: deletedTransaction.reference },
       });
-    } else if (deletedTransaction.reference.slice(0, 3) === "CMD") {
+    } else if (deletedTransaction.reference?.slice(0, 3) === "CMD") {
       await prisma.commandes.update({
         where: { numero: deletedTransaction.reference },
         data: {
@@ -85,6 +75,25 @@ export async function DELETE(req) {
     } else {
       console.log("Transaction reference not a valid found.");
     }
+    if (deletedTransaction.type === "recette") {
+      await prisma.comptabilite.update({
+        where: { id: 1 },
+        data: {
+          caisse: { decrement: deletedTransaction.montant },
+        },
+      });
+    } else if (
+      deletedTransaction.type === "depense" ||
+      deletedTransaction.type === "vider"
+    ) {
+      await prisma.comptabilite.update({
+        where: { id: 1 },
+        data: {
+          caisse: { increment: deletedTransaction.montant },
+        },
+      });
+    }
   });
+
   return NextResponse.json({ result });
 }

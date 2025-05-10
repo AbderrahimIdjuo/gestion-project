@@ -114,7 +114,7 @@ model AchatsCommandes {
   prixUnite      Float?
   payer          Boolean
   statut         String
-  description    String
+  description    String?
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
   commandeClient Commandes? @relation(fields: [commandeId], references: [id], onDelete: Cascade)
@@ -224,4 +224,9 @@ model InfoEntreprise {
   slogan    String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Comptabilite {
+  id        Int      @id @default(1)
+  caisse     Float
 }

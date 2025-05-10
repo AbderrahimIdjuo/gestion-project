@@ -31,7 +31,7 @@ export async function POST(req) {
           create: articls.map((articl) => ({
             key: articl.key, //permet de supprimer un articl doublon
             length: articl.length,
-            unite: articl.unite,
+            unite: articl.unite || "U",
             width: articl.width || 0,
             designation: articl.designation,
             quantite: articl.quantite,

@@ -157,7 +157,7 @@ export default function Banques() {
         lable: "Recette",
         color: "bg-green-100 text-green-600 font-medium",
       };
-    } else if (t === "dépense") {
+    } else if (t === "depense") {
       return { lable: "Dépense", color: "bg-red-100 text-red-600 font-medium" };
     } else if (t === "vider") {
       return {
@@ -238,7 +238,7 @@ export default function Banques() {
                             Recette
                           </div>
                         </SelectItem>
-                        <SelectItem value="dépense">
+                        <SelectItem value="depense">
                           <div className="flex items-center gap-2">
                             <span
                               className={`h-2 w-2 rounded-full bg-red-500`}

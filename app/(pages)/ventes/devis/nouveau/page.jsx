@@ -199,26 +199,29 @@ export default function NouveauDevisPage() {
 
   const unites = ["U", "m²", "m"];
 
+  const validateFloat = (value) => {
+    if (typeof value === "string") {
+      value = value.replace(",", ".");
+      // Remove any whitespace that might interfere
+      value = value.trim();
+    }
+   // const number = parseFloat(value);
+    const parsed = parseFloat(value);
+    if (isNaN(parsed)) {
+      // throw new Error("The value must be a float.");
+      return false;
+    }
+    return parsed;
+  };
+
   return (
     <>
       <Toaster position="top-center" />
       <form className="m-0 p-0" onSubmit={handleSubmit(onSubmit, onError)}>
         <div className="container mb-10 mx-auto py-6 space-y-6 w-full">
-          <div className="flex justify-between items-center">
-            <div className="flex gap-3 items-center">
-              {/* <Link href="/ventes/devis">
-                <Button
-                  type="button"
-                  className="rounded-lg"
-                  size="icon"
-                  variant="ghost"
-                >
-                  <MoveLeftIcon />
-                </Button>
-              </Link> */}
+          <div className="flex gap-3 items-center pt-10">
               <h1 className="text-3xl font-bold">Nouveau devis</h1>
             </div>
-          </div>
           <Card className="w-full">
             <CardContent className="p-6 space-y-6">
               {/* Header Section */}
@@ -370,17 +373,22 @@ export default function NouveauDevisPage() {
                               </TableCell>
                               <TableCell>
                                 <Input
-                                  onChange={(e) =>
-                                    handleItemChange(
+                                  onChange={(e) =>{
+                                      handleItemChange(
                                       item.id,
                                       "length",
-                                      Number(e.target.value)
-                                    )
+                                      validateFloat(e.target.value)
+                                    )                                   
+                                    
                                   }
-                                  className={`focus:!ring-purple-500 w-24 ${errors.articls?.[index]?.length && "!border-red-500"}`}
-
+                                  
+                                  }
+                                  className={`focus:!ring-purple-500 w-24 ${
+                                    errors.articls?.[index]?.length &&
+                                    "!border-red-500"
+                                  }`}
                                 />
-                                  {errors.articls?.[index]?.length && (
+                                {errors.articls?.[index]?.length && (
                                   <p className="text-xs text-red-500 mt-1">
                                     {errors.articls[index].length.message}
                                   </p>
@@ -392,12 +400,15 @@ export default function NouveauDevisPage() {
                                     handleItemChange(
                                       item.id,
                                       "width",
-                                      Number(e.target.value)
+                                      validateFloat(e.target.value)
                                     )
                                   }
-                                  className={`focus:!ring-purple-500 w-24 ${errors.articls?.[index]?.width && "!border-red-500"}`}
+                                  className={`focus:!ring-purple-500 w-24 ${
+                                    errors.articls?.[index]?.width &&
+                                    "!border-red-500"
+                                  }`}
                                 />
-                                 {errors.articls?.[index]?.width && (
+                                {errors.articls?.[index]?.width && (
                                   <p className="text-xs text-red-500 mt-1">
                                     {errors.articls[index].width.message}
                                   </p>
@@ -440,17 +451,19 @@ export default function NouveauDevisPage() {
                               </TableCell>
                               <TableCell>
                                 <Input
-                                  value={item.prixUnite}
                                   onChange={(e) => {
                                     handleItemChange(
                                       item.id,
                                       "prixUnite",
-                                      Number(e.target.value)
+                                      validateFloat(e.target.value)
                                     );
                                   }}
-                                  className={`focus:!ring-purple-500 w-24 ${errors.articls?.[index]?.prixUnite && "!border-red-500"}`}
+                                  className={`focus:!ring-purple-500 w-24 ${
+                                    errors.articls?.[index]?.prixUnite &&
+                                    "!border-red-500"
+                                  }`}
                                 />
-                                 {errors.articls?.[index]?.prixUnite && (
+                                {errors.articls?.[index]?.prixUnite && (
                                   <p className="text-xs text-red-500 mt-1">
                                     {errors.articls[index].prixUnite.message}
                                   </p>
@@ -471,7 +484,7 @@ export default function NouveauDevisPage() {
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </TableCell>
-                            </TableRow>                          
+                            </TableRow>
                           ))}
                         </TableBody>
                       </Table>

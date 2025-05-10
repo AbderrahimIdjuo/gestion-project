@@ -27,7 +27,7 @@ export async function PUT(req, { params }) {
       await tx.transactions.create({
         data: {
           reference: numero,
-          type: "dépense",
+          type: "depense",
           montant: montant,
           compte,
           lable,

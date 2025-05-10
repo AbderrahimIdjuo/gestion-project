@@ -19,7 +19,6 @@ const validateFloat = (value) => {
   return parsed;
 };
 // Product schema for individual items
-
 const articlSchema = z.object({
   designation: z.string().nonempty({ message: "La désignation est requise" }),
   key: z.string(),
@@ -43,13 +42,25 @@ const articlSchema = z.object({
       value === "" || value === undefined ? undefined : validateFloat(value),
     z
       .number({ invalid_type_error: "Ce champ doit contenir un nombre" })
-      .min(1, { message: "ce champ doit contenire un nombre" })
+      .min(1, { message: "Le prix d'unite doit être au moins 1" })
   ),
   width: z.preprocess((value) => {
     // Convert "" or undefined to undefined
     if (value === "" || value === undefined) return undefined;
-    return parseFloat(value);
-  }, z.number({ invalid_type_error: "Ce champ doit contenir un nombre" }).optional()),
+
+    // Convert string with comma to dot notation
+    if (typeof value === "string") {
+      value = value.replace(",", ".");
+      // Remove any whitespace that might interfere
+      value = value.trim();
+    }
+
+    const number = parseFloat(value);
+    // If the conversion fails, return undefined to trigger the validation error
+    if (isNaN(number)) return undefined;
+
+    return number;
+  }, z.number({ invalid_type_error: "Ce champ doit contenir un nombre valide" }).optional()),
   id: z.string(),
   unite: z.string().optional(),
 });

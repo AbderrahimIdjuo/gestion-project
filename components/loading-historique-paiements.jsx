@@ -18,47 +18,37 @@ function LoadingHistoriquePaiements() {
     <div className="container mx-auto p-8 max-w-4xl bg-white min-h-screen print:p-0 print:max-w-none">
       {/* Document Content */}
       <div id="print-area" className="space-y-6">
-        {/* Header */}
-        <div className="flex justify-between items-center border-b border-purple-500 pb-4">
-          <h1 className="flex gap-2 items-center text-3xl font-bold text-purple-600">
-            COMMANDE N° :
-            <Skeleton className="bg-purple-200 h-6 w-[200px] my-4" />
-          </h1>
-
-          <Skeleton className="bg-gray-200 h-24 w-24 rounded-full my-4" />
+        <div className="flex justify-between items-center border-b border-[#228B8B] pb-1">
+          <img src="/images/LOGO-tete.jpg" alt="Logo" width={300} />
+          <img src="/images/LOGO-OUDAOUD.jpg" className="h-24 w-24" />
         </div>
 
         {/* Company and Client Info */}
         <div className="grid grid-cols-2 gap-8">
           {/* Company Info */}
-          <div className="space-y-1">
-            <Skeleton className="h-4 w-[200px] my-4" />
-            <Skeleton className="h-4 w-[200px] my-4" />
-            <div className="flex items-center gap-2 ">
-              <MapPin className="h-4 w-4" />
-              <Skeleton className="h-4 w-[350px] my-2" />
+          <div className="col-span-1">
+            <div className="flex items-center gap-2 mb-2">
+              <h1 className="font-bold text-lg text-gray-900">
+                Commande N° :
+              </h1>
+              <Skeleton className="h-4 w-[150px] my-2" />
             </div>
-            <div className="flex items-center gap-2 ">
-              <Phone className="h-4 w-4" />
-              <Skeleton className="h-4 w-[200px] my-2" />
-            </div>
-            <div className="flex items-center gap-2 ">
-              <Smartphone className="h-4 w-4" />
-              <Skeleton className="h-4 w-[200px] my-2" />
+            <div className="flex items-center gap-2 mb-2">
+              <h1 className="font-bold text-lg text-gray-900">Total TTC :</h1>
+              <Skeleton className="h-4 w-[100px] my-2" />
             </div>
           </div>
-
           {/* Client Info */}
-          <div className="space-y-1">
-            <h2 className="font-bold text-xl text-gray-900">Client</h2>
-            <Skeleton className="h-4 w-[200px] my-4" />
-            <div className="flex items-center gap-2 ">
-              <MapPin className="h-4 w-4" />
-              <Skeleton className="h-4 w-[350px] my-4" />
+          <div className="col-span-1">
+          <div className="flex items-center gap-2 mb-2">
+              <h1 className="font-bold text-lg text-gray-900">
+              Client :
+              </h1>
+              <Skeleton className="h-4 w-[200px] my-2" />
             </div>
             <div className="flex items-center gap-2 ">
-              <Phone className="h-4 w-4" />
-              <Skeleton className="h-4 w-[200px] " />
+              <Phone className="h-3 w-3" />
+              <Skeleton className="h-4 w-[350px] my-2" />
             </div>
           </div>
         </div>
@@ -78,7 +68,7 @@ function LoadingHistoriquePaiements() {
               </TableRow>
             </TableHeader>
             <TableBody>
-            {[...Array(5)].map((_, index) => (
+              {[...Array(5)].map((_, index) => (
                 <TableRow key={index}>
                   <TableCell className="border-b border-black p-2 text-left">
                     <Skeleton className=" h-4 w-[50%]" />
@@ -98,7 +88,7 @@ function LoadingHistoriquePaiements() {
                   Total payé :
                 </TableCell>
                 <TableCell className="border-l border-b border-black border-black p-2 text-xl text-gray-900 text-left font-extrabold">
-                <Skeleton className=" h-4 w-[80px]" />
+                  <Skeleton className=" h-4 w-[80px]" />
                 </TableCell>
               </TableRow>
 
@@ -110,7 +100,7 @@ function LoadingHistoriquePaiements() {
                   Reste à payer :
                 </TableCell>
                 <TableCell className="border-l border-black p-2 text-xl text-gray-900 text-left font-extrabold">
-                <Skeleton className=" h-4 w-[80px]" />
+                  <Skeleton className=" h-4 w-[80px]" />
                 </TableCell>
               </TableRow>
             </TableFooter>

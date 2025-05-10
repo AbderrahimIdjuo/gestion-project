@@ -7,7 +7,7 @@ import {
   Receipt,
   TrendingUp,
   ArrowUpRight,
-  Truck,
+  Wallet,
   CircleDollarSign,
   HandCoins,
 } from "lucide-react";
@@ -185,7 +185,7 @@ export default function DashboardPage() {
             </div>
             <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2 pt-4">
               <CardTitle className="text-sm font-medium">
-                Produits en Stock
+                Produits
               </CardTitle>
               <Package className="h-6 w-6 text-muted-foreground" />
             </CardHeader>
@@ -212,13 +212,13 @@ export default function DashboardPage() {
             </div>
             <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2 pt-4">
               <CardTitle className="text-sm font-medium">
-                Total Fournisseurs
+                Caisse
               </CardTitle>
-              <Truck className="h-6 w-6 text-muted-foreground" />
+              <Wallet className="h-6 w-6 text-muted-foreground" />
             </CardHeader>
             <CardContent className="relative">
               <div className="text-2xl font-bold">
-                {statistiques.data?.nbrFournisseurs}
+                {statistiques.data?.caisse} DH
               </div>
               <div className="flex items-center gap-1 ">
                 <ArrowUpRight className="h-5 w-5 text-emerald-500" />

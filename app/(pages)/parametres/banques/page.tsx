@@ -13,13 +13,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ChangeEvent } from "react";
-import { Trash2 } from "lucide-react";
+import { Trash2, Pen } from "lucide-react";
 import SittingsSideBar from "@/components/sittingsSideBar";
 import { addCompteBancaire } from "@/app/api/actions";
 import { deleteCompteBancaire } from "@/app/api/actions";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
+import UpdateCaisseSolde from "@/components/update-caisse-solde";
 
 type Compte = {
   compte: string;
@@ -86,6 +87,15 @@ export default function Banques() {
       queryClient.invalidateQueries({ queryKey: ["comptes"] });
     },
   });
+
+  const statistiques = useQuery({
+    queryKey: ["statistiques"],
+    queryFn: async () => {
+      const response = await axios.get("/api/statistiques");
+      return response.data;
+    },
+    refetchOnWindowFocus: false,
+  });
   return (
     <>
       <Toaster position="top-center" />
@@ -130,7 +140,7 @@ export default function Banques() {
               <Table className="w-full">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Catégories</TableHead>
+                    <TableHead>Comptes</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -142,13 +152,14 @@ export default function Banques() {
                       </TableCell>
                     </TableRow>
                   ) : query.data?.length > 0 ? (
-                    query.data?.map((compte: Compte) => (
-                      <TableRow key={compte.id}>
-                        <TableCell className="font-medium">
-                          {compte.compte}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
+                    query.data
+                      ?.filter((compte: Compte) => compte.compte !== "caisse")
+                      .map((compte: Compte) => (
+                        <TableRow key={compte.id}>
+                          <TableCell className="font-medium">
+                            {compte.compte}
+                          </TableCell>
+                          <TableCell className="text-right">
                             <Button
                               onClick={() => {
                                 setCompte(compte);
@@ -159,12 +170,10 @@ export default function Banques() {
                               className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
                             >
                               <Trash2 className="h-4 w-4" />
-                              <span className="sr-only">Supprimer</span>
                             </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                          </TableCell>
+                        </TableRow>
+                      ))
                   ) : (
                     <TableRow>
                       <TableCell colSpan={2} className="text-center">
@@ -174,6 +183,10 @@ export default function Banques() {
                   )}
                 </TableBody>
               </Table>
+            </div>
+            <div className="border border-zinc-200 shadow w-full h-[50px] font-semibold rounded-lg p-2 mt-5 flex justify-between items-center">
+              <h2 className="pl-5">Caisse : {statistiques.data?.caisse} DH</h2>
+              <UpdateCaisseSolde solde={statistiques.data?.caisse} />
             </div>
           </div>
         </div>

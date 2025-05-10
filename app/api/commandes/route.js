@@ -72,7 +72,7 @@ export async function POST(req) {
               quantite: produit.quantite - produit.stock,
               prixUnite: produit.prixUnite,
               payer: false,
-              description: produit.description,
+              description: produit.description || null,
               statut: "En cours",
             })),
           },

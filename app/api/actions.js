@@ -104,7 +104,7 @@ export async function addInfoEntreprise(info) {
 }
 
 export async function addtransaction(data) {
-  const { numero, type, montant, compte, lable, description} = data;
+  const { numero, type, montant, compte, lable, description } = data;
   const result = await prisma.$transaction(async (prisma) => {
     await prisma.transactions.create({
       data: {
@@ -116,7 +116,29 @@ export async function addtransaction(data) {
         description,
       },
     });
-    if (numero.slice(0, 3) === "CMD") {
+    if(type === "depense" || type === "recette"){
+      if (compte === "caisse") {
+        await prisma.comptabilite.update({
+          where: { id: 1 },
+          data: {
+            caisse:
+              type === "recette"
+                ? { increment: montant }
+                : { decrement: montant },
+          },
+        });
+      }
+    }else if (type === "vider") {
+      await prisma.comptabilite.update({
+        where: { id: 1 },
+        data: {
+          caisse: { decrement: montant },
+        },
+      });
+    }
+
+
+    if (numero && numero.slice(0, 3) === "CMD") {
       await prisma.commandes.update({
         where: { numero: numero },
         data: {
