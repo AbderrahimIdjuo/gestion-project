@@ -269,7 +269,7 @@ export function ClientFormDialog() {
             </div>
             <div className="grid gap-2 w-full">
               <Label htmlFor="noteClient" className="text-left text-black">
-                Infos suplimentaires
+              Infos supplémentaires
               </Label>
               <Textarea
                 name="note"

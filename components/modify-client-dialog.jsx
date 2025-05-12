@@ -104,7 +104,7 @@ export function ModifyClientDialog({ currClient }) {
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
-        <form onSubmit={handleSubmit(onSubmit , handleErrors)}>
+        <form onSubmit={handleSubmit(onSubmit, handleErrors)}>
           <DialogHeader>
             <DialogTitle>Modifier un client</DialogTitle>
             <DialogDescription>
@@ -266,7 +266,7 @@ export function ModifyClientDialog({ currClient }) {
             </div>
             <div className="grid gap-2 w-full">
               <Label htmlFor="noteClient" className="text-left text-black">
-                Infos suplimentaires
+                Infos supplémentaires
               </Label>
               <Textarea
                 name="note"
