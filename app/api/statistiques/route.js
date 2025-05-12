@@ -73,6 +73,6 @@ export async function GET(req) {
     nbrCommandes,
     recettes,
     depenses,
-    caisse : comptabilite.caisse,
+    caisse : comptabilite?.caisse,
   });
 }

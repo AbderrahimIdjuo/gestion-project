@@ -11,10 +11,13 @@ datasource db {
 model Clients {
   id        String      @id @default(uuid())
   nom       String
-  civilite String?
+  titre String?
   email     String?
   telephone String?
+  mobile String?
   adresse   String?
+  ice    String?
+  note    String?
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
   commandes Commandes[]

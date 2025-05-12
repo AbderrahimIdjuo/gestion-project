@@ -1,22 +1,25 @@
 "use client";
-
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
-import { SaveButton } from "./customUi/styledButton";
-import { Separator } from "@/components/ui/separator";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CircleX } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { Textarea } from "@/components/ui/textarea";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -24,48 +27,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-export function ClientFormDialog({ clientList }) {
+export function ClientFormDialog() {
+  const [open, setOpen] = useState(false);
   const clientSchema = z.object({
     nom: z.string().min(1, "Veuillez insérer le nom du client"),
-    civilite: z.enum(["M", "Mme", "Mlle"]).optional(),
-    email: z
-      .preprocess((email) => {
-        // If email is empty or undefined, return null
-        return email === "" ? null : email;
-      }, z.string().email("Email invalide").nullable())
-      .refine(
-        (email) => {
-          // If email is null, skip the uniqueness check
-          if (email === null) return true;
-          // Check if the email already exists in the client list
-          return !clientList
-            ?.map((client) => client.email?.toLowerCase())
-            .includes(email?.toLowerCase());
-        },
-        {
-          // Message when the email is not unique
-          message: "Cet email existe déjà",
-        }
-      ),
-    telephone: z
-      .preprocess((telephone) => {
-        // If telephone is empty or undefined, return null
-        return telephone === "" ? null : telephone;
-      }, z.string().length(10, "Téléphone doit contenir 10 chiffres").regex(/^\d+$/, "Téléphone doit contenir des chiffres").nullable())
-      .refine(
-        (newTelephone) => {
-          // If telephone is null, skip the uniqueness check
-          if (newTelephone === null) return true;
-          // Check if the telephone already exists in the phone list
-          return !clientList
-            ?.map((client) => client.telephone)
-            .includes(newTelephone);
-        },
-        {
-          // Message when the telephone is not unique
-          message: "Ce téléphone existe déjà",
-        }
-      ),
+    titre: z.enum(["M", "Mme", "Mlle", "Sté"]).optional(),
+    ice: z.string().optional(),
+    email: z.preprocess((email) => {
+      // If email is empty or undefined, return null
+      return email === "" ? null : email;
+    }, z.string().email("Email invalide").nullable()),
+    telephone: z.string().optional(),
+    mobile: z.string().optional(),
+    note: z.string().optional(),
     adresse: z.string().optional(),
   });
 
@@ -77,13 +51,16 @@ export function ClientFormDialog({ clientList }) {
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm({
+    defaultValues: {
+      titre: "M",
+    },
     resolver: zodResolver(clientSchema),
   });
 
   const queryClient = useQueryClient();
   const onSubmit = async (data) => {
-    console.log("data :" , data);
-    
+    console.log("data :", data);
+
     toast.promise(
       (async () => {
         try {
@@ -119,57 +96,62 @@ export function ClientFormDialog({ clientList }) {
       }
     );
   };
-  const civilites = ["M", "Mme", "Mlle"];
+  const titres = ["M", "Mme", "Mlle", "Sté"];
 
   return (
-    <Card className="w-full grid gap-2 h-full px-2">
-      <CardHeader className="flex-col justify-start">
-        <CardTitle className="my-3">Ajouter un nouveau client</CardTitle>
-        <CardDescription className="my-5">
-          Remplissez les informations du nouveau client ici. Cliquez sur
-          enregistrer lorsque vous avez terminé.
-        </CardDescription>
-        <Separator className=" mb-5 w-[95%]" />
-      </CardHeader>
-
-      <CardContent className="w-full">
-        <form
-          className="w-full h-[80%] grid gap-4"
-          onSubmit={handleSubmit(onSubmit)}
-        >
-          <div className="w-full grid gap-6 ">
-            <div className="grid grid-cols-4 gap-4">
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 rounded-full">
+          <Plus className="mr-2 h-4 w-4" />
+          Ajouter un client
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <DialogHeader>
+            <DialogTitle>Nouveau client</DialogTitle>
+            <DialogDescription>
+              Remplissez les informations du nouveau client ici. Cliquez sur
+              enregistrer lorsque vous avez terminé.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="w-full grid gap-6 my-4">
+            <div className="grid md:grid-cols-5 grid-cols-1 gap-4">
               <div className="w-full grid grid-cols-1 col-span-1">
-                <Label htmlFor="civilite" className="text-left mb-2 mb-2">
-                  Civilité
+                <Label htmlFor="titre" className="text-left mb-2 mb-2">
+                  Titre
                 </Label>
                 <div className="w-full">
                   <Select
                     defaultValue="M"
-                    value={watch("civilite")}
-                    name="civilite"
-                    onValueChange={(value) => setValue("civilite", value)}
+                    value={watch("titre")}
+                    name="titre"
+                    onValueChange={(value) => setValue("titre", value)}
                   >
                     <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {civilites.map((civilite) => (
-                        <SelectItem key={civilite} value={civilite}>
-                          {civilite}
+                      {titres.map((titre) => (
+                        <SelectItem key={titre} value={titre}>
+                          {titre}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  {errors.civilite && (
+                  {errors.titre && (
                     <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
                       <CircleX className="h-4 w-4" />
-                      {errors.civilite.message}
+                      {errors.titre.message}
                     </p>
                   )}
                 </div>
               </div>
-              <div className="w-full grid grid-cols-1 col-span-3">
+              <div
+                className={`w-full grid grid-cols-1 ${
+                  watch("titre") === "Sté" ? "md:col-span-3" : "md:col-span-4"
+                }`}
+              >
                 <Label htmlFor="nom" className="text-left mb-2 mb-2">
                   Nom
                 </Label>
@@ -178,7 +160,7 @@ export function ClientFormDialog({ clientList }) {
                     id="nom"
                     name="nom"
                     {...register("nom")}
-                    className={`w-full  focus-visible:ring-purple-300 focus-visible:ring-offset-0 ${
+                    className={`w-full  focus:!ring-purple-500 ${
                       errors.nom && "border-red-500 border-2"
                     }`}
                     spellCheck={false}
@@ -191,70 +173,123 @@ export function ClientFormDialog({ clientList }) {
                   )}
                 </div>
               </div>
-            </div>
+              {watch("titre") === "Sté" && (
+                <div className="w-full grid grid-cols-1 col-span-1">
+                  <Label htmlFor="ice" className="text-left mb-2">
+                    ICE
+                  </Label>
 
-            <div className="w- full grid grid-cols-1">
-              <Label htmlFor="email" className="text-left mb-2">
-                Email
-              </Label>
-              <div className="col-span-1">
+                  <Input
+                    id="ice"
+                    {...register("ice")}
+                    className="col-span-3 focus:!ring-purple-500 "
+                    spellCheck={false}
+                  />
+                </div>
+              )}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="w- full grid grid-cols-1">
+                <Label htmlFor="telephone" className="text-left mb-2">
+                  Téléphone
+                </Label>
+                <div>
+                  <Input
+                    id="telephone"
+                    type="tel"
+                    {...register("telephone")}
+                    className={`w-full  focus:!ring-purple-500 ${
+                      errors.telephone && "border-red-500 border-2"
+                    }`}
+                  />
+                  {errors.telephone && (
+                    <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
+                      <CircleX className="h-4 w-4" />
+                      {errors.telephone.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="w- full grid grid-cols-1">
+                <Label htmlFor="mobile" className="text-left mb-2">
+                  Mobile
+                </Label>
+                <div>
+                  <Input
+                    id="mobile"
+                    type="tel"
+                    {...register("mobile")}
+                    className={`w-full  focus:!ring-purple-500 ${
+                      errors.mobile && "border-red-500 border-2"
+                    }`}
+                  />
+                  {errors.mobile && (
+                    <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
+                      <CircleX className="h-4 w-4" />
+                      {errors.mobile.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="w- full grid grid-cols-1">
+                <Label htmlFor="email" className="text-left mb-2">
+                  Email
+                </Label>
+                <div className="col-span-1">
+                  <Input
+                    id="email"
+                    {...register("email")}
+                    className={`w-full  focus:!ring-purple-500 ${
+                      errors.email && "border-red-500 border-2"
+                    }`}
+                    spellCheck={false}
+                  />
+                  {errors.email && (
+                    <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
+                      <CircleX className="h-4 w-4" />
+                      {errors.email.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="w-full grid grid-cols-1">
+                <Label htmlFor="adresse" className="text-left mb-2">
+                  Adresse
+                </Label>
+
                 <Input
-                  id="email"
-                  {...register("email")}
-                  className={`w-full  focus-visible:ring-purple-300 focus-visible:ring-offset-0 ${
-                    errors.email && "border-red-500 border-2"
-                  }`}
+                  id="adresse"
+                  {...register("adresse")}
+                  className="col-span-3 focus:!ring-purple-500"
                   spellCheck={false}
                 />
-                {errors.email && (
-                  <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
-                    <CircleX className="h-4 w-4" />
-                    {errors.email.message}
-                  </p>
-                )}
               </div>
             </div>
-            <div className="w- full grid grid-cols-1">
-              <Label htmlFor="telephone" className="text-left mb-2">
-                Téléphone
+            <div className="grid gap-2 w-full">
+              <Label htmlFor="noteClient" className="text-left text-black">
+                Infos suplimentaires
               </Label>
-              <div>
-                <Input
-                  id="telephone"
-                  type="tel"
-                  {...register("telephone")}
-                  className={`w-full  focus-visible:ring-purple-300 focus-visible:ring-offset-0 ${
-                    errors.telephone && "border-red-500 border-2"
-                  }`}
-                />
-                {errors.telephone && (
-                  <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
-                    <CircleX className="h-4 w-4" />
-                    {errors.telephone.message}
-                  </p>
-                )}
-              </div>
-            </div>
-            <div className="w- full grid grid-cols-1">
-              <Label htmlFor="adresse" className="text-left mb-2">
-                Adresse
-              </Label>
-
-              <Input
-                id="adresse"
-                {...register("adresse")}
-                className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
-                spellCheck={false}
+              <Textarea
+                name="note"
+                {...register("note")}
+                className="col-span-3 focus:!ring-purple-500 "
               />
             </div>
-            <SaveButton
-              disabled={isSubmitting}
-              type="submit"
-              title="Enregistrer"
-            />
           </div>
+          <DialogFooter>
+            <Button
+              className="bg-[#00e701] hover:bg-[#00e701] shadow-lg hover:scale-105 text-white text-md rounded-full font-bold transition-all duration-300 transform"
+              type="submit"
+              // isSubmiting={isSubmiting}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "En cours..." : "Enregistrer"}
+            </Button>
+          </DialogFooter>
         </form>
-      </CardContent>
-    </Card>
+      </DialogContent>
+    </Dialog>
   );
 }

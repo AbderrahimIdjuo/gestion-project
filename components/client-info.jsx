@@ -11,7 +11,14 @@ import {
 } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Mail, Phone, MapPin, CreditCard } from "lucide-react";
+import {
+  Mail,
+  Phone,
+  MapPin,
+  Smartphone,
+  NotebookText,
+  Hash,
+} from "lucide-react";
 
 export function ClientInfoDialog({ client, children }) {
   const [open, setOpen] = useState(false);
@@ -27,7 +34,7 @@ export function ClientInfoDialog({ client, children }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className=" sm:max-w-[400px]  lg:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Informations du client</DialogTitle>
           <DialogDescription></DialogDescription>
@@ -41,35 +48,51 @@ export function ClientInfoDialog({ client, children }) {
                 />
                 <AvatarFallback>{getInitials(client.nom)}</AvatarFallback>
               </Avatar>
-              <h2 className="text-2xl font-bold">{client.nom.toUpperCase()}</h2>
-              {client.entreprise && (
-                <p className="text-sm text-muted-foreground">
-                  {client.entreprise}
-                </p>
-              )}
+              <h2 className="text-2xl font-bold">
+                {client.titre && client.titre + ". "}
+                {client.nom.toUpperCase()}
+              </h2>
             </div>
             <div className="space-y-4">
               {client.email && (
-                <div className="flex items-center">
-                  <Mail className="w-5 h-5 mr-2 text-muted-foreground" />
+                <div className="flex items-center group hover:text-purple-600">
+                  <Mail className="w-5 h-5 mr-2 text-muted-foreground group-hover:text-purple-600" />
                   <span>{client.email}</span>
                 </div>
               )}
               {client.telephone && (
-                <div className="flex items-center">
-                  <Phone className="w-5 h-5 mr-2 text-muted-foreground" />
+                <div className="flex items-center group hover:text-purple-600">
+                  <Phone className="w-5 h-5 mr-2 text-muted-foreground group-hover:text-purple-600" />
                   <span>{client.telephone}</span>
                 </div>
               )}
+              {client.mobile && (
+                <div className="flex items-center group hover:text-purple-600">
+                  <Smartphone className="w-5 h-5 mr-2 text-muted-foreground group-hover:text-purple-600" />
+                  <span>{client.mobile}</span>
+                </div>
+              )}
               {client.adresse && (
-                <div className="flex items-center">
-                  <MapPin className="w-5 h-5 mr-2 text-muted-foreground" />
+                <div className="flex items-center group hover:text-purple-600">
+                  <MapPin className="w-5 h-5 mr-2 text-muted-foreground group-hover:text-purple-600" />
                   <span>{client.adresse}</span>
                 </div>
               )}
+              {client.ice && (
+                <div className="flex items-center group hover:text-purple-600">
+                  <Hash className="w-5 h-5 mr-2 text-muted-foreground group-hover:text-purple-600 " />
+                  <span>ICE : {client.ice}</span>
+                </div>
+              )}
+              {client.note && (
+                <div className="flex items-center group hover:text-purple-600">
+                  <NotebookText className="w-5 h-5 mr-2 text-muted-foreground group-hover:text-purple-600 " />
+                  <span>{client.note}</span>
+                </div>
+              )}
 
-              {/* <div className="flex items-center">
-                <CreditCard className="w-5 h-5 mr-2 text-muted-foreground" />
+              {/* <div className="flex items-center group hover:text-purple-600">
+                <CreditCard className="w-5 h-5 mr-2 text-muted-foreground group-hover:text-purple-600" />
                 <span>Crédit : 1500 DH</span>
               </div> */}
             </div>

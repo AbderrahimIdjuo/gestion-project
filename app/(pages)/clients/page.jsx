@@ -13,7 +13,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, Plus, X, Pen, Trash2 } from "lucide-react";
+import ImportClients from "@/components/importer-clients";
+import { Search, Plus, X, Pen, Trash2, Upload } from "lucide-react";
 import { ClientFormDialog } from "@/components/client-form-dialog";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import { ClientInfoDialog } from "@/components/client-info";
@@ -117,33 +118,18 @@ export default function ClientsPage() {
               </div>
             </div>
           </div>
-
-          <Button
-            onClick={() => {
-              setIsAddingClient(!isAddingClient);
-              if (isUpdatingClient) {
-                setIsUpdatingClient(false);
-                setIsAddingClient(false);
-              }
-            }}
-            className={`${
-              isAddingClient || isUpdatingClient
-                ? "bg-red-500 hover:bg-red-600"
-                : "bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 "
-            } text-white font-semibold transition-all duration-300 transform hover:scale-105 rounded-full`}
-          >
-            {isAddingClient || isUpdatingClient ? (
-              <>
-                <X className="mr-2 h-4 w-4" />
-                Annuler
-              </>
-            ) : (
-              <>
-                <Plus className="mr-2 h-4 w-4" />
-                Ajouter un client
-              </>
-            )}
-          </Button>
+          <div className="flex gap-2 items-center ">
+            <ImportClients>
+              <Button
+                variant="outline"
+                className="border-purple-500 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900 rounded-full"
+              >
+                <Upload className="mr-2 h-4 w-4" />
+                Importer
+              </Button>
+            </ImportClients>
+            <ClientFormDialog />
+          </div>
         </div>
 
         <div
@@ -153,255 +139,150 @@ export default function ClientsPage() {
               : "grid-cols-1"
           }`}
         >
-          <div className="col-span-2">
-            <div
-              className={`grid gap-3 border mb-3 rounded-lg ${
-                isAddingClient || isUpdatingClient ? "hidden" : ""
-              } `}
-            >
-              {/* the full table  */}
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nom</TableHead>
-                    <TableHead>Téléphone</TableHead>
-                    <TableHead>Adresse</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {clients.isLoading ? (
-                    [...Array(10)].map((_, index) => (
-                      <TableRow
-                        className="h-[2rem] MuiTableRow-root !py-2"
-                        role="checkbox"
-                        tabIndex={-1}
-                        key={index}
+          <div className="grid gap-3 border mb-3 rounded-lg">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nom</TableHead>
+                  <TableHead>Téléphone</TableHead>
+                  <TableHead>Adresse</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>ICE</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {clients.isLoading ? (
+                  [...Array(10)].map((_, index) => (
+                    <TableRow
+                      className="h-[2rem] MuiTableRow-root !py-2"
+                      role="checkbox"
+                      tabIndex={-1}
+                      key={index}
+                    >
+                      <TableCell
+                        className="!py-2 text-sm md:text-base"
+                        align="left"
                       >
-                        <TableCell
-                          className="!py-2 text-sm md:text-base"
-                          align="left"
-                        >
-                          <div className="flex gap-2 items-center">
-                            <Skeleton className="h-10 w-10 rounded-full" />
-                            <Skeleton className="h-4 w-[80%]" />
-                          </div>
-                        </TableCell>
-                        <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-full" />
-                        </TableCell>
-                        <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-full" />
-                        </TableCell>
-                        <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-full" />
-                        </TableCell>
-                        <TableCell className="!py-2">
-                          <div className="flex gap-2 justify-end">
-                            <Skeleton className="h-7 w-7 rounded-full" />
-                            <Skeleton className="h-7 w-7 rounded-full" />
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : clients.data?.length > 0 ? (
-                    clients.data?.map((client) => (
-                      <TableRow
-                        className="font-medium"
-                        key={client.id}
-                      >
-                        <ClientInfoDialog client={client}>
-                          <TableCell className="font-medium hover:text-purple-500 cursor-pointer !py-2">
-                            <div className="flex flex-row gap-2 justify-start items-center">
-                              <Avatar className="w-8 h-8">
-                                <AvatarImage
-                                  src={`https://api.dicebear.com/7.x/initials/svg?seed=${client.nom}`}
-                                />
-                                <AvatarFallback>
-                                  {getInitials(client.nom)}
-                                </AvatarFallback>
-                              </Avatar>
-                              <h2 className="text-sm font-bold">
-                                {client.nom.toUpperCase()}
-                              </h2>
-                            </div>
-                          </TableCell>
-                        </ClientInfoDialog>
-                        <TableCell className="text-md !py-2">
-                          {client.telephone}
-                        </TableCell>
-                        <TableCell className="text-md !py-2">
-                          {client.adresse}
-                        </TableCell>
-                        <TableCell className="text-md !py-2">
-                          {client.email}
-                        </TableCell>
-                        <TableCell className="text-right !py-2">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
-                              onClick={() => {
-                                setcurrClient(client);
-                                setIsUpdatingClient(true);
-                                setIsAddingClient(false);
-                              }}
-                            >
-                              <Pen className="h-4 w-4" />
-                              <span className="sr-only">Modifier</span>
-                            </Button>
-                            <Button
-                              name="delete btn"
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
-                              onClick={() => {
-                                setIsDialogOpen(true);
-                                setcurrClient(client);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              <span className="sr-only">Supprimer</span>
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableCell colSpan={5} align="center">
-                      Aucun client trouvé
-                    </TableCell>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-
-            {/* the half table with the name and Action columns */}
-            <ScrollArea
-              className={`h-[35rem] w-full  grid gap-3  border mb-3 rounded-lg ${
-                !isAddingClient && !isUpdatingClient ? "hidden" : ""
-              } `}
-            >
-              <div>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Client</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {clients.isLoading ? (
-                      [...Array(10)].map((_, index) => (
-                        <TableRow
-                          className="h-[2rem] MuiTableRow-root"
-                          role="checkbox"
-                          tabIndex={-1}
-                          key={index}
-                        >
-                          <TableCell
-                            className="!py-2 text-sm md:text-base"
-                            align="left"
-                          >
-                            <div className="flex gap-2 items-center">
-                              <Skeleton className="h-12 w-12 rounded-full" />
-                              <Skeleton className="h-4 w-[150px]" />
-                            </div>
-                          </TableCell>
-                          <TableCell className="!py-2" align="right">
-                            <Skeleton className="h-4 w-[100px]" />
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : clients.data?.length > 0 ? (
-                      clients.data?.map((client) => (
-                        <TableRow key={client.id}>
-                          <ClientInfoDialog client={client}>
-                            <TableCell className="font-medium cursor-pointer hover:text-purple-600">
-                              <div className="flex flex-row gap-2 justify-start items-center">
-                                <Avatar className="w-10 h-10">
-                                  <AvatarImage
-                                    src={`https://api.dicebear.com/7.x/initials/svg?seed=${client.nom}`}
-                                  />
-                                  <AvatarFallback>
-                                    {getInitials(client.nom)}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div className="grid grid-rows-2">
-                                  <h2 className="text-sm font-bold">
-                                    {client.nom.toUpperCase()}
-                                  </h2>
-
-                                  <p className="text-sm text-muted-foreground">
-                                    {client.telephone}
-                                  </p>
-                                </div>
-                              </div>
-                            </TableCell>
-                          </ClientInfoDialog>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
-                                onClick={() => {
-                                  setcurrClient(client);
-                                  setIsUpdatingClient(true);
-                                  setIsAddingClient(false);
-                                }}
-                              >
-                                <Pen className="h-4 w-4" />
-                                <span className="sr-only">Modifier</span>
-                              </Button>
-                              <Button
-                                name="delete btn"
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
-                                onClick={() => {
-                                  setIsDialogOpen(true);
-                                  setcurrClient(client);
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                <span className="sr-only">Supprimer</span>
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableCell colSpan={2} align="center">
-                        Aucun client trouvé
+                        <div className="flex gap-2 items-center">
+                          <Skeleton className="h-10 w-10 rounded-full" />
+                          <Skeleton className="h-4 w-[80%]" />
+                        </div>
                       </TableCell>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </ScrollArea>
-            {clients.data?.length > 0 ? (
-              <CustomPagination
-                currentPage={page}
-                setCurrentPage={setPage}
-                totalPages={totalPages}
-              />
-            ) : (
-              ""
-            )}
+                      <TableCell className="!py-2" align="left">
+                        <Skeleton className="h-4 w-full" />
+                      </TableCell>
+                      <TableCell className="!py-2" align="left">
+                        <Skeleton className="h-4 w-full" />
+                      </TableCell>
+                      <TableCell className="!py-2" align="left">
+                        <Skeleton className="h-4 w-full" />
+                      </TableCell>
+                      <TableCell className="!py-2" align="left">
+                        <Skeleton className="h-4 w-full" />
+                      </TableCell>
+                      <TableCell className="!py-2">
+                        <div className="flex gap-2 justify-end">
+                          <Skeleton className="h-7 w-7 rounded-full" />
+                          <Skeleton className="h-7 w-7 rounded-full" />
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : clients.data?.length > 0 ? (
+                  clients.data?.map((client) => (
+                    <TableRow className="font-medium" key={client.id}>
+                      <ClientInfoDialog client={client}>
+                        <TableCell className="font-medium hover:text-purple-500 cursor-pointer !py-2">
+                          <div className="flex flex-row gap-2 justify-start items-center">
+                            <Avatar className="w-8 h-8">
+                              <AvatarImage
+                                src={`https://api.dicebear.com/7.x/initials/svg?seed=${client.nom}`}
+                              />
+                              <AvatarFallback>
+                                {getInitials(client.nom)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <h2 className="text-sm font-bold">
+                              {client.titre
+                                ? client.titre + ". " + client.nom.toUpperCase()
+                                : client.nom.toUpperCase()}
+                            </h2>
+                          </div>
+                        </TableCell>
+                      </ClientInfoDialog>
+                      <TableCell className="text-md !py-2">
+                        {client.telephone}
+                      </TableCell>
+                      <TableCell className="text-md !py-2">
+                        {client.adresse}
+                      </TableCell>
+                      <TableCell className="text-md !py-2">
+                        {client.email}
+                      </TableCell>
+                      <TableCell className="text-md !py-2">
+                        {client.ice}
+                      </TableCell>
+                      <TableCell className="text-right !py-2">
+                        <div className="flex justify-end gap-2">
+                          <ModifyClientDialog currClient={client} />
+                          {/* <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
+                            onClick={() => {
+                              setcurrClient(client);
+                              setIsUpdatingClient(true);
+                              setIsAddingClient(false);
+                            }}
+                          >
+                            <Pen className="h-4 w-4" />
+                            <span className="sr-only">Modifier</span>
+                          </Button> */}
+                          <Button
+                            name="delete btn"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
+                            onClick={() => {
+                              setIsDialogOpen(true);
+                              setcurrClient(client);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            <span className="sr-only">Supprimer</span>
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableCell colSpan={6} align="center">
+                    Aucun client trouvé
+                  </TableCell>
+                )}
+              </TableBody>
+            </Table>
           </div>
-          {isUpdatingClient && (
-            <ModifyClientDialog
-              currClient={currClient}
-              clientList={clients.data}
-              setIsUpdatingClient={setIsUpdatingClient}
-            />
-          )}
-          {isAddingClient && <ClientFormDialog clientList={clients?.data} />}
         </div>
       </div>
+      {clients.data?.length > 0 ? (
+        <CustomPagination
+          currentPage={page}
+          setCurrentPage={setPage}
+          totalPages={totalPages}
+        />
+      ) : (
+        ""
+      )}
+      {/* {isUpdatingClient && (
+        <ModifyClientDialog
+          currClient={currClient}
+          clientList={clients.data}
+          isOpen={isUpdatingClient}
+          onClose={() => setIsUpdatingClient(false)}
+        />
+      )} */}
       <DeleteConfirmationDialog
         recordName={currClient?.nom}
         isOpen={isDialogOpen}

@@ -1,2 +1,2 @@
 -- AlterTable
-ALTER TABLE "Clients" ADD COLUMN     "civilite" TEXT;
+ALTER TABLE "Clients" ADD COLUMN     "titre" TEXT;

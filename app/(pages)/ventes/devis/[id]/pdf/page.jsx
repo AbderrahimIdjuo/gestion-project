@@ -141,8 +141,8 @@ export default function DevisPDFPage() {
           <div id="print-area" className="space-y-3">
             {/* Header */}
             <div className="flex justify-between items-center border-b border-[#228B8B] pb-1">
-            <img src="/images/LOGO-tete.jpg" alt="Logo" width={300} />
-            <img src="/images/LOGO-OUDAOUD.jpg" className="h-24 w-24" />
+              <img src="/images/LOGO-tete.jpg" alt="Logo" width={300} />
+              <img src="/images/LOGO-OUDAOUD.jpg" className="h-24 w-24" />
             </div>
 
             {/* Company and Client Info */}
@@ -165,8 +165,8 @@ export default function DevisPDFPage() {
                 <div className="flex items-center gap-2 mb-2">
                   <h2 className="font-bold text-lg text-gray-900">Client : </h2>
                   <p className="font-bold text-lg text-gray-900">
-                    {devi?.client.civilite && devi?.client.civilite +". "}
-                     {devi?.client.nom.toUpperCase()}
+                    {devi?.client.titre && devi?.client.titre + ". "}
+                    {devi?.client.nom.toUpperCase()}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 ">

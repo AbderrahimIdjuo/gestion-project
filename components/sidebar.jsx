@@ -15,12 +15,12 @@ import {
   ContactRound,
   Settings,
   Landmark,
-  Grid2X2
+  Grid2X2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const menuItems = [
- // { icon: TestTubeDiagonal, label: "Test", href: "/test" },
+  // { icon: TestTubeDiagonal, label: "Test", href: "/test" },
   { icon: LayoutDashboard, label: "Dashboard", href: "/" },
   {
     icon: Users,
@@ -67,7 +67,7 @@ const menuItems = [
       },
       { label: "Commandes", href: "/achats/commandes" },
       { label: "Dépenses récurrentes", href: "/achats/depenses-recurrentes" },
-     // { label: "Dépenses variantes", href: "/achats/depenses-variantes" },
+      // { label: "Dépenses variantes", href: "/achats/depenses-variantes" },
     ],
   },
   {

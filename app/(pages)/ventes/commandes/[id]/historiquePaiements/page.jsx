@@ -85,8 +85,8 @@ export default function HistoriquePaiement() {
                 <div className="flex items-center gap-2 mb-2">
                   <h2 className="font-bold text-lg text-gray-900">Client : </h2>
                   <p className="font-bold text-lg text-gray-900">
-                    {commande?.client.civilite && commande?.client.civilite + ". "}
-                     {commande?.client.nom.toUpperCase()}
+                    {commande?.client.titre && commande?.client.titre + ". "}
+                    {commande?.client.nom.toUpperCase()}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 ">
@@ -99,7 +99,7 @@ export default function HistoriquePaiement() {
             </div>
 
             {/* Items Table */}
-            <div >
+            <div>
               <h3 className="text-lg font-bold">Historique des paiements :</h3>
               <div className="overflow-hidden rounded-lg border border-black">
                 <Table className="w-full border-collapse">

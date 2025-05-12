@@ -64,13 +64,15 @@ export default function CommandesPDFPage() {
                 <h1 className="font-bold text-lg text-gray-900">
                   Commande N° : {commande?.numero}
                 </h1>
-               {commande?.echeance && <div className="flex items-center gap-2 mt-2 ">
-                  <Calendar className="h-3 w-3" />
-                  <p className="font-medium text-sm">
-                    <span>Date limite de livraison:</span>{" "}
-                    {formatDate(commande?.echeance)}{" "}
-                  </p>
-                </div>}
+                {commande?.echeance && (
+                  <div className="flex items-center gap-2 mt-2 ">
+                    <Calendar className="h-3 w-3" />
+                    <p className="font-medium text-sm">
+                      <span>Date limite de livraison:</span>{" "}
+                      {formatDate(commande?.echeance)}{" "}
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Client Info */}
@@ -78,8 +80,8 @@ export default function CommandesPDFPage() {
                 <div className="flex items-center gap-2 mb-2">
                   <h2 className="font-bold text-lg text-gray-900">Client : </h2>
                   <p className="font-bold text-lg text-gray-900">
-                    {commande?.client.civilite && commande?.client.civilite + ". "}
-                     {commande?.client.nom.toUpperCase()}
+                    {commande?.client.titre && commande?.client.titre + ". "}
+                    {commande?.client.nom.toUpperCase()}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 ">
