@@ -267,7 +267,7 @@ export default function TransactionDialog() {
                     </SelectTrigger>
                     <SelectContent>
                       {comptes.data?.map((element) => (
-                        <SelectItem key={element.id} value={element.compte}>
+                        <SelectItem key={element.id} value={JSON.stringify({ id: element.id, compte: element.compte })}>
                           <div className="flex items-center gap-2">
                             {element.compte}
                           </div>

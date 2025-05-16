@@ -66,7 +66,7 @@ const menuItems = [
         href: "/achats/fournisseurs",
       },
       { label: "Commandes", href: "/achats/commandes" },
-      { label: "Dépenses récurrentes", href: "/achats/depenses-recurrentes" },
+      { label: "Dépenses fix", href: "/achats/depenses-recurrentes" },
       // { label: "Dépenses variantes", href: "/achats/depenses-variantes" },
     ],
   },

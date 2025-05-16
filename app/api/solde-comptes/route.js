@@ -5,13 +5,13 @@ export const dynamic = "force-dynamic";
 export async function PUT(req) {
   try {
     const resopns = await req.json();
-    const { solde } = resopns;
+    const {id , solde } = resopns;
     console.log("solde type", typeof solde);
 
-    const result = await prisma.comptabilite.update({
-      where: { id: 1 },
+    const result = await prisma.comptesBancaires.update({
+      where: { id},
       data: {
-        caisse: parseFloat(solde),
+        solde: parseFloat(solde),
       },
     });
 

@@ -1,6 +1,6 @@
 "use client";
 
-export default function PiedFacture() {
+export default function PiedDevis() {
   return (
     <div
       className="print-footer"
@@ -16,10 +16,6 @@ export default function PiedFacture() {
         STE OUDAOUDOX SARL - Avenue Jaber Ben Hayane Bloc A N°01 Hay El Houda -
         Agadir
       </div>
-
-      <div style={{ marginTop: "5px", fontSize: "13px" }}>
-        Gsm : 06 61 58 53 08 - 06 63 63 72 44 - E-mail : inoxoudaoud@gmail.com
-      </div>
       <hr
         style={{
           width: "40%",
@@ -27,8 +23,8 @@ export default function PiedFacture() {
           border: "0.5px solid white",
         }}
       />
-      <div style={{ fontSize: "13px" }}>
-        RC : 53805 - TP : 67504461 - IF : 53290482 - ICE : 003172063000061
+      <div style={{ marginTop: "5px", fontSize: "13px" }}>
+        Gsm : 06 61 58 53 08 - 06 63 63 72 44 - E-mail : inoxoudaoud@gmail.com
       </div>
     </div>
   );

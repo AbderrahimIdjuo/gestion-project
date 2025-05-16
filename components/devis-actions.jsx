@@ -1,0 +1,98 @@
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import {
+  Pen,
+  Trash2,
+  FilePlus,
+  Printer,
+  PrinterCheck,
+  MoreVertical,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+
+export function DevisActions({ devis, setDeleteDialogOpen, setCurrentDevi }) {
+  const router = useRouter();
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 rounded-full hover:bg-gray-200"
+        >
+          <MoreVertical className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent align="end" className="w-72 rounded-md">
+        <DropdownMenuItem
+          onClick={() => router.push(`/ventes/devis/${devis.id}/update`)}
+          className="flex items-center gap-2 cursor-pointer group hover:!bg-purple-100"
+        >
+          <Pen className="h-4 w-4 text-purple-600 group-hover:text-purple-600" />
+          <span className="transition-colors duration-200 group-hover:text-purple-600 group-hover:bg-purple-100">
+            Modifier
+          </span>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem
+          onClick={() => {
+            setDeleteDialogOpen(true);
+            setCurrentDevi(devis);
+          }}
+          className="flex items-center gap-2 cursor-pointer group hover:!bg-red-100"
+        >
+          <Trash2 className="h-4 w-4 text-red-600" />
+          <span className="transition-colors duration-200 group-hover:text-red-600 group-hover:bg-red-100">
+            Supprimer
+          </span>
+        </DropdownMenuItem>
+        {!(devis.statut === "Accepté") && (
+          <DropdownMenuItem
+            onClick={() => {
+              localStorage.setItem("devi", JSON.stringify(devis));
+              router.push("/ventes/commandes/nouveau");
+            }}
+            className="flex items-center gap-2 cursor-pointer group hover:!bg-blue-100"
+          >
+            <FilePlus className="h-4 w-4 text-sky-600" />
+            <span className="transition-colors duration-200 group-hover:text-blue-600 group-hover:bg-blue-100">
+              Créer une commande
+            </span>
+          </DropdownMenuItem>
+        )}
+
+        <DropdownMenuItem
+          onClick={() => {
+            window.open(`/ventes/devis/${devis.id}/pdf`, "_blank");
+            localStorage.setItem("devi", JSON.stringify(devis));
+          }}
+          className="flex items-center gap-2 cursor-pointer group hover:!bg-amber-100"
+        >
+          <Printer className="h-4 w-4 text-amber-600" />
+          <span className="transition-colors duration-200 group-hover:text-amber-600 group-hover:bg-amber-100">
+            Imprimer un devis
+          </span>
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => {
+            window.open(`/ventes/devis/${devis.id}/facture`, "_blank");
+            localStorage.setItem("devi", JSON.stringify(devis));
+          }}
+          className="flex items-center gap-2 cursor-pointer group hover:!bg-emerald-100"
+        >
+          <PrinterCheck className="h-4 w-4 text-emerald-600" />
+          <span className="transition-colors duration-200 group-hover:text-emerald-600 group-hover:bg-emerald-100">
+            Imprimer une facture
+          </span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}

@@ -67,6 +67,7 @@ export default function UpdateDevisPage({ params }) {
   } = useForm({
     defaultValues: {
       articls: [],
+      unite : "U",
     },
     resolver: zodResolver(updateDeviSchema),
   });
@@ -399,6 +400,7 @@ export default function UpdateDevisPage({ params }) {
                               </TableCell>
                               <TableCell>
                                 <Select
+                                 defaultValue="U"
                                   value={item.unite}
                                   name="unites"
                                   onValueChange={(value) =>

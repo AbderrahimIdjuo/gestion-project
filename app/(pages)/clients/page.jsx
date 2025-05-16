@@ -146,7 +146,6 @@ export default function ClientsPage() {
                   <TableHead>Nom</TableHead>
                   <TableHead>Téléphone</TableHead>
                   <TableHead>Adresse</TableHead>
-                  <TableHead>Email</TableHead>
                   <TableHead>ICE</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -171,10 +170,7 @@ export default function ClientsPage() {
                       </TableCell>
                       <TableCell className="!py-2" align="left">
                         <Skeleton className="h-4 w-full" />
-                      </TableCell>
-                      <TableCell className="!py-2" align="left">
-                        <Skeleton className="h-4 w-full" />
-                      </TableCell>
+                      </TableCell>               
                       <TableCell className="!py-2" align="left">
                         <Skeleton className="h-4 w-full" />
                       </TableCell>
@@ -218,27 +214,11 @@ export default function ClientsPage() {
                         {client.adresse}
                       </TableCell>
                       <TableCell className="text-md !py-2">
-                        {client.email}
-                      </TableCell>
-                      <TableCell className="text-md !py-2">
                         {client.ice}
                       </TableCell>
                       <TableCell className="text-right !py-2">
                         <div className="flex justify-end gap-2">
                           <ModifyClientDialog currClient={client} />
-                          {/* <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
-                            onClick={() => {
-                              setcurrClient(client);
-                              setIsUpdatingClient(true);
-                              setIsAddingClient(false);
-                            }}
-                          >
-                            <Pen className="h-4 w-4" />
-                            <span className="sr-only">Modifier</span>
-                          </Button> */}
                           <Button
                             name="delete btn"
                             variant="ghost"

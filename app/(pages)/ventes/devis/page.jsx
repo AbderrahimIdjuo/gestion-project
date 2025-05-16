@@ -41,6 +41,7 @@ import { PriceRangeSlider } from "@/components/customUi/customSlider";
 import { LoadingDots } from "@/components/loading-dots";
 import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { DevisActions } from "@/components/devis-actions";
 
 export default function DevisPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -349,7 +350,7 @@ export default function DevisPage() {
                     </TableCell>
                     <TableCell className="!py-2">{devis.total} DH</TableCell>
                     <TableCell className="text-right !py-2">
-                      <div className="flex justify-end gap-2">
+                      {/* <div className="flex justify-end gap-2">
                         <CustomTooltip message="Modifier">
                           <Button
                             variant="ghost"
@@ -417,7 +418,9 @@ export default function DevisPage() {
                             <span className="sr-only">Imprimer</span>
                           </Button>
                         </CustomTooltip>
-                      </div>
+                       
+                      </div> */}
+                       <DevisActions devis={devis} setDeleteDialogOpen={setDeleteDialogOpen} setCurrentDevi={setCurrentDevi}/>
                     </TableCell>
                   </TableRow>
                 ))

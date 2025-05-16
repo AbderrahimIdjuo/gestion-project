@@ -238,6 +238,58 @@ export default function DashboardPage() {
             </div>
             <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2 pt-4">
               <CardTitle className="text-sm font-medium">
+                Compte personnel
+              </CardTitle>
+              <Wallet className="h-6 w-6 text-muted-foreground" />
+            </CardHeader>
+            <CardContent className="relative">
+              <div className="text-2xl font-bold">
+                {statistiques.data?.comptePersonnel} DH
+              </div>
+              <div className="flex items-center gap-1 ">
+                <ArrowUpRight className="h-5 w-5 text-emerald-500" />
+                <p className="text-xs">
+                  <span className="text-emerald-500">+8.2%</span>
+                  <span className="text-muted-foreground">
+                    {" "}
+                    par rapport au mois dernier
+                  </span>
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="relative bg-white overflow-hidden shadow-md">
+            <div className="absolute inset-0 bg-gradient-to-tr from-fuchsia-500 via-purple-500 to-violet-500 p-[2px]">
+              <div className="absolute inset-0 bg-white"></div>
+            </div>
+            <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2 pt-4">
+              <CardTitle className="text-sm font-medium">
+                Compte professionnel
+              </CardTitle>
+              <Wallet className="h-6 w-6 text-muted-foreground" />
+            </CardHeader>
+            <CardContent className="relative">
+              <div className="text-2xl font-bold">
+                {statistiques.data?.compteProfessionnel} DH
+              </div>
+              <div className="flex items-center gap-1 ">
+                <ArrowUpRight className="h-5 w-5 text-emerald-500" />
+                <p className="text-xs">
+                  <span className="text-emerald-500">+8.2%</span>
+                  <span className="text-muted-foreground">
+                    {" "}
+                    par rapport au mois dernier
+                  </span>
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="relative bg-white overflow-hidden shadow-md">
+            <div className="absolute inset-0 bg-gradient-to-tr from-fuchsia-500 via-purple-500 to-violet-500 p-[2px]">
+              <div className="absolute inset-0 bg-white"></div>
+            </div>
+            <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2 pt-4">
+              <CardTitle className="text-sm font-medium">
                 Total Commandes
               </CardTitle>
               <Receipt className="h-6 w-6 text-muted-foreground" />

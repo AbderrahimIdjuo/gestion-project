@@ -16,13 +16,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import CustomPagination from "@/components/customUi/customPagination";
-import { Search, Plus, Pen, Trash2, X } from "lucide-react";
+import { Search, Plus, Pen, Trash2, X , Upload} from "lucide-react";
 import { FournisseurFormDialog } from "@/components/fournisseur-form-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LoadingDots } from "@/components/loading-dots";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import ImportFournisseurs from "@/components/importer-fournisseur";
 
 export default function FournisseursPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -97,21 +98,32 @@ export default function FournisseursPage() {
         </div>
 
         <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-6">
-        <div className="relative w-full sm:w-96">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Rechercher des fournisseurs..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 w-full rounded-full bg-gray-50 focus-visible:ring-purple-500 focus-visible:ring-offset-0"
-                spellCheck={false}
-              />
-              <div className="absolute right-6 top-1/3 h-4 w-4 -translate-y-1/2 text-muted-foreground">
-                {fournisseurs.isFetching && !fournisseurs.isLoading && <LoadingDots />}
-              </div>
+          <div className="relative w-full sm:w-96">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Rechercher des fournisseurs..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 w-full rounded-full bg-gray-50 focus-visible:ring-purple-500 focus-visible:ring-offset-0"
+              spellCheck={false}
+            />
+            <div className="absolute right-6 top-1/3 h-4 w-4 -translate-y-1/2 text-muted-foreground">
+              {fournisseurs.isFetching && !fournisseurs.isLoading && (
+                <LoadingDots />
+              )}
             </div>
+          </div>
 
           <div className="flex space-x-2">
+            <ImportFournisseurs>
+              <Button
+                variant="outline"
+                className="border-purple-500 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900 rounded-full"
+              >
+                <Upload className="mr-2 h-4 w-4" />
+                Importer
+              </Button>
+            </ImportFournisseurs>
             {/* Botton d'ajout de fournisseur */}
             <Button
               onClick={() => {
@@ -205,10 +217,10 @@ export default function FournisseursPage() {
                   ) : fournisseurs.data?.length > 0 ? (
                     fournisseurs.data.map((fournisseur) => (
                       <TableRow
-                        className="font-medium hover:text-emerald-400"
+                        className="font-medium"
                         key={fournisseur.id}
                       >
-                        <TableCell className="font-medium cursor-pointer !py-2">
+                        <TableCell className="font-medium hover:text-purple-500 cursor-pointer !py-2">
                           <div className="flex flex-row gap-2 justify-start items-center">
                             <Avatar className="w-10 h-10">
                               <AvatarImage
@@ -402,9 +414,7 @@ export default function FournisseursPage() {
           <div className={`${!isAddingFournisseur && "hidden"} `}>
             <ScrollArea className="w-full h-[85vh]">
               {isAddingFournisseur && (
-                <FournisseurFormDialog
-                  fournisseurList={fournisseurs.data}
-                />
+                <FournisseurFormDialog fournisseurList={fournisseurs.data} />
               )}
             </ScrollArea>
           </div>

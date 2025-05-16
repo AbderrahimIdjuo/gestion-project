@@ -445,7 +445,7 @@ export default function NouvelleCommandePage() {
           </Card>
           <div className="flex justify-end items-center mt-3 ">
             <div className="space-x-2">
-              <Link href="/ventes/commandes">
+              <Link href="/ventes/devis">
                 <Button className="rounded-full" variant="outline">
                   Annuler
                 </Button>

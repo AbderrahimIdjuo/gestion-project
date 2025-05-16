@@ -14,7 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Phone, Calendar } from "lucide-react";
-import PiedDevis from "@/components/pied-devis";
+import PiedFacture from "@/components/pied-facture";
 import LoadingDeviPdf from "@/components/loading-devi-pdf";
 
 function formatPhoneNumber(phone) {
@@ -151,7 +151,7 @@ export default function DevisPDFPage() {
               {/* Devis Info */}
               <div className="col-span-1">
                 <h1 className="font-bold text-lg text-gray-900">
-                  DEVIS N° : {devi?.numero}
+                  Facture N° : {"FACT-"+ devi?.numero.slice(4, 12) }
                 </h1>
                 <div className="flex items-center gap-2 mt-2 ">
                   <Calendar className="h-3 w-3" />
@@ -176,6 +176,13 @@ export default function DevisPDFPage() {
                     {formatPhoneNumber(devi?.client.telephone)}
                   </p>
                 </div>
+                {devi?.client.ice && (
+                  <div className="flex items-center gap-2 ">
+                    <p className="font-medium text-sm">
+                      ICE : {devi?.client.ice}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
             {/* Items Table */}
@@ -386,7 +393,7 @@ export default function DevisPDFPage() {
                   une commande ferme et définitive.
                 </h3>
               </div>
-              <PiedDevis />
+              <PiedFacture />
             </div>
           </div>
           <div className="print:hidden mt-8 flex justify-end">

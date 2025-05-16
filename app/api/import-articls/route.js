@@ -24,20 +24,14 @@ export async function POST(req) {
     const data = XLSX.utils.sheet_to_json(sheet);
 
     // Format data to match Prisma schema
-    const clients = data.map((row) => ({
+    const articls = data.map((row) => ({
       id: row.id || undefined, // Prisma will generate a UUID if not provided
-      nom: row.nom,
-      email: row.email || null,
-      telephone:
-        row.telephone !== undefined && row.telephone !== null
-          ? row.telephone.toString()
-          : null,
-      adresse: row.adresse  || null,
-      ice: row.ice || null,
+      designation: row.designation,
+      categorie: row.categorie || null,
     }));
 
     // Insert into database
-    await prisma.clients.createMany({ data: clients });
+    await prisma.items.createMany({ data: articls });
 
     return NextResponse.json({ message: "Import successful" }, { status: 200 });
   } catch (error) {

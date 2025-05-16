@@ -14,13 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import CustomPagination from "@/components/customUi/customPagination";
-import {
-  Plus,
-  Search,
-  Pen,
-  Trash2,
-  X,
-} from "lucide-react";
+import { Plus, Search, Pen, Trash2, X , Upload } from "lucide-react";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -28,6 +22,7 @@ import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { LoadingDots } from "@/components/loading-dots";
 import { ArticlForm } from "@/components/add-articl-form";
 import { UpdateArticlForm } from "@/components/update-articl-form";
+import ImportArticls from "@/components/importer-articls";
 
 export default function ProduitsPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -191,148 +186,7 @@ export default function ProduitsPage() {
           </div>
           <div className="flex space-x-2">
             <ArticlForm />
-            {/* <Sheet>
-              <SheetTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="border-purple-500 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900 rounded-full"
-                >
-                  <Filter className="mr-2 h-4 w-4" />
-                  Filtres
-                </Button>
-              </SheetTrigger>
-              <SheetContent className="border-l-purple-200 bg-white">
-                <SheetHeader>
-                  <SheetTitle className="text-black">Filtres</SheetTitle>
-                  <SheetDescription className="text-gray-600">
-                    Ajustez les filtres pour affiner votre recherche de
-                    produits.
-                  </SheetDescription>
-                </SheetHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label
-                      htmlFor="categorie"
-                      className="text-right text-black"
-                    >
-                      Catégorie
-                    </Label>
-                    <Select
-                      value={filters.categorie}
-                      onValueChange={(value) =>
-                        setFilters({ ...filters, categorie: value })
-                      }
-                    >
-                      <SelectTrigger className="col-span-3  bg-white focus:ring-purple-500">
-                        <SelectValue placeholder="Toutes les catégories" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white">
-                        <SelectItem key="all" value="all">
-                          Toutes les catégories
-                        </SelectItem>
-                        {categories.data?.map((element) => (
-                          <SelectItem
-                            key={element.id}
-                            value={element.categorie}
-                          >
-                            {element.categorie}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4 my-2">
-                    <Label htmlFor="statut" className="text-right text-black">
-                      Statut
-                    </Label>
-                    <Select
-                      value={filters.statut}
-                      name="statut"
-                      onValueChange={(value) =>
-                        setFilters({ ...filters, statut: value })
-                      }
-                    >
-                      <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
-                        <SelectValue placeholder="Séléctionner un statut" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {status.map((statut, index) => (
-                          <SelectItem key={index} value={statut.value}>
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={`h-2 w-2 rounded-full bg-${statut.color}`}
-                              />
-                              {statut.lable}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4 my-2">
-                    <Label htmlFor="montant" className="text-right text-black">
-                      Prix d&apos;achat :
-                    </Label>
-                    <div className="col-span-3">
-                      <PriceRangeSlider
-                        min={0}
-                        max={maxPrixAchat}
-                        step={100}
-                        value={filters.prixAchat}
-                        onValueChange={(value) =>
-                          setFilters({ ...filters, prixAchat: value })
-                        }
-                      />
-                      <div className="flex justify-between mt-2">
-                        <span>{filters.prixAchat[0]} DH</span>
-                        <span>{filters.prixAchat[1]} DH</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4 my-2">
-                    <Label htmlFor="montant" className="text-right text-black">
-                      Prix de vente :
-                    </Label>
-                    <div className="col-span-3">
-                      <PriceRangeSlider
-                        min={0}
-                        max={maxPrixVente}
-                        step={100}
-                        value={filters.prixVente}
-                        onValueChange={(value) =>
-                          setFilters({ ...filters, prixVente: value })
-                        }
-                      />
-                      <div className="flex justify-between mt-2">
-                        <span>{filters.prixVente[0]} DH</span>
-                        <span>{filters.prixVente[1]} DH</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4 my-2">
-                    <Label htmlFor="montant" className="text-right text-black">
-                      Stock :
-                    </Label>
-                    <div className="col-span-3">
-                      <PriceRangeSlider
-                        min={0}
-                        max={maxStock}
-                        step={10}
-                        value={filters.stock}
-                        onValueChange={(value) =>
-                          setFilters({ ...filters, stock: value })
-                        }
-                      />
-                      <div className="flex justify-between mt-2">
-                        <span>{filters.stock[0]} </span>
-                        <span>{filters.stock[1]} </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </SheetContent>
-            </Sheet> */}
-            {/* <ImportProduits>
+            <ImportArticls>
             <Button
               variant="outline"
               className="border-purple-500 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900 rounded-full"
@@ -340,7 +194,7 @@ export default function ProduitsPage() {
               <Upload className="mr-2 h-4 w-4" />
               Importer
             </Button>
-            </ImportProduits> */}
+            </ImportArticls>
             <Button
               onClick={() => {
                 setAddDialogOpen(true);
@@ -385,6 +239,7 @@ export default function ProduitsPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Désignation</TableHead>
+                    <TableHead>Catégorie</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -397,6 +252,12 @@ export default function ProduitsPage() {
                         tabIndex={-1}
                         key={index}
                       >
+                        <TableCell
+                          className="!py-2 text-sm md:text-base"
+                          align="left"
+                        >
+                          <Skeleton className="h-4 w-[150px]" />
+                        </TableCell>
                         <TableCell
                           className="!py-2 text-sm md:text-base"
                           align="left"
@@ -417,6 +278,9 @@ export default function ProduitsPage() {
                         <TableCell className="font-medium !py-2">
                           {articl.designation}
                         </TableCell>
+                        <TableCell className="font-medium !py-2">
+                          {articl.categorie}
+                        </TableCell>
                         <TableCell className="text-right !py-2">
                           <div className="flex justify-end gap-2">
                             <CustomTooltip message="Modifier">
@@ -426,8 +290,8 @@ export default function ProduitsPage() {
                                 className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
                                 onClick={() => {
                                   setCurrArticl(articl);
-                                  setUpdateDialogOpen(true)
-                                  console.log("modifier un articl", articl);                
+                                  setUpdateDialogOpen(true);
+                                  console.log("modifier un articl", articl);
                                 }}
                               >
                                 <Pen className="h-4 w-4" />
@@ -440,9 +304,9 @@ export default function ProduitsPage() {
                                 className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
                                 onClick={() => {
                                   setCurrArticl(articl);
-                                  setDeleteDialogOpen(true)
-                                  console.log("delete un articl", articl);                
-                                }}                              
+                                  setDeleteDialogOpen(true);
+                                  console.log("delete un articl", articl);
+                                }}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -453,7 +317,7 @@ export default function ProduitsPage() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={7} align="center">
+                      <TableCell colSpan={3} align="center">
                         Aucun articl trouvé
                       </TableCell>
                     </TableRow>
@@ -488,8 +352,8 @@ export default function ProduitsPage() {
             setAddDialogOpen(false);
           }}
         />
-           <UpdateArticlForm
-           articl={currArticl}
+        <UpdateArticlForm
+          articl={currArticl}
           isOpen={updateDialogOpen}
           onClose={() => setUpdateDialogOpen(false)}
           onConfirm={() => {

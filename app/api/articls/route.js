@@ -5,10 +5,11 @@ export const dynamic = "force-dynamic";
 export async function POST(req) {
   try {
     const resopns = await req.json();
-    const { designation } = resopns;
+    const { designation  , categorie} = resopns;
     const result = await prisma.items.create({
       data: {
         designation,
+        categorie
       },
     });
 
@@ -25,12 +26,13 @@ export async function POST(req) {
 export async function PUT(req) {
   try {
     const resopns = await req.json();
-    const { id, designation } = resopns;
+    const { id, designation , categorie } = resopns;
 
     const result = await prisma.items.update({
       where: { id },
       data: {
         designation,
+        categorie
       },
     });
 

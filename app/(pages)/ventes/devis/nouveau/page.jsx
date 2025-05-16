@@ -147,22 +147,24 @@ export default function NouveauDevisPage() {
     setItems((prev) => prev.filter((item) => item.key !== deletedItem.key));
   };
   const calculateSubTotal = () => {
-    return items.reduce((sum, item) => {
+    const subtotal =  items.reduce((sum, item) => {
       const amount = item.quantite * item.prixUnite;
       return sum + amount;
     }, 0);
-  };
-
-  const calculateTotal = () => {
-    const TVA = calculateSubTotal() * 0.2;
-    const subtotal = calculateSubTotal();
-    const discountAmount =
+        const discountAmount =
       watch("typeReduction") === "%"
         ? subtotal * (watch("reduction") / 100)
         : Number(watch("reduction"));
-    const total = subtotal - discountAmount + TVA;
-    return total.toFixed(2);
+return subtotal - discountAmount;
   };
+
+   const calculateTVA = () => {
+    return calculateSubTotal() * 0.2;;
+  };
+  const calculateTotal = () => {
+    return (calculateSubTotal() + calculateTVA()).toFixed(2);
+  };
+
 
   // infinite scrolling clients comboBox
   const { data, fetchNextPage, isLoading, isFetchingNextPage, hasNextPage } =
@@ -219,7 +221,7 @@ export default function NouveauDevisPage() {
       <Toaster position="top-center" />
       <form className="m-0 p-0" onSubmit={handleSubmit(onSubmit, onError)}>
         <div className="container mb-10 mx-auto py-6 space-y-6 w-full">
-          <div className="flex gap-3 items-center pt-10">
+          <div className="flex gap-3 items-center ">
               <h1 className="text-3xl font-bold">Nouveau devis</h1>
             </div>
           <Card className="w-full">
@@ -531,7 +533,7 @@ export default function NouveauDevisPage() {
                   </div>
                   <div className="flex justify-between py-2 ">
                     <span>TVA 20%</span>
-                    <span>{(calculateSubTotal() * 0.2).toFixed(2)} MAD</span>
+                    <span>{calculateTVA().toFixed(2)} MAD</span>
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">

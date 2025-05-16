@@ -105,38 +105,41 @@ export async function addInfoEntreprise(info) {
 
 export async function addtransaction(data) {
   const { numero, type, montant, compte, lable, description } = data;
+  let compteData = {};
+  if (type === "vider") {
+  compteData = { id: "1", compte: "caisse" };
+  } else compteData = JSON.parse(compte);  
   const result = await prisma.$transaction(async (prisma) => {
     await prisma.transactions.create({
       data: {
         reference: numero,
         type,
         montant,
-        compte,
+        compte: compteData.compte,
         lable,
         description,
       },
     });
-    if(type === "depense" || type === "recette"){
-      if (compte === "caisse") {
-        await prisma.comptabilite.update({
-          where: { id: 1 },
-          data: {
-            caisse:
-              type === "recette"
-                ? { increment: montant }
-                : { decrement: montant },
-          },
-        });
-      }
-    }else if (type === "vider") {
-      await prisma.comptabilite.update({
-        where: { id: 1 },
+
+    if (type === "vider") {
+      await prisma.comptesBancaires.update({
+        where: { id: compteData.id },
         data: {
-          caisse: { decrement: montant },
+          solde: { decrement: montant },
+        },
+      });
+    } else if (type === "depense" || type === "recette") {
+      // Mise à jour d'un compte bancaire
+      await prisma.comptesBancaires.update({
+        where: { id: compteData.id },
+        data: {
+          solde:
+            type === "recette"
+              ? { increment: montant }
+              : { decrement: montant },
         },
       });
     }
-
 
     if (numero && numero.slice(0, 3) === "CMD") {
       await prisma.commandes.update({

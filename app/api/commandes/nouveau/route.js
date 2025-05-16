@@ -14,6 +14,7 @@ export async function GET(req) {
     if (searchQuery) {
       filters.nom = {
         contains: searchQuery,
+        mode : "insensitive",
       };
     }
     // Fetch devis and commandes in parallel

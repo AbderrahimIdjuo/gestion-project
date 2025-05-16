@@ -192,10 +192,10 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
                           <p className="text-md font-medium">
                             {article.designation}
                           </p>
-                          <p className="text-sm text-muted-foreground">
-                            Prix d&apos;unité: {article.prixVente.toFixed(2)}{" "}
+                          {/* <p className="text-sm text-muted-foreground">
+                            Prix d&apos;unité: {article.prix.toFixed(2)}{" "}
                             MAD
-                          </p>
+                          </p> */}
                         </div>
                         <div
                           className={cn(

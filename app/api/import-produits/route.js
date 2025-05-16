@@ -29,10 +29,7 @@ export async function POST(req) {
       designation: row.Name || "",
       categorie: row.ProductGroup || null,
       prixAchat: row.Price || 0,
-      prixVente: row.prixVente || 0,
       stock: row.Quantity || 0,
-      fournisseurId: row.fournisseurId || null,
-    //  description: row.Description || null,
     }));
 
     // Insert into database

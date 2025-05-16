@@ -82,7 +82,20 @@ body {
     margin: 1cm;
     size: A4;
   }
-
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-image: url("/images/LOGO-OUDAOUD.jpg");
+    background-repeat: no-repeat;
+    background-size: contain; /* Or 'cover' if you want it full */
+    background-position: center center;
+    opacity: 0.1; /* Adjust opacity */
+    z-index: -1;
+  }
   body {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;

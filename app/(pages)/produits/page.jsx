@@ -50,7 +50,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PriceRangeSlider } from "@/components/customUi/customSlider";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { LoadingDots } from "@/components/loading-dots";
-import ImportProduits from "@/components/importer-produits"
+import ImportProduits from "@/components/importer-produits";
 
 export default function ProduitsPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -59,7 +59,6 @@ export default function ProduitsPage() {
   const [debouncedQuery, setDebouncedQuery] = useState();
   const [debouncedValues, setDebouncedValues] = useState({
     stock: undefined,
-    prixVente: undefined,
     prixAchat: undefined,
   });
   const [totalPages, setTotalPages] = useState();
@@ -67,27 +66,22 @@ export default function ProduitsPage() {
   const [maxPrixVente, setMaxPrixVente] = useState();
   const [maxStock, setMaxStock] = useState();
   const [currProduct, setCurrProduct] = useState(null);
-  const [isAddingProduct, setIsAddingProduct] = useState(false);
-  const [isUpdatingProduct, setIsUpdatingProduct] = useState(false);
-  const [isPurchasingProduct, setIsPurchasingProduct] = useState(false);
-
   const [filters, setFilters] = useState({
     categorie: "all",
     statut: "all",
     prixAchat: [0, maxPrixAchat],
-    prixVente: [0, maxPrixVente],
     stock: [0, maxStock],
   });
 
-  const stockStatuts = (stock) => {
-    if (stock > 19) {
-      return "En stock";
-    } else if (stock < 20 && stock > 0) {
-      return "Limité";
-    } else if (stock == 0) {
-      return "En rupture";
-    }
-  };
+  // const stockStatuts = (stock) => {
+  //   if (stock > 19) {
+  //     return "En stock";
+  //   } else if (stock < 20 && stock > 0) {
+  //     return "Limité";
+  //   } else if (stock == 0) {
+  //     return "En rupture";
+  //   }
+  // };
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedQuery(searchQuery);
@@ -103,7 +97,6 @@ export default function ProduitsPage() {
     const handler = setTimeout(() => {
       setDebouncedValues({
         stock: filters.stock,
-        prixVente: filters.prixVente,
         prixAchat: filters.prixAchat,
       });
     }, 800);
@@ -129,8 +122,6 @@ export default function ProduitsPage() {
           categorie: filters.categorie,
           minPrixAchats: filters.prixAchat[0],
           maxPrixAchats: filters.prixAchat[1],
-          minPrixVentes: filters.prixVente[0],
-          maxPrixVentes: filters.prixVente[1],
           minimumStock: filters.stock[0],
           maximumStock: filters.stock[1],
         },
@@ -139,6 +130,8 @@ export default function ProduitsPage() {
       setMaxPrixAchat(response.data.maxPrixAchat);
       setMaxPrixVente(response.data.maxPrixVente);
       setMaxStock(response.data.maxStock);
+      console.log("produits :", response.data.produits);
+
       return response.data;
     },
     keepPreviousData: true, // Keeps old data visible while fetching new page
@@ -167,7 +160,6 @@ export default function ProduitsPage() {
       ...prevFilters,
       stock: [0, maxStock],
       prixAchat: [0, maxPrixAchat],
-      prixVente: [0, maxPrixVente],
     }));
   }, [maxStock, maxPrixAchat, maxPrixVente]);
 
@@ -302,7 +294,7 @@ export default function ProduitsPage() {
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4 my-2">
                     <Label htmlFor="montant" className="text-right text-black">
-                      Prix d&apos;achat :
+                      Prix:
                     </Label>
                     <div className="col-span-3">
                       <PriceRangeSlider
@@ -317,26 +309,6 @@ export default function ProduitsPage() {
                       <div className="flex justify-between mt-2">
                         <span>{filters.prixAchat[0]} DH</span>
                         <span>{filters.prixAchat[1]} DH</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4 my-2">
-                    <Label htmlFor="montant" className="text-right text-black">
-                      Prix de vente :
-                    </Label>
-                    <div className="col-span-3">
-                      <PriceRangeSlider
-                        min={0}
-                        max={maxPrixVente}
-                        step={100}
-                        value={filters.prixVente}
-                        onValueChange={(value) =>
-                          setFilters({ ...filters, prixVente: value })
-                        }
-                      />
-                      <div className="flex justify-between mt-2">
-                        <span>{filters.prixVente[0]} DH</span>
-                        <span>{filters.prixVente[1]} DH</span>
                       </div>
                     </div>
                   </div>
@@ -364,15 +336,16 @@ export default function ProduitsPage() {
               </SheetContent>
             </Sheet>
             <ImportProduits>
-            <Button
-              variant="outline"
-              className="border-purple-500 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900 rounded-full"
-            >
-              <Upload className="mr-2 h-4 w-4" />
-              Importer
-            </Button>
+              <Button
+                variant="outline"
+                className="border-purple-500 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900 rounded-full"
+              >
+                <Upload className="mr-2 h-4 w-4" />
+                Importer
+              </Button>
             </ImportProduits>
-            <Button
+            <ProductFormDialog />
+            {/* <Button
               onClick={() => {
                 setIsAddingProduct(!isAddingProduct);
                 if (isUpdatingProduct || isPurchasingProduct) {
@@ -398,34 +371,19 @@ export default function ProduitsPage() {
                   Ajouter un produit
                 </>
               )}
-            </Button>
+            </Button> */}
           </div>
         </div>
 
-        <div
-          className={`grid pb-5 ${
-            isAddingProduct || isUpdatingProduct || isPurchasingProduct
-              ? "grid-cols-3 gap-6"
-              : "grid-cols-1"
-          }`}
-        >
-          <div className="col-span-2 mb-10">
-            <div
-              className={`grid  gap-3 border mb-5 rounded-lg ${
-                (isAddingProduct || isUpdatingProduct || isPurchasingProduct) &&
-                "hidden"
-              } `}
-            >
-              {/* the full table  */}
+        <div className="col-span-2 mb-10">
+            <div className="grid  gap-3 border mb-5 rounded-lg">
               <Table>
                 <TableHeader>
                   <TableRow>
+                  <TableHead>Réference</TableHead>
                     <TableHead>Désignation</TableHead>
                     <TableHead>Catégorie</TableHead>
-                    <TableHead>Prix d&apos;achat</TableHead>
-                    <TableHead>Prix de vente</TableHead>
-                    <TableHead>Statut</TableHead>
-                    <TableHead>Stock</TableHead>
+                    <TableHead>Prix</TableHead>
                     <TableHead>Description</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -452,12 +410,6 @@ export default function ProduitsPage() {
                           <Skeleton className="h-4 w-[150px]" />
                         </TableCell>
                         <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-[150px]" />
-                        </TableCell>
-                        <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-[90px]" />
-                        </TableCell>
-                        <TableCell className="!py-2" align="left">
                           <Skeleton className="h-4 w-[90px]" />
                         </TableCell>
                         <TableCell className="!py-2" align="left">
@@ -465,7 +417,6 @@ export default function ProduitsPage() {
                         </TableCell>
                         <TableCell className="!py-2">
                           <div className="flex gap-2 justify-end">
-                            <Skeleton className="h-7 w-7 rounded-full" />
                             <Skeleton className="h-7 w-7 rounded-full" />
                             <Skeleton className="h-7 w-7 rounded-full" />
                           </div>
@@ -476,6 +427,9 @@ export default function ProduitsPage() {
                     produits.data?.produits.map((product) => (
                       <TableRow key={product.id}>
                         <TableCell className="font-medium !py-2">
+                          {product.reference}
+                        </TableCell>
+                        <TableCell className="font-medium !py-2">
                           {product.designation}
                         </TableCell>
                         <TableCell className="!py-2">
@@ -484,10 +438,8 @@ export default function ProduitsPage() {
                         <TableCell className="!py-2">
                           {product.prixAchat.toFixed(2)} DH
                         </TableCell>
-                        <TableCell className="!py-2">
-                          {product.prixVente.toFixed(2)} DH
-                        </TableCell>
-                        <TableCell className="!py-2">
+
+                        {/* <TableCell className="!py-2">
                           <div className="flex items-center gap-2">
                             <span
                               className={`h-2 w-2 rounded-full ${getStatusColor(
@@ -498,8 +450,8 @@ export default function ProduitsPage() {
                               {stockStatuts(product.stock)}
                             </span>
                           </div>
-                        </TableCell>
-                        <TableCell className="!py-2">{product.stock}</TableCell>
+                        </TableCell> */}
+
                         <TableCell className="!py-2">
                           <CustomTooltip message={product.description}>
                             {product.description && (
@@ -512,7 +464,8 @@ export default function ProduitsPage() {
                         <TableCell className="text-right !py-2">
                           <div className="flex justify-end gap-2">
                             <CustomTooltip message="Modifier">
-                              <Button
+                              <ModifyProductDialog currProduct={product} />
+                              {/* <Button
                                 variant="ghost"
                                 size="icon"
                                 className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
@@ -523,7 +476,7 @@ export default function ProduitsPage() {
                                 }}
                               >
                                 <Pen className="h-4 w-4" />
-                              </Button>
+                              </Button> */}
                             </CustomTooltip>
                             <CustomTooltip message="Supprimer">
                               <Button
@@ -539,7 +492,7 @@ export default function ProduitsPage() {
                               </Button>
                             </CustomTooltip>
                             <CustomTooltip message="Commander">
-                              <Button
+                              {/* <Button
                                 variant="ghost"
                                 size="icon"
                                 className="h-8 w-8 rounded-full hover:bg-green-100 hover:text-green-600"
@@ -551,7 +504,7 @@ export default function ProduitsPage() {
                                 }}
                               >
                                 <ShoppingBag className="h-4 w-4" />
-                              </Button>
+                              </Button> */}
                             </CustomTooltip>
                           </div>
                         </TableCell>
@@ -567,132 +520,6 @@ export default function ProduitsPage() {
                 </TableBody>
               </Table>
             </div>
-
-            {/* the half table */}
-            <div>
-              <ScrollArea
-                className={`w-full h-[80vh]  grid gap-3  border mb-3 rounded-lg ${
-                  !isAddingProduct &&
-                  !isUpdatingProduct &&
-                  !isPurchasingProduct &&
-                  "hidden"
-                } `}
-              >
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Désignation</TableHead>
-                      <TableHead>Catégorie</TableHead>
-                      <TableHead>Statut</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {produits.isLoading ? (
-                      [...Array(10)].map((_, index) => (
-                        <TableRow
-                          className="h-[2rem] MuiTableRow-root"
-                          role="checkbox"
-                          tabIndex={-1}
-                          key={index}
-                        >
-                          <TableCell
-                            className="!py-2 text-sm md:text-base"
-                            align="left"
-                          >
-                            <Skeleton className="h-4 w-[150px]" />
-                          </TableCell>
-                          <TableCell className="!py-2" align="left">
-                            <Skeleton className="h-4 w-[150px]" />
-                          </TableCell>
-                          <TableCell className="!py-2" align="left">
-                            <Skeleton className="h-4 w-[150px]" />
-                          </TableCell>
-                          <TableCell className="!py-2" align="left">
-                            <div className="flex gap-2 justify-end">
-                              <Skeleton className="h-7 w-7 rounded-full" />
-                              <Skeleton className="h-7 w-7 rounded-full" />
-                              <Skeleton className="h-7 w-7 rounded-full" />
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : produits.data?.produits.length > 0 ? (
-                      produits.data?.produits.map((product) => (
-                        <TableRow key={product.id}>
-                          <TableCell className="font-medium">
-                            {product.designation}
-                          </TableCell>
-                          <TableCell>{product.categorie}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={`h-2 w-2 rounded-full ${getStatusColor(
-                                  stockStatuts(product.stock)
-                                )}`}
-                              />
-                              <span className="text-sm text-muted-foreground">
-                                {stockStatuts(product.stock)}
-                              </span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
-                                onClick={() => {
-                                  setCurrProduct(product);
-                                  setIsUpdatingProduct(true);
-                                  setIsAddingProduct(false);
-                                }}
-                              >
-                                <Pen className="h-4 w-4" />
-                                <span className="sr-only">Modifier</span>
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
-                                onClick={() => {
-                                  setDeleteDialogOpen(true);
-                                  setCurrProduct(product);
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                <span className="sr-only">Supprimer</span>
-                              </Button>
-
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 rounded-full hover:bg-green-100 hover:text-green-600"
-                                onClick={() => {
-                                  setCurrProduct(product);
-                                  setIsPurchasingProduct(!isPurchasingProduct);
-                                  setIsUpdatingProduct(false);
-                                  setIsAddingProduct(false);
-                                }}
-                              >
-                                <ShoppingBag className="h-4 w-4" />
-                                <span className="sr-only">Détails</span>
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={7} align="center">
-                          Aucun produit trouvé
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </ScrollArea>
-            </div>
             {produits.data?.produits.length > 0 && (
               <CustomPagination
                 currentPage={page}
@@ -701,27 +528,6 @@ export default function ProduitsPage() {
               />
             )}
           </div>
-
-          <div className={`${!isAddingProduct && "hidden"} `}>
-            <ScrollArea className="w-full h-[85vh]">
-              {isAddingProduct && <ProductFormDialog />}
-            </ScrollArea>
-          </div>
-          <div className={`${!isUpdatingProduct && "hidden"} `}>
-            <ScrollArea className="w-full h-[85vh]">
-              {isUpdatingProduct && (
-                <ModifyProductDialog currProduct={currProduct} />
-              )}
-            </ScrollArea>
-          </div>
-          <div className={`${!isPurchasingProduct && "hidden"} `}>
-            <ScrollArea className="w-full h-[85vh]">
-              {isPurchasingProduct && (
-                <AchatCommandeForm currProduct={currProduct} />
-              )}
-            </ScrollArea>
-          </div>
-        </div>
 
         <DeleteConfirmationDialog
           recordName={currProduct?.designation}

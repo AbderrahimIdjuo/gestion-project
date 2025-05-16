@@ -20,10 +20,11 @@ import { deleteCompteBancaire } from "@/app/api/actions";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
-import UpdateCaisseSolde from "@/components/update-caisse-solde";
+import UpdatSolde from "@/components/update-caisse-solde";
 
 type Compte = {
   compte: string;
+  solde: string;
   id: string;
 };
 
@@ -88,14 +89,14 @@ export default function Banques() {
     },
   });
 
-  const statistiques = useQuery({
-    queryKey: ["statistiques"],
-    queryFn: async () => {
-      const response = await axios.get("/api/statistiques");
-      return response.data;
-    },
-    refetchOnWindowFocus: false,
-  });
+  // const statistiques = useQuery({
+  //   queryKey: ["statistiques"],
+  //   queryFn: async () => {
+  //     const response = await axios.get("/api/statistiques");
+  //     return response.data;
+  //   },
+  //   refetchOnWindowFocus: false,
+  // });
   return (
     <>
       <Toaster position="top-center" />
@@ -109,7 +110,7 @@ export default function Banques() {
           </div>
 
           <div className="w-full col-span-1 sm:col-span-2 md:col-span-3">
-            <form
+            {/* <form
               onSubmit={(e) => {
                 e.preventDefault();
                 addcompte.mutate(value);
@@ -133,7 +134,7 @@ export default function Banques() {
                   Ajouter
                 </Button>
               </div>
-            </form>
+            </form> */}
 
             {/* Table */}
             <div className="rounded-lg border overflow-x-auto">
@@ -141,6 +142,7 @@ export default function Banques() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Comptes</TableHead>
+                    <TableHead>Solde</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -152,15 +154,18 @@ export default function Banques() {
                       </TableCell>
                     </TableRow>
                   ) : query.data?.length > 0 ? (
-                    query.data
-                      ?.filter((compte: Compte) => compte.compte !== "caisse")
-                      .map((compte: Compte) => (
-                        <TableRow key={compte.id}>
-                          <TableCell className="font-medium">
-                            {compte.compte}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button
+                    query.data?.map((compte: Compte) => (
+                      <TableRow key={compte.id}>
+                        <TableCell className="font-medium">
+                          {compte.compte}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {compte.solde} DH
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <UpdatSolde solde={compte.solde} id={compte.id} />
+                            {/* <Button
                               onClick={() => {
                                 setCompte(compte);
                                 setDeleteDialog(true);
@@ -170,10 +175,11 @@ export default function Banques() {
                               className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
                             >
                               <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))
+                            </Button> */}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
                   ) : (
                     <TableRow>
                       <TableCell colSpan={2} className="text-center">
@@ -184,10 +190,10 @@ export default function Banques() {
                 </TableBody>
               </Table>
             </div>
-            <div className="border border-zinc-200 shadow w-full h-[50px] font-semibold rounded-lg p-2 mt-5 flex justify-between items-center">
+            {/* <div className="border border-zinc-200 shadow w-full h-[50px] font-semibold rounded-lg p-2 mt-5 flex justify-between items-center">
               <h2 className="pl-5">Caisse : {statistiques.data?.caisse} DH</h2>
-              <UpdateCaisseSolde solde={statistiques.data?.caisse} />
-            </div>
+              <UpdatSolde solde={statistiques.data?.caisse} />
+            </div> */}
           </div>
         </div>
       </div>

@@ -41,7 +41,7 @@ const soldeSchema = z.object({
   }, z.number({ invalid_type_error: "Ce champ doit contenir un nombre valide" }).optional()),
 });
 
-export default function UpdateCaisseSolde({ solde }) {
+export default function UpdatSolde({ solde , id }) {
   const [open, setOpen] = useState(false);
   const {
     register,
@@ -58,17 +58,18 @@ export default function UpdateCaisseSolde({ solde }) {
     mutationFn: async (data) => {
       const loadingToast = toast.loading("Modification en cours...");
       try {
-        const response = await axios.put("/api/solde-caisse", data);
-        toast.success("Articl ajouté avec succès!");
+        const response = await axios.put("/api/solde-comptes", {...data , id});
+        toast.success("Solde modifier avec succès!");
         return response.data;
       } catch (error) {
-        toast.error("Échec de l'ajout du articl");
+        toast.error("Échec de la modification");
         throw error;
       } finally {
         toast.dismiss(loadingToast);
       }
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["comptes"] });
       queryClient.invalidateQueries({ queryKey: ["statistiques"] });
     },
   });
