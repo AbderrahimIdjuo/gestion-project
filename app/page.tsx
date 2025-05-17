@@ -37,6 +37,8 @@ export default function DashboardPage() {
           to: endDate,
         },
       });
+      console.log("statistiques", response.data);
+      
       return response.data;
     },
     refetchOnWindowFocus: false,

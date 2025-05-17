@@ -59,11 +59,10 @@ export async function DELETE(req) {
     await prisma.transactions.delete({
       where: { id },
     });
-    if (deletedTransaction.reference?.slice(0, 2) === "FV") {
-      await prisma.depensesVariantes.delete({
-        where: { numero: deletedTransaction.reference },
-      });
-    } else if (deletedTransaction.reference?.slice(0, 3) === "CMD") {
+    if (
+      deletedTransaction.reference &&
+      deletedTransaction.reference?.slice(0, 3) === "CMD"
+    ) {
       await prisma.commandes.update({
         where: { numero: deletedTransaction.reference },
         data: {
@@ -73,23 +72,28 @@ export async function DELETE(req) {
         },
       });
     } else {
-      console.log("Transaction reference not a valid found.");
+      console.log("Transaction reference not found.");
     }
-    if (deletedTransaction.type === "recette") {
-      await prisma.comptabilite.update({
-        where: { id: 1 },
+
+    if (deletedTransaction.type === "vider") {
+      await prisma.comptesBancaires.updateMany({
+        where: { compte: "caisse" },
         data: {
-          caisse: { decrement: deletedTransaction.montant },
+          solde: { increment: deletedTransaction.montant },
         },
       });
     } else if (
       deletedTransaction.type === "depense" ||
-      deletedTransaction.type === "vider"
+      deletedTransaction.type === "recette"
     ) {
-      await prisma.comptabilite.update({
-        where: { id: 1 },
+      // Mise à jour d'un compte bancaire
+      await prisma.comptesBancaires.updateMany({
+        where: { compte: deletedTransaction.compte },
         data: {
-          caisse: { increment: deletedTransaction.montant },
+          solde:
+            deletedTransaction.type === "recette"
+              ? { decrement: deletedTransaction.montant }
+              : { increment: deletedTransaction.montant },
         },
       });
     }

@@ -151,7 +151,7 @@ export default function DevisPDFPage() {
               {/* Devis Info */}
               <div className="col-span-1">
                 <h1 className="font-bold text-lg text-gray-900">
-                  Facture N° : {"FACT-"+ devi?.numero.slice(4, 12) }
+                  Facture N° : {"FACT-" + devi?.numero.slice(4, 12)}
                 </h1>
                 <div className="flex items-center gap-2 mt-2 ">
                   <Calendar className="h-3 w-3" />
@@ -169,13 +169,7 @@ export default function DevisPDFPage() {
                     {devi?.client.titre && devi?.client.titre + ". "}
                     {devi?.client.nom.toUpperCase()}
                   </p>
-                </div>
-                <div className="flex items-center gap-2 ">
-                  <Phone className="h-3 w-3" />
-                  <p className="font-medium text-sm">
-                    {formatPhoneNumber(devi?.client.telephone)}
-                  </p>
-                </div>
+                </div>               
                 {devi?.client.ice && (
                   <div className="flex items-center gap-2 ">
                     <p className="font-medium text-sm">
