@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../lib/prisma";
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export async function POST(req) {
   try {
@@ -43,6 +43,15 @@ export async function POST(req) {
         },
       });
 
+      //modifier le solde du compte bancaire
+      console.log("compte , solde " , compte , avance );
+      
+      await tx.comptesBancaires.update({
+        where: { compte: compte },
+        data: {
+          solde: { increment: avance },
+        },
+      });
       // Créer la commande
       const commande = await tx.commandes.create({
         data: {
@@ -91,6 +100,8 @@ export async function POST(req) {
           },
         });
       }
+
+
 
       // Mettre à jour le stock des produits en stock
       await Promise.all(

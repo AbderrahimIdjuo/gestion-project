@@ -359,6 +359,7 @@ export default function Banques() {
                   <TableRow>
                     <TableHead className="w-[150px]">Date-Time</TableHead>
                     <TableHead>Réference</TableHead>
+                    <TableHead>Label</TableHead>
                     <TableHead>Montant</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Compte</TableHead>
@@ -414,6 +415,9 @@ export default function Banques() {
 
                         <TableCell className="font-medium py-0">
                           {transaction.reference}
+                        </TableCell>
+                        <TableCell className="font-medium py-0">
+                          {transaction.lable}
                         </TableCell>
                         <TableCell className="font-medium py-0">
                           {transaction.montant} DH

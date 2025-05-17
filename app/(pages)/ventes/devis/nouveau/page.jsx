@@ -147,24 +147,23 @@ export default function NouveauDevisPage() {
     setItems((prev) => prev.filter((item) => item.key !== deletedItem.key));
   };
   const calculateSubTotal = () => {
-    const subtotal =  items.reduce((sum, item) => {
+    const subtotal = items.reduce((sum, item) => {
       const amount = item.quantite * item.prixUnite;
       return sum + amount;
     }, 0);
-        const discountAmount =
+    const discountAmount =
       watch("typeReduction") === "%"
         ? subtotal * (watch("reduction") / 100)
         : Number(watch("reduction"));
-return subtotal - discountAmount;
+    return subtotal - discountAmount;
   };
 
-   const calculateTVA = () => {
-    return calculateSubTotal() * 0.2;;
+  const calculateTVA = () => {
+    return calculateSubTotal() * 0.2;
   };
   const calculateTotal = () => {
     return (calculateSubTotal() + calculateTVA()).toFixed(2);
   };
-
 
   // infinite scrolling clients comboBox
   const { data, fetchNextPage, isLoading, isFetchingNextPage, hasNextPage } =
@@ -207,7 +206,7 @@ return subtotal - discountAmount;
       // Remove any whitespace that might interfere
       value = value.trim();
     }
-   // const number = parseFloat(value);
+    // const number = parseFloat(value);
     const parsed = parseFloat(value);
     if (isNaN(parsed)) {
       // throw new Error("The value must be a float.");
@@ -221,9 +220,9 @@ return subtotal - discountAmount;
       <Toaster position="top-center" />
       <form className="m-0 p-0" onSubmit={handleSubmit(onSubmit, onError)}>
         <div className="container mb-10 mx-auto py-6 space-y-6 w-full">
-          <div className="flex gap-3 items-center ">
-              <h1 className="text-3xl font-bold">Nouveau devis</h1>
-            </div>
+          <div className="flex gap-3 items-center pt-10">
+            <h1 className="text-3xl font-bold">Nouveau devis</h1>
+          </div>
           <Card className="w-full">
             <CardContent className="p-6 space-y-6">
               {/* Header Section */}
@@ -375,16 +374,13 @@ return subtotal - discountAmount;
                               </TableCell>
                               <TableCell>
                                 <Input
-                                  onChange={(e) =>{
-                                      handleItemChange(
+                                  onChange={(e) => {
+                                    handleItemChange(
                                       item.id,
                                       "length",
                                       validateFloat(e.target.value)
-                                    )                                   
-                                    
-                                  }
-                                  
-                                  }
+                                    );
+                                  }}
                                   className={`focus:!ring-purple-500 w-24 ${
                                     errors.articls?.[index]?.length &&
                                     "!border-red-500"
