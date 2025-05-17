@@ -43,15 +43,6 @@ export async function POST(req) {
         },
       });
 
-      //modifier le solde du compte bancaire
-      console.log("compte , solde " , compte , avance );
-      
-      await tx.comptesBancaires.update({
-        where: { compte: compte },
-        data: {
-          solde: { increment: avance },
-        },
-      });
       // Créer la commande
       const commande = await tx.commandes.create({
         data: {
