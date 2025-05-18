@@ -122,9 +122,6 @@ export default function NouvelleCommandePage() {
 
   const handleItemChange = (id, field, value) => {
     // // Convertit les virgules en points et en nombre
-    // const numericValue =
-    //   typeof value === "string" ? Number(value.replace(",", ".")) : value;
-
     setItems((prevItems) =>
       prevItems.map((item) =>
         item.id === id ? { ...item, [field]: value } : item
@@ -352,7 +349,7 @@ export default function NouvelleCommandePage() {
                               </TableCell>
                               <TableCell>
                                 <Input
-                                  value={item.quantite}
+                                  defaultValue={item.quantite}
                                   onChange={(e) => {
                                     handleItemChange(
                                       item.id,
@@ -362,29 +359,15 @@ export default function NouvelleCommandePage() {
                                   }}
                                   className="focus:!ring-purple-500 w-20"
                                 />
+                                 {errors.produits?.[index]?.quantite && (
+                                  <p className="text-xs text-red-500 mt-1">
+                                    {errors.articls[index].quantite.message}
+                                  </p>
+                                )}
                               </TableCell>
-                              <TableCell>
-                                {/* <Input
-                                  type="number"
-                                  step={0.01}
-                                  value={item.prixUnite}
-                                  onChange={(e) => {
-                                     const value = e.target.value.replace(".", ",");
-                                    console.log(
-                                      "item.prixUnite",
-                                      typeof item.prixUnite
-                                    );
-
-                                    handleItemChange(
-                                      item.id,
-                                      "prixUnite",
-                                      Number(e.target.value)
-                                    );
-                                  }}
-                                  className="focus:!ring-purple-500 w-24"
-                                /> */}
+                              <TableCell>                      
                                 <Input
-                                  value={item.prixUnite}
+                                  defaultValue={item.prixUnite}
                                   onChange={(e) => {
                                     handleItemChange(
                                       item.id,
@@ -394,6 +377,11 @@ export default function NouvelleCommandePage() {
                                   }}
                                   className="focus:!ring-purple-500 w-24"
                                 />
+                                  {errors.produits?.[index]?.prixUnite && (
+                                  <p className="text-xs text-red-500 mt-1">
+                                    {errors.articls[index].prixUnite.message}
+                                  </p>
+                                )}
                               </TableCell>
                               <TableCell>
                                 {(item.quantite * item.prixUnite).toFixed(2)} DH
