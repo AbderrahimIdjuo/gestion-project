@@ -55,14 +55,14 @@ export default function TransactionDialog() {
             message: "Le label est requis pour une recette ou une dépense.",
           });
         }
-        if (!data.numero || data.numero.trim() === "") {
-          ctx.addIssue({
-            path: ["numero"],
-            code: z.ZodIssueCode.custom,
-            message:
-              "La référence est requise pour une recette ou une dépense.",
-          });
-        }
+        // if (!data.numero || data.numero.trim() === "") {
+        //   ctx.addIssue({
+        //     path: ["numero"],
+        //     code: z.ZodIssueCode.custom,
+        //     message:
+        //       "La référence est requise pour une recette ou une dépense.",
+        //   });
+        // }
         if (typeof data.montant !== "number" || data.montant <= 0) {
           ctx.addIssue({
             path: ["montant"],

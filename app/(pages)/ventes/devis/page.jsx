@@ -142,6 +142,8 @@ export default function DevisPage() {
         throw error; // Relancez l'erreur pour que `onError` soit déclenché
       } finally {
         toast.dismiss(loadingToast);
+        setCurrentDevi(null);
+        setDeleteDialogOpen(false);
       }
     },
     onSuccess: () => {
@@ -420,7 +422,11 @@ export default function DevisPage() {
                         </CustomTooltip>
                        
                       </div> */}
-                       <DevisActions devis={devis} setDeleteDialogOpen={setDeleteDialogOpen} setCurrentDevi={setCurrentDevi}/>
+                      <DevisActions
+                        devis={devis}
+                        setDeleteDialogOpen={setDeleteDialogOpen}
+                        setCurrentDevi={setCurrentDevi}
+                      />
                     </TableCell>
                   </TableRow>
                 ))

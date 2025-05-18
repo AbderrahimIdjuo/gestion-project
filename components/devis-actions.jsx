@@ -14,12 +14,14 @@ import {
   MoreVertical,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export function DevisActions({ devis, setDeleteDialogOpen, setCurrentDevi }) {
+  const [menuOpen, setMenuOpen] = useState(false);
   const router = useRouter();
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
@@ -45,6 +47,7 @@ export function DevisActions({ devis, setDeleteDialogOpen, setCurrentDevi }) {
           onClick={() => {
             setDeleteDialogOpen(true);
             setCurrentDevi(devis);
+            setMenuOpen(false);
           }}
           className="flex items-center gap-2 cursor-pointer group hover:!bg-red-100"
         >
@@ -62,6 +65,7 @@ export function DevisActions({ devis, setDeleteDialogOpen, setCurrentDevi }) {
             className="flex items-center gap-2 cursor-pointer group hover:!bg-blue-100"
           >
             <FilePlus className="h-4 w-4 text-sky-600" />
+
             <span className="transition-colors duration-200 group-hover:text-blue-600 group-hover:bg-blue-100">
               Créer une commande
             </span>

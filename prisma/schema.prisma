@@ -64,7 +64,7 @@ model CommandesProduits {
   commandeId String
   produitId  String
   montant    Float
-  quantite   Int
+  quantite   Float
   prixUnite  Float
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt

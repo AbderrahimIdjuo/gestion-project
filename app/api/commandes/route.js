@@ -28,9 +28,6 @@ export async function POST(req) {
       (produit) => produit.stock < produit.quantite
     );
 
-    console.log("Produits en stock:", produitsEnStock);
-    console.log("Produits en rupture:", produitsEnRupture);
-
     // Update stock and create purchase orders for out-of-stock products
     const transactionResult = await prisma.$transaction(async (tx) => {
       // Changer le statut du devi "Accepté" une fois la commande est créer
@@ -61,19 +58,9 @@ export async function POST(req) {
           commandeProduits: {
             create: produits.map((produit) => ({
               produitId: produit.id,
-              quantite: produit.quantite || 0,
+              quantite: parseFloat(produit.quantite) || 0,
               prixUnite: produit.prixUnite || 0,
-              montant: produit.quantite * produit.prixUnite || 0,
-            })),
-          },
-          achatsCommande: {
-            create: produitsEnRupture.map((produit) => ({
-              produitId: produit.id,
-              quantite: produit.quantite - produit.stock,
-              prixUnite: produit.prixUnite,
-              payer: false,
-              description: produit.description || null,
-              statut: "En cours",
+              montant: parseFloat(produit.quantite) * produit.prixUnite || 0,
             })),
           },
         },
@@ -91,8 +78,6 @@ export async function POST(req) {
           },
         });
       }
-
-
 
       // Mettre à jour le stock des produits en stock
       await Promise.all(

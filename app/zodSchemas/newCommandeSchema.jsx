@@ -24,11 +24,10 @@ const productSchema = z.object({
   designation: z.string().nonempty({ message: "La désignation est requise" }),
   quantite: z.preprocess(
     (value) =>
-      value === "" || value === undefined ? undefined : validateInt(value),
+      value === "" || value === undefined ? undefined : validateFloat(value),
     z
-      .number()
-      .int({ message: "La quantité doit être un entier" })
-      .min(1, { message: "La quantité doit être au moins 1" })
+      .number({ invalid_type_error: "La quantité doit être un nombre" })
+      .min(0.01, { message: "La quantité doit être au moins 1" })
   ),
   prixUnite: z.preprocess(
     (value) =>
@@ -39,8 +38,6 @@ const productSchema = z.object({
   ),
   stock: z.number(),
   id: z.string(),
-  //fournisseurId: z.string().nullable(),
- // description: z.string().optional(),
   categorie: z.string().nullable(),
 });
 const newCommandeSchema = z

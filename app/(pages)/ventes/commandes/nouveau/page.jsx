@@ -121,6 +121,10 @@ export default function NouvelleCommandePage() {
   };
 
   const handleItemChange = (id, field, value) => {
+    // // Convertit les virgules en points et en nombre
+    // const numericValue =
+    //   typeof value === "string" ? Number(value.replace(",", ".")) : value;
+
     setItems((prevItems) =>
       prevItems.map((item) =>
         item.id === id ? { ...item, [field]: value } : item
@@ -129,6 +133,8 @@ export default function NouvelleCommandePage() {
   };
 
   const handleAddArticles = (newArticles) => {
+    console.log("newArticles", newArticles);
+
     setItems((prevItems) => [
       ...prevItems,
       ...newArticles.map((article) => ({
@@ -157,19 +163,27 @@ export default function NouvelleCommandePage() {
     const total = subtotal - discountAmount;
     return total.toFixed(2);
   };
-
+  const validateFloat = (value) => {
+    if (typeof value === "string") {
+      value = value.replace(",", ".");
+      // Remove any whitespace that might interfere
+      value = value.trim();
+    }
+    // const number = parseFloat(value);
+    const parsed = parseFloat(value);
+    if (isNaN(parsed)) {
+      // throw new Error("The value must be a float.");
+      return false;
+    }
+    return parsed;
+  };
   return (
     <>
       <Toaster position="top-center" />
       <form onSubmit={handleSubmit(onSubmit)}>
-        <div className="container mb-10 mx-auto py-6 space-y-6 w-full">
+        <div className="container mb-[5rem] mx-auto space-y-6 w-full">
           <div className="flex justify-between items-center">
             <div className="flex gap-3 items-center">
-              {/* <Link href="/ventes/commandes">
-                <Button type="button" size="icon" variant="ghost">
-                  <MoveLeft />
-                </Button>
-              </Link> */}
               <h1 className="text-3xl font-bold">Nouvelle Commande</h1>
             </div>
           </div>
@@ -338,32 +352,44 @@ export default function NouvelleCommandePage() {
                               </TableCell>
                               <TableCell>
                                 <Input
-                                  type="number"
-                                  min={1}
                                   value={item.quantite}
-                                  onChange={(e) =>
+                                  onChange={(e) => {
                                     handleItemChange(
                                       item.id,
                                       "quantite",
-                                      Number(e.target.value)
-                                    )
-                                  }
+                                      validateFloat(e.target.value)
+                                    );
+                                  }}
                                   className="focus:!ring-purple-500 w-20"
                                 />
                               </TableCell>
                               <TableCell>
-                                <Input
+                                {/* <Input
+                                  type="number"
+                                  step={0.01}
                                   value={item.prixUnite}
                                   onChange={(e) => {
+                                     const value = e.target.value.replace(".", ",");
                                     console.log(
                                       "item.prixUnite",
-                                      item.prixUnite
+                                      typeof item.prixUnite
                                     );
 
                                     handleItemChange(
                                       item.id,
                                       "prixUnite",
                                       Number(e.target.value)
+                                    );
+                                  }}
+                                  className="focus:!ring-purple-500 w-24"
+                                /> */}
+                                <Input
+                                  value={item.prixUnite}
+                                  onChange={(e) => {
+                                    handleItemChange(
+                                      item.id,
+                                      "prixUnite",
+                                      validateFloat(e.target.value)
                                     );
                                   }}
                                   className="focus:!ring-purple-500 w-24"
@@ -403,14 +429,6 @@ export default function NouvelleCommandePage() {
                         </TableBody>
                       </Table>
                     </div>
-                    {/* <div className="space-y-4 bg-violet-50 p-4 rounded-lg">
-                      <div className="space-y-4">
-                        <div className="flex justify-between py-2 font-bold">
-                          <span>Total</span>
-                          <span>{calculateTotal()} DH</span>
-                        </div>
-                      </div>
-                    </div> */}
                   </>
                 )}
 

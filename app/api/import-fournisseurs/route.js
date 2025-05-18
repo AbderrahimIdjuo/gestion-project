@@ -28,7 +28,7 @@ export async function POST(req) {
       id: row.id || undefined, // Prisma will generate a UUID if not provided
       nom: row.nom,
       email: row.email || null,
-      telephone: row.telephone.toString() || null,
+      telephone: row.telephone?.toString() || null,
       adresse: row.adresse || null,
       ice: row.ice || null,
     }));

@@ -219,8 +219,8 @@ export default function NouveauDevisPage() {
     <>
       <Toaster position="top-center" />
       <form className="m-0 p-0" onSubmit={handleSubmit(onSubmit, onError)}>
-        <div className="container mb-10 mx-auto py-6 space-y-6 w-full">
-          <div className="flex gap-3 items-center pt-10">
+        <div className="container mb-[5rem] mx-auto space-y-6 w-full">
+          <div className="flex gap-3 items-center">
             <h1 className="text-3xl font-bold">Nouveau devis</h1>
           </div>
           <Card className="w-full">
