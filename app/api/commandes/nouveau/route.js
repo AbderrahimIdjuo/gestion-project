@@ -25,14 +25,6 @@ export async function GET(req) {
      // prisma.commandes.findMany(),
     ]);
 
-    // Filter devis that do not have corresponding commandes
-    // const devisList = devis.filter(
-    //   (devi) =>
-    //     !commandes.some(
-    //       (commande) =>
-    //         commande.numero.slice(4, 13) === devi.numero.slice(4, 13)
-    //     )
-    // );
     const clients = await prisma.clients.findMany({
       where: filters,
       orderBy: { updatedAt: "desc" },

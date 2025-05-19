@@ -134,7 +134,7 @@ model Articls {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   width       Float?
-  length      Float
+  length      Float?
   unite      String @default("U")
   key         String   @unique
   devi        Devis    @relation(fields: [deviId], references: [id], onDelete: Cascade)

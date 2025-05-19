@@ -211,7 +211,7 @@ export default function DevisPDFPage() {
                       rowSpan="2"
                       className="text-black font-bold border-l border-b border-black p-2 text-center p-1"
                     >
-                      P.U
+                      P.U/m²
                     </TableHead>
                     <TableHead
                       rowSpan="2"
@@ -236,10 +236,10 @@ export default function DevisPDFPage() {
                         {articl.designation}{" "}
                       </TableCell>
                       <TableCell className="border-l border-b border-black p-1 text-center">
-                        {articl.length}
+                        {!articl.length? "-" : articl.length}
                       </TableCell>
                       <TableCell className="border-l border-b border-black p-1 text-center">
-                        {articl.width === 0 ? "-" : articl.width}
+                        {!articl.width ? "-" : articl.width}
                       </TableCell>
                       <TableCell className="border-l border-b border-black p-1 text-center">
                         {articl.unite}
@@ -271,21 +271,7 @@ export default function DevisPDFPage() {
                       {devi?.sousTotal.toFixed(2)} DH
                     </TableCell>
                   </TableRow>
-                  <TableRow>
-                    <TableCell
-                      colSpan={6}
-                      className="border-b border-black p-2 text-right font-bold"
-                    >
-                      TVA :
-                    </TableCell>
-                    <TableCell
-                      colSpan={2}
-                      className="border-l border-b border-black p-2 text-left font-bold"
-                    >
-                      {devi?.tva.toFixed(2)} DH
-                    </TableCell>
-                  </TableRow>
-                  {devi?.reduction > 0 ? (
+                          {devi?.reduction > 0 ? (
                     <TableRow>
                       <TableCell
                         colSpan={6}
@@ -303,20 +289,40 @@ export default function DevisPDFPage() {
                   ) : (
                     ""
                   )}
-                  <TableRow>
-                    <TableCell
-                      colSpan={6}
-                      className="text-lg text-gray-900 p-2 text-right font-extrabold"
-                    >
-                      Total TTC :
-                    </TableCell>
-                    <TableCell
-                      colSpan={2}
-                      className="border-l border-black p-2 text-lg text-gray-900 text-left font-extrabold"
-                    >
-                      {devi?.total.toFixed(2)} DH
-                    </TableCell>
-                  </TableRow>
+                  {devi?.tva > 0 ? (
+                    <>
+                      <TableRow>
+                        <TableCell
+                          colSpan={6}
+                          className="border-b border-black p-2 text-right font-bold"
+                        >
+                          TVA :
+                        </TableCell>
+                        <TableCell
+                          colSpan={2}
+                          className="border-l border-b border-black p-2 text-left font-bold"
+                        >
+                          {devi?.tva.toFixed(2)} DH
+                        </TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell
+                          colSpan={6}
+                          className="text-lg text-gray-900 p-2 text-right font-extrabold"
+                        >
+                          Total TTC :
+                        </TableCell>
+                        <TableCell
+                          colSpan={2}
+                          className="border-l border-black p-2 text-lg text-gray-900 text-left font-extrabold"
+                        >
+                          {devi?.total.toFixed(2)} DH
+                        </TableCell>
+                      </TableRow>
+                    </>
+                  ) : (
+                    ""
+                  )}
                 </TableFooter>
               </Table>
             </div>

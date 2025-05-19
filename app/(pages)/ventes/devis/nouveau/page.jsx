@@ -22,7 +22,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
-import { Trash2, MoveLeftIcon } from "lucide-react";
+import { Trash2, MoveLeftIcon, Copy } from "lucide-react";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -50,6 +50,7 @@ import { CircleX } from "lucide-react";
 import newDeviSchema from "@/app/zodSchemas/newDeviSchema";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useInView } from "react-intersection-observer";
+import { Switch } from "@/components/ui/switch";
 
 export default function NouveauDevisPage() {
   const [open, setOpen] = useState(false);
@@ -59,6 +60,7 @@ export default function NouveauDevisPage() {
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [isArticleDialogOpen, setIsArticleDialogOpen] = useState(false);
   const [formError, setFormError] = useState(false);
+  const [activerTVA, setActiverTVA] = useState(false);
 
   const { ref, inView } = useInView();
   const {
@@ -91,6 +93,12 @@ export default function NouveauDevisPage() {
     const nanoidCustom = customAlphabet(digits, 8);
     const customId = nanoidCustom();
     return `DEV-${customId}`;
+  };
+
+  const generateUniqueKey = () => {
+    const digits = "1234567890";
+    const nanoidCustom = customAlphabet(digits, 6);
+    return nanoidCustom();
   };
 
   const onSubmit = async (data) => {
@@ -162,7 +170,10 @@ export default function NouveauDevisPage() {
     return calculateSubTotal() * 0.2;
   };
   const calculateTotal = () => {
-    return (calculateSubTotal() + calculateTVA()).toFixed(2);
+    if (activerTVA) {
+      return (calculateSubTotal() + calculateTVA()).toFixed(2);
+    }
+    return calculateSubTotal();
   };
 
   // infinite scrolling clients comboBox
@@ -359,8 +370,9 @@ export default function NouveauDevisPage() {
                             </TableHead>
                             <TableHead>Quantité</TableHead>
                             <TableHead>Prix d&apos;unité</TableHead>
-                            <TableHead colSpan={2} className="text-left">
-                              Montant
+                            <TableHead className="text-left">Montant</TableHead>
+                            <TableHead className="text-right pr-3">
+                              Actions
                             </TableHead>
                           </TableRow>
                         </TableHeader>
@@ -368,12 +380,25 @@ export default function NouveauDevisPage() {
                           {items.map((item, index) => (
                             <TableRow key={item.key}>
                               <TableCell>
-                                <span className="focus:!ring-purple-500 text-md font-semibold ">
-                                  {item.designation}
-                                </span>
+                                <Input
+                                  spellCheck="false"
+                                  defaultValue={item.designation}
+                                  onChange={(e) => {
+                                    handleItemChange(
+                                      item.key,
+                                      "designation",
+                                      e.target.value
+                                    );
+                                  }}
+                                  className={`focus:!ring-purple-500 w-full ${
+                                    errors.articls?.[index]?.length &&
+                                    "!border-red-500"
+                                  }`}
+                                />
                               </TableCell>
                               <TableCell>
                                 <Input
+                                defaultValue={item.length}
                                   onChange={(e) => {
                                     handleItemChange(
                                       item.key,
@@ -394,6 +419,7 @@ export default function NouveauDevisPage() {
                               </TableCell>
                               <TableCell>
                                 <Input
+                                defaultValue={item.width}
                                   onChange={(e) =>
                                     handleItemChange(
                                       item.key,
@@ -414,7 +440,7 @@ export default function NouveauDevisPage() {
                               </TableCell>
                               <TableCell>
                                 <Select
-                                  defaultValue="U"
+                                  defaultValue={item.unite || "U"} 
                                   name="unites"
                                   onValueChange={(value) =>
                                     handleItemChange(item.key, "unite", value)
@@ -434,9 +460,9 @@ export default function NouveauDevisPage() {
                               </TableCell>
                               <TableCell>
                                 <Input
-                                  // type="number"
-                                  // min={1}
-                                  value={item.quantite}
+                                defaultValue={item.quantite}
+                                  type="number"
+                                  min={1}
                                   onChange={(e) =>
                                     handleItemChange(
                                       item.key,
@@ -449,6 +475,7 @@ export default function NouveauDevisPage() {
                               </TableCell>
                               <TableCell>
                                 <Input
+                                  defaultValue={item.prixUnite}
                                   onChange={(e) => {
                                     handleItemChange(
                                       item.key,
@@ -472,15 +499,45 @@ export default function NouveauDevisPage() {
                                   ? (item.quantite * item.prixUnite).toFixed(2)
                                   : 0}
                               </TableCell>
-                              <TableCell>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => removeItem(item)}
-                                  className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
+                              <TableCell className="pr-3">
+                                <div className="flex justify-end gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => removeItem(item)}
+                                    className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    type="button" // <- important pour ne PAS soumettre
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => {
+                                      const origineItem = items.find((i) => i.key === item.key);
+                                      console.log("origineItem", origineItem);
+                                      
+                                      setItems((prevItems) => [
+                                        ...prevItems,
+                                        {
+                                          ...item,
+                                          designation: origineItem.designation,
+                                          quantite: origineItem.quantite,
+                                          prixUnite: origineItem.prixUnite,
+                                          length: origineItem.length,
+                                          width: origineItem.width,
+                                          unite: origineItem.unite,
+                                          key: generateUniqueKey(),
+                                        },
+                                      ]);
+                                      console.log("Cloned item");
+                                      console.log("items", items);
+                                    }}
+                                    className="h-8 w-8 rounded-full hover:bg-blue-100 hover:text-blue-600"
+                                  >
+                                    <Copy className="h-4 w-4" />
+                                  </Button>
+                                </div>
                               </TableCell>
                             </TableRow>
                           ))}
@@ -528,8 +585,17 @@ export default function NouveauDevisPage() {
                     <span>{calculateSubTotal().toFixed(2)} MAD</span>
                   </div>
                   <div className="flex justify-between py-2 ">
-                    <span>TVA 20%</span>
-                    <span>{calculateTVA().toFixed(2)} MAD</span>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="switch"
+                        checked={activerTVA}
+                        onCheckedChange={setActiverTVA}
+                      />
+                      <Label htmlFor="switch">
+                        {activerTVA ? "TVA de 20% est activé" : "TVA désactivé"}
+                      </Label>
+                    </div>
+                    {activerTVA && <span>{calculateTVA().toFixed(2)} MAD</span>}
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
@@ -595,7 +661,9 @@ export default function NouveauDevisPage() {
                   );
                   setValue(
                     "tva",
-                    parseFloat(calculateSubTotal() * 0.2).toFixed(2)
+                    activerTVA
+                      ? parseFloat(calculateSubTotal() * 0.2).toFixed(2)
+                      : 0
                   );
                   setValue("total", parseFloat(calculateTotal()));
                   setValue("articls", items);

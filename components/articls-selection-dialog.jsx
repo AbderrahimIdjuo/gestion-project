@@ -17,13 +17,24 @@ import { cn } from "@/lib/utils";
 import axios from "axios";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { LoadingDots } from "@/components/loading-dots";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useInView } from "react-intersection-observer";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
 export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedArticles, setSelectedArticles] = useState({});
   const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [filters, setFilters] = useState({
+    categorie: "all",
+  });
   const { ref, inView } = useInView();
 
   const handleToggleArticle = (article) => {
@@ -94,6 +105,13 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
 
   const selectedCount = Object.keys(selectedArticles).length;
 
+  const categories = useQuery({
+    queryKey: ["categories"],
+    queryFn: async () => {
+      const response = await axios.get("/api/categoriesProduits");
+      return response.data.categories;
+    },
+  });
   // infinite scrolling articls comboBox
   const {
     data,
@@ -144,9 +162,35 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
           <div className="p-4 border-b">
             <span className="font-semibold">Ajouter les articls </span>
           </div>
+
           <div className="h-[600px] flex gap-3 gap-2 px-4 ">
             <div className="w-full h-full">
-              <div className="relative p-4">
+              <div  name="selectCategorie"  className=" relative px-4 pt-2 pb-1">
+                {/* <Label htmlFor="categorie" className="text-right text-black">
+                  Catégorie
+                </Label> */}
+                <Select
+                  value={filters.categorie}
+                  onValueChange={(value) =>
+                    setFilters({ ...filters, categorie: value })
+                  }
+                >
+                  <SelectTrigger className="col-span-3  bg-white focus:ring-purple-500">
+                    <SelectValue placeholder="Séléctionnez une catégorie..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white">
+                    <SelectItem key="all" value="all">
+                      Toutes les catégories
+                    </SelectItem>
+                    {categories.data?.map((element) => (
+                      <SelectItem key={element.id} value={element.categorie}>
+                        {element.categorie}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div name="searchBar" className="relative px-4 py-1">
                 <Search className="absolute left-6 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Chercher un articl..."
