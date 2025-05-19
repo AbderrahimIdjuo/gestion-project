@@ -124,10 +124,10 @@ export default function NouveauDevisPage() {
     console.log("Erreur de validation:", errors);
     setFormError(true); // Si le formulaire échoue
   };
-  const handleItemChange = (id, field, value) => {
+  const handleItemChange = (key, field, value) => {
     setItems((prevItems) =>
       prevItems.map((item) =>
-        item.id === id ? { ...item, [field]: value } : item
+        item.key === key ? { ...item, [field]: value } : item
       )
     );
   };
@@ -376,7 +376,7 @@ export default function NouveauDevisPage() {
                                 <Input
                                   onChange={(e) => {
                                     handleItemChange(
-                                      item.id,
+                                      item.key,
                                       "length",
                                       validateFloat(e.target.value)
                                     );
@@ -396,7 +396,7 @@ export default function NouveauDevisPage() {
                                 <Input
                                   onChange={(e) =>
                                     handleItemChange(
-                                      item.id,
+                                      item.key,
                                       "width",
                                       validateFloat(e.target.value)
                                     )
@@ -417,7 +417,7 @@ export default function NouveauDevisPage() {
                                   defaultValue="U"
                                   name="unites"
                                   onValueChange={(value) =>
-                                    handleItemChange(item.id, "unite", value)
+                                    handleItemChange(item.key, "unite", value)
                                   }
                                 >
                                   <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
@@ -434,12 +434,12 @@ export default function NouveauDevisPage() {
                               </TableCell>
                               <TableCell>
                                 <Input
-                                  type="number"
-                                  min={1}
+                                  // type="number"
+                                  // min={1}
                                   value={item.quantite}
                                   onChange={(e) =>
                                     handleItemChange(
-                                      item.id,
+                                      item.key,
                                       "quantite",
                                       Number(e.target.value)
                                     )
@@ -451,7 +451,7 @@ export default function NouveauDevisPage() {
                                 <Input
                                   onChange={(e) => {
                                     handleItemChange(
-                                      item.id,
+                                      item.key,
                                       "prixUnite",
                                       validateFloat(e.target.value)
                                     );
