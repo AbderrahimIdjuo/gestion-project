@@ -103,7 +103,7 @@ export async function PUT(req) {
       }
 
       // Update devis and its articles
-      return await tx.devis.update({
+      await tx.devis.update({
         where: { id },
         data: {
           numero,
@@ -140,6 +140,14 @@ export async function PUT(req) {
               montant: articl.quantite * articl.prixUnite,
             })),
           },
+        },
+      });
+
+      //Modifier le totalDevis de la commande associé
+      await tx.commandes.updateMany({
+        where: { numero: "CMD-" + devi.numero.slice(4, 13) },
+        data: {
+          totalDevi: total,
         },
       });
     });

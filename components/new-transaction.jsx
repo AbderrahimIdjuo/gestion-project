@@ -99,15 +99,34 @@ export default function TransactionDialog() {
   } = useForm({
     defaultValues: {
       type: "recette",
-      reference : "",
+      reference: "",
       description: "",
       compte: "",
     },
     resolver: zodResolver(newTransactionSchema),
   });
   const queryClient = useQueryClient();
+  const returnCompteObject = (compteName) => {
+    if (compteName === "caisse") {
+      return { id: "1", compte: "caisse" };
+    } else if (compteName === "compte personnel") {
+      return { id: "2", compte: "compte personnel" };
+    } else if (compteName === "compte profesionnel") {
+      return { id: "3", compte: "compte profesionnel" };
+    }
+  };
   const createTransaction = useMutation({
     mutationFn: async (data) => {
+      const { compte, description, lable, montant, numero, type } = data;
+      const transData = {
+        compte,
+        description,
+        lable,
+        montant,
+        numero,
+        type,
+      };
+      console.log("transData", transData);
       const loadingToast = toast.loading("Paiement en cours...");
       try {
         await addtransaction(data);
@@ -124,7 +143,6 @@ export default function TransactionDialog() {
       queryClient.invalidateQueries({ queryKey: ["commandes"] });
       queryClient.invalidateQueries({ queryKey: ["factures"] });
       queryClient.invalidateQueries({ queryKey: ["statistiques"] });
-      
     },
   });
   const onSubmit = async (data) => {
@@ -267,7 +285,7 @@ export default function TransactionDialog() {
                     </SelectTrigger>
                     <SelectContent>
                       {comptes.data?.map((element) => (
-                        <SelectItem key={element.id} value={JSON.stringify({ id: element.id, compte: element.compte })}>
+                        <SelectItem key={element.id} value={element.compte}>
                           <div className="flex items-center gap-2">
                             {element.compte}
                           </div>
@@ -310,7 +328,6 @@ export default function TransactionDialog() {
             <Button
               className="bg-[#00e701] hover:bg-[#00e701] shadow-lg hover:scale-105 text-white text-md rounded-full font-bold transition-all duration-300 transform"
               type="submit"
-              isSubmiting={isSubmiting}
               disabled={isSubmiting}
             >
               {isSubmiting ? "En cours..." : "Confirmer"}

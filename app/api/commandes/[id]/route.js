@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../../lib/prisma";
+import { deleteTransactionById } from "../../../../lib/deleteTransaction";
 
 export async function DELETE(_, { params }) {
   const id = params.id;
@@ -23,6 +24,13 @@ export async function DELETE(_, { params }) {
       },
     }),
   ]);
+
+  const transactions = await prisma.transactions.findMany({
+    where: {
+      reference: commandeClient.numero,
+    },
+  });
+  console.log("transactions", transactions);
 
   const comparaison = produits.map((item1) => {
     const item2 = commandes.find((item) => item.produitId === item1.produitId);
@@ -72,7 +80,7 @@ export async function DELETE(_, { params }) {
   // Filtrer les mises à jour nulles et exécuter la transaction
   const updates = comparaison.map((item) => item.update).filter(Boolean);
   const transactionResult = await prisma.$transaction(updates);
-  const transactions = await prisma.$transaction(async (prisma) => {
+  const operations = await prisma.$transaction(async (prisma) => {
     // delete the commande
     await prisma.commandes.delete({
       where: { id },
@@ -87,9 +95,13 @@ export async function DELETE(_, { params }) {
         statut: "En attente",
       },
     });
+    // Supprimer les transactions liée a la commande
+    transactions.map(async (item) => {
+      await deleteTransactionById(item);
+    });
   });
 
-  return NextResponse.json({ transactionResult, transactions });
+  return NextResponse.json({ transactionResult, operations });
 }
 
 export async function GET(_, { params }) {

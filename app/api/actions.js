@@ -105,33 +105,29 @@ export async function addInfoEntreprise(info) {
 
 export async function addtransaction(data) {
   const { numero, type, montant, compte, lable, description } = data;
-  let compteData = {};
-  if (type === "vider") {
-  compteData = { id: "1", compte: "caisse" };
-  } else compteData = JSON.parse(compte);  
   const result = await prisma.$transaction(async (prisma) => {
     await prisma.transactions.create({
       data: {
         reference: numero,
         type,
         montant,
-        compte: compteData.compte,
+        compte: type === "vider" ? "caisse" : compte,
         lable,
         description,
       },
     });
 
     if (type === "vider") {
-      await prisma.comptesBancaires.update({
-        where: { id: compteData.id },
+      await prisma.comptesBancaires.updateMany({
+        where: { compte: "caisse"},
         data: {
           solde: { decrement: montant },
         },
       });
     } else if (type === "depense" || type === "recette") {
       // Mise à jour d'un compte bancaire
-      await prisma.comptesBancaires.update({
-        where: { id: compteData.id },
+      await prisma.comptesBancaires.updateMany({
+        where: { compte: compte },
         data: {
           solde:
             type === "recette"

@@ -217,8 +217,30 @@ export default function CommandesPage() {
     montant: Number(montant),
     type: "recette",
   };
+
+  const returnCompteObject = (compteName) => {
+    if (compteName === "caisse") {
+      return { id: "1", compte: "caisse" };
+    } else if (compteName === "compte personnel") {
+      return { id: "2", compte: "compte personnel" };
+    } else if (compteName === "compte profesionnel") {
+      return { id: "3", compte: "compte profesionnel" };
+    }
+  };
+
   const createTransaction = useMutation({
     mutationFn: async (data) => {
+      const { montant, compte, numero, type } = data;
+      const transData = {
+        montant,
+        compte: returnCompteObject(compte),
+        numero,
+        type,
+        lable: "",
+        description: "",
+      };
+
+      console.log("transData : ", transData);
       const loadingToast = toast.loading("Paiement en cours...");
       try {
         await addtransaction(data);
@@ -632,9 +654,7 @@ export default function CommandesPage() {
                         <TableCell colSpan={10} className="p-0">
                           <div className="px-8 py-4 animate-in slide-in-from-top-2 duration-200">
                             <div className="">
-                              <div                               
-                                className="flex justify-between items-center gap-3 p-1 w-[50%] min-w-[500]"
-                              >
+                              <div className="flex justify-between items-center gap-3 p-1 w-[50%] min-w-[500]">
                                 <h4 className="text-sm font-semibold mb-3">
                                   Historique des paiements
                                 </h4>
@@ -653,7 +673,9 @@ export default function CommandesPage() {
                                     );
                                     localStorage.setItem(
                                       "transactions",
-                                      JSON.stringify(transactionPerCommande(commande.numero))
+                                      JSON.stringify(
+                                        transactionPerCommande(commande.numero)
+                                      )
                                     );
                                   }}
                                 >
