@@ -5,7 +5,8 @@ export const dynamic = "force-dynamic";
 export async function POST(req) {
   try {
     const resopns = await req.json();
-    const { designation, categorie, prixAchat, stock, description , reference} = resopns;
+    const { designation, categorie, prixAchat, stock, description, reference } =
+      resopns;
     const result = await prisma.produits.create({
       data: {
         designation,
@@ -13,7 +14,7 @@ export async function POST(req) {
         prixAchat,
         stock,
         description,
-        reference
+        reference,
       },
     });
 
@@ -38,7 +39,7 @@ export async function PUT(req) {
       statut,
       stock,
       description,
-      reference
+      reference,
     } = resopns;
 
     const result = await prisma.produits.update({
@@ -50,7 +51,7 @@ export async function PUT(req) {
         statut,
         stock: parseInt(stock, 10),
         description,
-        reference
+        reference,
       },
     });
 

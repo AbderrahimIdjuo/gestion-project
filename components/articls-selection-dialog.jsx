@@ -11,7 +11,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Search, Check, Plus, Minus } from "lucide-react";
+import { Search, Check, Plus, Minus, Tags } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import axios from "axios";
@@ -26,7 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
+import { customAlphabet } from "nanoid";
 
 export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -83,12 +83,17 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
       };
     });
   };
+    const generateUniqueKey = () => {
+      const digits = "1234567890";
+      const nanoidCustom = customAlphabet(digits, 6);
+      return nanoidCustom();
+    };
   const handleAddItems = () => {
     const articlesToAdd = Object.values(selectedArticles)
       .filter((article) => article.quantite > 0)
       .map(({ id, designation, quantite }) => ({
         id,
-        key: `${Date.now()}-${id}`,
+        key: generateUniqueKey(),
         designation: designation,
         quantite,
       }));
@@ -121,13 +126,14 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
     isFetching,
     hasNextPage,
   } = useInfiniteQuery({
-    queryKey: ["articls", debouncedQuery],
+    queryKey: ["articls", debouncedQuery, filters.categorie],
     queryFn: async ({ pageParam = null }) => {
       const response = await axios.get("/api/articls/infinitPagination", {
         params: {
           limit: 10,
           query: debouncedQuery,
           cursor: pageParam,
+          categorie: filters.categorie,
         },
       });
       return response.data;
@@ -165,7 +171,7 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
 
           <div className="h-[600px] flex gap-3 gap-2 px-4 ">
             <div className="w-full h-full">
-              <div  name="selectCategorie"  className=" relative px-4 pt-2 pb-1">
+              <div name="selectCategorie" className=" relative px-4 pt-2 pb-1">
                 {/* <Label htmlFor="categorie" className="text-right text-black">
                   Catégorie
                 </Label> */}
@@ -202,7 +208,7 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
                   {isFetching && !isLoading && <LoadingDots />}
                 </div>
               </div>
-              <div className="h-[510px] space-y-2">
+              <div className="h-[500px] space-y-2">
                 <ScrollArea className="h-[100%] w-full">
                   {articls?.length > 0 ? (
                     articls?.map((article) => (
@@ -220,6 +226,12 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
                           <p className="text-md font-medium">
                             {article.designation}
                           </p>
+                          {article.categorie && (
+                            <p className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Tags className="h-3 w-3 text-muted-foreground" />
+                              {article.categorie}
+                            </p>
+                          )}
                         </div>
                         <div
                           className={cn(
@@ -270,6 +282,7 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
                         <span className="font-medium">
                           {article.designation}
                         </span>
+
                         <div className="flex items-center gap-2 ">
                           <Button
                             variant="outline"

@@ -398,7 +398,7 @@ export default function NouveauDevisPage() {
                               </TableCell>
                               <TableCell>
                                 <Input
-                                defaultValue={item.length}
+                                  defaultValue={item.length}
                                   onChange={(e) => {
                                     handleItemChange(
                                       item.key,
@@ -419,7 +419,7 @@ export default function NouveauDevisPage() {
                               </TableCell>
                               <TableCell>
                                 <Input
-                                defaultValue={item.width}
+                                  defaultValue={item.width}
                                   onChange={(e) =>
                                     handleItemChange(
                                       item.key,
@@ -440,7 +440,7 @@ export default function NouveauDevisPage() {
                               </TableCell>
                               <TableCell>
                                 <Select
-                                  defaultValue={item.unite || "U"} 
+                                  defaultValue={item.unite || "U"}
                                   name="unites"
                                   onValueChange={(value) =>
                                     handleItemChange(item.key, "unite", value)
@@ -460,7 +460,7 @@ export default function NouveauDevisPage() {
                               </TableCell>
                               <TableCell>
                                 <Input
-                                defaultValue={item.quantite}
+                                  defaultValue={item.quantite}
                                   type="number"
                                   min={1}
                                   onChange={(e) =>
@@ -514,9 +514,11 @@ export default function NouveauDevisPage() {
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => {
-                                      const origineItem = items.find((i) => i.key === item.key);
+                                      const origineItem = items.find(
+                                        (i) => i.key === item.key
+                                      );
                                       console.log("origineItem", origineItem);
-                                      
+
                                       setItems((prevItems) => [
                                         ...prevItems,
                                         {
@@ -626,11 +628,12 @@ export default function NouveauDevisPage() {
                       </div>
                     </div>
                   </div>
-
-                  <div className="flex justify-between py-2 border-t font-bold">
-                    <span>Total TTC</span>
-                    <span>{calculateTotal()} MAD</span>
-                  </div>
+                  {activerTVA && (
+                    <div className="flex justify-between py-2 border-t font-bold">
+                      <span>Total TTC</span>
+                      <span>{calculateTotal()} MAD</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>
