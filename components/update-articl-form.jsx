@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useEffect } from "react";
 export function UpdateArticlForm({ isOpen, onClose, onConfirm, articl }) {
   const articlSchema = z.object({
     id: z.string(),
@@ -46,6 +47,13 @@ export function UpdateArticlForm({ isOpen, onClose, onConfirm, articl }) {
     },
     resolver: zodResolver(articlSchema),
   });
+  useEffect(() => {
+    if (articl) {
+      setValue("id", articl.id);
+      setValue("designation", articl.designation);
+      setValue("categorie", articl.categorie ?? null);
+    }
+  }, [articl, setValue]);
   const queryClient = useQueryClient();
   const updateArticl = useMutation({
     mutationFn: async (data) => {
@@ -100,7 +108,6 @@ export function UpdateArticlForm({ isOpen, onClose, onConfirm, articl }) {
             <Input
               id="designation"
               name="designation"
-              defaultValue={articl?.designation}
               {...register("designation", {
                 required: "Ce champ est obligatoire",
               })}
@@ -121,7 +128,6 @@ export function UpdateArticlForm({ isOpen, onClose, onConfirm, articl }) {
               Catégorie
             </Label>
             <Select
-            defaultValue={articl?.categorie}
               name="categorie"
               onValueChange={(value) => setValue("categorie", value)}
               value={watch("categorie")}

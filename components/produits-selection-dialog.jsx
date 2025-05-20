@@ -79,7 +79,7 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
         ({
           id,
           designation,
-          prixVente,
+          prixAchat,
           prixUnite,
           quantite,
           stock,
@@ -89,7 +89,7 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
         }) => ({
           id,
           designation: designation,
-          prixUnite: prixUnite || prixVente,
+          prixUnite: prixUnite || prixAchat,
           quantite,
           stock,
           fournisseurId,
@@ -192,10 +192,10 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
                           <p className="text-md font-medium">
                             {article.designation}
                           </p>
-                          {/* <p className="text-sm text-muted-foreground">
-                            Prix d&apos;unité: {article.prix.toFixed(2)}{" "}
+                          <p className="text-xs text-muted-foreground">
+                            Prix d&apos;unité: {article.prixAchat.toFixed(2)}{" "}
                             MAD
-                          </p> */}
+                          </p>
                         </div>
                         <div
                           className={cn(
