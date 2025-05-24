@@ -340,7 +340,7 @@ export default function NouvelleCommandePage() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {items.map((item) => (
+                          {items.map((item ,index) => (
                             <TableRow key={item.id}>
                               <TableCell>
                                 <span className="focus:!ring-purple-500 text-md">
@@ -361,7 +361,7 @@ export default function NouvelleCommandePage() {
                                 />
                                  {errors.produits?.[index]?.quantite && (
                                   <p className="text-xs text-red-500 mt-1">
-                                    {errors.articls[index].quantite.message}
+                                    {errors.produits?.[index].quantite.message}
                                   </p>
                                 )}
                               </TableCell>
@@ -379,7 +379,7 @@ export default function NouvelleCommandePage() {
                                 />
                                   {errors.produits?.[index]?.prixUnite && (
                                   <p className="text-xs text-red-500 mt-1">
-                                    {errors.articls[index].prixUnite.message}
+                                    {errors.produits[index].prixUnite.message}
                                   </p>
                                 )}
                               </TableCell>

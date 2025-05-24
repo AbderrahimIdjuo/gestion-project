@@ -39,6 +39,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { PriceRangeSlider } from "@/components/customUi/customSlider";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+ import AddCommandeFournisseur from "@/components/add-commande-fournisseur";
+ import PreviewCommandeFournitureDialog from "@/components/preview-commandeFourniture";
+  import PrintCommandeFournitureDialog from "@/components/print-commandeFourniture";
 
 export default function CommandesAchats() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -53,6 +56,7 @@ export default function CommandesAchats() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState();
   const queryClient = useQueryClient();
+ 
   const [filters, setFilters] = useState({
     categorie: "all",
     statut: "all",
@@ -85,6 +89,8 @@ export default function CommandesAchats() {
       return response.data.categories;
     },
   });
+
+
 
   const commandes = useQuery({
     queryKey: [
@@ -185,7 +191,7 @@ export default function CommandesAchats() {
       <Toaster position="top-center" />
       <div className="space-y-6 caret-transparent">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Commandes</h1>
+          <h1 className="text-3xl font-bold">Commandes Fournitures</h1>
         </div>
 
         <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-6 ">
@@ -327,6 +333,7 @@ export default function CommandesAchats() {
                 </div>
               </SheetContent>
             </Sheet>
+            <AddCommandeFournisseur />
             {/* <Button
               onClick={() => {
                 setIsAddingCommande(!isAddingCommande);
@@ -375,14 +382,8 @@ export default function CommandesAchats() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Date</TableHead>
-                    <TableHead>Produit</TableHead>
-                    <TableHead>Catégorie</TableHead>
-                    <TableHead>Bon de commande </TableHead>
+                    <TableHead>Numéro</TableHead>
                     <TableHead>Fournisseur</TableHead>
-                    <TableHead>Quantité</TableHead>
-                    <TableHead>Montant</TableHead>
-                    <TableHead>Statut de livraison </TableHead>
-                    <TableHead>Statut de paiement</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -437,49 +438,11 @@ export default function CommandesAchats() {
                           {commande.createdAt.split("T")[0]}
                         </TableCell>
                         <TableCell className="text-md">
-                          {commande.produit.designation}
+                          {commande.numero}
                         </TableCell>
                         <TableCell className="text-md">
-                          {commande.produit.categorie}
-                        </TableCell>
-                        <TableCell className="text-md">
-                          {commande.commandeClient
-                            ? commande.commandeClient.numero
-                            : ""}
-                        </TableCell>
-                        <TableCell className="text-md">
-                          {commande.produit.fournisseur?.nom.toUpperCase() ||
-                            "Inconnu"}
-                        </TableCell>
-                        <TableCell className="text-md">
-                          {commande.quantite}
-                        </TableCell>
-                        <TableCell className="text-md">
-                          {(commande.prixUnite * commande.quantite).toFixed(2)}{" "}
-                          DH
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`h-2 w-2 rounded-full ${getStatusColor(
-                                commande.statut
-                              )}`}
-                            />
-                            <span className="text-sm text-muted-foreground">
-                              {commande.statut}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-md">
-                          <span
-                            className={`text-sm p-[1px] px-3 rounded-full  ${getStatusPaiemenetColor(
-                              commande.payer
-                            )}`}
-                          >
-                            {commande.payer ? "Payé" : "Impayé"}
-                          </span>
-                        </TableCell>
-
+                          {commande.fournisseur.nom}
+                        </TableCell>                                  
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
                             <Button
@@ -495,6 +458,8 @@ export default function CommandesAchats() {
                               <Pen className="h-4 w-4" />
                               <span className="sr-only">Modifier</span>
                             </Button>
+                            <PreviewCommandeFournitureDialog commande={commande}/>
+                             <PrintCommandeFournitureDialog commande={commande}/>
                             <Button
                               name="delete btn"
                               variant="ghost"
@@ -530,7 +495,7 @@ export default function CommandesAchats() {
               } `}
             >
               <div className="col-span-2">
-                <Table>
+                {/* <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Commande</TableHead>
@@ -626,7 +591,7 @@ export default function CommandesAchats() {
                       </TableRow>
                     )}
                   </TableBody>
-                </Table>
+                </Table> */}
               </div>
             </ScrollArea>
             {commandes.data?.length > 0 ? (

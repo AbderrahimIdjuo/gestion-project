@@ -49,6 +49,8 @@ model Produits {
   updatedAt         DateTime            @updatedAt
   achatsCommandes   AchatsCommandes[]
   CommandesProduits CommandesProduits[]
+  groupProduits         ListProduits[]
+
 }
 
 model Items {
@@ -84,6 +86,7 @@ model Fournisseurs {
   updatedAt           DateTime   @updatedAt
   ice                 String?
   telephoneSecondaire String?
+  commandesFournitures  CommandeFourniture[]
 }
 
 model Commandes {
@@ -122,6 +125,36 @@ model AchatsCommandes {
   produit        Produits   @relation(fields: [produitId], references: [id], onDelete: Cascade)
 
   @@unique([commandeId, produitId])
+}
+
+model CommandeFourniture {
+  id           String   @id @default(uuid())
+  numero       String   @unique
+  fournisseur  Fournisseurs @relation(fields: [fournisseurId], references: [id])
+  fournisseurId String
+
+   groups        OrdersGroups[]
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model OrdersGroups {
+  id        String       @id @default(uuid())
+commandeNumero String?  
+ clientName String?  
+commandeFourniture    CommandeFourniture?    @relation(fields: [commandeFournitureId], references: [id])
+  commandeFournitureId  String?
+  produits  ListProduits[]
+}
+
+model ListProduits {
+  id       String   @id @default(uuid())
+  group    OrdersGroups    @relation(fields: [groupId], references: [id])
+  groupId  String
+  produit  Produits @relation(fields: [produitId], references: [id])
+  produitId String
+  quantite Float
 }
 
 model Articls {

@@ -61,7 +61,14 @@ export default function NouveauDevisPage() {
   const [isArticleDialogOpen, setIsArticleDialogOpen] = useState(false);
   const [formError, setFormError] = useState(false);
   const [activerTVA, setActiverTVA] = useState(false);
+  const buttonRef = useRef(null);
+  const [buttonWidth, setButtonWidth] = useState(0);
 
+  useEffect(() => {
+    if (buttonRef.current) {
+      setButtonWidth(buttonRef.current.offsetWidth);
+    }
+  }, [buttonRef.current, open]);
   const { ref, inView } = useInView();
   const {
     register,
@@ -245,6 +252,7 @@ export default function NouveauDevisPage() {
                     <Popover open={open} onOpenChange={setOpen}>
                       <PopoverTrigger asChild>
                         <Button
+                          ref={buttonRef}
                           variant="outline"
                           role="combobox"
                           aria-expanded={open}
@@ -256,7 +264,7 @@ export default function NouveauDevisPage() {
                           <ChevronDown className="opacity-50" />
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto min-w-[25vw] p-0">
+                      <PopoverContent style={{ width: buttonWidth }} className="w-auto min-w-[25vw] p-0">
                         <Command>
                           <CommandInput
                             placeholder="Chercher un client..."

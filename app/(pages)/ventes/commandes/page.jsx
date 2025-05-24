@@ -555,10 +555,10 @@ export default function CommandesPage() {
                         {commande.totalDevi} DH
                       </TableCell>
                       <TableCell className="!py-2">
-                        {commande.totalDevi - commande.total} DH
+                        {(commande.totalDevi - commande.total).toFixed(2)} DH
                       </TableCell>
                       <TableCell className="!py-2">
-                        {commande.totalDevi - commande.totalPaye} DH
+                        {(commande.totalDevi - commande.totalPaye).toFixed(2)} DH
                       </TableCell>
                       <TableCell className="!py-2">
                         {etatPaiement(commande)}

@@ -40,6 +40,15 @@ export async function POST(req) {
         },
       });
 
+      //Update the price of products
+      await Promise.all(
+        produits.map((produit) =>
+          tx.produits.update({
+            where: { id: produit.id },
+            data: { prixAchat: produit.prixUnite },
+          })
+        )
+      );
       // Créer la commande
       const commande = await tx.commandes.create({
         data: {
@@ -156,7 +165,7 @@ export async function PUT(req) {
     // const commandesAchatsMap = new Map(
     //   commandesAchats.map((c) => [c.produitId, c])
     // );
-   const  produitsCommande = await prisma.commandesProduits.findMany({
+    const produitsCommande = await prisma.commandesProduits.findMany({
       where: { commandeId: id },
     });
     const existingIds = produits.map((p) => p.id);

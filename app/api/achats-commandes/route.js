@@ -4,31 +4,36 @@ import prisma from "../../../lib/prisma";
 export async function POST(req) {
   try {
     const response = await req.json();
-    const { produit, payer, fournisseur, quantite, prixUnite, description } =
-      response;
-    const result = await prisma.achatsCommandes.create({
+    console.log("data : ", response);
+
+    const { numero, fournisseurId, orderGroups } = response;
+    const result = await prisma.commandeFourniture.create({
       data: {
-        produitId: produit.id,
-        quantite: parseInt(quantite, 10),
-        prixUnite: parseFloat(prixUnite),
-        payer,
-      //  description: description || null,
-        statut: "En cours",
+        numero,
+        fournisseur: {
+          connect: { id: fournisseurId },
+        },
+        groups: {
+          create: orderGroups.map((group) => ({
+            id: group.id,
+            commandeNumero: group.commande,
+            clientName : group.clientName,
+            produits: {
+              create: group.items.map((produit) => ({
+                produit: {
+                  connect: { id: produit.id },
+                },
+                quantite: produit.quantite,
+              })),
+            },
+          })),
+        },
       },
     });
-    // Mise à jour du produit
-    if (fournisseur) {
-      await prisma.produits.update({
-        where: { id: produit.id },
-        data: {
-          fournisseurId: fournisseur.id,
-        },
-      });
-    }
 
     return NextResponse.json({ result });
   } catch (error) {
-    console.error("Error updating product:", error);
+    console.error("Error creating commandeFourniture:", error);
     return NextResponse.json(
       { message: "An unexpected error occurred." },
       { status: 500 }
@@ -86,53 +91,58 @@ export async function GET(req) {
 
   // Search filter by produit designation , fournisseur
   filters.OR = [
-    { produit: { designation: { contains: searchQuery } } },
-    { produit: { fournisseur: { nom: { contains: searchQuery } } } },
+    { fournisseur: { nom: { contains: searchQuery, mode: "insensitive" } } },
+    { numero: { contains: searchQuery } },
   ];
 
-  // Filters par statutPaiement : "payé" ou "impayé"
-  if (statutPaiement !== "all") {
-    if (statutPaiement === "true") {
-      filters.payer = true;
-    } else if (statutPaiement === "false") {
-      filters.payer = false;
-    }
-  }
+  // // Filters par statutPaiement : "payé" ou "impayé"
+  // if (statutPaiement !== "all") {
+  //   if (statutPaiement === "true") {
+  //     filters.payer = true;
+  //   } else if (statutPaiement === "false") {
+  //     filters.payer = false;
+  //   }
+  // }
 
-  // Filters par categorie
-  if (categorie !== "all") {
-    filters.produit = {
-      categorie: {
-        equals: categorie,
-      },
-    };
-  }
+  // // Filters par categorie
+  // if (categorie !== "all") {
+  //   filters.produit = {
+  //     categorie: {
+  //       equals: categorie,
+  //     },
+  //   };
+  // }
 
   // Fetch filtered commandes with pagination and related data
   const [commandes, totalCommandes] = await Promise.all([
-    prisma.achatsCommandes.findMany({
+    prisma.commandeFourniture.findMany({
       where: filters,
       skip: (page - 1) * commandesPerPage,
       take: commandesPerPage,
       orderBy: { createdAt: "desc" },
       include: {
-        produit: {
+        fournisseur: {
+          select: {
+            nom: true,
+          },
+        },
+        groups: {
           include: {
-            fournisseur: {
-              select: {
-                nom: true,
+            produits: {
+              include: {
+                produit: {
+                  select: {
+                    designation: true,
+                    prixAchat: true,
+                  },
+                },
               },
             },
           },
         },
-        commandeClient: {
-          select: {
-            numero: true,
-          },
-        },
       },
     }),
-    prisma.achatsCommandes.count({ where: filters }), // Get total count for pagination
+    prisma.commandeFourniture.count({ where: filters }),
   ]);
 
   // Calculate total pages for pagination

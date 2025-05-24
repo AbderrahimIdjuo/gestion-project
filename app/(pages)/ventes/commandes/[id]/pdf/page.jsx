@@ -84,12 +84,14 @@ export default function CommandesPDFPage() {
                     {commande?.client.nom.toUpperCase()}
                   </p>
                 </div>
-                <div className="flex items-center gap-2 ">
-                  <Phone className="h-3 w-3" />
-                  <p className="font-medium text-sm">
-                    {formatPhoneNumber(commande?.client.telephone)}
-                  </p>
-                </div>
+                {commande?.client.telephone && (
+                  <div className="flex items-center gap-2 ">
+                    <Phone className="h-3 w-3" />
+                    <p className="font-medium text-sm">
+                      {formatPhoneNumber(commande?.client.telephone)}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
             {/* Items Table */}
