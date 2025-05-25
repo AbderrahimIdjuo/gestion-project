@@ -6,7 +6,7 @@
 
 */
 -- DropForeignKey
-ALTER TABLE "Produits" DROP CONSTRAINT "Produits_fournisseurId_fkey";
+-- ALTER TABLE "Produits" DROP CONSTRAINT "Produits_fournisseurId_fkey";
 
 -- AlterTable
 ALTER TABLE "Produits" DROP COLUMN "fournisseurId",

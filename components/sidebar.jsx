@@ -20,7 +20,7 @@ import {
 import { cn } from "@/lib/utils";
 
 const menuItems = [
-  { icon: TestTubeDiagonal, label: "Test", href: "/test" },
+//  { icon: TestTubeDiagonal, label: "Test", href: "/test" },
   { icon: LayoutDashboard, label: "Dashboard", href: "/" },
   {
     icon: Users,
