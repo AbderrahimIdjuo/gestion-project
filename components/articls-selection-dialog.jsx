@@ -172,9 +172,6 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
           <div className="h-[600px] flex gap-3 gap-2 px-4 ">
             <div className="w-full h-full">
               <div name="selectCategorie" className=" relative px-4 pt-2 pb-1">
-                {/* <Label htmlFor="categorie" className="text-right text-black">
-                  Catégorie
-                </Label> */}
                 <Select
                   value={filters.categorie}
                   onValueChange={(value) =>

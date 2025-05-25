@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../../lib/prisma";
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export async function GET(req) {
   try {
@@ -8,18 +8,22 @@ export async function GET(req) {
     const cursor = searchParams.get("cursor") || null;
     const limit = parseInt(searchParams.get("limit")) || 10;
     const searchQuery = searchParams.get("query");
+    const categorie = searchParams.get("categorie");
     const filters = {};
 
     if (searchQuery) {
       filters.designation = {
         contains: searchQuery,
-        mode : "insensitive"
+        mode: "insensitive",
       };
     }
- 
+    // Filtre par catégorie
+    if (categorie !== "all") {
+      filters.categorie = { equals: categorie }; // Utilisez "equals" pour une correspondance exacte
+    }
     const produits = await prisma.produits.findMany({
       where: filters,
-      orderBy: { updatedAt: "desc" },
+      orderBy: { id: "asc" },
       take: limit,
       skip: cursor ? 1 : 0,
       cursor: cursor ? { id: cursor } : undefined,

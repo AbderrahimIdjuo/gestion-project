@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../../lib/prisma";
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export async function GET(req) {
   try {
@@ -13,12 +13,12 @@ export async function GET(req) {
     if (searchQuery) {
       filters.nom = {
         contains: searchQuery,
-        mode : "insensitive"
+        mode: "insensitive",
       };
     }
     const fournisseurs = await prisma.fournisseurs.findMany({
       where: filters,
-      orderBy: { updatedAt: "desc" },
+      orderBy: { id: "asc" },
       take: limit,
       skip: cursor ? 1 : 0,
       cursor: cursor ? { id: cursor } : undefined,

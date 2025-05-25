@@ -116,16 +116,16 @@ export default function CommandesPDFPage() {
                 <TableBody>
                   {commande?.commandeProduits.map((articl) => (
                     <TableRow key={articl.id}>
-                      <TableCell className=" p-1 text-left border-b border-black text-md font-semibold">
+                      <TableCell className=" p-1 text-left  border-black text-md font-semibold">
                         {articl.produit.designation}{" "}
                       </TableCell>
-                      <TableCell className="border-l border-b border-black p-2 text-center">
+                      <TableCell className="border-l  border-black p-2 text-center">
                         {articl.quantite}
                       </TableCell>
-                      <TableCell className="border-l border-b border-black p-2 text-center">
+                      <TableCell className="border-l  border-black p-2 text-center">
                         {articl.prixUnite} DH
                       </TableCell>
-                      <TableCell className="border-l border-b border-black p-2 text-center font-bold">
+                      <TableCell className="border-l  border-black p-2 text-center font-bold">
                         {articl.montant} DH
                       </TableCell>
                     </TableRow>

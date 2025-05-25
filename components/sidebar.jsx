@@ -20,7 +20,7 @@ import {
 import { cn } from "@/lib/utils";
 
 const menuItems = [
-  //{ icon: TestTubeDiagonal, label: "Test", href: "/test" },
+  { icon: TestTubeDiagonal, label: "Test", href: "/test" },
   { icon: LayoutDashboard, label: "Dashboard", href: "/" },
   {
     icon: Users,
@@ -65,7 +65,7 @@ const menuItems = [
         label: "Fournisseurs",
         href: "/achats/fournisseurs",
       },
-      { label: "Commandes", href: "/achats/commandes" },
+      { label: "Commandes Fournitures", href: "/achats/commandes" },
       { label: "Dépenses fix", href: "/achats/depenses-recurrentes" },
       // { label: "Dépenses variantes", href: "/achats/depenses-variantes" },
     ],

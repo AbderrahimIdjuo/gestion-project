@@ -19,6 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { AddButton } from "@/components/customUi/styledButton";
 import { useForm } from "react-hook-form";
 import { Label } from "@/components/ui/label";
 import { customAlphabet } from "nanoid";
@@ -150,7 +151,6 @@ export default function AddCommandeFournisseur() {
       ...prev,
       [groupId]: commande,
     }));
-    console.log("selected commandes : ", selectedCommandes);
   }, []);
 
   // Initialisation
@@ -179,6 +179,7 @@ export default function AddCommandeFournisseur() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["commandeFournisseur"]);
+      setOpen(false);
       reset();
     },
   });
@@ -324,26 +325,21 @@ export default function AddCommandeFournisseur() {
             ))}
           </div>
 
-          <Button
-            onClick={addOrderGroup}
-            className="mb-4 w-fit bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 text-white font-semibold rounded-full"
-            variant="outline"
-          >
-            <Plus className="mr-2 h-4 w-4" /> Ajouter un groupe de produits
-          </Button>
+          <div className="w-fit">
+            <AddButton
+              type="button"
+              onClick={addOrderGroup}
+              title="Ajouter un groupe"
+            />
+          </div>
 
           <div className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" onClick={() => setOpen(false)}>
+            <Button className="rounded-full" variant="outline" onClick={() => setOpen(false)}>
               Annuler
             </Button>
             <Button
+              className="bg-purple-500 hover:bg-purple-600 text-white rounded-full"
               onClick={() => {
-                console.log("Data", {
-                  numero: watch("numero"),
-                  fournisseurId: selectedFournisseur.id,
-                  selectedFournisseur,
-                  orderGroups,
-                });
                 const Data = {
                   numero: watch("numero"),
                   fournisseurId: selectedFournisseur.id,

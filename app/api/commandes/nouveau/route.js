@@ -27,7 +27,7 @@ export async function GET(req) {
 
     const clients = await prisma.clients.findMany({
       where: filters,
-      orderBy: { updatedAt: "desc" },
+      orderBy: { id: "asc" },
       take: limit,
       skip: cursor ? 1 : 0,
       cursor: cursor ? { id: cursor } : undefined,

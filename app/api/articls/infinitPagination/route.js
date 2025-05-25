@@ -21,13 +21,11 @@ export async function GET(req) {
 
     // Filtre par catégorie
     if (categorie !== "all") {
-      console.log("categorie", categorie);
-
       filters.categorie = { equals: categorie }; // Utilisez "equals" pour une correspondance exacte
     }
     const articls = await prisma.items.findMany({
       where: filters,
-      orderBy: { updatedAt: "desc" },
+      orderBy: { id: "asc" },
       take: limit,
       skip: cursor ? 1 : 0,
       cursor: cursor ? { id: cursor } : undefined,

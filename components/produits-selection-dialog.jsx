@@ -17,15 +17,23 @@ import { cn } from "@/lib/utils";
 import axios from "axios";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { LoadingDots } from "@/components/loading-dots";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery  , useQuery} from "@tanstack/react-query";
 import { useInView } from "react-intersection-observer";
-
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedArticles, setSelectedArticles] = useState({});
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const { ref, inView } = useInView();
-
+ const [filters, setFilters] = useState({
+    categorie: "all",
+  });
   const handleToggleArticle = (article) => {
     setSelectedArticles((prev) => {
       const newSelected = { ...prev };
@@ -67,7 +75,7 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
         ...prev,
         [articleId]: {
           ...prev[articleId],
-          quantite: value.replace("," , "."),
+          quantite: value.replace(",", "."),
         },
       };
     });
@@ -109,7 +117,13 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
   );
 
   const selectedCount = Object.keys(selectedArticles).length;
-
+  const categories = useQuery({
+    queryKey: ["categories"],
+    queryFn: async () => {
+      const response = await axios.get("/api/categoriesProduits");
+      return response.data.categories;
+    },
+  });
   // infinite scrolling produits comboBox
   const {
     data,
@@ -119,15 +133,18 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
     isFetching,
     hasNextPage,
   } = useInfiniteQuery({
-    queryKey: ["produits", debouncedQuery],
+    queryKey: ["produits", debouncedQuery , filters.categorie],
     queryFn: async ({ pageParam = null }) => {
       const response = await axios.get("/api/produits/infinitPagination", {
         params: {
           limit: 10,
           query: debouncedQuery,
           cursor: pageParam,
+          categorie: filters.categorie,
         },
       });
+      console.log("Produits : ", response.data);
+      
       return response.data;
     },
     getNextPageParam: (lastPage) => lastPage.nextCursor || null,
@@ -162,7 +179,29 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
           </div>
           <div className="h-[600px] flex gap-3 gap-2 px-4 ">
             <div className="w-full h-full">
-              <div className="relative p-4">
+              <div name="selectCategorie" className=" relative px-4 pt-2 pb-1">
+                <Select
+                  value={filters.categorie}
+                  onValueChange={(value) =>
+                    setFilters({ ...filters, categorie: value })
+                  }
+                >
+                  <SelectTrigger className="col-span-3  bg-white focus:ring-purple-500">
+                    <SelectValue placeholder="Séléctionnez une catégorie..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white">
+                    <SelectItem key="all" value="all">
+                      Toutes les catégories
+                    </SelectItem>
+                    {categories.data?.map((element) => (
+                      <SelectItem key={element.id} value={element.categorie}>
+                        {element.categorie}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="relative  px-4 py-1">
                 <Search className="absolute left-6 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Chercher un produit..."
@@ -174,7 +213,7 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
                   {isFetching && !isLoading && <LoadingDots />}
                 </div>
               </div>
-              <div className="h-[510px] space-y-2">
+              <div className="h-[500px] space-y-2">
                 <ScrollArea className="h-[100%] w-full">
                   {produits?.length > 0 ? (
                     produits?.map((article) => (
@@ -238,7 +277,7 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
                 </div>
                 <ScrollArea className="h-[100%] w-full mt-3">
                   <div className="space-y-3 ">
-                    {Object.values(selectedArticles).map((article) => (
+                    {Object.values(selectedArticles).map((article , index) => (
                       <div
                         key={article.id}
                         className="flex items-center justify-between p-3 border rounded-lg w-full"

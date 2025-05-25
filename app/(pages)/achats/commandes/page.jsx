@@ -30,7 +30,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search,Pen, Trash2, Filter } from "lucide-react";
+import { Search, Pen, Trash2, Filter } from "lucide-react";
 import { UpdateAchatCommandeForm } from "@/components/update-achat-commande-form";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import { AchatCommandesForm } from "@/components/achat-many-commande-form";
@@ -39,9 +39,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { PriceRangeSlider } from "@/components/customUi/customSlider";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
- import AddCommandeFournisseur from "@/components/add-commande-fournisseur";
- import PreviewCommandeFournitureDialog from "@/components/preview-commandeFourniture";
-  import PrintCommandeFournitureDialog from "@/components/print-commandeFourniture";
+import AddCommandeFournisseur from "@/components/add-commande-fournisseur";
+import PreviewCommandeFournitureDialog from "@/components/preview-commandeFourniture";
+import PrintCommandeFournitureDialog from "@/components/print-commandeFourniture";
+import CustomTooltip from "@/components/customUi/customTooltip";
 
 export default function CommandesAchats() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -56,7 +57,7 @@ export default function CommandesAchats() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState();
   const queryClient = useQueryClient();
- 
+
   const [filters, setFilters] = useState({
     categorie: "all",
     statut: "all",
@@ -90,11 +91,9 @@ export default function CommandesAchats() {
     },
   });
 
-
-
   const commandes = useQuery({
     queryKey: [
-      "commandesAchats",
+      "commandeFournisseur",
       filters.statut,
       debouncedQuery,
       page,
@@ -119,7 +118,7 @@ export default function CommandesAchats() {
         },
       });
 
-      console.log("commandes", response.data.commandes);
+      console.log("commandesFourniture", response.data.commandes);
       setTotalPages(response.data.totalPages);
       return response.data.commandes;
     },
@@ -131,7 +130,7 @@ export default function CommandesAchats() {
     mutationFn: async () => {
       const loadingToast = toast.loading("Suppression...");
       try {
-        await axios.delete(`/api/commandes/$${currCommande.id}`);
+        await axios.delete(`/api/achats-commandes/${currCommande.id}`);
         toast(
           <span>
             La commande numéro : <b>{currCommande?.numero.toUpperCase()}</b> a
@@ -209,7 +208,7 @@ export default function CommandesAchats() {
             </div>
           </div>
           <div className="flex space-x-2">
-            <Sheet>
+            {/* <Sheet>
               <SheetTrigger asChild>
                 <Button
                   variant="outline"
@@ -332,119 +331,66 @@ export default function CommandesAchats() {
                   </div>
                 </div>
               </SheetContent>
-            </Sheet>
+            </Sheet> */}
             <AddCommandeFournisseur />
-            {/* <Button
-              onClick={() => {
-                setIsAddingCommande(!isAddingCommande);
-                if (isUpdatingCommande) {
-                  setIsUpdatingCommande(false);
-                  setIsAddingCommande(false);
-                }
-                console.log("isAddingCommande ##: ", isAddingCommande);
-              }}
-              className={`${
-                isAddingCommande || isUpdatingCommande
-                  ? "bg-red-500 hover:bg-red-600"
-                  : "bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 "
-              } text-white font-semibold transition-all duration-300 transform hover:scale-105 rounded-full`}
-            >
-              {isAddingCommande || isUpdatingCommande ? (
-                <>
-                  <X className="mr-2 h-4 w-4" />
-                  Annuler
-                </>
-              ) : (
-                <>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Commander des produits
-                </>
-              )}
-            </Button> */}
           </div>
         </div>
 
-        <div
-          className={`grid ${
-            isAddingCommande || isUpdatingCommande
-              ? "grid-cols-2 gap-6"
-              : "grid-cols-1"
-          }`}
-        >
-          <div>
-            <div
-              className={`grid gap-3 border mb-3 rounded-lg ${
-                isAddingCommande || isUpdatingCommande ? "hidden" : ""
-              } `}
-            >
-              {/* the full table  */}
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Numéro</TableHead>
-                    <TableHead>Fournisseur</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {commandes?.isLoading ? (
-                    [...Array(10)].map((_, index) => (
-                      <TableRow
-                        className="h-[2rem] MuiTableRow-root"
-                        role="checkbox"
-                        tabIndex={-1}
-                        key={index}
-                      >
-                        <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-full" />
-                        </TableCell>
-                        <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-full" />
-                        </TableCell>
-                        <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-full" />
-                        </TableCell>
-                        <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-full" />
-                        </TableCell>
-                        <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-full" />
-                        </TableCell>
-                        <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-full" />
-                        </TableCell>
-                        <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-full" />
-                        </TableCell>
-                        <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-full" />
-                        </TableCell>
-                        <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-full" />
-                        </TableCell>
-                        <TableCell className="!py-2">
-                          <div className="flex gap-2 justify-end">
-                            <Skeleton className="h-7 w-7 rounded-full" />
-                            <Skeleton className="h-7 w-7 rounded-full" />
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : commandes.data?.length > 0 ? (
-                    commandes.data?.map((commande) => (
-                      <TableRow key={commande.id}>
-                        <TableCell className="text-md">
-                          {commande.createdAt.split("T")[0]}
-                        </TableCell>
-                        <TableCell className="text-md">
-                          {commande.numero}
-                        </TableCell>
-                        <TableCell className="text-md">
-                          {commande.fournisseur.nom}
-                        </TableCell>                                  
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
+        <div>
+          <div className="grid gap-3 border mb-3 rounded-lg">
+            {/* the full table  */}
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Numéro</TableHead>
+                  <TableHead>Fournisseur</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {commandes?.isLoading ? (
+                  [...Array(10)].map((_, index) => (
+                    <TableRow
+                      className="h-[2rem] MuiTableRow-root"
+                      role="checkbox"
+                      tabIndex={-1}
+                      key={index}
+                    >
+                      <TableCell className="!py-2" align="left">
+                        <Skeleton className="h-4 w-full" />
+                      </TableCell>
+                      <TableCell className="!py-2" align="left">
+                        <Skeleton className="h-4 w-full" />
+                      </TableCell>
+                      <TableCell className="!py-2" align="left">
+                        <Skeleton className="h-4 w-full" />
+                      </TableCell>                   
+                      <TableCell className="!py-2">
+                        <div className="flex gap-2 justify-end">
+                          <Skeleton className="h-7 w-7 rounded-full" />
+                          <Skeleton className="h-7 w-7 rounded-full" />
+                          <Skeleton className="h-7 w-7 rounded-full" />
+                          <Skeleton className="h-7 w-7 rounded-full" />
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : commandes.data?.length > 0 ? (
+                  commandes.data?.map((commande) => (
+                    <TableRow key={commande.id}>
+                      <TableCell className="text-md !py-2">
+                        {commande.createdAt.split("T")[0]}
+                      </TableCell>
+                      <TableCell className="text-md !py-2">
+                        {commande.numero}
+                      </TableCell>
+                      <TableCell className="text-md font-medium !py-2">
+                        {commande.fournisseur.nom}
+                      </TableCell>
+                      <TableCell className="text-right !py-2">
+                        <div className="flex justify-end gap-2">
+                          <CustomTooltip message="Modifier">
                             <Button
                               variant="ghost"
                               size="icon"
@@ -458,8 +404,18 @@ export default function CommandesAchats() {
                               <Pen className="h-4 w-4" />
                               <span className="sr-only">Modifier</span>
                             </Button>
-                            <PreviewCommandeFournitureDialog commande={commande}/>
-                             <PrintCommandeFournitureDialog commande={commande}/>
+                          </CustomTooltip>
+                          <CustomTooltip message="Visualiser">
+                            <PreviewCommandeFournitureDialog
+                              commande={commande}
+                            />
+                          </CustomTooltip>
+                          <CustomTooltip message="Imprimer">
+                            <PrintCommandeFournitureDialog
+                              commande={commande}
+                            />
+                          </CustomTooltip>
+                          <CustomTooltip message="Supprimer">
                             <Button
                               name="delete btn"
                               variant="ghost"
@@ -473,168 +429,30 @@ export default function CommandesAchats() {
                               <Trash2 className="h-4 w-4" />
                               <span className="sr-only">Supprimer</span>
                             </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={10} align="center">
-                        Aucune commande trouvé
+                          </CustomTooltip>
+                        </div>
                       </TableCell>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-
-            {/* the half table with the name and Action columns */}
-            <ScrollArea
-              className={`h-[35rem] w-full gap-3 col-span-2  border mb-3 rounded-lg ${
-                !isAddingCommande && !isUpdatingCommande ? "hidden" : ""
-              } `}
-            >
-              <div className="col-span-2">
-                {/* <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Commande</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {commandes?.isLoading ? (
-                      [...Array(10)].map((_, index) => (
-                        <TableRow
-                          className="h-[2rem] MuiTableRow-root"
-                          role="checkbox"
-                          tabIndex={-1}
-                          key={index}
-                        >
-                          <TableCell
-                            className="!py-2 text-sm md:text-base"
-                            align="left"
-                          >
-                            <div className="flex gap-2 items-center">
-                              <Skeleton className="h-12 w-12 rounded-full" />
-                              <Skeleton className="h-4 w-[150px]" />
-                            </div>
-                          </TableCell>
-                          <TableCell className="!py-2" align="right">
-                            <Skeleton className="h-4 w-[100px]" />
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : commandes.data?.length > 0 ? (
-                      commandes.data?.map((commande) => (
-                        <TableRow key={commande.id}>
-                          <TableCell>
-                            <div className="grid grid-cols-2 grid-rows-2 items-center gap-2">
-                              <span className="text-md font-medium text-gray-900 col-span-2">
-                                {commande.produit.designation}
-                              </span>
-                              <div className="flex items-center gap-1">
-                                <span className="text-xs text-gray-500">
-                                  Quantité:
-                                </span>
-                                <span className="text-sm font-medium text-gray-700">
-                                  {commande.quantite}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1 justify-end">
-                                <span className="text-xs text-gray-500">
-                                  Montant:
-                                </span>
-                                <span className="text-sm font-medium text-gray-700">
-                                  {commande.prixUnite * commande.quantite} DH
-                                </span>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
-                                onClick={() => {
-                                  setCurrCommande(commande);
-                                  setIsUpdatingCommande(true);
-                                  setIsAddingCommande(false);
-                                }}
-                              >
-                                <Pen className="h-4 w-4" />
-                                <span className="sr-only">Modifier</span>
-                              </Button>
-                              <Button
-                                name="delete btn"
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
-                                onClick={() => {
-                                  setIsDialogOpen(true);
-                                  setCurrCommande(commande);
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                <span className="sr-only">Supprimer</span>
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={2} align="center">
-                          Aucune commande trouvé
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table> */}
-              </div>
-            </ScrollArea>
-            {commandes.data?.length > 0 ? (
-              <CustomPagination
-                currentPage={page}
-                setCurrentPage={setPage}
-                totalPages={totalPages}
-              />
-            ) : (
-              ""
-            )}
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={10} align="center">
+                      Aucune commande trouvé
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
           </div>
-          {/* {isUpdatingCommande && (
-            <ModifyClientDialog
-              currCommande={currCommande}
-              getCommandes={getCommandes}
+          {commandes.data?.length > 0 ? (
+            <CustomPagination
+              currentPage={page}
+              setCurrentPage={setPage}
+              totalPages={totalPages}
             />
-          )} */}
-          {/* {isUpdatingCommande && (
-            <div className="col-span-1">
-              <UpdateAchatCommandeForm currCommande={currCommande} />
-            </div>
-          )} */}
-          <div
-            className={`${!isAddingCommande && "hidden"} col-span-1 mb-[5rem]`}
-          >
-            <ScrollArea className="w-full h-[85vh]">
-              {isAddingCommande && (
-                <AchatCommandesForm currCommande={currCommande} />
-              )}
-            </ScrollArea>
-          </div>
-          <div
-            className={`${
-              !isUpdatingCommande && "hidden"
-            } col-span-1 mb-[5rem]`}
-          >
-            <ScrollArea className="w-full h-[85vh]">
-              {isUpdatingCommande && (
-                <UpdateAchatCommandeForm currCommande={currCommande} />
-              )}
-            </ScrollArea>
-          </div>
+          ) : (
+            ""
+          )}
         </div>
       </div>
       <DeleteConfirmationDialog
@@ -645,7 +463,7 @@ export default function CommandesAchats() {
           deleteCommande.mutate();
           setIsDialogOpen(false);
         }}
-        itemType="client"
+        itemType="commandeFourniture"
       ></DeleteConfirmationDialog>
     </>
   );

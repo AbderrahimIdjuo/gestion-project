@@ -11,23 +11,31 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Search, Check, Plus, Minus } from "lucide-react";
+import { Search, Check, Plus, Minus, Tags, DollarSign } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import axios from "axios";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { LoadingDots } from "@/components/loading-dots";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useInView } from "react-intersection-observer";
 import { AddButton } from "@/components/customUi/styledButton";
-
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 export function ProduitsSelection({ onArticlesAdd }) {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedArticles, setSelectedArticles] = useState({});
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const { ref, inView } = useInView();
-
+  const [filters, setFilters] = useState({
+    categorie: "all",
+  });
   const handleToggleArticle = (article) => {
     setSelectedArticles((prev) => {
       const newSelected = { ...prev };
@@ -111,7 +119,13 @@ export function ProduitsSelection({ onArticlesAdd }) {
   );
 
   const selectedCount = Object.keys(selectedArticles).length;
-
+  const categories = useQuery({
+    queryKey: ["categories"],
+    queryFn: async () => {
+      const response = await axios.get("/api/categoriesProduits");
+      return response.data.categories;
+    },
+  });
   // infinite scrolling produits comboBox
   const {
     data,
@@ -121,13 +135,14 @@ export function ProduitsSelection({ onArticlesAdd }) {
     isFetching,
     hasNextPage,
   } = useInfiniteQuery({
-    queryKey: ["produits", debouncedQuery],
+    queryKey: ["produits", debouncedQuery, filters.categorie],
     queryFn: async ({ pageParam = null }) => {
       const response = await axios.get("/api/produits/infinitPagination", {
         params: {
           limit: 10,
           query: debouncedQuery,
           cursor: pageParam,
+          categorie: filters.categorie,
         },
       });
       return response.data;
@@ -158,13 +173,6 @@ export function ProduitsSelection({ onArticlesAdd }) {
         onClick={() => setOpen(true)}
         title="Ajouter des produits"
       />
-      {/* <Button
-        className="bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg px-4 py-2 shadow-md transition"
-        onClick={() => setOpen(true)}
-      >
-        <Plus className="mr-2 h-4 w-4" />
-        Ajouter des produits
-      </Button> */}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-[1000px] p-0 gap-0 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -177,7 +185,32 @@ export function ProduitsSelection({ onArticlesAdd }) {
             </div>
             <div className="h-[600px] flex gap-3 gap-2 px-4 ">
               <div className="w-full h-full">
-                <div className="relative p-4">
+                <div
+                  name="selectCategorie"
+                  className=" relative px-4 pt-2 pb-1"
+                >
+                  <Select
+                    value={filters.categorie}
+                    onValueChange={(value) =>
+                      setFilters({ ...filters, categorie: value })
+                    }
+                  >
+                    <SelectTrigger className="col-span-3  bg-white focus:ring-purple-500">
+                      <SelectValue placeholder="Séléctionnez une catégorie..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white">
+                      <SelectItem key="all" value="all">
+                        Toutes les catégories
+                      </SelectItem>
+                      {categories.data?.map((element) => (
+                        <SelectItem key={element.id} value={element.categorie}>
+                          {element.categorie}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="relative  px-4 py-1">
                   <Search className="absolute left-6 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     placeholder="Chercher un produit..."
@@ -189,7 +222,7 @@ export function ProduitsSelection({ onArticlesAdd }) {
                     {isFetching && !isLoading && <LoadingDots />}
                   </div>
                 </div>
-                <div className="h-[510px] space-y-2">
+                <div className="h-[500px] space-y-2">
                   <ScrollArea className="h-[100%] w-full">
                     {produits?.length > 0 ? (
                       produits?.map((article) => (
@@ -207,10 +240,13 @@ export function ProduitsSelection({ onArticlesAdd }) {
                             <p className="text-md font-medium">
                               {article.designation}
                             </p>
-                            <p className="text-xs text-muted-foreground">
-                              Prix d&apos;unité: {article.prixAchat.toFixed(2)}{" "}
-                              MAD
-                            </p>
+                            <div className="flex justify-between">
+                             
+                                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                 Prix d&apos;unité : {article.prixAchat.toFixed(2) || "0"} MAD
+                                </p>
+                             
+                            </div>
                           </div>
                           <div
                             className={cn(

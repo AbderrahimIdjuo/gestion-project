@@ -19,6 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import CustomTooltip from "@/components/customUi/customTooltip";
 
 function regrouperProduitsParQuantite(groups) {
   const produitMap = new Map();
@@ -46,62 +47,70 @@ function regrouperProduitsParQuantite(groups) {
 
 export default function PrintCommandeFournitureDialog({ commande }) {
   const [open, setOpen] = useState(false);
-  const [print, setPrint] = useState(false);
 
   // Extract order data
   const { fournisseur, groups, numero } = commande;
-  console.log("groups", groups);
-  console.log("listProduits : ", regrouperProduitsParQuantite(groups));
+
   const handlePrint = () => {
     window.print();
   };
 
   return (
     <>
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => setOpen(true)}
-        className="h-8 w-8 rounded-full hover:bg-green-100 hover:text-green-600"
-      >
-        <PrinterIcon className="h-4 w-4" />
-      </Button>
+      <CustomTooltip message="Imprimer">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setOpen(true)}
+          className="h-8 w-8 rounded-full hover:bg-green-100 hover:text-green-600"
+        >
+          <PrinterIcon className="h-4 w-4" />
+        </Button>
+      </CustomTooltip>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto print:shadow-none print:max-h-none print:overflow-visible">
           <DialogHeader>
             <DialogTitle></DialogTitle>
           </DialogHeader>
-          <div className="container mx-auto max-w-4xl bg-white min-h-screen print:p-0 print:max-w-none ">
-            <div id="print-area" className="print:mt-10">
-              <div className="flex justify-between items-center mb-6 border-b pb-4">
-                <div className="space-y-1">
+          <div className="container mx-auto p-8 max-w-4xl bg-white min-h-screen print:p-0 print:max-w-none mb-10">
+            {/* Document Content */}
+            <div id="print-area" className="space-y-6 print:mt-10">
+              {/* Header */}
+              <div className="flex justify-between items-center border-b border-[#228B8B] pb-1">
+                <img src="/images/LOGO-tete.jpg" alt="Logo" width={300} />
+                <img src="/images/LOGO-OUDAOUD.jpg" className="h-24 w-24" />
+              </div>
+              {/* Company and Client Info */}
+              <div className="grid grid-cols-3 gap-8">
+                {/* commande Info */}
+                <div className="space-y-1 col-span-2">
                   <h3 className="font-medium text-sm text-muted-foreground">
                     Fournisseur
                   </h3>
                   <p className="font-semibold">{fournisseur?.nom}</p>
                 </div>
-                <div className="space-y-1 text-right">
-                  <h3 className="font-medium text-sm text-muted-foreground">
-                    Commande numéro
+                <div className="col-span-1">
+                       <h3 className="font-medium text-sm text-muted-foreground">
+                    Numéro de la commande
                   </h3>
-                  <p className="font-semibold">{commande?.numero}</p>
+                  <p className="font-semibold">{numero}</p>
                 </div>
               </div>
-
-              <div className="space-y-6">
-                <Table>
-                  <TableHeader>
+              {/* Items Table */}
+              <div className="overflow-hidden rounded-lg border border-black">
+                <Table className="w-full border-collapse">
+                  <TableHeader className="text-[1rem] border-black">
                     <TableRow>
-                      <TableHead>Produit</TableHead>
-                      <TableHead className="text-center">Quantité</TableHead>
+                      <TableHead className="text-black font-bold text-center border-b border-black w-[90%]">Produit</TableHead>
+                      <TableHead className="text-black font-bold border-l border-b border-black text-center ">Qté</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {regrouperProduitsParQuantite(groups)?.map(
                       (produit, index) => (
                         <TableRow key={produit.id || index}>
-                          <TableCell>{produit.produit.designation}</TableCell>
-                          <TableCell className="text-center">
+                          <TableCell className=" p-1 text-left  border-black text-md font-semibold">{produit.produit.designation}</TableCell>
+                          <TableCell className="border-l  border-black p-2 text-center">
                             {produit.quantite}
                           </TableCell>
                         </TableRow>
@@ -112,22 +121,22 @@ export default function PrintCommandeFournitureDialog({ commande }) {
               </div>
             </div>
           </div>
-          <div className="flex justify-between mt-6 print:hidden">
+          <div className="flex justify-end gap-3 mt-6 print:hidden">
             <Button
-              className="rounded-full hover:bg-emerald-400 hover:text-green-900 "
+              className="rounded-full"
+              variant="outline"
+              onClick={() => setOpen(false)}
+            >
+              Fermer
+            </Button>
+            <Button
+              className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full"
               variant="outline"
               onClick={() => {
                 handlePrint();
               }}
             >
               <Printer className="mr-2 h-4 w-4" /> Imprimer
-            </Button>
-            <Button
-              className="rounded-full hover:bg-red-400 hover:text-red-900 !border-red"
-              variant="outline"
-              onClick={() => setOpen(false)}
-            >
-              Fermer
             </Button>
           </div>
         </DialogContent>
