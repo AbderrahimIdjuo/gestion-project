@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Printer, PrinterIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import PiedFacture from "@/components/pied-facture";
 import {
   Dialog,
   DialogContent,
@@ -49,7 +49,7 @@ export default function PrintCommandeFournitureDialog({ commande }) {
   const [open, setOpen] = useState(false);
 
   // Extract order data
-  const { fournisseur, groups, numero } = commande;
+  const {echeance ,  fournisseur, groups, numero } = commande;
 
   const handlePrint = () => {
     window.print();
@@ -68,13 +68,13 @@ export default function PrintCommandeFournitureDialog({ commande }) {
         </Button>
       </CustomTooltip>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto print:shadow-none print:max-h-none print:overflow-visible">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto print:shadow-none print:overflow-visible">
           <DialogHeader>
             <DialogTitle></DialogTitle>
           </DialogHeader>
-          <div className="container mx-auto p-8 max-w-4xl bg-white min-h-screen print:p-0 print:max-w-none mb-10">
+          <div className="container mx-auto p-8 max-w-4xl bg-white min-h-screen print:p-0 print:max-w-none">
             {/* Document Content */}
-            <div id="print-area" className="space-y-6 print:mt-10">
+            <div id="print-area" className="space-y-6 print:my-0">
               {/* Header */}
               <div className="flex justify-between items-center border-b border-[#228B8B] pb-1">
                 <img src="/images/LOGO-tete.jpg" alt="Logo" width={300} />
@@ -89,27 +89,39 @@ export default function PrintCommandeFournitureDialog({ commande }) {
                   </h3>
                   <p className="font-semibold">{fournisseur?.nom}</p>
                 </div>
+                 <div className="space-y-1 col-span-2">
+                  <h3 className="font-medium text-sm text-muted-foreground">
+                    Écheance
+                  </h3>
+                  <p className="font-semibold">{echeance}</p>
+                </div>
                 <div className="col-span-1">
-                       <h3 className="font-medium text-sm text-muted-foreground">
+                  <h3 className="font-medium text-sm text-muted-foreground">
                     Numéro de la commande
                   </h3>
                   <p className="font-semibold">{numero}</p>
                 </div>
               </div>
               {/* Items Table */}
-              <div className="overflow-hidden rounded-lg border border-black">
-                <Table className="w-full border-collapse">
+              <div className="overflow-hidden rounded-md border border-black mt-0">
+                <Table className="w-full border-collapse print:w-full print:min-w-full">
                   <TableHeader className="text-[1rem] border-black">
                     <TableRow>
-                      <TableHead className="text-black font-bold text-center border-b border-black w-[90%]">Produit</TableHead>
-                      <TableHead className="text-black font-bold border-l border-b border-black text-center ">Qté</TableHead>
+                      <TableHead className="text-black font-bold text-center border-b border-black w-[90%]">
+                        Produit
+                      </TableHead>
+                      <TableHead className="text-black font-bold border-l border-b border-black text-center ">
+                        Qté
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {regrouperProduitsParQuantite(groups)?.map(
                       (produit, index) => (
                         <TableRow key={produit.id || index}>
-                          <TableCell className=" p-1 text-left  border-black text-md font-semibold">{produit.produit.designation}</TableCell>
+                          <TableCell className=" p-1 text-left  border-black text-md font-semibold">
+                            {produit.produit.designation}
+                          </TableCell>
                           <TableCell className="border-l  border-black p-2 text-center">
                             {produit.quantite}
                           </TableCell>
@@ -119,6 +131,9 @@ export default function PrintCommandeFournitureDialog({ commande }) {
                   </TableBody>
                 </Table>
               </div>
+              {/* <div className="flex flex-col gap-2">
+                <PiedFacture />
+              </div> */}
             </div>
           </div>
           <div className="flex justify-end gap-3 mt-6 print:hidden">

@@ -18,7 +18,7 @@ import PiedDevis from "@/components/pied-devis";
 import LoadingDeviPdf from "@/components/loading-devi-pdf";
 
 function formatPhoneNumber(phone) {
-  return phone.replace(/(\d{2})(?=\d)/g, "$1 ").trim();
+  return phone?.replace(/(\d{2})(?=\d)/g, "$1 ").trim();
 }
 function nombreEnLettres(n) {
   const unites = [
@@ -173,13 +173,13 @@ export default function DevisPDFPage() {
                 <div className="flex items-center gap-2 ">
                   <Phone className="h-3 w-3" />
                   <p className="font-medium text-sm">
-                    {formatPhoneNumber(devi?.client.telephone)}
+                    {formatPhoneNumber(devi?.client?.telephone)}
                   </p>
                 </div>
               </div>
             </div>
             {/* Items Table */}
-            <div className="overflow-hidden rounded-md border border-black mt-0">
+            <div className="overflow-hidden rounded-md border border-black mt-0 main-table-container">
               <Table className="w-full border-collapse print:w-full print:min-w-full">
                 <TableHeader className="text-[1rem] border-black">
                   <TableRow>
@@ -236,7 +236,7 @@ export default function DevisPDFPage() {
                         {articl.designation}{" "}
                       </TableCell>
                       <TableCell className="border-l border-b border-black p-1 text-center">
-                        {!articl.length? "-" : articl.length}
+                        {!articl.length ? "-" : articl.length}
                       </TableCell>
                       <TableCell className="border-l border-b border-black p-1 text-center">
                         {!articl.width ? "-" : articl.width}
@@ -271,7 +271,7 @@ export default function DevisPDFPage() {
                       {devi?.sousTotal.toFixed(2)} DH
                     </TableCell>
                   </TableRow>
-                          {devi?.reduction > 0 ? (
+                  {devi?.reduction > 0 ? (
                     <TableRow>
                       <TableCell
                         colSpan={6}
@@ -327,70 +327,72 @@ export default function DevisPDFPage() {
               </Table>
             </div>
 
-            <div className="flex flex-col gap-2">
-              <h3 className="text-sm font-medium mb-0">
-                Arrêter le devis à :{" "}
-                <span className="text-sm font-bold mb-0 ">
-                  {nombreEnLettres(devi?.total)}{" "}
-                </span>{" "}
-                Dirhams TTC{" "}
-              </h3>
-              <h3 className="text-sm font-medium mb-0">
-                Validité du devis : 30 jours{" "}
-              </h3>
-              <div className="print-block ">
+            <div className="flex flex-col gap-2 table-to-footer-spacing">
+              <div>
                 <h3 className="text-sm font-medium mb-0">
-                  Modes de paiements :
+                  Arrêter le devis à :{" "}
+                  <span className="text-sm font-bold mb-0 ">
+                    {nombreEnLettres(devi?.total)}{" "}
+                  </span>{" "}
+                  Dirhams TTC{" "}
                 </h3>
-                <div className="flex justify-center">
-                  <div className="w-[70%] overflow-hidden  my-auto">
-                    <Table className="w-full border-collapse">
-                      <TableHeader className="text-[1rem] border-none">
-                        <TableRow className="!py-0">
-                          <TableHead className="text-sm text-black font-medium text-center !py-0">
-                            Paiements
-                          </TableHead>
-                          <TableHead className="text-sm text-black font-medium  text-center !py-0">
-                            Montant H.T
-                          </TableHead>
-                          <TableHead className="text-sm text-black font-medium  text-center !py-0">
-                            TVA 20%
-                          </TableHead>
-                          <TableHead className="text-sm text-black font-medium  text-center !py-0">
-                            Montant TTC
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {modesPaiement.map((mode) => (
-                          <TableRow
-                            key={mode.pourcentage}
-                            className="border-none"
-                          >
-                            <TableCell className="p-1 text-center  text-md font-semibold p-0">
-                              {mode.pourcentage}
-                            </TableCell>
-                            <TableCell className=" p-1 text-center p-0">
-                              {mode.montantHT.toFixed(2)} DH
-                            </TableCell>
-                            <TableCell className="  p-1 text-center p-0">
-                              {mode.tva.toFixed(2)} DH
-                            </TableCell>
-                            <TableCell className="  p-1 text-center p-0">
-                              {mode.montantTTC.toFixed(2)} DH
-                            </TableCell>
+                <h3 className="text-sm font-medium mb-0">
+                  Validité du devis : 30 jours{" "}
+                </h3>
+                <div className="print-block ">
+                  <h3 className="text-sm font-medium mb-0">
+                    Modes de paiements :
+                  </h3>
+                  <div className="flex justify-center">
+                    <div className="w-[70%] overflow-hidden my-auto">
+                      <Table className="w-full border-collapse">
+                        <TableHeader className="text-[1rem] border-none">
+                          <TableRow className="!py-0">
+                            <TableHead className="text-sm text-black font-medium text-center !py-0">
+                              Paiements
+                            </TableHead>
+                            <TableHead className="text-sm text-black font-medium  text-center !py-0">
+                              Montant H.T
+                            </TableHead>
+                            <TableHead className="text-sm text-black font-medium  text-center !py-0">
+                              TVA 20%
+                            </TableHead>
+                            <TableHead className="text-sm text-black font-medium  text-center !py-0">
+                              Montant TTC
+                            </TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                        </TableHeader>
+                        <TableBody>
+                          {modesPaiement.map((mode) => (
+                            <TableRow
+                              key={mode.pourcentage}
+                              className="border-none"
+                            >
+                              <TableCell className="p-1 text-center  text-md font-semibold p-0">
+                                {mode.pourcentage}
+                              </TableCell>
+                              <TableCell className=" p-1 text-center p-0">
+                                {mode.montantHT.toFixed(2)} DH
+                              </TableCell>
+                              <TableCell className="  p-1 text-center p-0">
+                                {mode.tva.toFixed(2)} DH
+                              </TableCell>
+                              <TableCell className="  p-1 text-center p-0">
+                                {mode.montantTTC.toFixed(2)} DH
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold mb-0 italic underline">
-                  En signant ce devis, le client confirme son accord et valide
-                  une commande ferme et définitive.
-                </h3>
+                <div>
+                  <h3 className="text-sm font-semibold mb-0 italic underline">
+                    En signant ce devis, le client confirme son accord et valide
+                    une commande ferme et définitive.
+                  </h3>
+                </div>
               </div>
               <PiedDevis />
             </div>

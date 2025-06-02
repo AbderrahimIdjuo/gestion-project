@@ -27,7 +27,7 @@ const productSchema = z.object({
       value === "" || value === undefined ? undefined : validateFloat(value),
     z
       .number({ invalid_type_error: "La quantité doit être un nombre" })
-      .min(0.01, { message: "La quantité doit être au moins 1" })
+      .min(0.01, { message: "La quantité doit être au moins 0.01" })
   ),
   prixUnite: z.preprocess(
     (value) =>

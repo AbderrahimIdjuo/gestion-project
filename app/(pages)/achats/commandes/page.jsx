@@ -30,7 +30,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, Pen, Trash2, Filter } from "lucide-react";
+import { Search, Pen, Trash2, Filter , Printer } from "lucide-react";
 import { UpdateAchatCommandeForm } from "@/components/update-achat-commande-form";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import { AchatCommandesForm } from "@/components/achat-many-commande-form";
@@ -44,12 +44,13 @@ import PreviewCommandeFournitureDialog from "@/components/preview-commandeFourni
 import PrintCommandeFournitureDialog from "@/components/print-commandeFourniture";
 import CustomTooltip from "@/components/customUi/customTooltip";
 
+function formatDate(dateString) {
+  return dateString?.split("T")[0].split("-").reverse().join("-");
+}
 export default function CommandesAchats() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false); // Delete dialog
   const [currCommande, setCurrCommande] = useState("");
-  const [isAddingCommande, setIsAddingCommande] = useState(false);
-  const [isUpdatingCommande, setIsUpdatingCommande] = useState(false);
   const [maxMontant, setMaxMontant] = useState();
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [startDate, setStartDate] = useState();
@@ -117,7 +118,6 @@ export default function CommandesAchats() {
           statutPaiement: filters.statutPaiement,
         },
       });
-
       console.log("commandesFourniture", response.data.commandes);
       setTotalPages(response.data.totalPages);
       return response.data.commandes;
@@ -149,7 +149,7 @@ export default function CommandesAchats() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(["commandesAchats"]);
+      queryClient.invalidateQueries(["commandeFournisseur"]);
     },
   });
 
@@ -365,7 +365,7 @@ export default function CommandesAchats() {
                       </TableCell>
                       <TableCell className="!py-2" align="left">
                         <Skeleton className="h-4 w-full" />
-                      </TableCell>                   
+                      </TableCell>
                       <TableCell className="!py-2">
                         <div className="flex gap-2 justify-end">
                           <Skeleton className="h-7 w-7 rounded-full" />
@@ -380,7 +380,7 @@ export default function CommandesAchats() {
                   commandes.data?.map((commande) => (
                     <TableRow key={commande.id}>
                       <TableCell className="text-md !py-2">
-                        {commande.createdAt.split("T")[0]}
+                        {formatDate(commande.date)}
                       </TableCell>
                       <TableCell className="text-md !py-2">
                         {commande.numero}
@@ -390,7 +390,7 @@ export default function CommandesAchats() {
                       </TableCell>
                       <TableCell className="text-right !py-2">
                         <div className="flex justify-end gap-2">
-                          <CustomTooltip message="Modifier">
+                          {/* <CustomTooltip message="Modifier">
                             <Button
                               variant="ghost"
                               size="icon"
@@ -404,16 +404,31 @@ export default function CommandesAchats() {
                               <Pen className="h-4 w-4" />
                               <span className="sr-only">Modifier</span>
                             </Button>
-                          </CustomTooltip>
+                          </CustomTooltip> */}
                           <CustomTooltip message="Visualiser">
                             <PreviewCommandeFournitureDialog
                               commande={commande}
                             />
                           </CustomTooltip>
                           <CustomTooltip message="Imprimer">
-                            <PrintCommandeFournitureDialog
-                              commande={commande}
-                            />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 rounded-full hover:bg-emerald-100 hover:text-emerald-600"
+                              onClick={() => {
+                                window.open(
+                                  `/achats/commandes/${commande.id}/commandeFourniseur`,
+                                  "_blank"
+                                );
+                                localStorage.setItem(
+                                  "commandeFournitures",
+                                  JSON.stringify(commande)
+                                );
+                              }}
+                            >
+                              <Printer className="h-4 w-4" />
+                              <span className="sr-only">Imprimer</span>
+                            </Button>
                           </CustomTooltip>
                           <CustomTooltip message="Supprimer">
                             <Button
@@ -456,7 +471,7 @@ export default function CommandesAchats() {
         </div>
       </div>
       <DeleteConfirmationDialog
-        recordName={currCommande?.id}
+        recordName={currCommande?.numero}
         isOpen={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
         onConfirm={() => {

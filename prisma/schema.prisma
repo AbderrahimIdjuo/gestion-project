@@ -64,6 +64,7 @@ model Items {
 model CommandesProduits {
   id         String    @id @default(uuid())
   commandeId String
+  commandeNumero String?
   produitId  String
   montant    Float
   quantite   Float
@@ -74,6 +75,7 @@ model CommandesProduits {
   produit    Produits  @relation(fields: [produitId], references: [id], onDelete: Cascade)
 
   @@unique([commandeId, produitId])
+   @@unique([commandeNumero, produitId])
 }
 
 model Fournisseurs {
@@ -132,7 +134,7 @@ model CommandeFourniture {
   numero       String   @unique
   fournisseur  Fournisseurs @relation(fields: [fournisseurId], references: [id], onDelete: Cascade)
   fournisseurId String
-
+date     DateTime?
    groups        OrdersGroups[]
 
   createdAt    DateTime  @default(now())
@@ -141,7 +143,7 @@ model CommandeFourniture {
 
 model OrdersGroups {
 id               String       @id @default(uuid())
-commandeNumero   String?  
+devisNumero   String?  
 clientName       String?  
 commandeFourniture    CommandeFourniture?    @relation(fields: [commandeFournitureId], references: [id] , onDelete: Cascade)
 commandeFournitureId  String?

@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   Users,
   Package,
+  FileText,
   Truck,
   ShoppingCart,
   ChevronDown,
@@ -20,13 +21,14 @@ import {
 import { cn } from "@/lib/utils";
 
 const menuItems = [
-//  { icon: TestTubeDiagonal, label: "Test", href: "/test" },
+  //  { icon: TestTubeDiagonal, label: "Test", href: "/test" },
   { icon: LayoutDashboard, label: "Dashboard", href: "/" },
   {
     icon: Users,
     label: "Clients",
     href: "/clients",
   },
+  { icon: Users, label: "Fournisseurs", href: "/achats/fournisseurs" },
   {
     icon: Package,
     label: "Produits",
@@ -37,48 +39,50 @@ const menuItems = [
     label: "Articls",
     href: "/articls",
   },
+  { icon: FileText, label: "Devis", href: "/ventes/devis" },
+  { icon: Truck, label: "Commandes Fournitures", href: "/achats/commandes" },
   {
     icon: ContactRound,
     label: "Employés",
     href: "/Employes",
   },
-  {
-    icon: ShoppingCart,
-    label: "Ventes",
-    href: "/ventes",
-    subItems: [
-      { label: "Devis", href: "/ventes/devis" },
-      { label: "Commandes", href: "/ventes/commandes" },
-    ],
-  },
+  // {
+  //   icon: ShoppingCart,
+  //   label: "Ventes",
+  //   href: "/ventes",
+  //   subItems: [
+  //     { label: "Devis", href: "/ventes/devis" },
+  //     { label: "Commandes", href: "/ventes/commandes" },
+  //   ],
+  // },
   {
     icon: Landmark,
     label: "Transactions",
     href: "/transactions",
   },
-  {
-    icon: Truck,
-    label: "Achats",
-    href: "/achats",
-    subItems: [
-      {
-        label: "Fournisseurs",
-        href: "/achats/fournisseurs",
-      },
-      { label: "Commandes Fournitures", href: "/achats/commandes" },
-      { label: "Dépenses fix", href: "/achats/depenses-recurrentes" },
-      // { label: "Dépenses variantes", href: "/achats/depenses-variantes" },
-    ],
-  },
+  // {
+  //   icon: Truck,
+  //   label: "Achats",
+  //   href: "/achats",
+  //   subItems: [
+  //     {
+  //       label: "Fournisseurs",
+  //       href: "/achats/fournisseurs",
+  //     },
+  //     { label: "Commandes Fournitures", href: "/achats/commandes" },
+  //     { label: "Dépenses fix", href: "/achats/depenses-recurrentes" },
+  //     // { label: "Dépenses variantes", href: "/achats/depenses-variantes" },
+  //   ],
+  // },
   {
     icon: Settings,
     label: "Paramètres",
     href: "/parametres",
     subItems: [
-      {
-        label: "Info de l'entreprise",
-        href: "/parametres/infoEntreprise",
-      },
+      // {
+      //   label: "Info de l'entreprise",
+      //   href: "/parametres/infoEntreprise",
+      // },
       {
         label: "Catégories des produits",
         href: "/parametres/categories",

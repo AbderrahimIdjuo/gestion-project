@@ -23,7 +23,7 @@ function formatDate(dateString) {
 }
 
 function formatPhoneNumber(phone) {
-  return phone.replace(/(\d{2})(?=\d)/g, "$1 ").trim();
+  return phone?.replace(/(\d{2})(?=\d)/g, "$1 ").trim();
 }
 
 export default function CommandesPDFPage() {
@@ -49,8 +49,8 @@ export default function CommandesPDFPage() {
   return (
     <>
       {commande ? (
-        <div className="container mx-auto p-8 max-w-4xl bg-white min-h-screen print:p-0 print:max-w-none mb-10">
-          {/* Document Content */}
+<div className="container mx-auto p-4 max-w-4xl bg-white min-h-screen print:p-0 print:max-w-none mb-10">         
+   {/* Document Content */}
           <div id="print-area" className="space-y-6">
             {/* Header */}
             <div className="flex justify-between items-center border-b border-[#228B8B] pb-1">
@@ -58,7 +58,7 @@ export default function CommandesPDFPage() {
               <img src="/images/LOGO-OUDAOUD.jpg" className="h-24 w-24" />
             </div>
             {/* Company and Client Info */}
-            <div className="grid grid-cols-2 gap-8">
+            <div className="flex justify-between gap-8">
               {/* Devis Info */}
               <div className="col-span-1">
                 <h1 className="font-bold text-lg text-gray-900">
@@ -88,15 +88,15 @@ export default function CommandesPDFPage() {
                   <div className="flex items-center gap-2 ">
                     <Phone className="h-3 w-3" />
                     <p className="font-medium text-sm">
-                      {formatPhoneNumber(commande?.client.telephone)}
+                      {formatPhoneNumber(commande?.client?.telephone)}
                     </p>
                   </div>
                 )}
               </div>
             </div>
             {/* Items Table */}
-            <div className="overflow-hidden rounded-lg border border-black">
-              <Table className="w-full border-collapse">
+            <div className="overflow-hidden rounded-md border border-black mt-0">
+              <Table className="w-full border-collapse print:w-full print:min-w-full">
                 <TableHeader className="text-[1rem] border-black">
                   <TableRow>
                     <TableHead className="text-black font-bold text-center border-b border-black w-[50%]">
@@ -116,16 +116,16 @@ export default function CommandesPDFPage() {
                 <TableBody>
                   {commande?.commandeProduits.map((articl) => (
                     <TableRow key={articl.id}>
-                      <TableCell className=" p-1 text-left  border-black text-md font-semibold">
+                      <TableCell className=" p-1 text-left border-b border-black text-md font-semibold">
                         {articl.produit.designation}{" "}
                       </TableCell>
-                      <TableCell className="border-l  border-black p-2 text-center">
+                      <TableCell className="border-l border-b  border-black p-2 text-center">
                         {articl.quantite}
                       </TableCell>
-                      <TableCell className="border-l  border-black p-2 text-center">
+                      <TableCell className="border-l border-b  border-black p-2 text-center">
                         {articl.prixUnite} DH
                       </TableCell>
-                      <TableCell className="border-l  border-black p-2 text-center font-bold">
+                      <TableCell className="border-l border-b  border-black p-2 text-center font-bold">
                         {articl.montant} DH
                       </TableCell>
                     </TableRow>

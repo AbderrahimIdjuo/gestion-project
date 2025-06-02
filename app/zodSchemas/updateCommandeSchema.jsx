@@ -25,11 +25,10 @@ const productSchema = z.object({
   designation: z.string().nonempty({ message: "La désignation est requise" }),
   quantite: z.preprocess(
     (value) =>
-      value === "" || value === undefined ? undefined : validateInt(value),
+      value === "" || value === undefined ? undefined : validateFloat(value),
     z
-      .number()
-      .int({ message: "La quantité doit être un entier" })
-      .min(1, { message: "La quantité doit être au moins 1" })
+      .number({ invalid_type_error: "La quantité doit être un nombre" })
+      .min(0.01, { message: "La quantité doit être au moins 0.01" })
   ),
   prixUnite: z.preprocess(
     (value) =>
@@ -50,10 +49,6 @@ const updateCommandeSchema = z.object({
     z.number().optional()
   ),
   typeReduction: z.string().default("%"),
-  // avance: z.preprocess(
-  //   (value) => (value === "" || value === undefined ? 0 : validateFloat(value)),
-  //   z.number({ invalid_type_error: "L'avance' doit être un nombre" }).optional()
-  // ),
   note: z.string(),
   sousTotal: z.preprocess(
     (value) => (value === "" || value === undefined ? 0 : validateFloat(value)),

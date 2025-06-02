@@ -20,12 +20,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import CustomTooltip from "@/components/customUi/customTooltip";
-
+function formatDate(dateString) {
+  return dateString?.split("T")[0].split("-").reverse().join("-");
+}
 export default function PreviewCommandeFournitureDialog({ commande }) {
   const [open, setOpen] = useState(false);
 
   // Extract order data
-  const { fournisseur, groups, numero } = commande;
+  const { echeance, fournisseur, groups, numero } = commande;
 
   const handlePrint = () => {
     window.print();
@@ -73,14 +75,14 @@ export default function PreviewCommandeFournitureDialog({ commande }) {
                   >
                     <CardHeader className="p-4 pb-2">
                       <div className="flex justify-between items-center">
-                        {group.commandeNumero ? (
+                        {group.devisNumero ? (
                           <>
                             <div className="space-y-1">
                               <h3 className="font-medium text-sm text-muted-foreground">
                                 Numéro de la commande client :
                               </h3>
                               <p className="font-semibold">
-                                {group.commandeNumero}
+                                {group.devisNumero}
                               </p>
                             </div>
                             <div className="space-y-1 text-left">
@@ -153,14 +155,22 @@ export default function PreviewCommandeFournitureDialog({ commande }) {
                 <img src="/images/LOGO-OUDAOUD.jpg" className="h-24 w-24" />
               </div>
               {/* Company and Client Info */}
-              <div className="grid grid-cols-3 gap-8">
+              <div className="flex justify-between gap-8">
                 {/* commande Info */}
-                <div className="space-y-1 col-span-2">
+                <div className="space-y-1 col-span-1">
                   <h3 className="font-medium text-sm text-muted-foreground">
                     Fournisseur
                   </h3>
                   <p className="font-semibold">{fournisseur?.nom}</p>
                 </div>
+                {echeance && (
+                  <div className="space-y-1 col-span-1">
+                    <h3 className="font-medium text-sm text-muted-foreground">
+                      Écheance
+                    </h3>
+                    <p className="font-semibold">{formatDate(echeance)}</p>
+                  </div>
+                )}
                 <div className="col-span-1">
                   <h3 className="font-medium text-sm text-muted-foreground">
                     Commande fournitures N°
@@ -176,14 +186,14 @@ export default function PreviewCommandeFournitureDialog({ commande }) {
                   >
                     <div className="p-4 pb-2 border-b">
                       <div className="flex justify-between items-center">
-                        {group.commandeNumero ? (
+                        {group.devisNumero ? (
                           <>
                             <div className="space-y-1">
                               <h3 className="font-medium text-sm text-muted-foreground">
-                                Commande client numéro :
+                                Devis numéro :
                               </h3>
                               <p className="font-semibold">
-                                {group.commandeNumero}
+                                {group.devisNumero}
                               </p>
                             </div>
                             <div className="space-y-1 text-left">

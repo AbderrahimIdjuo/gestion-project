@@ -259,7 +259,19 @@ export default function NouvelleCommandePage() {
                           <Calendar
                             mode="single"
                             selected={field.value}
-                            onSelect={field.onChange}
+                            onSelect={(date) => {
+                              if (date) {
+                                // Set to midnight UTC
+                                const utcMidnight = new Date(
+                                  Date.UTC(
+                                    date.getFullYear(),
+                                    date.getMonth(),
+                                    date.getDate()
+                                  )
+                                );
+                                field.onChange(utcMidnight);
+                              }
+                            }}
                             initialFocus
                           />
                         )}
@@ -340,7 +352,7 @@ export default function NouvelleCommandePage() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {items.map((item ,index) => (
+                          {items.map((item, index) => (
                             <TableRow key={item.id}>
                               <TableCell>
                                 <span className="focus:!ring-purple-500 text-md">
@@ -359,13 +371,13 @@ export default function NouvelleCommandePage() {
                                   }}
                                   className="focus:!ring-purple-500 w-20"
                                 />
-                                 {errors.produits?.[index]?.quantite && (
+                                {errors.produits?.[index]?.quantite && (
                                   <p className="text-xs text-red-500 mt-1">
                                     {errors.produits?.[index].quantite.message}
                                   </p>
                                 )}
                               </TableCell>
-                              <TableCell>                      
+                              <TableCell>
                                 <Input
                                   defaultValue={item.prixUnite}
                                   onChange={(e) => {
@@ -377,7 +389,7 @@ export default function NouvelleCommandePage() {
                                   }}
                                   className="focus:!ring-purple-500 w-24"
                                 />
-                                  {errors.produits?.[index]?.prixUnite && (
+                                {errors.produits?.[index]?.prixUnite && (
                                   <p className="text-xs text-red-500 mt-1">
                                     {errors.produits[index].prixUnite.message}
                                   </p>

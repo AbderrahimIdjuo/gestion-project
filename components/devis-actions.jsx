@@ -56,7 +56,7 @@ export function DevisActions({ devis, setDeleteDialogOpen, setCurrentDevi }) {
             Supprimer
           </span>
         </DropdownMenuItem>
-        {!(devis.statut === "Accepté") && (
+        {/* {!(devis.statut === "Accepté") && (
           <DropdownMenuItem
             onClick={() => {
               localStorage.setItem("devi", JSON.stringify(devis));
@@ -70,7 +70,7 @@ export function DevisActions({ devis, setDeleteDialogOpen, setCurrentDevi }) {
               Créer une commande
             </span>
           </DropdownMenuItem>
-        )}
+        )} */}
 
         <DropdownMenuItem
           onClick={() => {

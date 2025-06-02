@@ -69,9 +69,9 @@ body {
 }
 
 @layer base {
-  * {
+  /* * {
     @apply border-border;
-  }
+  } */
   body {
     @apply bg-background text-foreground;
   }
@@ -80,8 +80,10 @@ body {
 @media print {
   @page {
     margin: 1cm;
+    margin-bottom: 5rem;
     size: A4;
   }
+
   body::before {
     content: "";
     position: fixed;
@@ -121,7 +123,7 @@ body {
   }
 
   /* Hide UI elements */
-  .print\:hidden,
+  .print\\:hidden,
   button,
   nav,
   .sidebar,
@@ -129,15 +131,24 @@ body {
     display: none !important;
   }
 
-  /* Table styling */
+  /* Table styling - EMPÊCHER LA RÉPÉTITION DE L'EN-TÊTE ET DU FOOTER */
   table {
     width: 100% !important;
+    height: 90% !important;
     page-break-inside: auto;
     border-collapse: collapse !important;
   }
 
+  /* EMPÊCHER la répétition de l'en-tête ET du footer sur chaque page */
   thead {
-    display: table-header-group;
+    display: table-row-group !important;
+  }
+
+  /* EMPÊCHER la répétition du footer - une seule fois à la fin */
+  tfoot {
+    display: table-row-group !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 
   tr {
@@ -149,41 +160,25 @@ body {
     border-color: rgba(92, 92, 92, 0.776) !important;
   }
 
-  /* Footer styling */
+  /* ESPACEMENT DE 5PX ENTRE TABLEAU ET PIEDDEVIS */
+  .table-to-footer-spacing {
+    margin-top: 5px !important;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: end;
+  }
+
+  /* PiedDevis fixé en bas de la dernière page */
   .print-footer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background-color: #228b8b !important;
-    padding: 10px;
-    text-align: center;
-    color: white !important;
-    font-family: "Times New Roman", serif;
+    page-break-before: auto;
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
 
-  .footer-content {
-    width: 100%;
-  }
-
-  .footer-line-1 {
-    font-size: 14px;
-    font-weight: 500;
-  }
-
-  .footer-line-2 {
-    margin-top: 5px;
-    font-size: 13px;
-  }
-
-  .footer-divider {
-    width: 40%;
-    margin: 5px auto;
-    border: 0.5px solid white;
-  }
-
-  .footer-line-3 {
-    font-size: 13px;
+  .print-footer::before {
+    display: block;
+    page-break-before: auto;
   }
 
   /* Prevent page breaks inside important sections */
@@ -192,9 +187,19 @@ body {
     page-break-inside: avoid;
   }
 
-  /* Ensure background colors print correctly */
-  .bg-\[\#228b8b1d\] {
-    background-color: rgba(34, 139, 139, 0.1) !important;
+  /* Améliorer la gestion des sauts de page pour les gros tableaux */
+  .main-table-container {
+    page-break-inside: auto;
+  }
+
+  /* S'assurer que le contenu ne chevauche pas avec le footer fixe */
+  #print-area {
+    padding-bottom: 80px !important;
+  }
+
+  /* Garder l'espace avant PiedDevis quand ce n'est pas en position fixe */
+  .table-to-footer-spacing {
+    margin-bottom: 80px !important;
   }
 }
 

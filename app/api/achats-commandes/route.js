@@ -6,9 +6,11 @@ export async function POST(req) {
     const response = await req.json();
     console.log("data : ", response);
 
-    const { numero, fournisseurId, orderGroups } = response;
+    const { date, numero, fournisseurId, orderGroups } = response;
+
     const result = await prisma.commandeFourniture.create({
       data: {
+        date,
         numero,
         fournisseur: {
           connect: { id: fournisseurId },
@@ -16,14 +18,14 @@ export async function POST(req) {
         groups: {
           create: orderGroups.map((group) => ({
             id: group.id,
-            commandeNumero: group.commande,
-            clientName : group.clientName,
+            devisNumero: group.devisNumber, // commandeNumero = devisNumber
+            clientName: group.clientName,
             produits: {
               create: group.items.map((produit) => ({
                 produit: {
                   connect: { id: produit.id },
                 },
-                quantite: produit.quantite,
+                quantite: parseFloat(produit.quantite),
               })),
             },
           })),

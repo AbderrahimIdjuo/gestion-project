@@ -70,6 +70,7 @@ export async function POST(req) {
               quantite: parseFloat(produit.quantite) || 0,
               prixUnite: produit.prixUnite || 0,
               montant: parseFloat(produit.quantite) * produit.prixUnite || 0,
+              commandeNumero: numero,
             })),
           },
         },
@@ -182,7 +183,15 @@ export async function PUT(req) {
           where: { id: { in: productsToDelete.map((p) => p.id) } },
         });
       }
-
+      //Update the price of products
+      await Promise.all(
+        produits.map((produit) =>
+          tx.produits.update({
+            where: { id: produit.id },
+            data: { prixAchat: produit.prixUnite },
+          })
+        )
+      );
       // Mise à jour du stock pour les produits supprimés
       // await Promise.all(
       //   productsToDelete.map(async (item) => {
@@ -288,18 +297,23 @@ export async function PUT(req) {
           commandeProduits: {
             upsert: produits.map((p) => ({
               where: {
-                commandeId_produitId: { commandeId: id, produitId: p.id },
+                commandeNumero_produitId: {
+                  commandeNumero: numero,
+                  produitId: p.id,
+                },
               },
               update: {
                 quantite: Number(p.quantite),
                 prixUnite: Number(p.prixUnite),
                 montant: Number(p.quantite) * Number(p.prixUnite),
+                commandeNumero: numero,
               },
               create: {
                 produitId: p.id,
                 quantite: Number(p.quantite),
                 prixUnite: Number(p.prixUnite),
                 montant: Number(p.quantite) * Number(p.prixUnite),
+                commandeNumero: numero,
               },
             })),
           },

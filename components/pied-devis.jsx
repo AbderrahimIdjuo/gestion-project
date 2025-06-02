@@ -1,9 +1,9 @@
 "use client";
 
-export default function PiedDevis() {
+export default function PiedDevis(){
   return (
     <div
-      className="print-footer"
+      className="print-footer "
       style={{
         backgroundColor: "#228B8B",
         padding: "10px",
@@ -12,6 +12,7 @@ export default function PiedDevis() {
         fontFamily: '"Times New Roman", serif',
       }}
     >
+      <div>
       <div style={{ fontSize: "14px", fontWeight: "medium" }}>
         STE OUDAOUDOX SARL - Avenue Jaber Ben Hayane Bloc A N°01 Hay El Houda -
         Agadir
@@ -25,6 +26,7 @@ export default function PiedDevis() {
       />
       <div style={{ marginTop: "5px", fontSize: "13px" }}>
         Gsm : 06 61 58 53 08 - 06 63 63 72 44 - E-mail : inoxoudaoud@gmail.com
+      </div>
       </div>
     </div>
   );

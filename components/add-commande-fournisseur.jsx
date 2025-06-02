@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Trash2, X } from "lucide-react";
+import { Plus, Trash2, X, CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
@@ -20,29 +20,37 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AddButton } from "@/components/customUi/styledButton";
-import { useForm } from "react-hook-form";
 import { Label } from "@/components/ui/label";
 import { customAlphabet } from "nanoid";
 import ComboBoxFournisseur from "@/components/comboBox-fournisseurs";
-import ComboBoxCommandes from "@/components/comboBox-CMD";
+import ComboBoxDevis from "@/components/comboBox-devis";
 import { ProduitsSelection } from "@/components/produits-selection-CMDF";
 import axios from "axios";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import toast from "react-hot-toast";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { Calendar } from "@/components/ui/calendar";
+import { fr } from "date-fns/locale";
+import { useForm, Controller } from "react-hook-form";
+import { format } from "date-fns";
 
 export default function AddCommandeFournisseur() {
   const [open, setOpen] = useState(false);
   const [orderGroups, setOrderGroups] = useState([]);
   const [selectedFournisseur, setSelectedFournisseur] = useState(null);
-  const [selectedCommandes, setSelectedCommandes] = useState({});
-  const [commande, setCommande] = useState(null);
-  const [groupId, setGroupeId] = useState(null);
-
+  const [selectedDevis, setSelectedDevis] = useState({});
   const {
-    watch,
     setValue,
+    watch,
+    control,
     formState: { isSubmitting },
   } = useForm();
+  const selectedDate = watch("date");
 
   // Génération de numéro de commande mémoïsée
   const generateCommandeNumber = useCallback(() => {
@@ -56,19 +64,27 @@ export default function AddCommandeFournisseur() {
     const newGroup = {
       id: crypto.randomUUID(), // Génération d'un ID unique
       items: [],
-      commande: null,
+      devisNumber: null,
       clientName: null,
+      clientId: null,
     };
     setOrderGroups((prev) => [...prev, newGroup]);
   }, []);
 
   // modifier le numero de commande d'un groupe
-  const updateCommandeNumberOfGroup = useCallback(
-    (groupId, commandeNumber, clientName) => {
+  const updateDevisNumberOfGroup = useCallback(
+    (groupId, devisNumber, clientName, clientId, numero, totalDevi) => {
       setOrderGroups((prevGroups) =>
         prevGroups.map((group) =>
           group.id === groupId
-            ? { ...group, commande: commandeNumber, clientName: clientName } // Met à jour la commande
+            ? {
+                ...group,
+                devisNumber: devisNumber,
+                clientName,
+                clientId,
+                numero,
+                totalDevi,
+              } // Met à jour la commande
             : group
         )
       );
@@ -78,7 +94,7 @@ export default function AddCommandeFournisseur() {
   // Suppression d'un groupe
   const removeOrderGroup = useCallback((groupId) => {
     setOrderGroups((prev) => prev.filter((group) => group.id !== groupId));
-    setSelectedCommandes((prev) => {
+    setSelectedDevis((prev) => {
       const newState = { ...prev };
       delete newState[groupId];
       return newState;
@@ -146,10 +162,10 @@ export default function AddCommandeFournisseur() {
   }, []);
 
   // Mise à jour de la commande sélectionnée
-  const handleCommandeSelect = useCallback((groupId, commande) => {
-    setSelectedCommandes((prev) => ({
+  const handleDevisSelect = useCallback((groupId, devis) => {
+    setSelectedDevis((prev) => ({
       ...prev,
-      [groupId]: commande,
+      [groupId]: devis,
     }));
   }, []);
 
@@ -159,7 +175,7 @@ export default function AddCommandeFournisseur() {
       setValue("numero", generateCommandeNumber());
       setOrderGroups([]);
       setSelectedFournisseur(null);
-      setSelectedCommandes({});
+      setSelectedDevis({});
     }
   }, [open, setValue, generateCommandeNumber]);
   const queryClient = useQueryClient();
@@ -179,6 +195,8 @@ export default function AddCommandeFournisseur() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["commandeFournisseur"]);
+      queryClient.invalidateQueries(["commandes"]);
+
       setOpen(false);
       reset();
     },
@@ -201,10 +219,57 @@ export default function AddCommandeFournisseur() {
           </DialogHeader>
 
           <div className="flex justify-between items-center mb-4">
-            <div className="w-1/2 pr-2">
+            <div className="w-1/3 pr-2">
               <ComboBoxFournisseur setFournisseur={setSelectedFournisseur} />
             </div>
-            <div className="w-1/2 pl-2">
+            <div className="w-1/3 pr-2">
+              <Label htmlFor="client">Date : </Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal hover:text-purple-600 hover:bg-white hover:border-2 hover:border-purple-500",
+                      !selectedDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2" />
+                    {selectedDate ? (
+                      format(new Date(selectedDate), "PPP", { locale: fr })
+                    ) : (
+                      <span>Choisis une date</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Controller
+                    name="date"
+                    control={control}
+                    render={({ field }) => (
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={(date) => {
+                          if (date) {
+                            // Set to midnight UTC
+                            const utcMidnight = new Date(
+                              Date.UTC(
+                                date.getFullYear(),
+                                date.getMonth(),
+                                date.getDate()
+                              )
+                            );
+                            field.onChange(utcMidnight);
+                          }
+                        }}
+                        initialFocus
+                      />
+                    )}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="w-1/3 pl-2">
               <div className="col-span-2 grid gap-3">
                 <Label htmlFor="statut" className="text-left text-black">
                   Commande numéro :
@@ -236,14 +301,17 @@ export default function AddCommandeFournisseur() {
                   </div>
                   <div className="flex justify-between items-center mt-2">
                     <div className="w-1/2 pr-2">
-                      <ComboBoxCommandes
+                      <ComboBoxDevis
                         onClick={() => console.log(group.id)}
-                        onSelect={(commande) => {
-                          handleCommandeSelect(group.id, commande);
-                          updateCommandeNumberOfGroup(
+                        onSelect={(devis) => {
+                          handleDevisSelect(group.id, devis);
+                          updateDevisNumberOfGroup(
                             group.id,
-                            commande.numero,
-                            commande.client.nom
+                            devis.numero,
+                            devis.client.nom,
+                            devis.clientId,
+                            `CMD-${devis?.numero?.slice(4, 13)}`,
+                            devis.total
                           );
                         }}
                       />
@@ -252,7 +320,7 @@ export default function AddCommandeFournisseur() {
                       <div className="col-span-2 grid gap-3">
                         <Label className="text-left text-black">Client :</Label>
                         <span className="text-md text-left text-gray-900 rounded-lg p-2 pl-4 bg-purple-50 h-[2.5rem]">
-                          {selectedCommandes[group.id]?.client?.nom ||
+                          {selectedDevis[group.id]?.client?.nom ||
                             "Non sélectionné"}
                         </span>
                       </div>
@@ -334,17 +402,25 @@ export default function AddCommandeFournisseur() {
           </div>
 
           <div className="flex justify-end gap-2 mt-4">
-            <Button className="rounded-full" variant="outline" onClick={() => setOpen(false)}>
+            <Button
+              className="rounded-full"
+              variant="outline"
+              onClick={() => setOpen(false)}
+            >
               Annuler
             </Button>
             <Button
               className="bg-purple-500 hover:bg-purple-600 text-white rounded-full"
               onClick={() => {
+                console.log("  selectedDate :", selectedDate);
+
                 const Data = {
+                  date: selectedDate,
                   numero: watch("numero"),
                   fournisseurId: selectedFournisseur.id,
                   orderGroups,
                 };
+                console.log("Data to submit:", Data);
                 ajouterCommande.mutate(Data);
               }}
               disabled={isSubmitting}

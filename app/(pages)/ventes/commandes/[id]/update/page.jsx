@@ -165,6 +165,21 @@ export default function UpdateCommandePage({ params }) {
     { lable: "Livrée", color: "green-500" },
     { lable: "Annulé", color: "red-500" },
   ];
+
+  const validateFloat = (value) => {
+    if (typeof value === "string") {
+      value = value.replace(",", ".");
+      // Remove any whitespace that might interfere
+      value = value.trim();
+    }
+    // const number = parseFloat(value);
+    const parsed = parseFloat(value);
+    if (isNaN(parsed)) {
+      // throw new Error("The value must be a float.");
+      return false;
+    }
+    return parsed;
+  };
   return (
     <>
       <Toaster position="top-center" />
@@ -172,17 +187,6 @@ export default function UpdateCommandePage({ params }) {
         <div className="container mb-10 mx-auto py-6 space-y-6 w-full">
           <div className="flex justify-between items-center">
             <div className="flex gap-3 items-center">
-              {/* <Link href="/ventes/commandes">
-                <Button
-                  type="button"
-                  className="rounded-lg !p-0"
-                  size="icon"
-                  variant="ghost"
-                >
-                  <MoveLeft />
-                </Button>
-              </Link> */}
-
               <h1 className="text-3xl font-bold mr-2">Modifier une commande</h1>
               {isLoading && <LoadingDots size={7} />}
             </div>
@@ -297,29 +301,27 @@ export default function UpdateCommandePage({ params }) {
                           </TableCell>
                           <TableCell>
                             <Input
-                              type="number"
-                              min={1}
-                              value={item.quantite}
-                              onChange={(e) =>
+                              defaultValue={item.quantite}
+                              onChange={(e) => {
                                 handleItemChange(
                                   item.id,
                                   "quantite",
-                                  Number(e.target.value)
-                                )
-                              }
+                                  validateFloat(e.target.value)
+                                );
+                              }}
                               className="focus:!ring-purple-500 w-20"
                             />
                           </TableCell>
                           <TableCell>
                             <Input
-                              value={item.prixUnite}
-                              onChange={(e) =>
+                              defaultValue={item.prixUnite}
+                              onChange={(e) => {
                                 handleItemChange(
                                   item.id,
                                   "prixUnite",
-                                  Number(e.target.value)
-                                )
-                              }
+                                  validateFloat(e.target.value)
+                                );
+                              }}
                               className="focus:!ring-purple-500 w-24"
                             />
                           </TableCell>

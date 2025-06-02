@@ -9,9 +9,6 @@ import {
 } from "@/components/ui/pagination";
 
 function CustomPagination({ currentPage, setCurrentPage, totalPages }) {
-  console.log("currentPage", currentPage);
-  console.log("totalPages", totalPages);
-
   // Function to generate the page numbers to display
   const getPageNumbers = () => {
     const pages = [];
