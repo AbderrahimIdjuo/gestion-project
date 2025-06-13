@@ -46,6 +46,11 @@ const menuItems = [
     label: "Employés",
     href: "/Employes",
   },
+  {
+    icon: ShoppingCart,
+    label: "Commandes clients",
+    href: "/ventes/commandes",
+  },
   // {
   //   icon: ShoppingCart,
   //   label: "Ventes",

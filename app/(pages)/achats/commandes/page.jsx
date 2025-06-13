@@ -380,7 +380,7 @@ export default function CommandesAchats() {
                   commandes.data?.map((commande) => (
                     <TableRow key={commande.id}>
                       <TableCell className="text-md !py-2">
-                        {formatDate(commande.date)}
+                        {formatDate(commande.date) || formatDate(commande.createdAt)}
                       </TableCell>
                       <TableCell className="text-md !py-2">
                         {commande.numero}

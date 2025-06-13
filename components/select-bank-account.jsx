@@ -85,7 +85,6 @@ export function PaymentDialog({
             className="bg-[#00e701] hover:bg-[#00e701] shadow-lg hover:scale-105 text-white text-md rounded-full font-bold transition-all duration-300 transform"
             onClick={() => {
               console.log(`Paiement effectué depuis le compte: ${compte}`);
-
               onConfirm();
               onClose();
             }}

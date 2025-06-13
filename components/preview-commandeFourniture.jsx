@@ -234,7 +234,7 @@ export default function PreviewCommandeFournitureDialog({ commande }) {
                                   {product.quantite}
                                 </TableCell>
                                 <TableCell className="text-center !py-2">
-                                  {product.produit.prixAchat} DH
+                                  {product.prixUnite} DH
                                 </TableCell>
                               </TableRow>
                             ))}

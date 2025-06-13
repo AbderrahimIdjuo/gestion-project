@@ -53,6 +53,9 @@ export default function DevisPage() {
   const [maxMontant, setMaxMontant] = useState();
   const [startDate, setStartDate] = useState();
   const [endDate, setEndDate] = useState();
+  const [transactions, setTransactions] = useState();
+  const [ordersGroups, setOrdersGroups] = useState();
+  useEffect;
   const [filters, setFilters] = useState({
     dateStart: "",
     dateEnd: "",
@@ -93,6 +96,9 @@ export default function DevisPage() {
           maxTotal: filters.montant[1],
         },
       });
+      console.log("Listes des trans :", response.data.transactionsList);
+      setOrdersGroups(response.data.ordersGroupdsList);
+      setTransactions(response.data.transactionsList);
       setMaxMontant(response.data.maxMontant);
       setTotalPages(response.data.totalPages);
       return response.data.devis;
@@ -161,6 +167,48 @@ export default function DevisPage() {
     { value: "Annulé", lable: "Annulé", color: "red-500" },
     { value: "Expiré", lable: "Expiré", color: "gray-500" },
   ];
+
+  const orderGroups = useQuery({
+    queryKey: ["orderGroups", currentDevi],
+    queryFn: async () => {
+      console.log("Fetching order groups for devis:", currentDevi?.numero);
+      const response = await axios.get(
+        `/api/orderGroups/${currentDevi?.numero}`
+      );
+      console.log("commandesFourniture", response.data.orderGroups);
+      //setOrderGroupsList(response.data.orderGroups);
+      return response.data.orderGroups;
+    },
+  });
+
+  const totalCommandeFourniture = (produits) => {
+    return produits?.reduce((acc, produit) => {
+      return acc + produit.quantite * produit.produit.prixAchat;
+    }, 0);
+  };
+  const totalFourniture = (group) => {
+    return group?.reduce((acc, order) => {
+      return acc + totalCommandeFourniture(order.produits);
+    }, 0);
+  };
+
+  const filteredOrders = (numero) => {
+    const list = ordersGroups?.filter((order) => {
+      return order.devisNumero === numero;
+    });
+    //   console.log("Filtered Orders:", list);
+    return list;
+  };
+  console.log("Orders:", ordersGroups);
+  console.log("Filtered Orders:", filteredOrders("DEV-42638475"));
+
+  const totalPaye = (numero) => {
+    const trans = transactions?.filter((c) => c.reference === numero);
+    const totalPaye = trans?.reduce((acc, transaction) => {
+      return acc + transaction.montant;
+    }, 0);
+    return totalPaye;
+  };
 
   return (
     <>
@@ -259,7 +307,6 @@ export default function DevisPage() {
                         value={filters.montant} // Ensure montant is an array, e.g., [min, max]
                         onValueChange={(value) => {
                           setFilters({ ...filters, montant: value }); // value will be [min, max]
-                          console.log(filters.montant);
                         }}
                       />
                       <div className="flex justify-between mt-2">
@@ -284,8 +331,12 @@ export default function DevisPage() {
                 <TableHead>Date</TableHead>
                 <TableHead>Numéro</TableHead>
                 <TableHead>Client</TableHead>
-                <TableHead>Statut</TableHead>
                 <TableHead>Montant total</TableHead>
+                <TableHead>Fournitures</TableHead>
+                <TableHead>Marge</TableHead>
+                <TableHead>Payé</TableHead>
+                <TableHead>Reste</TableHead>
+                <TableHead>Statut</TableHead>
 
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -338,6 +389,21 @@ export default function DevisPage() {
                     <TableCell className="!py-2">
                       {devis.client.nom.toUpperCase()}
                     </TableCell>
+                    <TableCell className="!py-2">{devis.total} DH</TableCell>
+                    <TableCell className="!py-2">
+                      {totalFourniture(filteredOrders(devis.numero))} DH
+                    </TableCell>
+                    <TableCell className="!py-2">
+                      {devis.total -
+                        totalFourniture(filteredOrders(devis.numero))}{" "}
+                      DH
+                    </TableCell>
+                    <TableCell className="!py-2">
+                      {totalPaye(devis.numero)}
+                    </TableCell>
+                    <TableCell className="!py-2">
+                      {devis.total - totalPaye(devis.numero)} DH
+                    </TableCell>
                     <TableCell className="!py-2">
                       <div className="flex items-center gap-2">
                         <span
@@ -350,82 +416,13 @@ export default function DevisPage() {
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className="!py-2">{devis.total} DH</TableCell>
                     <TableCell className="text-right !py-2">
-                      {/* <div className="flex justify-end gap-2">
-                        <CustomTooltip message="Modifier">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
-                            onClick={() =>
-                              router.push(`/ventes/devis/${devis.id}/update`)
-                            }
-                          >
-                            <Pen className="h-4 w-4" />
-                            <span className="sr-only">Modifier</span>
-                          </Button>
-                        </CustomTooltip>
-                        <CustomTooltip message="Supprimer">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
-                            onClick={() => {
-                              setDeleteDialogOpen(true);
-                              setCurrentDevi(devis);
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            <span className="sr-only">Supprimer</span>
-                          </Button>
-                        </CustomTooltip>
-
-                        <CustomTooltip message="créer une commande">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-full hover:bg-sky-100 hover:text-sky-600"
-                            onClick={() => {
-                              console.log("create a commande");
-                              localStorage.setItem(
-                                "devi",
-                                JSON.stringify(devis)
-                              );
-                              router.push("/ventes/commandes/nouveau");
-                            }}
-                            disabled={devis.statut === "Accepté"}
-                          >
-                            <FilePlus className="h-4 w-4" />
-                          </Button>
-                        </CustomTooltip>
-
-                        <CustomTooltip message="Imprimer">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-full hover:bg-emerald-100 hover:text-emerald-600"
-                            onClick={() => {
-                              window.open(
-                                `/ventes/devis/${devis.id}/pdf`,
-                                "_blank"
-                              );
-                              localStorage.setItem(
-                                "devi",
-                                JSON.stringify(devis)
-                              );
-                            }}
-                          >
-                            <Printer className="h-4 w-4" />
-                            <span className="sr-only">Imprimer</span>
-                          </Button>
-                        </CustomTooltip>
-                       
-                      </div> */}
                       <DevisActions
+                        transactions={transactions}
                         devis={devis}
                         setDeleteDialogOpen={setDeleteDialogOpen}
                         setCurrentDevi={setCurrentDevi}
+                        orderGroups={filteredOrders(devis.numero)}
                       />
                     </TableCell>
                   </TableRow>

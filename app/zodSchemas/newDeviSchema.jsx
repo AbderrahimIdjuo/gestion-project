@@ -74,40 +74,55 @@ const articlSchema = z.object({
   id: z.string(),
   unite: z.string().optional(),
 });
-const newDeviSchema = z.object({
-  clientId: z.string({ required_error: "Champ obligatoir" }),
-  numero: z.string(),
-  statut: z.string(),
-  tva: z.preprocess(
-    (value) => (value === "" || value === undefined ? 0 : validateInt(value)),
-    z.number().optional()
-  ),
-  reduction: z.preprocess(
-    (value) => (value === "" || value === undefined ? 0 : validateInt(value)),
-    z.number().optional()
-  ),
-  typeReduction: z.string().default("%"),
-  note: z.string(),
-  sousTotal: z.preprocess(
-    (value) => (value === "" || value === undefined ? 0 : validateFloat(value)),
-    z
-      .number({ invalid_type_error: "Le sousTotal doit être un nombre" })
-      .optional()
-  ),
-  total: z.preprocess(
-    (value) => (value === "" || value === undefined ? 0 : validateFloat(value)),
-    z.number({ invalid_type_error: "Le total doit être un nombre" }).optional()
-  ),
-  articls: z
-    .array(articlSchema)
-    .min(1, { message: "La commande doit contenir au moins un articl" })
-    .refine(
-      (articles) =>
-        articles.every((article) => articlSchema.safeParse(article).success),
-      {
-        message: "Un ou plusieurs articles sont invalides",
-      }
+const newDeviSchema = z
+  .object({
+    clientId: z.string({ required_error: "Champ obligatoir" }),
+    numero: z.string(),
+    statut: z.string(),
+    tva: z.preprocess(
+      (value) => (value === "" || value === undefined ? 0 : validateInt(value)),
+      z.number().optional()
     ),
-});
+    reduction: z.preprocess(
+      (value) => (value === "" || value === undefined ? 0 : validateInt(value)),
+      z.number().optional()
+    ),
+    typeReduction: z.string().default("%"),
+    note: z.string(),
+    sousTotal: z.preprocess(
+      (value) =>
+        value === "" || value === undefined ? 0 : validateFloat(value),
+      z
+        .number({ invalid_type_error: "Le sousTotal doit être un nombre" })
+        .optional()
+    ),
+    total: z.preprocess(
+      (value) =>
+        value === "" || value === undefined ? 0 : validateFloat(value),
+      z
+        .number({ invalid_type_error: "Le total doit être un nombre" })
+        .optional()
+    ),
+    // avance: z.preprocess(
+    //   (value) =>
+    //     value === "" || value === undefined ? 0 : validateFloat(value),
+    //   z
+    //     .number({ invalid_type_error: "L'avance' doit être un nombre" })
+    //     .optional()
+    // ),
+   // compte: z.string().optional(),
+    echeance: z.date().nullable().default(null),
+    articls: z
+      .array(articlSchema)
+      .min(1, { message: "Le devis doit contenir au moins un articl" })
+      .refine(
+        (articles) =>
+          articles.every((article) => articlSchema.safeParse(article).success),
+        {
+          message: "Un ou plusieurs articles sont invalides",
+        }
+      ),
+  });
+
 
 export default newDeviSchema;

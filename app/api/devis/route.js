@@ -15,31 +15,57 @@ export async function POST(req) {
       total,
       typeReduction,
       note,
+      avance,
+      echeance,
+      compte,
     } = resopns;
-    const result = await prisma.devis.create({
-      data: {
-        numero,
-        clientId,
-        statut,
-        sousTotal,
-        tva: parseFloat(tva),
-        reduction,
-        total,
-        typeReduction,
-        note,
-        articls: {
-          create: articls.map((articl) => ({
-            key: articl.key, //permet de supprimer un articl doublon
-            length: articl.length,
-            unite: articl.unite || "U",
-            width: articl.width || 0,
-            designation: articl.designation,
-            quantite: articl.quantite,
-            prixUnite: articl.prixUnite,
-            montant: articl.quantite * articl.prixUnite,
-          })),
+
+    const result = await prisma.$transaction(async (prisma) => {
+      await prisma.devis.create({
+        data: {
+          numero,
+          clientId,
+          statut,
+          sousTotal,
+          tva: parseFloat(tva),
+          reduction,
+          total,
+          typeReduction,
+          note,
+          echeance,
+          articls: {
+            create: articls.map((articl) => ({
+              key: articl.key, //permet de supprimer un articl doublon
+              length: articl.length,
+              unite: articl.unite || "U",
+              width: articl.width || 0,
+              designation: articl.designation,
+              quantite: articl.quantite,
+              prixUnite: articl.prixUnite,
+              montant: articl.quantite * articl.prixUnite,
+            })),
+          },
         },
-      },
+      });
+
+      //créer une transaction : paiement d'avance
+      if (avance > 0) {
+        await prisma.transactions.create({
+          data: {
+            reference: numero,
+            type: "recette",
+            montant: avance,
+            compte,
+            lable: "avance",
+          },
+        });
+        await prisma.comptesBancaires.updateMany({
+          where: { compte },
+          data: {
+            solde: { increment: avance },
+          },
+        });
+      }
     });
     return NextResponse.json({ result });
   } catch (error) {
@@ -66,6 +92,7 @@ export async function PUT(req) {
       total,
       typeReduction,
       note,
+      echeance,
     } = requestBody;
 
     // Fetch existing devis with articls
@@ -115,6 +142,7 @@ export async function PUT(req) {
           total,
           typeReduction,
           note,
+          echeance,
           articls: {
             update: existingArticls.map((articl) => ({
               where: { id: articl.id },
@@ -144,12 +172,12 @@ export async function PUT(req) {
       });
 
       //Modifier le totalDevis de la commande associé
-      await tx.commandes.updateMany({
-        where: { numero: "CMD-" + devi.numero.slice(4, 13) },
-        data: {
-          totalDevi: total,
-        },
-      });
+      // await tx.commandes.updateMany({
+      //   where: { numero: "CMD-" + devi.numero.slice(4, 13) },
+      //   data: {
+      //     totalDevi: total,
+      //   },
+      // });
     });
 
     return NextResponse.json({ result });
@@ -239,12 +267,48 @@ export async function GET(req) {
 
   // Calculate total pages for pagination
   const totalPages = Math.ceil(totalDevis / devisPerPage);
+  // Extract devis numbers for transaction lookup
+  const devisNumbers = devis.map((c) => c.numero);
 
+  // Fetch transactions for the commandes
+  const transactionsList = await prisma.transactions.findMany({
+    where: { reference: { in: devisNumbers } },
+  });
+
+  // Fetch ordersGroups
+  const ordersGroupdsList = await prisma.ordersGroups.findMany({
+    where: { devisNumero: { in: devisNumbers } },
+    include: {
+      commandeFourniture: {
+        select: {
+          numero: true,
+          fournisseur: {
+            select: {
+              nom: true,
+            },
+          },
+        },
+      },
+      produits: {
+        include: {
+          produit: {
+            select: {
+              designation: true,
+              prixAchat: true,
+            },
+          },
+        },
+      },
+    },
+  });
   // Return the response
   return NextResponse.json({
     devis,
     totalPages,
     maxMontant: deviMaxTotal?.total || 0,
+    totalDevis,
+    transactionsList,
+    ordersGroupdsList,
   });
 }
 

@@ -75,7 +75,6 @@ model CommandesProduits {
   produit    Produits  @relation(fields: [produitId], references: [id], onDelete: Cascade)
 
   @@unique([commandeId, produitId])
-   @@unique([commandeNumero, produitId])
 }
 
 model Fournisseurs {
@@ -157,6 +156,7 @@ model ListProduits {
   produit  Produits @relation(fields: [produitId], references: [id], onDelete: Cascade)
   produitId String
   quantite Float
+  prixUnite Float
 }
 
 model Articls {
@@ -188,6 +188,8 @@ model Devis {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   tva           Float
+  totalPaye        Float?
+  echeance         DateTime?
   articls       Articls[]
   client        Clients   @relation(fields: [clientId], references: [id], onDelete: Cascade)
 }

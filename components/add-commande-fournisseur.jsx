@@ -52,12 +52,18 @@ export default function AddCommandeFournisseur() {
   } = useForm();
   const selectedDate = watch("date");
 
-  // Génération de numéro de commande mémoïsée
-  const generateCommandeNumber = useCallback(() => {
-    const digits = "1234567890";
-    const nanoidCustom = customAlphabet(digits, 8);
-    return `CMDF-${nanoidCustom()}`;
-  }, []);
+  const lastCommande = useQuery({
+    queryKey: ["lastCommande"],
+    queryFn: async () => {
+      const response = await axios.get("/api/achats-commandes/lastCommande");
+      return response.data;
+    },
+  });
+
+  const generateCommandeNumber = () => {
+    const numero = Number(lastCommande.data.numero.replace("CMDF-", "")) || 0;
+    return `CMDF-${numero + 1}`;
+  };
 
   // Ajout d'un groupe de commande
   const addOrderGroup = useCallback(() => {
@@ -172,12 +178,11 @@ export default function AddCommandeFournisseur() {
   // Initialisation
   useEffect(() => {
     if (open) {
-      setValue("numero", generateCommandeNumber());
       setOrderGroups([]);
       setSelectedFournisseur(null);
       setSelectedDevis({});
     }
-  }, [open, setValue, generateCommandeNumber]);
+  }, [open, setValue]);
   const queryClient = useQueryClient();
   const ajouterCommande = useMutation({
     mutationFn: async (data) => {
@@ -198,7 +203,6 @@ export default function AddCommandeFournisseur() {
       queryClient.invalidateQueries(["commandes"]);
 
       setOpen(false);
-      reset();
     },
   });
 
@@ -275,7 +279,7 @@ export default function AddCommandeFournisseur() {
                   Commande numéro :
                 </Label>
                 <span className="text-md text-left text-gray-900 rounded-lg p-2 pl-4 bg-purple-50 h-[2.5rem]">
-                  {watch("numero")}
+                  {generateCommandeNumber()}
                 </span>
               </div>
             </div>
@@ -343,6 +347,7 @@ export default function AddCommandeFournisseur() {
                           <TableRow>
                             <TableHead className="w-[60%]">Produits</TableHead>
                             <TableHead>Quantité</TableHead>
+                            <TableHead>Prix unitaire</TableHead>
                             <TableHead className="text-right">Action</TableHead>
                           </TableRow>
                         </TableHeader>
@@ -362,6 +367,22 @@ export default function AddCommandeFournisseur() {
                                       group.id,
                                       item.uniqueKey,
                                       "quantite",
+                                      e.target.value
+                                    )
+                                  }
+                                  className="focus:!ring-purple-500 w-20"
+                                  type="number"
+                                  min="1"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  value={item.prixUnite}
+                                  onChange={(e) =>
+                                    handleItemChange(
+                                      group.id,
+                                      item.uniqueKey,
+                                      "prixUnite",
                                       e.target.value
                                     )
                                   }
@@ -412,6 +433,7 @@ export default function AddCommandeFournisseur() {
             <Button
               className="bg-purple-500 hover:bg-purple-600 text-white rounded-full"
               onClick={() => {
+                setValue("numero", generateCommandeNumber());
                 console.log("  selectedDate :", selectedDate);
 
                 const Data = {

@@ -26,6 +26,7 @@ export async function POST(req) {
                   connect: { id: produit.id },
                 },
                 quantite: parseFloat(produit.quantite),
+                prixUnite: parseFloat(produit.prixUnite),
               })),
             },
           })),

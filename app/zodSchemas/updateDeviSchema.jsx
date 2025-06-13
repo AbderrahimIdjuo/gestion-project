@@ -38,49 +38,78 @@ const articlSchema = z.object({
       .number({ invalid_type_error: "Le prix d'unite doit être un nombre" })
       .min(1, { message: "Le prix d'unite doit être au moins 1" })
   ),
-  length: z.preprocess(
-    (value) =>
-      value === "" || value === undefined ? undefined : validateFloat(value),
-    z
-      .number({ invalid_type_error: "Le prix d'unite doit être un nombre" })
-      .min(1, { message: "ce champ doit contenire un nombre" })
-  ),
+  length: z.preprocess((value) => {
+    // Convert "" or undefined to undefined
+    if (value === "" || value === undefined) return undefined;
+
+    // Convert string with comma to dot notation
+    if (typeof value === "string") {
+      value = value.replace(",", ".");
+      // Remove any whitespace that might interfere
+      value = value.trim();
+    }
+
+    const number = parseFloat(value);
+    // If the conversion fails, return undefined to trigger the validation error
+    if (isNaN(number)) return undefined;
+
+    return number;
+  }, z.number({ invalid_type_error: "Ce champ doit contenir un nombre valide" }).optional()),
   width: z.preprocess((value) => {
     // Convert "" or undefined to undefined
     if (value === "" || value === undefined) return undefined;
-    return parseFloat(value);
-  }, z.number({ invalid_type_error: "Ce champ doit contenir un nombre" }).optional()),
+
+    // Convert string with comma to dot notation
+    if (typeof value === "string") {
+      value = value.replace(",", ".");
+      // Remove any whitespace that might interfere
+      value = value.trim();
+    }
+
+    const number = parseFloat(value);
+    // If the conversion fails, return undefined to trigger the validation error
+    if (isNaN(number)) return undefined;
+
+    return number;
+  }, z.number({ invalid_type_error: "Ce champ doit contenir un nombre valide" }).optional()),
   id: z.string(),
   unite: z.string().optional(),
 });
-const updateDeviSchema = z.object({
-  id: z.string(),
-  clientId: z.string({ required_error: "Champ obligatoir" }),
-  numero: z.string(),
-  statut: z.string(),
-  fraisLivraison: z.preprocess(
-    (value) => (value === "" || value === undefined ? 0 : validateInt(value)),
-    z.number().optional()
-  ),
-  reduction: z.preprocess(
-    (value) => (value === "" || value === undefined ? 0 : validateInt(value)),
-    z.number().optional()
-  ),
-  typeReduction: z.string().default("%"),
-  note: z.string(),
-  sousTotal: z.preprocess(
-    (value) => (value === "" || value === undefined ? 0 : validateFloat(value)),
-    z
-      .number({ invalid_type_error: "Le sousTotal doit être un nombre" })
-      .optional()
-  ),
-  total: z.preprocess(
-    (value) => (value === "" || value === undefined ? 0 : validateFloat(value)),
-    z.number({ invalid_type_error: "Le total doit être un nombre" }).optional()
-  ),
-  articls: z
-    .array(articlSchema)
-    .min(1, { message: "La commande doit contenir au moins un articl" }),
-});
+const updateDeviSchema = z
+  .object({
+    id: z.string(),
+    clientId: z.string({ required_error: "Champ obligatoir" }),
+    numero: z.string(),
+    statut: z.string(),
+    tva: z.preprocess(
+      (value) => (value === "" || value === undefined ? 0 : validateInt(value)),
+      z.number().optional()
+    ),
+    reduction: z.preprocess(
+      (value) => (value === "" || value === undefined ? 0 : validateInt(value)),
+      z.number().optional()
+    ),
+    typeReduction: z.string().default("%"),
+    note: z.string(),
+    sousTotal: z.preprocess(
+      (value) =>
+        value === "" || value === undefined ? 0 : validateFloat(value),
+      z
+        .number({ invalid_type_error: "Le sousTotal doit être un nombre" })
+        .optional()
+    ),
+    total: z.preprocess(
+      (value) =>
+        value === "" || value === undefined ? 0 : validateFloat(value),
+      z
+        .number({ invalid_type_error: "Le total doit être un nombre" })
+        .optional()
+    ),
+    echeance: z.date().nullable().default(null),
+    articls: z
+      .array(articlSchema)
+      .min(1, { message: "La commande doit contenir au moins un articl" }),
+  })
+
 
 export default updateDeviSchema;

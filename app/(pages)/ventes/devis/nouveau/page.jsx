@@ -22,59 +22,44 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
-import { Trash2, MoveLeftIcon, Copy } from "lucide-react";
+import { Trash2, Copy } from "lucide-react";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { ChevronDown } from "lucide-react";
 import { ArticleSelectionDialog } from "@/components/articls-selection-dialog";
-
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
+import ComboBoxClients from "@/components/comboBox-clients";
+import Link from "next/link";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { CircleX } from "lucide-react";
+import newDeviSchema from "@/app/zodSchemas/newDeviSchema";
+import { Switch } from "@/components/ui/switch";
+import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { AddButton } from "@/components/customUi/styledButton";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import Link from "next/link";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { CircleX } from "lucide-react";
-import newDeviSchema from "@/app/zodSchemas/newDeviSchema";
-import { useInfiniteQuery } from "@tanstack/react-query";
-import { useInView } from "react-intersection-observer";
-import { Switch } from "@/components/ui/switch";
+import { useForm, Controller } from "react-hook-form";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Calendar } from "@/components/ui/calendar";
+import { fr } from "date-fns/locale";
 
 export default function NouveauDevisPage() {
-  const [open, setOpen] = useState(false);
   const [items, setItems] = useState([]);
-  const scrollAreaRef = useRef(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [isArticleDialogOpen, setIsArticleDialogOpen] = useState(false);
   const [formError, setFormError] = useState(false);
   const [activerTVA, setActiverTVA] = useState(false);
-  const buttonRef = useRef(null);
-  const [buttonWidth, setButtonWidth] = useState(0);
+  const [client, setClient] = useState(null);
 
-  useEffect(() => {
-    if (buttonRef.current) {
-      setButtonWidth(buttonRef.current.offsetWidth);
-    }
-  }, [buttonRef.current, open]);
-  const { ref, inView } = useInView();
   const {
     register,
     reset,
     watch,
     setValue,
+    control,
     handleSubmit,
     formState: { errors, isSubmiting },
   } = useForm({
@@ -88,18 +73,32 @@ export default function NouveauDevisPage() {
     },
     resolver: zodResolver(newDeviSchema),
   });
+  const selectedDate = watch("echeance");
 
   const status = [
     { lable: "En attente", color: "amber-500" },
     { lable: "Accepté", color: "green-500" },
     { lable: "Annulé", color: "red-500" },
   ];
+  const comptes = useQuery({
+    queryKey: ["comptes"],
+    queryFn: async () => {
+      const response = await axios.get("/api/comptesBancaires");
+      const comptes = response.data.comptes;
+      return comptes;
+    },
+  });
+  const lastDevis = useQuery({
+    queryKey: ["lastDevis"],
+    queryFn: async () => {
+      const response = await axios.get("/api/devis/lastDevis");
+      return response.data;
+    },
+  });
 
   const generateDeviNumber = () => {
-    const digits = "1234567890";
-    const nanoidCustom = customAlphabet(digits, 8);
-    const customId = nanoidCustom();
-    return `DEV-${customId}`;
+    const numero = Number(lastDevis.data.numero.replace("DEV-", "")) || 0;
+    return `DEV-${numero + 1}`;
   };
 
   const generateUniqueKey = () => {
@@ -116,8 +115,10 @@ export default function NouveauDevisPage() {
         try {
           const response = await axios.post("/api/devis", data);
           console.log("Devi ajouté avec succès");
+          //router.push("/ventes/devis");
           reset();
           setItems([]);
+          setClient(null);
           setFormError(false);
           if (response.status === 200) {
             console.log("Devi ajouté avec succès");
@@ -183,39 +184,6 @@ export default function NouveauDevisPage() {
     return calculateSubTotal();
   };
 
-  // infinite scrolling clients comboBox
-  const { data, fetchNextPage, isLoading, isFetchingNextPage, hasNextPage } =
-    useInfiniteQuery({
-      queryKey: ["clients", debouncedQuery],
-      queryFn: async ({ pageParam = null }) => {
-        const response = await axios.get("/api/commandes/nouveau", {
-          params: {
-            limit: 15,
-            query: debouncedQuery,
-            cursor: pageParam,
-          },
-        });
-        return response.data;
-      },
-      getNextPageParam: (lastPage) => lastPage.nextCursor || null,
-      keepPreviousData: true,
-    });
-
-  const clients = data?.pages.flatMap((page) => page.clients) || [];
-
-  useEffect(() => {
-    if (inView && hasNextPage) {
-      fetchNextPage();
-    }
-  }, [inView, hasNextPage, fetchNextPage]);
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedQuery(searchQuery);
-    }, 500);
-
-    return () => clearTimeout(handler);
-  }, [searchQuery]);
-
   const unites = ["U", "m²", "m"];
 
   const validateFloat = (value) => {
@@ -245,9 +213,9 @@ export default function NouveauDevisPage() {
             <CardContent className="p-6 space-y-6">
               {/* Header Section */}
               <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div className="col-span-2">
-                    <Label htmlFor="customerName">Client*</Label>
+                <div>
+                  <ComboBoxClients setClient={setClient} client={client} />
+                  {/* <Label htmlFor="customerName">Client*</Label>
                     <br />
                     <Popover open={open} onOpenChange={setOpen}>
                       <PopoverTrigger asChild>
@@ -264,7 +232,10 @@ export default function NouveauDevisPage() {
                           <ChevronDown className="opacity-50" />
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent style={{ width: buttonWidth }} className="w-auto min-w-[25vw] p-0">
+                      <PopoverContent
+                        style={{ width: buttonWidth }}
+                        className="w-auto min-w-[25vw] p-0"
+                      >
                         <Command>
                           <CommandInput
                             placeholder="Chercher un client..."
@@ -321,8 +292,8 @@ export default function NouveauDevisPage() {
                           </CommandList>
                         </Command>
                       </PopoverContent>
-                    </Popover>
-                  </div>
+                    </Popover> */}
+
                   {errors.clientId && (
                     <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
                       <CircleX className="h-4 w-4" />
@@ -355,6 +326,109 @@ export default function NouveauDevisPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+              </div>
+              <div className="grid gap-6 grid-cols-3">
+                <div className="space-y-1">
+                  <Label htmlFor="client">Date limite de livraison : </Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full justify-start text-left font-normal hover:text-purple-600 hover:bg-white hover:border-2 hover:border-purple-500",
+                          !selectedDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2" />
+                        {selectedDate ? (
+                          format(new Date(selectedDate), "PPP", { locale: fr })
+                        ) : (
+                          <span>Choisis une date</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Controller
+                        name="echeance"
+                        control={control}
+                        render={({ field }) => (
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={(date) => {
+                              if (date) {
+                                // Set to midnight UTC
+                                const utcMidnight = new Date(
+                                  Date.UTC(
+                                    date.getFullYear(),
+                                    date.getMonth(),
+                                    date.getDate()
+                                  )
+                                );
+                                field.onChange(utcMidnight);
+                              }
+                            }}
+                            initialFocus
+                          />
+                        )}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  {errors.echeance && (
+                    <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
+                      <CircleX className="h-4 w-4" />
+                      {errors.echeance.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-1">
+                  <Label htmlFor="orderNumber">Avance :</Label>
+                  <div className="relative w-full flex">
+                    <div className="absolute border-2 border-gray-300 bg-white inset-y-0 right-0 w-12 flex items-center justify-center  rounded-r-md">
+                      <span className="text-sm text-gray-800">MAD</span>
+                    </div>
+                    <Input
+                      id="avance"
+                      name="avance"
+                      {...register("avance")}
+                      className="focus:!ring-purple-500 pr-14 text-left rounded-r-md"
+                    />
+                  </div>
+                  {errors.avance && (
+                    <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
+                      <CircleX className="h-4 w-4" />
+                      {errors.avance.message}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="orderNumber">Compte :</Label>
+                  <Select
+                    value={watch("compte")}
+                    name="compte"
+                    onValueChange={(value) => setValue("compte", value)}
+                  >
+                    <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500 mt-2">
+                      <SelectValue placeholder="Séléctionner..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {comptes.data?.map((element) => (
+                        <SelectItem key={element.id} value={element.compte}>
+                          <div className="flex items-center gap-2">
+                            {element.compte}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.compte && (
+                    <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
+                      <CircleX className="h-4 w-4" />
+                      {errors.compte.message}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -665,17 +739,13 @@ export default function NouveauDevisPage() {
               <Button
                 onClick={() => {
                   setValue("numero", generateDeviNumber());
+                  setValue("clientId", client?.id);
 
                   setValue(
                     "sousTotal",
                     parseFloat(calculateSubTotal().toFixed(2))
                   );
-                  setValue(
-                    "tva",
-                    activerTVA
-                      ? parseFloat(calculateSubTotal() * 0.2).toFixed(2)
-                      : 0
-                  );
+                  setValue("tva", activerTVA ? calculateTVA().toFixed(2) : 0);
                   setValue("total", parseFloat(calculateTotal()));
                   setValue("articls", items);
                   console.log(
