@@ -17,6 +17,7 @@ import {
   Settings,
   Landmark,
   Grid2X2,
+  ScrollText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -41,6 +42,7 @@ const menuItems = [
   },
   { icon: FileText, label: "Devis", href: "/ventes/devis" },
   { icon: Truck, label: "Commandes Fournitures", href: "/achats/commandes" },
+  { icon: ScrollText, label: "Bon de livraison", href: "/achats/bonLivraison" },
   {
     icon: ContactRound,
     label: "Employés",

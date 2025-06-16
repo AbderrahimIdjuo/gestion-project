@@ -11,13 +11,13 @@ datasource db {
 model Clients {
   id        String      @id @default(uuid())
   nom       String
-  titre String?
+  titre     String?
   email     String?
   telephone String?
-  mobile String?
+  mobile    String?
   adresse   String?
-  ice    String?
-  note    String?
+  ice       String?
+  note      String?
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
   commandes Commandes[]
@@ -38,56 +38,57 @@ model Employes {
 }
 
 model Produits {
-  id                String              @id @default(uuid())
-  designation       String
-  categorie         String?
-  reference         String?
-  prixAchat         Float?
-  stock             Int?
-  description       String?
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
-  achatsCommandes   AchatsCommandes[]
-  CommandesProduits CommandesProduits[]
-  groupProduits         ListProduits[]
-
+  id                   String                 @id @default(uuid())
+  designation          String
+  categorie            String?
+  reference            String?
+  prixAchat            Float?
+  stock                Int?
+  description          String?
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  achatsCommandes      AchatsCommandes[]
+  CommandesProduits    CommandesProduits[]
+  groupProduits        ListProduits[]
+  bonLivraisonProduits BonLivraisonProduits[]
 }
 
 model Items {
   id          String   @id @default(uuid())
   designation String
-  categorie String?
+  categorie   String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
 
 model CommandesProduits {
-  id         String    @id @default(uuid())
-  commandeId String
+  id             String    @id @default(uuid())
+  commandeId     String
   commandeNumero String?
-  produitId  String
-  montant    Float
-  quantite   Float
-  prixUnite  Float
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  commande   Commandes @relation(fields: [commandeId], references: [id], onDelete: Cascade)
-  produit    Produits  @relation(fields: [produitId], references: [id], onDelete: Cascade)
+  produitId      String
+  montant        Float
+  quantite       Float
+  prixUnite      Float
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  commande       Commandes @relation(fields: [commandeId], references: [id], onDelete: Cascade)
+  produit        Produits  @relation(fields: [produitId], references: [id], onDelete: Cascade)
 
   @@unique([commandeId, produitId])
 }
 
 model Fournisseurs {
-  id                  String     @id @default(uuid())
-  nom                 String
-  email               String?
-  telephone           String?
-  adresse             String?
-  createdAt           DateTime   @default(now())
-  updatedAt           DateTime   @updatedAt
-  ice                 String?
-  telephoneSecondaire String?
-  commandesFournitures  CommandeFourniture[]
+  id                   String               @id @default(uuid())
+  nom                  String
+  email                String?
+  telephone            String?
+  adresse              String?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  ice                  String?
+  telephoneSecondaire  String?
+  commandesFournitures CommandeFourniture[]
+  bonLivraisons        BonLivraison[]
 }
 
 model Commandes {
@@ -129,34 +130,44 @@ model AchatsCommandes {
 }
 
 model CommandeFourniture {
-  id           String   @id @default(uuid())
-  numero       String   @unique
-  fournisseur  Fournisseurs @relation(fields: [fournisseurId], references: [id], onDelete: Cascade)
+  id            String         @id @default(uuid())
+  numero        String         @unique
+  fournisseur   Fournisseurs   @relation(fields: [fournisseurId], references: [id], onDelete: Cascade)
   fournisseurId String
-date     DateTime?
-   groups        OrdersGroups[]
+  date          DateTime?
+  groups        OrdersGroups[]
 
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model OrdersGroups {
-id               String       @id @default(uuid())
-devisNumero   String?  
-clientName       String?  
-commandeFourniture    CommandeFourniture?    @relation(fields: [commandeFournitureId], references: [id] , onDelete: Cascade)
-commandeFournitureId  String?
-produits  ListProduits[]
+  id                   String              @id @default(uuid())
+  devisNumero          String?
+  clientName           String?
+  commandeFourniture   CommandeFourniture? @relation(fields: [commandeFournitureId], references: [id], onDelete: Cascade)
+  commandeFournitureId String?
+  produits             ListProduits[]
 }
 
 model ListProduits {
-  id       String   @id @default(uuid())
-  group    OrdersGroups    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  groupId  String
-  produit  Produits @relation(fields: [produitId], references: [id], onDelete: Cascade)
+  id        String       @id @default(uuid())
+  group     OrdersGroups @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId   String
+  produit   Produits     @relation(fields: [produitId], references: [id], onDelete: Cascade)
   produitId String
-  quantite Float
+  quantite  Float
   prixUnite Float
+}
+
+model BonLivraisonProduits {
+  id             String       @id @default(uuid())
+  bonLivraisonId String
+  bonLivraison   BonLivraison @relation(fields: [bonLivraisonId], references: [id], onDelete: Cascade)
+  produitId      String
+  produit        Produits     @relation(fields: [produitId], references: [id], onDelete: Cascade)
+  quantite       Float
+  prixUnite      Float
 }
 
 model Articls {
@@ -170,7 +181,7 @@ model Articls {
   updatedAt   DateTime @updatedAt
   width       Float?
   length      Float?
-  unite      String @default("U")
+  unite       String   @default("U")
   key         String   @unique
   devi        Devis    @relation(fields: [deviId], references: [id], onDelete: Cascade)
 }
@@ -188,10 +199,27 @@ model Devis {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   tva           Float
-  totalPaye        Float?
-  echeance         DateTime?
+  totalPaye     Float?
+  echeance      DateTime?
   articls       Articls[]
   client        Clients   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+}
+
+model BonLivraison {
+  id             String                 @id @default(uuid())
+  numero         String                 @unique
+  reference      String
+  fournisseurId  String
+  date           DateTime?
+  total          Float
+  totalPaye      Float?
+  statutPaiement String?
+  type           String?
+  reduction      Int
+  produits       BonLivraisonProduits[]
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  fournisseur    Fournisseurs           @relation(fields: [fournisseurId], references: [id], onDelete: Cascade)
 }
 
 model Factures {
@@ -220,15 +248,15 @@ model DepensesVariantes {
 }
 
 model Transactions {
-  id        String   @id @default(uuid())
-  type      String
-  montant   Float
-  compte    String?
-  lable     String?
-  reference String?
+  id          String   @id @default(uuid())
+  type        String
+  montant     Float
+  compte      String?
+  lable       String?
+  reference   String?
   description String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model TachesEmployes {
@@ -244,7 +272,7 @@ model CategoriesProduits {
 model ComptesBancaires {
   id     String @id @default(uuid())
   compte String
-  solde  Float      @default(0)
+  solde  Float  @default(0)
 }
 
 model ModesPaiement {
@@ -266,6 +294,6 @@ model InfoEntreprise {
 }
 
 model Comptabilite {
-  id        Int      @id @default(1)
-  caisse     Float
+  id     Int   @id @default(1)
+  caisse Float
 }

@@ -61,7 +61,7 @@ export default function AddCommandeFournisseur() {
   });
 
   const generateCommandeNumber = () => {
-    const numero = Number(lastCommande.data.numero.replace("CMDF-", "")) || 0;
+    const numero = Number(lastCommande?.data?.numero.replace("CMDF-", "")) || 0;
     return `CMDF-${numero + 1}`;
   };
 
