@@ -87,7 +87,7 @@ export async function POST(req) {
         if (nouveauPrix !== undefined) {
           updates.push(
             prisma.produits.update({
-              where: { id: produit.produitId }, 
+              where: { id: produit.produitId },
               data: { prixAchat: nouveauPrix },
             })
           );
@@ -182,32 +182,37 @@ export async function GET(req) {
   // }
 
   // Fetch filtered commandes with pagination and related data
-  const [bonLivraison, totalBonLivraison] = await Promise.all([
-    prisma.bonLivraison.findMany({
-      where: filters,
-      skip: (page - 1) * bonLivraisonPerPage,
-      take: bonLivraisonPerPage,
-      orderBy: { createdAt: "desc" },
-      include: {
-        fournisseur: {
-          select: {
-            nom: true,
+  const [bonLivraison, totalBonLivraison, lastBonLivraison] = await Promise.all(
+    [
+      prisma.bonLivraison.findMany({
+        where: filters,
+        skip: (page - 1) * bonLivraisonPerPage,
+        take: bonLivraisonPerPage,
+        orderBy: { createdAt: "desc" },
+        include: {
+          fournisseur: {
+            select: {
+              nom: true,
+            },
           },
-        },
-        produits: {
-          include: {
-            produit: {
-              select: {
-                designation: true,
-                prixAchat: true,
+          produits: {
+            include: {
+              produit: {
+                select: {
+                  designation: true,
+                  prixAchat: true,
+                },
               },
             },
           },
         },
-      },
-    }),
-    prisma.bonLivraison.count({ where: filters }),
-  ]);
+      }),
+      prisma.bonLivraison.count({ where: filters }),
+      prisma.bonLivraison.findFirst({
+        orderBy: { createdAt: "desc" },
+      }),
+    ]
+  );
 
   // Calculate total pages for pagination
   const totalPages = Math.ceil(totalBonLivraison / bonLivraisonPerPage);
@@ -216,5 +221,6 @@ export async function GET(req) {
   return NextResponse.json({
     bonLivraison,
     totalPages,
+    lastBonLivraison
   });
 }

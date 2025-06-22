@@ -60,7 +60,7 @@ export default function BonLivraison() {
   const [endDate, setEndDate] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState<number | null>(null);
-
+  const [lastBonLivraison, setLastBonLivraison] = useState();
   const [filters, setFilters] = useState({
     categorie: "all",
     statut: "all",
@@ -114,7 +114,7 @@ export default function BonLivraison() {
         "Fetching bonLivraison with filters:",
         response.data.bonLivraison
       );
-
+      setLastBonLivraison(response.data.lastBonLivraison);
       setTotalPages(response.data.totalPages);
       return response.data.bonLivraison;
     },
@@ -153,7 +153,7 @@ export default function BonLivraison() {
             </div>
           </div>
           <div className="flex gap-3">
-            <AddBonLivraison />
+            <AddBonLivraison lastBonLivraison={lastBonLivraison} />
           </div>
         </div>
         <DataTable columns={useBonLivraisonColumns()} data={listBonLivraison} />

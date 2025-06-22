@@ -39,7 +39,7 @@ import { CustomDatePicker } from "@/components/customUi/customDatePicker";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 
-export default function AddBonLivraison() {
+export default function AddBonLivraison({ lastBonLivraison }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [date, setDate] = useState(null);
   const [currentStep, setCurrentStep] = useState(1);
@@ -48,7 +48,7 @@ export default function AddBonLivraison() {
   const [commande, setCommande] = useState(null);
   const [reference, setReference] = useState(null);
   const [isArticleDialogOpen, setIsArticleDialogOpen] = useState(false);
- const queryClient = useQueryClient();
+  const queryClient = useQueryClient();
   function regrouperProduitsParQuantite(groups) {
     const produitMap = new Map();
 
@@ -98,14 +98,14 @@ export default function AddBonLivraison() {
   // };
 
   const generateBLNumber = () => {
-  const lastNumber = lastBon?.data?.numero
-    ? Number(lastBon.data.numero.replace("BL-", ""))
-    : 0;
+    const lastNumber = lastBonLivraison
+      ? Number(lastBonLivraison.data.numero.replace("BL-", ""))
+      : 0;
 
-  const nextNumber = lastNumber + 1;
-  console.log("numero :", `BL-${nextNumber}`);
-  return `BL-${nextNumber}`;
-};
+    const nextNumber = lastNumber + 1;
+    console.log("numero :", `BL-${nextNumber}`);
+    return `BL-${nextNumber}`;
+  };
   const handleAddArticles = (newArticles) => {
     // console.log("Produits### :", produits);
     // console.log("newArticles", newArticles);

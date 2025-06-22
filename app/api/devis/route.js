@@ -243,7 +243,7 @@ export async function GET(req) {
   }
 
   // Fetch filtered commandes with pagination and related data
-  const [devis, totalDevis, deviMaxTotal] = await Promise.all([
+  const [devis, totalDevis, deviMaxTotal, lastDevi] = await Promise.all([
     prisma.devis.findMany({
       where: filters,
       skip: (page - 1) * devisPerPage,
@@ -262,6 +262,9 @@ export async function GET(req) {
       select: {
         total: true, // Only fetch the total field
       },
+    }),
+    prisma.devis.findFirst({
+      orderBy: { createdAt: "desc" },
     }),
   ]);
 
@@ -309,6 +312,7 @@ export async function GET(req) {
     totalDevis,
     transactionsList,
     ordersGroupdsList,
+    lastDevi,
   });
 }
 

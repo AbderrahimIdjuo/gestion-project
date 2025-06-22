@@ -55,6 +55,7 @@ export default function DevisPage() {
   const [endDate, setEndDate] = useState();
   const [transactions, setTransactions] = useState();
   const [ordersGroups, setOrdersGroups] = useState();
+  const [lastDevi, setLastDevi] = useState();
   useEffect;
   const [filters, setFilters] = useState({
     dateStart: "",
@@ -96,7 +97,8 @@ export default function DevisPage() {
           maxTotal: filters.montant[1],
         },
       });
-      console.log("Listes des trans :", response.data.transactionsList);
+      //console.log("LastDevi:", response.data.lastDevi);
+      setLastDevi(response.data.lastDevi);
       setOrdersGroups(response.data.ordersGroupdsList);
       setTransactions(response.data.transactionsList);
       setMaxMontant(response.data.maxMontant);
@@ -319,7 +321,15 @@ export default function DevisPage() {
               </SheetContent>
             </Sheet>
             <Link href="/ventes/devis/nouveau">
-              <AddButton title="Nouveau devis" />
+              <AddButton
+                onClick={() => {
+                  localStorage.setItem(
+                    "lastDeviNumber",
+                    JSON.stringify(lastDevi.numero)
+                  );
+                }}
+                title="Nouveau devis"
+              />
             </Link>
           </div>
         </div>

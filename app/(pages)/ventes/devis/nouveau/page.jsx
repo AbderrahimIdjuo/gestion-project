@@ -53,6 +53,7 @@ export default function NouveauDevisPage() {
   const [formError, setFormError] = useState(false);
   const [activerTVA, setActiverTVA] = useState(false);
   const [client, setClient] = useState(null);
+  const [lastDeviNumber, setLastDeviNumber] = useState();
 
   const {
     register,
@@ -88,16 +89,22 @@ export default function NouveauDevisPage() {
       return comptes;
     },
   });
-  const lastDevis = useQuery({
-    queryKey: ["lastDevis"],
-    queryFn: async () => {
-      const response = await axios.get("/api/devis/lastDevis");
-      return response.data;
-    },
-  });
-
+  // const lastDevis = useQuery({
+  //   queryKey: ["lastDevis"],
+  //   queryFn: async () => {
+  //     const response = await axios.get("/api/devis/lastDevis");
+  //     return response.data;
+  //   },
+  // });
+  useEffect(() => {
+    const storedData = localStorage.getItem("lastDeviNumber");
+    if (storedData) {
+      setLastDeviNumber(JSON.parse(storedData));
+    }
+    console.log("lastDeviNumber", JSON.parse(storedData));
+  }, []);
   const generateDeviNumber = () => {
-    const numero = Number(lastDevis.data.numero.replace("DEV-", "")) || 0;
+    const numero = Number(lastDeviNumber.replace("DEV-", "")) || 0;
     return `DEV-${numero + 1}`;
   };
 
