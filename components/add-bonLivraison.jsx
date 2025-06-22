@@ -39,56 +39,6 @@ import { CustomDatePicker } from "@/components/customUi/customDatePicker";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 
-// Données mockées pour les commandes de fourniture
-const commandesFourniture = [
-  {
-    id: "CMD-001",
-    numero: "CMD-2024-001",
-    fournisseur: "Fournisseur Alpha",
-    date: "2024-01-15",
-    statut: "En attente",
-    produits: [
-      {
-        id: 1,
-        nom: "Ordinateur portable Dell",
-        quantite: 5,
-        prixUnitaire: 850.0,
-      },
-      { id: 2, nom: "Souris sans fil", quantite: 10, prixUnitaire: 25.0 },
-      { id: 3, nom: "Clavier mécanique", quantite: 8, prixUnitaire: 120.0 },
-    ],
-  },
-  {
-    id: "CMD-002",
-    numero: "CMD-2024-002",
-    fournisseur: "TechSupply Pro",
-    date: "2024-01-18",
-    statut: "Confirmée",
-    produits: [
-      { id: 4, nom: "Écran 24 pouces", quantite: 12, prixUnitaire: 280.0 },
-      { id: 5, nom: "Câble HDMI", quantite: 15, prixUnitaire: 15.0 },
-      { id: 6, nom: "Hub USB-C", quantite: 6, prixUnitaire: 45.0 },
-    ],
-  },
-  {
-    id: "CMD-003",
-    numero: "CMD-2024-003",
-    fournisseur: "Bureau Solutions",
-    date: "2024-01-20",
-    statut: "En attente",
-    produits: [
-      {
-        id: 7,
-        nom: "Chaise de bureau ergonomique",
-        quantite: 20,
-        prixUnitaire: 180.0,
-      },
-      { id: 8, nom: "Bureau réglable", quantite: 8, prixUnitaire: 450.0 },
-      { id: 9, nom: "Lampe de bureau LED", quantite: 15, prixUnitaire: 35.0 },
-    ],
-  },
-];
-
 export default function AddBonLivraison() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [date, setDate] = useState(null);
@@ -175,25 +125,6 @@ export default function AddBonLivraison() {
       })),
     ]);
   };
-
-  // const handleCreateBL = () => {
-  //   const data = {
-  //     numero: "BL-1",
-  //     date,
-  //     produits,
-  //     reference,
-  //     fournisseurId: commande.fournisseurId,
-  //     commandeFourniture: commande.numero,
-  //     total: total().toFixed(2),
-  //     type: "Achats",
-  //   };
-  //   console.log("Data :", data);
-
-  //   // Ici vous pouvez traiter la création du BL
-  //   console.log("Création du BL avec:", { commandeDetails, produits });
-  //   setIsDialogOpen(false);
-  //   resetDialog();
-  // };
 
   const resetDialog = () => {
     setCurrentStep(1);
