@@ -59,11 +59,24 @@ export async function DELETE(req) {
     await prisma.transactions.delete({
       where: { id },
     });
+    // if (
+    //   deletedTransaction.reference &&
+    //   deletedTransaction.reference?.slice(0, 3) === "CMD"
+    // ) {
+    //   await prisma.commandes.update({
+    //     where: { numero: deletedTransaction.reference },
+    //     data: {
+    //       totalPaye: {
+    //         decrement: deletedTransaction.montant,
+    //       },
+    //     },
+    //   });
+    // }
     if (
       deletedTransaction.reference &&
-      deletedTransaction.reference?.slice(0, 3) === "CMD"
+      deletedTransaction.reference?.slice(0, 2) === "BL"
     ) {
-      await prisma.commandes.update({
+      await prisma.bonLivraison.update({
         where: { numero: deletedTransaction.reference },
         data: {
           totalPaye: {

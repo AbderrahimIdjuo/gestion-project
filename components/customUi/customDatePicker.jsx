@@ -2,9 +2,6 @@
 
 import * as React from "react";
 import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
-
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -12,13 +9,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-
-export function CustomDatePicker({
-  date,
-  onDateChange,
-  placeholder = "Pick a date",
-  buttonClassName,
-}) {
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { fr } from "date-fns/locale";
+export function CustomDatePicker({ date, onDateChange }) {
   // Handle date changes internally and pass them to the `onDateChange` prop
   const handleDateSelect = (selectedDate) => {
     if (onDateChange) {
@@ -30,15 +24,20 @@ export function CustomDatePicker({
     <Popover>
       <PopoverTrigger asChild>
         <Button
-          variant="outline"
+          variant={"outline"}
           className={cn(
-            "w-[280px] justify-start text-left font-normal",
-            !date && "text-muted-foreground",
-            buttonClassName // Allow custom button styles
+            "w-full justify-start text-left font-normal hover:text-purple-600 hover:bg-white hover:border-2 hover:border-purple-500",
+            !date && "text-muted-foreground"
           )}
         >
           <CalendarIcon className="mr-2" />
-          {date ? format(date, "PPP") : <span>{placeholder}</span>}
+          {date ? (
+            format(new Date(date), "PPP", {
+              locale: fr,
+            })
+          ) : (
+            <span>Choisis une date</span>
+          )}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0">

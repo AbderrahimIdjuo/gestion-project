@@ -119,7 +119,7 @@ export async function addtransaction(data) {
 
     if (type === "vider") {
       await prisma.comptesBancaires.updateMany({
-        where: { compte: "caisse"},
+        where: { compte: "caisse" },
         data: {
           solde: { decrement: montant },
         },
@@ -139,6 +139,13 @@ export async function addtransaction(data) {
 
     if (numero && numero.slice(0, 3) === "CMD") {
       await prisma.commandes.update({
+        where: { numero: numero },
+        data: {
+          totalPaye: { increment: montant },
+        },
+      });
+    } else if (numero && numero.slice(0, 2) === "BL") {
+      await prisma.bonLivraison.update({
         where: { numero: numero },
         data: {
           totalPaye: { increment: montant },

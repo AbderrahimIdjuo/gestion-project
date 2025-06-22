@@ -215,11 +215,10 @@ model BonLivraison {
   totalPaye      Float?
   statutPaiement String?
   type           String?
-  reduction      Int
   produits       BonLivraisonProduits[]
+  fournisseur    Fournisseurs           @relation(fields: [fournisseurId], references: [id], onDelete: Cascade)
   createdAt      DateTime               @default(now())
   updatedAt      DateTime               @updatedAt
-  fournisseur    Fournisseurs           @relation(fields: [fournisseurId], references: [id], onDelete: Cascade)
 }
 
 model Factures {

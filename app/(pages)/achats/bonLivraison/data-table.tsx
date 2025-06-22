@@ -10,6 +10,7 @@ import {
   VisibilityState,
 } from "@tanstack/react-table";
 import { LoadingDots } from "@/components/loading-dots";
+import AddBonLivraison from "@/components/add-bonLivraison";
 import { Search, Pen, Trash2, Filter, Printer } from "lucide-react";
 import {
   DropdownMenu,
@@ -51,48 +52,54 @@ export function DataTable<TData, TValue>({
     getCoreRowModel: getCoreRowModel(),
   });
 
+ function getHeaderLabel(column: any) {
+  const header = column.columnDef.header;
+
+  // Si header est une string → OK
+  if (typeof header === "string") return header;
+
+  // Si header est un élément React, on essaie de lire son contenu
+  if (React.isValidElement(header)) {
+    const element = header as React.ReactElement;
+    return typeof element.props.children === "string"
+      ? element.props.children
+      : column.id;
+  }
+
+  // Sinon on retourne l'ID comme fallback
+  return column.id;
+}
+
+
   return (
     <div>
-      <div className="flex items-center py-4">
-        <div className="relative w-full sm:w-96">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Rechercher des bon de livraison..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 w-full rounded-full bg-gray-50 focus-visible:ring-purple-500 focus-visible:ring-offset-0"
-            spellCheck={false}
-          />
-          <div className="absolute right-6 top-1/3 h-4 w-4 -translate-y-1/2 text-muted-foreground">
-            {/* {commandes.isFetching && !commandes.isLoading && <LoadingDots />} */}
-          </div>
-        </div>
+      <div className="flex justify-end items-center py-2">
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto rounded-full">
-              Columns
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {table
-              .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => {
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) =>
-                      column.toggleVisibility(!!value)
-                    }
-                  >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                );
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="ml-auto rounded-full">
+                Colonnes
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {table
+                .getAllColumns()
+                .filter((column) => column.getCanHide())
+                .map((column) => {
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={column.id}
+                      className="capitalize"
+                      checked={column.getIsVisible()}
+                      onCheckedChange={(value) =>
+                        column.toggleVisibility(!!value)
+                      }
+                    >
+                      {getHeaderLabel(column)}
+                    </DropdownMenuCheckboxItem>
+                  );
+                })}
+            </DropdownMenuContent>
+          </DropdownMenu>
       </div>
       <div className="rounded-md border">
         <Table>
@@ -137,7 +144,7 @@ export function DataTable<TData, TValue>({
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  No results.
+                  aucun BL trouvé.
                 </TableCell>
               </TableRow>
             )}

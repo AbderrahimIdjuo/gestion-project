@@ -1,9 +1,19 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal } from "lucide-react";
-
+import {
+  MoreHorizontal,
+  Pen,
+  Trash2,
+  CircleDollarSign,
+  Eye,
+} from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import axios from "axios";
+import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
+import PaiementBLDialog from "@/components/paiement-BL";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,84 +22,244 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
+import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
+import { useDeleteBonLivraison } from "@/hooks/useDeleteBonLivraison";
+import PreviewBonLivraisonDialog from "@/components/preview-bonLivraison";
 // This type is used to define the shape of our data.
 // You can use a Zod schema here if you want.
-export type Payment = {
+export type BonLivraisonT = {
   id: string;
   numero: string;
   date: string;
-  fournisseur: {
-    nom: string;
-  };
+  fournisseur: string;
   total: number;
   totalPaye: number;
   reference: string;
 };
 
-export const columns: ColumnDef<Payment>[] = [
-  {
-    accessorKey: "date",
-    header: "Date",
-  },
-  {
-    accessorKey: "reference",
-    header: "Référence",
-  },
-  {
-    accessorKey: "fournisseur",
-    header: "Fournisseur",
-  },
-  {
-    accessorKey: "total",
-    header: () => <div className="text-left">Montant</div>,
-    cell: ({ row }) => {
-      const amount = parseFloat(row.getValue("total"));
-      const formatted = `${new Intl.NumberFormat("fr-MA").format(amount)} MAD`;
+export function useBonLivraisonColumns() {
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
+  const [paiementDialogOpen, setPaiementDialogOpen] = useState(false);
+  const [currentBL, setCurrentBL] = useState<BonLivraisonT>();
+  const deleteDevi = useDeleteBonLivraison();
 
-      return <div className="text-left font-medium">{formatted}</div>;
+  const columns: ColumnDef<BonLivraisonT>[] = [
+    {
+      accessorKey: "date",
+      header: "Date",
     },
-  },
-  {
-    accessorKey: "totalPaye",
-    header: () => <div className="text-left">Montant payé</div>,
-    cell: ({ row }) => {
-      const amount = parseFloat(row.getValue("totalPaye"));
-      const formatted = `${new Intl.NumberFormat("fr-MA").format(amount)} MAD`;
+    {
+      accessorKey: "numero",
+      header: "Numéro",
+    },
+    {
+      accessorKey: "reference",
+      header: "Référence",
+    },
+    {
+      accessorKey: "fournisseur",
+      header: "Fournisseur",
+    },
+    {
+      accessorKey: "total",
+      header: "Montant",
+      cell: ({ row }) => {
+        const amount = parseFloat(row.getValue("total"));
+        const formatted = `${new Intl.NumberFormat("fr-MA").format(
+          amount
+        )} MAD`;
 
-      return <div className="text-left font-medium">{formatted}</div>;
+        return <div className="text-left font-medium">{formatted}</div>;
+      },
     },
-  },
-  {
-    accessorKey: "status",
-    header: "Status",
-  },
-  {
-    id: "actions",
-    cell: ({ row }) => {
-      const payment = row.original;
+    {
+      accessorKey: "totalPaye",
+      header: "Montant payé",
+      cell: ({ row }) => {
+        const amount = parseFloat(row.getValue("totalPaye"));
+        const formatted = `${new Intl.NumberFormat("fr-MA").format(
+          amount
+        )} MAD`;
 
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <div className="flex justify-end">
-            <Button
-              variant="ghost"
-              className="h-8 w-8 p-0 rounded-full text-right "
-            >
-              <span className="sr-only ">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-            </div>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>Modifier</DropdownMenuItem>
-            <DropdownMenuItem>Supprimer</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
+        return <div className="text-left font-medium">{formatted}</div>;
+      },
     },
-  },
-];
+    {
+      id: "actions",
+      cell: ({ row }) => {
+        const bonLivraison = row.original;
+
+        return (
+          <>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <div className="flex justify-end">
+                  <Button
+                    variant="ghost"
+                    className="h-8 w-8 p-0 rounded-full text-right"
+                  >
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-72 rounded-md">
+                <DropdownMenuItem
+                  onClick={() =>
+                    console.log("modifier un BL ", bonLivraison.id)
+                  }
+                  className="flex items-center gap-2 cursor-pointer group hover:!bg-purple-100"
+                >
+                  <Pen className="h-4 w-4 text-purple-600" />
+                  <span>Modifier</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setCurrentBL(bonLivraison);
+                    setDeleteDialogOpen(true);
+                  }}
+                  className="flex items-center gap-2 cursor-pointer group hover:!bg-red-100"
+                >
+                  <Trash2 className="h-4 w-4 text-red-600" />
+                  <span>Supprimer</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setCurrentBL(bonLivraison);
+                    setPreviewDialogOpen(true);
+                  }}
+                  className="flex items-center gap-2 cursor-pointer group hover:!bg-blue-100"
+                >
+                  <Eye className="h-4 w-4 text-sky-600" />
+
+                  <span className="transition-colors duration-200 group-hover:text-blue-600 group-hover:bg-blue-100">
+                    Visualiser
+                  </span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setCurrentBL(bonLivraison);
+                    setPaiementDialogOpen(true);
+                  }}
+                  className="flex items-center gap-2 cursor-pointer group hover:!bg-green-100"
+                >
+                  <CircleDollarSign className="h-4 w-4 text-green-600" />
+
+                  <span className="transition-colors duration-200 group-hover:text-green-600 group-hover:bg-green-100">
+                    Paiement
+                  </span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <DeleteConfirmationDialog
+              recordName={currentBL?.numero}
+              isOpen={deleteDialogOpen}
+              onClose={() => setDeleteDialogOpen(false)}
+              onConfirm={() => {
+                setDeleteDialogOpen(false);
+                deleteDevi.mutate(bonLivraison);
+              }}
+            />
+            <PreviewBonLivraisonDialog
+              bonLivraison={currentBL}
+              isOpen={previewDialogOpen}
+              onClose={() => setPreviewDialogOpen(false)}
+            />
+            <PaiementBLDialog
+              bonLivraison={currentBL}
+              isOpen={paiementDialogOpen}
+              onClose={() => setPaiementDialogOpen(false)}
+            />
+          </>
+        );
+      },
+    },
+  ];
+
+  return columns;
+}
+
+// export const columns: ColumnDef<BonLivraisonT>[] = [
+//   {
+//     accessorKey: "date",
+//     header: "Date",
+//   },
+//   {
+//     accessorKey: "numero",
+//     header: "Numéro",
+//   },
+//   {
+//     accessorKey: "reference",
+//     header: "Référence",
+//   },
+//   {
+//     accessorKey: "fournisseur",
+//     header: "Fournisseur",
+//   },
+//   {
+//     accessorKey: "total",
+//     header: () => <div className="text-left">Montant</div>,
+//     cell: ({ row }) => {
+//       const amount = parseFloat(row.getValue("total"));
+//       const formatted = `${new Intl.NumberFormat("fr-MA").format(amount)} MAD`;
+
+//       return <div className="text-left font-medium">{formatted}</div>;
+//     },
+//   },
+//   {
+//     accessorKey: "totalPaye",
+//     header: () => <div className="text-left">Montant payé</div>,
+//     cell: ({ row }) => {
+//       const amount = parseFloat(row.getValue("totalPaye"));
+//       const formatted = `${new Intl.NumberFormat("fr-MA").format(amount)} MAD`;
+
+//       return <div className="text-left font-medium">{formatted}</div>;
+//     },
+//   },
+//   {
+//     accessorKey: "status",
+//     header: "Status",
+//   },
+//   {
+//     id: "actions",
+//     cell: ({ row }) => {
+//       const bonLivraison = row.original;
+
+//       return (
+//         <DropdownMenu>
+//           <DropdownMenuTrigger asChild>
+//             <div className="flex justify-end">
+//               <Button
+//                 variant="ghost"
+//                 className="h-8 w-8 p-0 rounded-full text-right "
+//               >
+//                 <span className="sr-only ">Open menu</span>
+//                 <MoreHorizontal className="h-4 w-4" />
+//               </Button>
+//             </div>
+//           </DropdownMenuTrigger>
+//           <DropdownMenuContent align="end" className="w-72 rounded-md">
+//             <DropdownMenuItem
+//               onClick={() => console.log("modifier un BL ", bonLivraison.id)}
+//               className="flex items-center gap-2 cursor-pointer group hover:!bg-purple-100"
+//             >
+//               <Pen className="h-4 w-4 text-purple-600 group-hover:text-purple-600" />
+//               <span className="transition-colors duration-200 group-hover:text-purple-600 group-hover:bg-purple-100">
+//                 Modifier
+//               </span>
+//             </DropdownMenuItem>
+//             <DropdownMenuItem
+//               onClick={() => console.log("supprimer le BL ", bonLivraison.id)}
+//               className="flex items-center gap-2 cursor-pointer group hover:!bg-red-100"
+//             >
+//               <Trash2 className="h-4 w-4 text-red-600" />
+//               <span className="transition-colors duration-200 group-hover:text-red-600 group-hover:bg-red-100">
+//                 Supprimer
+//               </span>
+//             </DropdownMenuItem>
+//           </DropdownMenuContent>
+//         </DropdownMenu>
+//       );
+//     },
+//   },
+// ];
