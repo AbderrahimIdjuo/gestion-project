@@ -81,25 +81,9 @@ export default function AddBonLivraison({ lastBonLivraison }) {
     }
   }, [commande]);
 
-  const lastBon = useQuery({
-    queryKey: ["lastBon"],
-    queryFn: async () => {
-      const response = await axios.get("/api/bonLivraison/lastBon");
-      console.log("lastBon : ", response.data);
-
-      return response.data;
-    },
-  });
-
-  // const generateBLNumber = () => {
-  //   const numero = Number(lastBon.data.numero.replace("BL-", "")) || 0;
-  //   console.log("numero : ", `BL-${numero + 1}`);
-  //   return `BL-${numero + 1}`;
-  // };
-
   const generateBLNumber = () => {
     const lastNumber = lastBonLivraison
-      ? Number(lastBonLivraison.data.numero.replace("BL-", ""))
+      ? Number(lastBonLivraison.numero.replace("BL-", ""))
       : 0;
 
     const nextNumber = lastNumber + 1;
@@ -107,8 +91,6 @@ export default function AddBonLivraison({ lastBonLivraison }) {
     return `BL-${nextNumber}`;
   };
   const handleAddArticles = (newArticles) => {
-    // console.log("Produits### :", produits);
-    // console.log("newArticles", newArticles);
     const produitsAjouter = newArticles.map((p) => ({
       produitId: p.id,
       quantite: p.quantite,
