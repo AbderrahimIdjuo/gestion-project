@@ -157,7 +157,7 @@ model ListProduits {
   produit   Produits     @relation(fields: [produitId], references: [id], onDelete: Cascade)
   produitId String
   quantite  Float
-  prixUnite Float
+  prixUnite Float @default(0)
 }
 
 model BonLivraisonProduits {
