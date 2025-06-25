@@ -67,19 +67,19 @@ export async function POST(req) {
       // Étape 3 : Mettre à jour chaque ListProduits concerné
       const updates = [];
 
-      for (const group of commande.groups) {
-        for (const produit of group.produits) {
-          const nouveauPrix = prixMap.get(produit.produitId);
-          if (nouveauPrix !== undefined) {
-            updates.push(
-              prisma.listProduits.update({
-                where: { id: produit.id },
-                data: { prixUnite: nouveauPrix },
-              })
-            );
-          }
-        }
-      }
+      // for (const group of commande.groups) {
+      //   for (const produit of group.produits) {
+      //     const nouveauPrix = prixMap.get(produit.produitId);
+      //     if (nouveauPrix !== undefined) {
+      //       updates.push(
+      //         prisma.listProduits.update({
+      //           where: { id: produit.id },
+      //           data: { prixUnite: nouveauPrix },
+      //         })
+      //       );
+      //     }
+      //   }
+      // }
       // mettre a jours le prix achats des produits
 
       for (const produit of produits) {
