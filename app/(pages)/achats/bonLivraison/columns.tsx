@@ -157,7 +157,7 @@ export function useBonLivraisonColumns() {
               onClose={() => setDeleteDialogOpen(false)}
               onConfirm={() => {
                 setDeleteDialogOpen(false);
-                deleteDevi.mutate(bonLivraison);
+                deleteDevi.mutate(currentBL);
               }}
             />
             <PreviewBonLivraisonDialog

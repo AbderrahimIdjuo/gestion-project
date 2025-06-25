@@ -7,7 +7,7 @@ export function useDeleteBonLivraison() {
   const queryClient = useQueryClient();
 
   return useMutation({
-      mutationFn: async (bonLivraison : BonLivraisonT) => {
+      mutationFn: async (bonLivraison : any) => {
         const loadingToast = toast.loading("Suppression...");
         try {
           await axios.delete(`/api/bonLivraison/${bonLivraison.id}`);
