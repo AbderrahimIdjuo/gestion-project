@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Pen, Trash2, X, CalendarIcon } from "lucide-react";
+import { Trash2, X, CalendarIcon, Pen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/table";
 import { AddButton } from "@/components/customUi/styledButton";
 import { Label } from "@/components/ui/label";
-import { customAlphabet } from "nanoid";
 import ComboBoxFournisseur from "@/components/comboBox-fournisseurs";
 import ComboBoxDevis from "@/components/comboBox-devis";
 import { ProduitsSelection } from "@/components/produits-selection-CMDF";
@@ -53,12 +52,34 @@ export default function UpdateCommandeFournisseur({ commande }) {
   } = useForm({ defaultValues: { date: commande?.date } });
   const selectedDate = watch("date");
 
+  const formatCommandeGroups = (groups) => {
+    return groups.map((group) => ({
+      id: group.id,
+      devisNumber: group.devisNumero,
+      items: group.produits.map((produit) => ({
+        id: produit.produitId,
+        quantite: produit.quantite,
+        designation: produit.produit.designation,
+        prixUnite: produit.prixUnite,
+        uniqueKey: `${produit.produitId}-${crypto.randomUUID()}`,
+      })),
+    }));
+  };
+
+  //Initialisation
   useEffect(() => {
-    setOrderGroups(commande?.groups);
-    console.log("commande", commande);
+    setSelectedFournisseur(commande?.fournisseur);
+
+    setOrderGroups(formatCommandeGroups(commande?.groups));
+    // console.log("commande", commande);
     console.log("commande groups", commande?.groups);
+    console.log("formatCommandeGroups", formatCommandeGroups(commande?.groups));
   }, [commande]);
 
+  const generateCommandeNumber = () => {
+    const numero = 0;
+    return `CMDF-${numero + 1}`;
+  };
   // Ajout d'un groupe de commande
   const addOrderGroup = useCallback(() => {
     const newGroup = {
@@ -103,20 +124,20 @@ export default function UpdateCommandeFournisseur({ commande }) {
 
   // Gestion des articles
   const handleAddArticles = useCallback((groupId, newArticles) => {
+    console.log("newArticles", newArticles);
+    console.log("orderGroups", orderGroups);
     setOrderGroups((prev) =>
       prev.map((group) => {
         if (group.id === groupId) {
-          const existingIds = new Set(
-            group.produits.map((produit) => produit.produitId)
-          );
+          const existingIds = new Set(group.items.map((item) => item.id));
           const filteredArticles = newArticles.filter(
             (article) => !existingIds.has(article.id)
           );
 
           return {
             ...group,
-            produits: [
-              ...group.produits,
+            items: [
+              ...group.items,
               ...filteredArticles.map((article) => ({
                 ...article,
                 uniqueKey: `${article.id}-${crypto.randomUUID()}`, // Clé vraiment unique
@@ -130,15 +151,13 @@ export default function UpdateCommandeFournisseur({ commande }) {
   }, []);
 
   // Suppression d'un article
-  const removeItem = useCallback((groupId, produitId) => {
+  const removeItem = useCallback((groupId, itemId) => {
     setOrderGroups((prev) =>
       prev.map((group) => {
         if (group.id === groupId) {
           return {
             ...group,
-            produits: group.produits.filter(
-              (produit) => produit.produitId !== produitId
-            ),
+            items: group.items.filter((item) => item.uniqueKey !== itemId),
           };
         }
         return group;
@@ -153,10 +172,10 @@ export default function UpdateCommandeFournisseur({ commande }) {
         if (group.id === groupId) {
           return {
             ...group,
-            produits: group.produits.map((produit) =>
-              produit.produitId === itemId
-                ? { ...produit, [field]: Number(value) || 0 }
-                : produit
+            items: group.items.map((item) =>
+              item.uniqueKey === itemId
+                ? { ...item, [field]: Number(value) || 0 }
+                : item
             ),
           };
         }
@@ -173,14 +192,6 @@ export default function UpdateCommandeFournisseur({ commande }) {
     }));
   }, []);
 
-  // Initialisation
-  // useEffect(() => {
-  //   if (open) {
-  //     setOrderGroups([]);
-  //     setSelectedFournisseur(null);
-  //     setSelectedDevis({});
-  //   }
-  // }, [open, setValue]);
   const queryClient = useQueryClient();
   const ajouterCommande = useMutation({
     mutationFn: async (data) => {
@@ -321,6 +332,13 @@ export default function UpdateCommandeFournisseur({ commande }) {
                             devis.total
                           );
                         }}
+                        setSelectedDevis={(devis) =>
+                          setSelectedDevis((prev) => ({
+                            ...prev,
+                            [group.id]: devis,
+                          }))
+                        }
+                        Devisnumero={group.devisNumber}
                       />
                     </div>
                     <div className="w-1/2 pr-2">
@@ -337,14 +355,13 @@ export default function UpdateCommandeFournisseur({ commande }) {
                 <CardContent className="p-4 pt-2">
                   <div className="flex justify-end items-center gap-3 mb-4">
                     <ProduitsSelection
-                      onArticlesAdd={(articles) => {
-                        console.log("articles : ", articles);
-                       // handleAddArticles(group.id, articles);
-                      }}
+                      onArticlesAdd={(articles) =>
+                        handleAddArticles(group.id, articles)
+                      }
                     />
                   </div>
 
-                  {group.produits.length > 0 && (
+                  {group.items.length > 0 && (
                     <div className="overflow-hidden border rounded-lg">
                       <Table>
                         <TableHeader>
@@ -356,20 +373,20 @@ export default function UpdateCommandeFournisseur({ commande }) {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {group.produits.map((produit) => (
-                            <TableRow key={produit.produitId}>
+                          {group.items.map((item) => (
+                            <TableRow key={item.uniqueKey}>
                               <TableCell>
                                 <span className="text-md">
-                                  {produit.produit.designation}
+                                  {item.designation}
                                 </span>
                               </TableCell>
                               <TableCell>
                                 <Input
-                                  value={produit.quantite}
+                                  value={item.quantite}
                                   onChange={(e) =>
                                     handleItemChange(
                                       group.id,
-                                      produit.produitId,
+                                      item.uniqueKey,
                                       "quantite",
                                       e.target.value
                                     )
@@ -381,11 +398,11 @@ export default function UpdateCommandeFournisseur({ commande }) {
                               </TableCell>
                               <TableCell>
                                 <Input
-                                  value={produit.prixUnite}
+                                  value={item.prixUnite}
                                   onChange={(e) =>
                                     handleItemChange(
                                       group.id,
-                                      produit.produitId,
+                                      item.uniqueKey,
                                       "prixUnite",
                                       e.target.value
                                     )
@@ -400,7 +417,7 @@ export default function UpdateCommandeFournisseur({ commande }) {
                                   variant="ghost"
                                   size="icon"
                                   onClick={() =>
-                                    removeItem(group.id, produit.produitId)
+                                    removeItem(group.id, item.uniqueKey)
                                   }
                                   className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
                                 >
@@ -437,17 +454,14 @@ export default function UpdateCommandeFournisseur({ commande }) {
             <Button
               className="bg-purple-500 hover:bg-purple-600 text-white rounded-full"
               onClick={() => {
-                setValue("numero", generateCommandeNumber());
-                console.log("  selectedDate :", selectedDate);
-
                 const Data = {
                   date: selectedDate,
-                  numero: watch("numero"),
+                  numero: commande?.numero,
                   fournisseurId: selectedFournisseur.id,
                   orderGroups,
                 };
                 console.log("Data to submit:", Data);
-                ajouterCommande.mutate(Data);
+                //  ajouterCommande.mutate(Data);
               }}
               disabled={isSubmitting}
             >

@@ -44,7 +44,6 @@ import PreviewCommandeFournitureDialog from "@/components/preview-commandeFourni
 import PrintCommandeFournitureDialog from "@/components/print-commandeFourniture";
 import CustomTooltip from "@/components/customUi/customTooltip";
 import UpdateCommandeFournisseur from "@/components/update-commande-fournisseur";
-import UpdateCommandeFournisseurTest from "@/components/update-commande-fournisseurTest";
 function formatDate(dateString) {
   return dateString?.split("T")[0].split("-").reverse().join("-");
 }
@@ -394,11 +393,6 @@ export default function CommandesAchats() {
                         <div className="flex justify-end gap-2">
                           <CustomTooltip message="Modifier">
                             <UpdateCommandeFournisseur commande={commande} />
-                          </CustomTooltip>
-                          <CustomTooltip message="Test">
-                            <UpdateCommandeFournisseurTest
-                              commande={commande}
-                            />
                           </CustomTooltip>
                           <CustomTooltip message="Visualiser">
                             <PreviewCommandeFournitureDialog
