@@ -127,6 +127,7 @@ export async function GET(req) {
         fournisseur: {
           select: {
             nom: true,
+            id: true,
           },
         },
         groups: {

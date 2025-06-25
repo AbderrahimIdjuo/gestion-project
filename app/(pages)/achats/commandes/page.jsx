@@ -30,7 +30,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, Pen, Trash2, Filter , Printer } from "lucide-react";
+import { Search, Pen, Trash2, Filter, Printer } from "lucide-react";
 import { UpdateAchatCommandeForm } from "@/components/update-achat-commande-form";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import { AchatCommandesForm } from "@/components/achat-many-commande-form";
@@ -43,7 +43,8 @@ import AddCommandeFournisseur from "@/components/add-commande-fournisseur";
 import PreviewCommandeFournitureDialog from "@/components/preview-commandeFourniture";
 import PrintCommandeFournitureDialog from "@/components/print-commandeFourniture";
 import CustomTooltip from "@/components/customUi/customTooltip";
-
+import UpdateCommandeFournisseur from "@/components/update-commande-fournisseur";
+import UpdateCommandeFournisseurTest from "@/components/update-commande-fournisseurTest";
 function formatDate(dateString) {
   return dateString?.split("T")[0].split("-").reverse().join("-");
 }
@@ -380,7 +381,8 @@ export default function CommandesAchats() {
                   commandes.data?.map((commande) => (
                     <TableRow key={commande.id}>
                       <TableCell className="text-md !py-2">
-                        {formatDate(commande.date) || formatDate(commande.createdAt)}
+                        {formatDate(commande.date) ||
+                          formatDate(commande.createdAt)}
                       </TableCell>
                       <TableCell className="text-md !py-2">
                         {commande.numero}
@@ -390,21 +392,14 @@ export default function CommandesAchats() {
                       </TableCell>
                       <TableCell className="text-right !py-2">
                         <div className="flex justify-end gap-2">
-                          {/* <CustomTooltip message="Modifier">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
-                              onClick={() => {
-                                setCurrCommande(commande);
-                                setIsUpdatingCommande(true);
-                                setIsAddingCommande(false);
-                              }}
-                            >
-                              <Pen className="h-4 w-4" />
-                              <span className="sr-only">Modifier</span>
-                            </Button>
-                          </CustomTooltip> */}
+                          <CustomTooltip message="Modifier">
+                            <UpdateCommandeFournisseur commande={commande} />
+                          </CustomTooltip>
+                          <CustomTooltip message="Test">
+                            <UpdateCommandeFournisseurTest
+                              commande={commande}
+                            />
+                          </CustomTooltip>
                           <CustomTooltip message="Visualiser">
                             <PreviewCommandeFournitureDialog
                               commande={commande}

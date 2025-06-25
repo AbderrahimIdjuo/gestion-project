@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Trash2, X, CalendarIcon } from "lucide-react";
+import { Pen, Trash2, X, CalendarIcon, TestTubeDiagonal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
@@ -39,32 +39,46 @@ import { fr } from "date-fns/locale";
 import { useForm, Controller } from "react-hook-form";
 import { format } from "date-fns";
 
-export default function AddCommandeFournisseur() {
+export default function UpdateCommandeFournisseurTest({ commande }) {
   const [open, setOpen] = useState(false);
   const [orderGroups, setOrderGroups] = useState([]);
   const [selectedFournisseur, setSelectedFournisseur] = useState(null);
   const [selectedDevis, setSelectedDevis] = useState({});
+
   const {
     setValue,
     watch,
     control,
     formState: { isSubmitting },
-  } = useForm();
+  } = useForm({ defaultValues: { date: commande?.date } });
   const selectedDate = watch("date");
 
-  const lastCommande = useQuery({
-    queryKey: ["lastCommande"],
-    queryFn: async () => {
-      const response = await axios.get("/api/achats-commandes/lastCommande");
-      return response.data;
-    },
-  });
-
-  const generateCommandeNumber = () => {
-    const numero = Number(lastCommande?.data?.numero.replace("CMDF-", "")) || 0;
-    return `CMDF-${numero + 1}`;
+  const formatCommandeGroups = (groups) => {
+    return groups.map((group) => ({
+      id: group.id,
+      devisNumber: group.devisNumero,
+      items: group.produits.map((produit) => ({
+        id: produit.produitId,
+        quantite: produit.quantite,
+        designation: produit.produit.designation,
+        prixUnite: produit.prixUnite,
+        uniqueKey: `${produit.produitId}-${crypto.randomUUID()}`,
+      })),
+    }));
   };
 
+  //Initialisation
+  useEffect(() => {
+    setOrderGroups(formatCommandeGroups(commande?.groups));
+    // console.log("commande", commande);
+    console.log("commande groups", commande?.groups);
+    console.log("formatCommandeGroups", formatCommandeGroups(commande?.groups));
+  }, [commande]);
+
+  const generateCommandeNumber = () => {
+    const numero = 0;
+    return `CMDF-${numero + 1}`;
+  };
   // Ajout d'un groupe de commande
   const addOrderGroup = useCallback(() => {
     const newGroup = {
@@ -85,7 +99,7 @@ export default function AddCommandeFournisseur() {
           group.id === groupId
             ? {
                 ...group,
-                devisNumber,
+                devisNumber: devisNumber,
                 clientName,
                 clientId,
                 numero,
@@ -109,6 +123,8 @@ export default function AddCommandeFournisseur() {
 
   // Gestion des articles
   const handleAddArticles = useCallback((groupId, newArticles) => {
+    console.log("newArticles", newArticles);
+    console.log("orderGroups", orderGroups);
     setOrderGroups((prev) =>
       prev.map((group) => {
         if (group.id === groupId) {
@@ -175,14 +191,6 @@ export default function AddCommandeFournisseur() {
     }));
   }, []);
 
-  // Initialisation
-  useEffect(() => {
-    if (open) {
-      setOrderGroups([]);
-      setSelectedFournisseur(null);
-      setSelectedDevis({});
-    }
-  }, [open, setValue]);
   const queryClient = useQueryClient();
   const ajouterCommande = useMutation({
     mutationFn: async (data) => {
@@ -209,11 +217,13 @@ export default function AddCommandeFournisseur() {
   return (
     <div>
       <Button
-        className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 text-white font-semibold transition-all duration-300 transform hover:scale-105 rounded-full"
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
         onClick={() => setOpen(true)}
       >
-        <Plus className="mr-2 h-4 w-4" />
-        Ajouter une commande
+        <TestTubeDiagonal className="h-4 w-4" />
+        <span className="sr-only">Modifier</span>
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -224,7 +234,10 @@ export default function AddCommandeFournisseur() {
 
           <div className="flex justify-between items-center mb-4">
             <div className="w-1/3 pr-2">
-              <ComboBoxFournisseur setFournisseur={setSelectedFournisseur} />
+              <ComboBoxFournisseur
+                fournisseur={commande?.fournisseur}
+                setFournisseur={setSelectedFournisseur}
+              />
             </div>
             <div className="w-1/3 pr-2">
               <Label htmlFor="client">Date : </Label>
@@ -279,7 +292,7 @@ export default function AddCommandeFournisseur() {
                   Commande numéro :
                 </Label>
                 <span className="text-md text-left text-gray-900 rounded-lg p-2 pl-4 bg-purple-50 h-[2.5rem]">
-                  {generateCommandeNumber()}
+                  {commande?.numero}
                 </span>
               </div>
             </div>
@@ -306,6 +319,7 @@ export default function AddCommandeFournisseur() {
                   <div className="flex justify-between items-center mt-2">
                     <div className="w-1/2 pr-2">
                       <ComboBoxDevis
+                        onClick={() => console.log(group.id)}
                         onSelect={(devis) => {
                           handleDevisSelect(group.id, devis);
                           updateDevisNumberOfGroup(
@@ -317,19 +331,20 @@ export default function AddCommandeFournisseur() {
                             devis.total
                           );
                         }}
-                          setSelectedDevis={(devis) =>
+                        setSelectedDevis={(devis) =>
                           setSelectedDevis((prev) => ({
                             ...prev,
                             [group.id]: devis,
                           }))
                         }
+                        Devisnumero={group.devisNumber}
                       />
                     </div>
                     <div className="w-1/2 pr-2">
                       <div className="col-span-2 grid gap-3">
                         <Label className="text-left text-black">Client :</Label>
                         <span className="text-md text-left text-gray-900 rounded-lg p-2 pl-4 bg-purple-50 h-[2.5rem]">
-                          {selectedDevis[group.id]?.client?.nom ||
+                            {selectedDevis[group.id]?.client?.nom ||
                             "Non sélectionné"}
                         </span>
                       </div>
@@ -438,17 +453,14 @@ export default function AddCommandeFournisseur() {
             <Button
               className="bg-purple-500 hover:bg-purple-600 text-white rounded-full"
               onClick={() => {
-                setValue("numero", generateCommandeNumber());
-                console.log("  selectedDate :", selectedDate);
-
                 const Data = {
                   date: selectedDate,
                   numero: watch("numero"),
-                  fournisseurId: selectedFournisseur.id,
+                  // fournisseurId: selectedFournisseur.id,
                   orderGroups,
                 };
                 console.log("Data to submit:", Data);
-                ajouterCommande.mutate(Data);
+                //  ajouterCommande.mutate(Data);
               }}
               disabled={isSubmitting}
             >

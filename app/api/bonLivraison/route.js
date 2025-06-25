@@ -221,6 +221,6 @@ export async function GET(req) {
   return NextResponse.json({
     bonLivraison,
     totalPages,
-    lastBonLivraison
+    lastBonLivraison,
   });
 }

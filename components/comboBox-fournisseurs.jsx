@@ -23,15 +23,20 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Label } from "@/components/ui/label";
 import { useForm } from "react-hook-form";
 
-export default function ComboBoxFournisseur({ setFournisseur }) {
+export default function ComboBoxFournisseur({ fournisseur, setFournisseur }) {
   const [openComboBox, setOpenComboBox] = useState(false);
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const { ref, inView } = useInView();
   const [searchQuery, setSearchQuery] = useState("");
   const [buttonWidth, setButtonWidth] = useState(0);
   const buttonRef = useRef(null);
-  const { watch, setValue } = useForm();
-
+  const { watch, setValue } = useForm({
+    defaultValues: { fournisseur },
+  });
+  useEffect(() => {
+    //setValue("fournisseur", fournisseur);
+    console.log("fournisseur", fournisseur);
+  }, [fournisseur]);
   useEffect(() => {
     if (buttonRef.current) {
       setButtonWidth(buttonRef.current.offsetWidth);
@@ -93,8 +98,8 @@ export default function ComboBoxFournisseur({ setFournisseur }) {
             <ChevronDown className="opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent 
-          style={{ width: buttonWidth }} 
+        <PopoverContent
+          style={{ width: buttonWidth }}
           className="p-0"
           onWheel={(e) => {
             // Empêcher la propagation vers le dialog parent
@@ -121,7 +126,7 @@ export default function ComboBoxFournisseur({ setFournisseur }) {
                 </CommandEmpty>
               ) : (
                 <>
-                  <ScrollArea 
+                  <ScrollArea
                     className="h-72 w-full"
                     onWheel={(e) => {
                       // Permettre le scroll dans cette zone
@@ -138,6 +143,7 @@ export default function ComboBoxFournisseur({ setFournisseur }) {
                             setOpenComboBox(false);
                             setValue("fournisseur", fournisseur);
                             setFournisseur(fournisseur);
+                            console.log("Selected fournisseur :", fournisseur);
                           }}
                         >
                           {fournisseur.nom.toUpperCase()}
