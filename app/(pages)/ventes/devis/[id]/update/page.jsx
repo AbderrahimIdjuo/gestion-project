@@ -78,12 +78,13 @@ export default function UpdateDevisPage({ params }) {
   const getDevisById = async () => {
     const result = await axios.get(`/api/devis/${params.id}`);
     const { devi } = result.data;
+
     setValue("articls", devi?.articls);
     setClient(devi?.client);
     setValue("statut", devi?.statut);
     setValue("avance", devi?.avance);
     setValue("compte", devi?.compte);
-    setValue("echeance", devi?.echeance);
+    setValue("echeance", new Date(devi?.echeance));
     setActiverTVA(devi?.tva > 0 ? true : false);
     setValue("reduction", devi?.reduction);
     setValue("typeReduction", devi?.typeReduction);
@@ -92,8 +93,6 @@ export default function UpdateDevisPage({ params }) {
     setValue("clientId", devi?.clientId);
     setItems(devi?.articls);
     setLoadingDevis(false);
-    // console.log("Articls : ", devi.articls);
-    // console.log("devi : ", devi);
   };
   useEffect(() => {
     getDevisById();
@@ -104,12 +103,10 @@ export default function UpdateDevisPage({ params }) {
     return nanoidCustom();
   };
   const onSubmit = async (data) => {
-    console.log("data", data);
     toast.promise(
       (async () => {
         try {
           const response = await axios.put("/api/devis", data);
-          console.log("Devi ajouté avec succès");
           router.push("/ventes/devis");
           if (response.status === 200) {
             console.log("Devi modifier avec succès");
@@ -121,7 +118,7 @@ export default function UpdateDevisPage({ params }) {
         }
       })(),
       {
-        loading: "Ajout du devi ...",
+        loading: "modification du devi ...",
         success: "Devi modifier avec succès!",
         error: "Échec de la modification du devi",
       }
@@ -142,12 +139,8 @@ export default function UpdateDevisPage({ params }) {
         ...article,
       })),
     ]);
-    // console.log("newArticles", newArticles);
-    //  console.log("items ", items);
   };
   const removeItem = (deletedItem) => {
-    //  console.log("deletedItem", deletedItem);
-    //  console.log("items", items);
     setItems((prev) => prev.filter((item) => item.key !== deletedItem.key));
   };
   const calculateSubTotal = () => {
@@ -171,14 +164,7 @@ export default function UpdateDevisPage({ params }) {
     }
     return calculateSubTotal();
   };
-  const comptes = useQuery({
-    queryKey: ["comptes"],
-    queryFn: async () => {
-      const response = await axios.get("/api/comptesBancaires");
-      const comptes = response.data.comptes;
-      return comptes;
-    },
-  });
+
   const unites = ["U", "m²", "m"];
 
   const validateFloat = (value) => {
@@ -221,7 +207,7 @@ export default function UpdateDevisPage({ params }) {
                     </p>
                   )}
                 </div>
-                 <div className="space-y-2">
+                <div className="space-y-2">
                   <Label htmlFor="client">Date limite de livraison : </Label>
                   <Popover>
                     <PopoverTrigger asChild>
@@ -300,112 +286,8 @@ export default function UpdateDevisPage({ params }) {
                     </SelectContent>
                   </Select>
                 </div>
-               
               </div>
-              <div className="grid gap-6 grid-cols-3">
-                {/* <div className="space-y-1">
-                  <Label htmlFor="client">Date limite de livraison : </Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant={"outline"}
-                        className={cn(
-                          "w-full justify-start text-left font-normal hover:text-purple-600 hover:bg-white hover:border-2 hover:border-purple-500",
-                          !selectedDate && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2" />
-                        {selectedDate ? (
-                          format(new Date(selectedDate), "PPP", { locale: fr })
-                        ) : (
-                          <span>Choisis une date</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Controller
-                        name="echeance"
-                        control={control}
-                        render={({ field }) => (
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={(date) => {
-                              if (date) {
-                                // Set to midnight UTC
-                                const utcMidnight = new Date(
-                                  Date.UTC(
-                                    date.getFullYear(),
-                                    date.getMonth(),
-                                    date.getDate()
-                                  )
-                                );
-                                field.onChange(utcMidnight);
-                              }
-                            }}
-                            initialFocus
-                          />
-                        )}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  {errors.echeance && (
-                    <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
-                      <CircleX className="h-4 w-4" />
-                      {errors.echeance.message}
-                    </p>
-                  )}
-                </div> */}
-
-                {/* <div className="space-y-1">
-                  <Label htmlFor="orderNumber">Avance :</Label>
-                  <div className="relative w-full flex">
-                    <div className="absolute border-2 border-gray-300 bg-white inset-y-0 right-0 w-12 flex items-center justify-center  rounded-r-md">
-                      <span className="text-sm text-gray-800">MAD</span>
-                    </div>
-                    <Input
-                    value={watch("avance")}
-                      id="avance"
-                      name="avance"
-                      {...register("avance")}
-                      className="focus:!ring-purple-500 pr-14 text-left rounded-r-md"
-                    />
-                  </div>
-                  {errors.avance && (
-                    <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
-                      <CircleX className="h-4 w-4" />
-                      {errors.avance.message}
-                    </p>
-                  )}
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="orderNumber">Compte :</Label>
-                  <Select
-                    value={watch("compte")}
-                    name="compte"
-                    onValueChange={(value) => setValue("compte", value)}
-                  >
-                    <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500 mt-2">
-                      <SelectValue placeholder="Séléctionner..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {comptes.data?.map((element) => (
-                        <SelectItem key={element.id} value={element.compte}>
-                          <div className="flex items-center gap-2">
-                            {element.compte}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {errors.compte && (
-                    <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
-                      <CircleX className="h-4 w-4" />
-                      {errors.compte.message}
-                    </p>
-                  )}
-                </div> */}
-              </div>
+              <div className="grid gap-6 grid-cols-3"></div>
               {/* Items Table */}
               <div className="space-y-4">
                 {items.length > 0 && (
@@ -712,11 +594,6 @@ export default function UpdateDevisPage({ params }) {
                   setValue("tva", activerTVA ? calculateTVA().toFixed(2) : 0);
                   setValue("total", parseFloat(calculateTotal()));
                   setValue("articls", items);
-                  console.log(
-                    "form data validation :",
-                    updateDeviSchema.parse(watch())
-                  );
-                  console.log("data ###:", watch());
                 }}
                 type="submit"
                 className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 hover:scale-105 text-white hover:!text-white font-semibold transition-all duration-300 transform rounded-full"
