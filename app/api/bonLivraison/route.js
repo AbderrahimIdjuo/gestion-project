@@ -11,7 +11,7 @@ export async function POST(req) {
       numero,
       fournisseurId,
       produits,
-      commandeFourniture,
+    //  commandeFourniture,
       total,
       totalPaye,
       type,
@@ -42,25 +42,25 @@ export async function POST(req) {
       });
       // Mettre a jour les prixUnite des produits dans la CMDF
       // Étape 1 : Récupérer la commande fourniture
-      const commande = await prisma.commandeFourniture.findUnique({
-        where: { numero: commandeFourniture },
-        include: {
-          fournisseur: {
-            select: {
-              nom: true,
-            },
-          },
-          groups: {
-            include: {
-              produits: {
-                include: {
-                  produit: true,
-                },
-              },
-            },
-          },
-        },
-      });
+      // const commande = await prisma.commandeFourniture.findUnique({
+      //   where: { numero: commandeFourniture },
+      //   include: {
+      //     fournisseur: {
+      //       select: {
+      //         nom: true,
+      //       },
+      //     },
+      //     groups: {
+      //       include: {
+      //         produits: {
+      //           include: {
+      //             produit: true,
+      //           },
+      //         },
+      //       },
+      //     },
+      //   },
+      // });
       // Étape 2 : Créer une map pour un accès rapide au nouveau prix
       const prixMap = new Map(produits.map((p) => [p.produitId, p.prixUnite]));
 

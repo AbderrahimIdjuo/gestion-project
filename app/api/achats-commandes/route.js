@@ -7,7 +7,15 @@ export async function POST(req) {
     console.log("data : ", response);
 
     const { date, numero, fournisseurId, orderGroups } = response;
-
+    const DevisNumbers = orderGroups.map((g) => g.devisNumber);
+    await prisma.devis.updateMany({
+      where: {
+        numero: { in: DevisNumbers },
+      },
+      data: {
+        statut: "Accepté",
+      },
+    });
     const result = await prisma.commandeFourniture.create({
       data: {
         date,
@@ -47,33 +55,120 @@ export async function POST(req) {
 export async function PUT(req) {
   try {
     const response = await req.json();
-    const {
-      id,
-      designation,
-      categorie,
-      prixAchat,
-      prixVente,
-      statu,
-      stock,
-      description,
-    } = response;
+    const { id, date, numero, fournisseurId, orderGroups } = response;
 
-    const result = await prisma.produits.update({
+    // 1. Récupérer les groups existants
+    const existing = await prisma.commandeFourniture.findUnique({
+      where: { id },
+      include: {
+        groups: {
+          select: { id: true },
+        },
+      },
+    });
+
+    const existingGroupIds = existing?.groups.map((g) => g.id) || [];
+    const incomingGroupIds = orderGroups.map((group) => group.id);
+
+    // 2. Supprimer les groups retirés
+    const groupsToDelete = existingGroupIds.filter(
+      (existingId) => !incomingGroupIds.includes(existingId)
+    );
+
+    await prisma.ordersGroups.deleteMany({
+      where: {
+        id: { in: groupsToDelete },
+      },
+    });
+
+    // 3. Pour chaque group, supprimer les produits retirés
+    for (const group of orderGroups) {
+      const existingProduits = await prisma.listProduits.findMany({
+        where: { groupId: group.id },
+        select: { produitId: true },
+      });
+
+      const existingProduitIds = existingProduits.map((p) => p.produitId);
+      const incomingProduitIds = group.items.map((p) => p.id);
+
+      const produitsToDelete = existingProduitIds.filter(
+        (produitId) => !incomingProduitIds.includes(produitId)
+      );
+
+      if (produitsToDelete.length > 0) {
+        await prisma.listProduits.deleteMany({
+          where: {
+            groupId: group.id,
+            produitId: { in: produitsToDelete },
+          },
+        });
+      }
+    }
+
+    // 4. Upsert commandeFourniture avec groupes et produits
+    const result = await prisma.commandeFourniture.update({
       where: { id },
       data: {
-        designation,
-        categorie,
-        prixAchat: parseFloat(prixAchat),
-        prixVente: parseFloat(prixVente),
-        statut: statu,
-        stock: parseInt(stock, 10),
-        description,
+        date,
+        fournisseur: {
+          connect: { id: fournisseurId },
+        },
+        groups: {
+          upsert: orderGroups.map((group) => ({
+            where: { id: group.id },
+            update: {
+              devisNumero: group.devisNumber,
+              clientName: group.clientName,
+              produits: {
+                upsert: group.items.map((produit) => ({
+                  where: {
+                    groupId_produitId: {
+                      groupId: group.id,
+                      produitId: produit.id,
+                    },
+                  },
+                  update: {
+                    quantite: parseFloat(produit.quantite),
+                    prixUnite: parseFloat(produit.prixUnite),
+                    produit: {
+                      connect: { id: produit.id },
+                    },
+                  },
+                  create: {
+                    quantite: parseFloat(produit.quantite),
+                    prixUnite: parseFloat(produit.prixUnite),
+                    produit: {
+                      connect: { id: produit.id },
+                    },
+                  },
+                })),
+              },
+            },
+            create: {
+              id: group.id,
+              devisNumero: group.devisNumber,
+              clientName: group.clientName,
+              produits: {
+                create: group.items.map((produit) => ({
+                  quantite: parseFloat(produit.quantite),
+                  prixUnite: parseFloat(produit.prixUnite),
+                  produit: {
+                    connect: { id: produit.id },
+                  },
+                })),
+              },
+            },
+          })),
+        },
       },
     });
 
     return NextResponse.json({ result });
   } catch (error) {
-    console.error("Error updating product:", error);
+    console.error(
+      "Error upserting commandeFourniture with nested upserts:",
+      error
+    );
     return NextResponse.json(
       { message: "An unexpected error occurred." },
       { status: 500 }

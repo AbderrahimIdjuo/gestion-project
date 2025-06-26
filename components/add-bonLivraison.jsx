@@ -24,6 +24,7 @@ import {
 import { ArticleSelectionDialog } from "@/components/produits-selection-NouveauBL";
 import { Badge } from "@/components/ui/badge";
 import ComboBoxCommandesFournitures from "@/components/comboBox-commandesFournitures";
+import ComboBoxFournisseur from "@/components/comboBox-fournisseurs";
 import {
   Table,
   TableBody,
@@ -33,6 +34,15 @@ import {
   TableRow,
   TableFooter,
 } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import axios from "axios";
 import { AddButton } from "@/components/customUi/styledButton";
 import { CustomDatePicker } from "@/components/customUi/customDatePicker";
@@ -47,7 +57,10 @@ export default function AddBonLivraison({ lastBonLivraison }) {
   const [produits, setProduits] = useState([]);
   const [commande, setCommande] = useState(null);
   const [reference, setReference] = useState(null);
+  const [type, setType] = useState();
   const [isArticleDialogOpen, setIsArticleDialogOpen] = useState(false);
+  const [selectedFournisseur, setSelectedFournisseur] = useState(null);
+
   const queryClient = useQueryClient();
   function regrouperProduitsParQuantite(groups) {
     const produitMap = new Map();
@@ -112,6 +125,8 @@ export default function AddBonLivraison({ lastBonLivraison }) {
     setCurrentStep(1);
     setReference(null);
     setCommande(null);
+    setType();
+    setDate(null);
     setCommandeDetails(null);
     setProduits([]);
   };
@@ -144,12 +159,16 @@ export default function AddBonLivraison({ lastBonLivraison }) {
         date,
         produits,
         reference,
-        fournisseurId: commande.fournisseurId,
-        commandeFourniture: commande.numero,
+        fournisseurId: commande
+          ? commande?.fournisseurId
+          : selectedFournisseur.id,
+        //commandeFourniture: commande ? commande.numero : null,
         total: total().toFixed(2),
-        type: "Achats",
+        type,
         totalPaye: 0,
       };
+      console.log("data ##### :", data);
+
       const loadingToast = toast.loading("Ajout du bon de livraison...");
       try {
         await axios.post("/api/bonLivraison", data);
@@ -202,10 +221,29 @@ export default function AddBonLivraison({ lastBonLivraison }) {
 
             {currentStep === 1 && (
               <div className="space-y-6">
-                <div className="flex gap-3">
+                <div className="grid grid-cols-2 grid-rows-2 gap-3">
                   <div className="w-full space-y-2">
                     <Label htmlFor="client">Date : </Label>
                     <CustomDatePicker date={date} onDateChange={setDate} />
+                  </div>
+                  <div className="w-full space-y-2">
+                    <Label className="text-sm font-medium block pt-1">
+                      Type
+                    </Label>
+                    <Select
+                      value={type}
+                      onValueChange={(value) => setType(value)}
+                    >
+                      <SelectTrigger className="w-full col-span-3 bg-white focus:ring-purple-500">
+                        <SelectValue placeholder="Séléctionnez ..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectItem value="achats">Achats</SelectItem>
+                          <SelectItem value="retour">Retour</SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="w-full space-y-2">
                     <Label className="text-sm font-medium block pt-1">
@@ -221,10 +259,12 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                       spellCheck={false}
                     />
                   </div>
-                  <ComboBoxCommandesFournitures
-                    setCommande={setCommande}
-                    commande={commande}
-                  />
+                  <div className="w-full space-y-2">
+                    <ComboBoxCommandesFournitures
+                      setCommande={setCommande}
+                      commande={commande}
+                    />
+                  </div>
                 </div>
                 {commande !== null && (
                   <Card>
@@ -281,27 +321,53 @@ export default function AddBonLivraison({ lastBonLivraison }) {
 
             {currentStep === 2 && (
               <div className="space-y-6 ">
-                <div className="flex justify-between gap-8 mb-4 p-4 border-t border-gray-300">
-                  <div className="space-y-1 col-span-1">
-                    <h3 className="font-medium text-sm text-muted-foreground">
-                      Référence :
-                    </h3>
-                    <p className="font-semibold">{reference} </p>
-                  </div>
-                  <div className="space-y-1 col-span-1">
-                    <h3 className="font-medium text-sm text-muted-foreground">
-                      Fournisseur :
-                    </h3>
-                    <p className="font-semibold">
-                      {commande?.fournisseur.nom.toUpperCase()}{" "}
-                    </p>
-                  </div>
-                  <div className="space-y-1 col-span-1">
-                    <h3 className="font-medium text-sm text-muted-foreground">
-                      Numero de commande :
-                    </h3>
-                    <p className="font-semibold">{commande?.numero} </p>
-                  </div>
+                <div
+                  className={`grid gap-4 mb-4 p-4 border-t border-gray-300 ${
+                    commande ? "grid-cols-4" : "grid-cols-4"
+                  }`}
+                >
+                  {reference && (
+                    <div className="space-y-1 col-span-1">
+                      <h3 className="font-medium text-sm text-muted-foreground">
+                        Référence :
+                      </h3>
+                      <p className="font-semibold">{reference} </p>
+                    </div>
+                  )}
+                  {type && (
+                    <div className="space-y-1 col-span-1">
+                      <h3 className="font-medium text-sm text-muted-foreground">
+                        Type :
+                      </h3>
+                      <p className="font-semibold">{type} </p>
+                    </div>
+                  )}
+                  {commande ? (
+                    <>
+                      {" "}
+                      <div className="space-y-1 col-span-1">
+                        <h3 className="font-medium text-sm text-muted-foreground">
+                          Fournisseur :
+                        </h3>
+                        <p className="font-semibold">
+                          {commande?.fournisseur.nom.toUpperCase()}{" "}
+                        </p>
+                      </div>
+                      <div className="space-y-1 col-span-1">
+                        <h3 className="font-medium text-sm text-muted-foreground">
+                          Numero de commande :
+                        </h3>
+                        <p className="font-semibold">{commande?.numero} </p>
+                      </div>{" "}
+                    </>
+                  ) : (
+                    <div className="w-full col-span-2">
+                      <ComboBoxFournisseur
+                        fournisseur={selectedFournisseur}
+                        setFournisseur={setSelectedFournisseur}
+                      />
+                    </div>
+                  )}
                 </div>
                 <Card>
                   <CardHeader>
@@ -426,7 +492,6 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                   onClick={() => {
                     setCurrentStep(2);
                   }}
-                  disabled={!commande || !reference}
                 >
                   Suivant
                 </Button>

@@ -98,6 +98,7 @@ export default function ComboBoxCommandesFournitures({
             role="combobox"
             aria-expanded={openComboBox}
             className="w-full justify-between mt-2"
+            
           >
             {watch("commande")
               ? watch("commande").numero

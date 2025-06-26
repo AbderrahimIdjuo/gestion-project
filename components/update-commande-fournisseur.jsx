@@ -193,15 +193,15 @@ export default function UpdateCommandeFournisseur({ commande }) {
   }, []);
 
   const queryClient = useQueryClient();
-  const ajouterCommande = useMutation({
+  const updateCommande = useMutation({
     mutationFn: async (data) => {
-      const loadingToast = toast.loading("Ajout de la commande...");
+      const loadingToast = toast.loading("Modification de la commande...");
       try {
-        const response = await axios.post("/api/achats-commandes", data);
-        toast.success("Commande ajouté avec succès!");
+        const response = await axios.put("/api/achats-commandes", data);
+        toast.success("Commande modifier avec succès!");
         return response.data;
       } catch (error) {
-        toast.error("Échec de l'ajout ");
+        toast.error("Échec de la modification ");
         throw error;
       } finally {
         toast.dismiss(loadingToast);
@@ -455,13 +455,14 @@ export default function UpdateCommandeFournisseur({ commande }) {
               className="bg-purple-500 hover:bg-purple-600 text-white rounded-full"
               onClick={() => {
                 const Data = {
+                  id: commande?.id,
                   date: selectedDate,
                   numero: commande?.numero,
                   fournisseurId: selectedFournisseur.id,
                   orderGroups,
                 };
                 console.log("Data to submit:", Data);
-                //  ajouterCommande.mutate(Data);
+                updateCommande.mutate(Data);
               }}
               disabled={isSubmitting}
             >
