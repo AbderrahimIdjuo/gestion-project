@@ -200,7 +200,7 @@ export default function AddCommandeFournisseur() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["commandeFournisseur"]);
-      queryClient.invalidateQueries(["commandes"]);
+      queryClient.invalidateQueries(["lastCommande"]);
 
       setOpen(false);
     },

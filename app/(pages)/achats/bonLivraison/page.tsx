@@ -110,10 +110,7 @@ export default function BonLivraison() {
           statutPaiement: filters.statutPaiement,
         },
       });
-      console.log(
-        "Fetching bonLivraison with filters:",
-        response.data.bonLivraison
-      );
+     // console.log("last BL:", response.data.lastBonLivraison);
       setLastBonLivraison(response.data.lastBonLivraison);
       setTotalPages(response.data.totalPages);
       return response.data.bonLivraison;
