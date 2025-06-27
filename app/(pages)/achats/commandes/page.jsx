@@ -51,6 +51,7 @@ export default function CommandesAchats() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false); // Delete dialog
   const [currCommande, setCurrCommande] = useState("");
+  const [lastCommande, setLastCommande] = useState();
   const [maxMontant, setMaxMontant] = useState();
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [startDate, setStartDate] = useState();
@@ -119,6 +120,7 @@ export default function CommandesAchats() {
         },
       });
       console.log("commandesFourniture", response.data.commandes);
+      setLastCommande(response.data.lastCommande);
       setTotalPages(response.data.totalPages);
       return response.data.commandes;
     },
@@ -332,7 +334,7 @@ export default function CommandesAchats() {
                 </div>
               </SheetContent>
             </Sheet> */}
-            <AddCommandeFournisseur />
+            <AddCommandeFournisseur lastCommande={lastCommande} />
           </div>
         </div>
 

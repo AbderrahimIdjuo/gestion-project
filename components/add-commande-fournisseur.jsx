@@ -39,7 +39,7 @@ import { fr } from "date-fns/locale";
 import { useForm, Controller } from "react-hook-form";
 import { format } from "date-fns";
 
-export default function AddCommandeFournisseur() {
+export default function AddCommandeFournisseur({ lastCommande }) {
   const [open, setOpen] = useState(false);
   const [orderGroups, setOrderGroups] = useState([]);
   const [selectedFournisseur, setSelectedFournisseur] = useState(null);
@@ -52,18 +52,18 @@ export default function AddCommandeFournisseur() {
   } = useForm();
   const selectedDate = watch("date");
 
-  const lastCommande = useQuery({
-    queryKey: ["lastCommande"],
-    queryFn: async () => {
-      const response = await axios.get("/api/achats-commandes/lastCommande");
-      return response.data;
-    },
-  });
+  // const lastCommande = useQuery({
+  //   queryKey: ["lastCommande"],
+  //   queryFn: async () => {
+  //     const response = await axios.get("/api/achats-commandes/lastCommande");
+  //     return response.data;
+  //   },
+  // });
 
   const generateCommandeNumber = () => {
-    console.log("lastCommande", lastCommande?.data?.numero);
+    console.log("lastCommande", lastCommande?.numero);
 
-    const numero = Number(lastCommande?.data?.numero.replace("CMDF-", "")) || 0;
+    const numero = Number(lastCommande?.numero.replace("CMDF-", "")) || 0;
     return `CMDF-${numero + 1}`;
   };
 

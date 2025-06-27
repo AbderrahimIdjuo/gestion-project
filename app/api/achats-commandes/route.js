@@ -212,7 +212,7 @@ export async function GET(req) {
   // }
 
   // Fetch filtered commandes with pagination and related data
-  const [commandes, totalCommandes] = await Promise.all([
+  const [commandes, lastCommande, totalCommandes] = await Promise.all([
     prisma.commandeFourniture.findMany({
       where: filters,
       skip: (page - 1) * commandesPerPage,
@@ -241,6 +241,9 @@ export async function GET(req) {
         },
       },
     }),
+    prisma.commandeFourniture.findFirst({
+      orderBy: { createdAt: "desc" },
+    }),
     prisma.commandeFourniture.count({ where: filters }),
   ]);
 
@@ -250,6 +253,7 @@ export async function GET(req) {
   // Return the response
   return NextResponse.json({
     commandes,
+    lastCommande,
     totalPages,
   });
 }
