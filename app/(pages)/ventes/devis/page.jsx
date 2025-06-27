@@ -185,7 +185,7 @@ export default function DevisPage() {
 
   const totalCommandeFourniture = (produits) => {
     return produits?.reduce((acc, produit) => {
-      return acc + produit.quantite * produit.produit.prixAchat;
+      return acc + produit.quantite * produit.prixUnite;
     }, 0);
   };
   const totalFourniture = (group) => {
@@ -202,7 +202,7 @@ export default function DevisPage() {
     return list;
   };
   console.log("Orders:", ordersGroups);
-  console.log("Filtered Orders:", filteredOrders("DEV-42638475"));
+  console.log("Filtered Orders:", filteredOrders("DEV-9"));
 
   const totalPaye = (numero) => {
     const trans = transactions?.filter((c) => c.reference === numero);
