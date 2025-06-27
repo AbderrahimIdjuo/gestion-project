@@ -61,6 +61,8 @@ export default function AddCommandeFournisseur() {
   });
 
   const generateCommandeNumber = () => {
+    console.log("lastCommande", lastCommande?.data?.numero);
+
     const numero = Number(lastCommande?.data?.numero.replace("CMDF-", "")) || 0;
     return `CMDF-${numero + 1}`;
   };
@@ -317,7 +319,7 @@ export default function AddCommandeFournisseur() {
                             devis.total
                           );
                         }}
-                          setSelectedDevis={(devis) =>
+                        setSelectedDevis={(devis) =>
                           setSelectedDevis((prev) => ({
                             ...prev,
                             [group.id]: devis,

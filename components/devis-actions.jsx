@@ -15,6 +15,7 @@ import {
   MoreVertical,
   CircleDollarSign,
   TruckIcon,
+  Files,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -23,6 +24,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { addtransaction } from "@/app/api/actions";
 import toast from "react-hot-toast";
 import FournitureDialog from "@/components/fourniture-dialog";
+import FactureDialog from "@/components/add-facture-dialog";
 export function DevisActions({
   devis,
   setDeleteDialogOpen,
@@ -34,6 +36,8 @@ export function DevisActions({
   const [compte, setCompte] = useState("");
   const [isBankDialogOpen, setIsBankDialogOpen] = useState(false);
   const [isFournitureOpen, setIsFournitureOpen] = useState(false);
+  const [isFactureOpen, setIsFactureOpen] = useState(false);
+
   const [montant, setMontant] = useState("");
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -146,7 +150,7 @@ export function DevisActions({
               Imprimer un devis
             </span>
           </DropdownMenuItem>
-          <DropdownMenuItem
+          {/* <DropdownMenuItem
             onClick={() => {
               window.open(`/ventes/devis/${devis.id}/facture`, "_blank");
               localStorage.setItem("devi", JSON.stringify(devis));
@@ -156,6 +160,19 @@ export function DevisActions({
             <PrinterCheck className="h-4 w-4 text-emerald-600" />
             <span className="transition-colors duration-200 group-hover:text-emerald-600 group-hover:bg-emerald-100">
               Imprimer une facture
+            </span>
+          </DropdownMenuItem> */}
+          <DropdownMenuItem
+            onClick={() => {
+              setIsFactureOpen(true);
+              setMenuOpen(false);
+              setCurrentDevi(devis);
+            }}
+            className="flex items-center gap-2 cursor-pointer group hover:!bg-emerald-100"
+          >
+            <Files className="h-4 w-4 text-emerald-600" />
+            <span className="transition-colors duration-200 group-hover:text-emerald-600 group-hover:bg-emerald-100">
+              créer une facture
             </span>
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -178,6 +195,11 @@ export function DevisActions({
         isOpen={isFournitureOpen}
         onClose={() => setIsFournitureOpen(false)}
         orderGroups={orderGroups}
+      />
+      <FactureDialog
+        devis={devis}
+        isOpen={isFactureOpen}
+        onClose={() => setIsFactureOpen(false)}
       />
     </>
   );

@@ -36,7 +36,7 @@ export async function POST(req) {
           articls: {
             create: articls.map((articl) => ({
               key: articl.key, //permet de supprimer un articl doublon
-              length: articl.length,
+              length: articl.length || 0,
               unite: articl.unite || "U",
               width: articl.width || 0,
               designation: articl.designation,
@@ -217,8 +217,8 @@ export async function GET(req) {
 
   // Search filter by numero and client name
   filters.OR = [
-    { numero: { contains: searchQuery } },
-    { client: { nom: { contains: searchQuery } } },
+    { numero: { contains: searchQuery , mode: "insensitive"  } },
+    { client: { nom: { contains: searchQuery , mode: "insensitive"  } } },
   ];
 
   // Statut filter
