@@ -378,10 +378,20 @@ export default function DevisPage() {
                     <TableCell className="!py-2" align="left">
                       <Skeleton className="h-4 w-full" />
                     </TableCell>
+                    <TableCell className="!py-2" align="left">
+                      <Skeleton className="h-4 w-full" />
+                    </TableCell>
+                    <TableCell className="!py-2" align="left">
+                      <Skeleton className="h-4 w-full" />
+                    </TableCell>
+                    <TableCell className="!py-2" align="left">
+                      <Skeleton className="h-4 w-full" />
+                    </TableCell>
+                    <TableCell className="!py-2" align="left">
+                      <Skeleton className="h-4 w-full" />
+                    </TableCell>
                     <TableCell className="!py-2">
                       <div className="flex gap-2 justify-end">
-                        <Skeleton className="h-7 w-7 rounded-full" />
-                        <Skeleton className="h-7 w-7 rounded-full" />
                         <Skeleton className="h-7 w-7 rounded-full" />
                       </div>
                     </TableCell>

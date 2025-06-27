@@ -161,6 +161,13 @@ export default function PreviewFactureDialog({ facture }) {
                           {devis?.client.titre && devis?.client.titre + ". "}
                           {devis?.client.nom.toUpperCase()}
                         </p>
+                        {devis?.client.ice && (
+                          <div className="flex items-center gap-2 ">
+                            <p className="font-medium text-sm">
+                              ICE : {devis?.client.ice}
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="col-span-1">
@@ -196,6 +203,13 @@ export default function PreviewFactureDialog({ facture }) {
                         {devis?.client.titre && devis?.client.titre + ". "}
                         {devis?.client.nom.toUpperCase()}
                       </p>
+                      {devis?.client.ice && (
+                        <div className="flex items-center gap-2 ">
+                          <p className="font-medium text-sm">
+                            ICE : {devis?.client.ice}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
