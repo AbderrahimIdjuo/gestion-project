@@ -106,15 +106,7 @@ export default function TransactionDialog() {
     resolver: zodResolver(newTransactionSchema),
   });
   const queryClient = useQueryClient();
-  const returnCompteObject = (compteName) => {
-    if (compteName === "caisse") {
-      return { id: "1", compte: "caisse" };
-    } else if (compteName === "compte personnel") {
-      return { id: "2", compte: "compte personnel" };
-    } else if (compteName === "compte profesionnel") {
-      return { id: "3", compte: "compte profesionnel" };
-    }
-  };
+
   const createTransaction = useMutation({
     mutationFn: async (data) => {
       const { compte, description, lable, montant, numero, type } = data;
@@ -311,19 +303,45 @@ export default function TransactionDialog() {
             )}
 
             {watch("type") === "vider" && (
-              <div className="grid w-full items-center gap-1.5">
-                <Label htmlFor="montant-vider">Montant</Label>
-                <Input
-                  {...register("montant", { valueAsNumber: true })}
-                  className="w-full focus-visible:ring-purple-500"
-                  id="montant-vider"
-                  type="number"
-                  placeholder="0.00 DH"
-                  step="1"
-                />
-              </div>
+              <>
+                <div className="grid w-full items-center gap-1.5">
+                  <Label htmlFor="montant-vider">Montant</Label>
+                  <Input
+                    {...register("montant", { valueAsNumber: true })}
+                    className="w-full focus-visible:ring-purple-500"
+                    id="montant-vider"
+                    type="number"
+                    placeholder="0.00 DH"
+                    step="1"
+                  />
+                </div>
+                <div className="grid w-full items-center gap-1.5">
+                  <Label htmlFor="compte">Compte bancaire</Label>
+                  <Select
+                    value={watch("compte")}
+                    name="compte"
+                    onValueChange={(value) => setValue("compte", value)}
+                  >
+                    <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500 mt-2">
+                      <SelectValue placeholder="Séléctionner..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {comptes.data
+                        ?.filter((c) => c.compte !== "caisse")
+                        .map((element) => (
+                          <SelectItem key={element.id} value={element.compte}>
+                            <div className="flex items-center gap-2">
+                              {element.compte}
+                            </div>
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
             )}
           </div>
+
           <DialogFooter>
             <Button
               className="bg-[#00e701] hover:bg-[#00e701] shadow-lg hover:scale-105 text-white text-md rounded-full font-bold transition-all duration-300 transform"

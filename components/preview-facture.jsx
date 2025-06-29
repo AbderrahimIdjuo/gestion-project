@@ -216,8 +216,8 @@ export default function PreviewFactureDialog({ facture }) {
               )}
 
               {/* Items Table */}
-              <div className="overflow-hidden rounded-md border border-black mt-0">
-                <Table className="w-full border-collapse print:w-full print:min-w-full">
+              <div className="overflow-hidden rounded-md border border-black mt-0 main-table-container">
+              <Table className="w-full border-collapse print:w-full print:min-w-full">
                   <TableHeader className="text-[1rem] border-black">
                     <TableRow>
                       <TableHead

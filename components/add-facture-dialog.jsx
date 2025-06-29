@@ -54,10 +54,22 @@ export default function FactureDialog({ devis, isOpen, onClose }) {
   const [numero, setNumero] = useState(null);
   const queryClient = useQueryClient();
   const router = useRouter();
+
+  function toUTCDateOnly(localDate) {
+    return new Date(
+      Date.UTC(
+        localDate.getFullYear(),
+        localDate.getMonth(),
+        localDate.getDate()
+      )
+    );
+  }
   const createFacture = useMutation({
     mutationFn: async () => {
+      // Ensure UTC midnight before converting to ISO string
+      const fixedDate = toUTCDateOnly(date);
       const data = {
-        date,
+        date: fixedDate.toISOString(),
         devisId: devis.id,
         numero,
       };
@@ -77,7 +89,7 @@ export default function FactureDialog({ devis, isOpen, onClose }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["factures"]);
-      router.push("/ventes/factures")
+      router.push("/ventes/factures");
     },
   });
 

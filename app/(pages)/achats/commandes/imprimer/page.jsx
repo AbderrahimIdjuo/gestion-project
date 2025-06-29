@@ -13,7 +13,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Phone, Calendar } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import PiedDevis from "@/components/pied-devis";
 import LoadingDeviPdf from "@/components/loading-devi-pdf";
 
@@ -42,6 +43,7 @@ function regrouperProduitsParQuantite(groups) {
 }
 export default function DevisPDFPage() {
   const [commande, setCommande] = useState();
+  const [infosVisibilite, setInfosVisibilite] = useState(false);
   useEffect(() => {
     const storedData = localStorage.getItem("commandeFournitures");
     if (storedData) {
@@ -60,7 +62,7 @@ export default function DevisPDFPage() {
 
   return (
     <>
-      {commande ? (
+      {commande && (
         <div className="container mx-auto p-4 max-w-4xl bg-white min-h-screen print:p-0 print:max-w-none mb-10">
           {/* Document Content */}
           <div id="print-area" className="space-y-3">
@@ -71,34 +73,64 @@ export default function DevisPDFPage() {
             </div>
 
             {/* Company and Client Info */}
-            <div className="grid grid-cols-2 gap-8">
-              {/* Devis Info */}
-              <div className="col-span-1">
-                <h1 className="font-bold text-lg text-gray-900">
-                  Commande N° : {commande?.numero}
-                </h1>
-                {commande?.echeance && (
-                  <div className="flex items-center gap-2 mt-2 ">
-                    <Calendar className="h-3 w-3" />
-                    <p className="font-medium text-sm">
-                      <span>Écheance:</span> {formatDate(commande?.echeance)}{" "}
-                    </p>
-                  </div>
-                )}
-              </div>
 
-              {/* Client Info */}
-              <div className="col-span-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <h2 className="font-bold text-lg text-gray-900">
-                    Fournisseur :{" "}
-                  </h2>
-                  <p className="font-bold text-lg text-gray-900">
-                    {commande?.fournisseur?.nom.toUpperCase()}
-                  </p>
+            {infosVisibilite ? (
+              <div className="flex justify-between px-4">
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">
+                    STE OUDAOUDOX SARL
+                  </h3>
+                  <div className="text-sm text-gray-600">
+                    <p>Avenue Jaber Ben Hayane</p>
+                    <p>Bloc A N°01 Hay El Houda • Agadir</p>
+                    <p>Gsm : 06 61 58 53 08 • 06 63 63 72 44</p>
+                    <p>E-mail : inoxoudaoud@gmail.com</p>
+                    <p>RC : 53805 • TP : 67504461</p>
+                    <p>IF : 53290482 • ICE : 003172063000061</p>
+                  </div>
+                </div>
+                <div className="grid grid-rows-2 gap-4">
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">
+                      Fournisseur :
+                    </h3>
+                    <div className="text-sm text-gray-600">
+                      <p>{commande?.fournisseur?.nom.toUpperCase()}</p>
+                    </div>
+                  </div>
+                  <div className="col-span-1">
+                    <h3 className="font-semibold text-gray-900 mb-2">
+                      commande N° : {commande?.numero}
+                    </h3>
+                    <div className="text-sm text-gray-600">
+                      <p>Date : {formatDate(commande?.createdAt)} </p>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="grid grid-cols-2  gap-4">
+                <div className="col-span-1">
+                  <h3 className="font-semibold text-gray-900 mb-2">
+                    commande N° : {commande?.numero}
+                  </h3>
+                  {commande?.echeance && (
+                    <div className="text-sm text-gray-600">
+                      <p>Écheance: : {formatDate(commande?.echeance)} </p>
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">
+                    Fournisseur :
+                  </h3>
+                  <div className="text-sm text-gray-600">
+                    <p>{commande?.fournisseur?.nom.toUpperCase()}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Items Table */}
             <div className="overflow-hidden rounded-md border border-black mt-0">
               <Table className="w-full border-collapse print:w-full print:min-w-full">
@@ -116,10 +148,10 @@ export default function DevisPDFPage() {
                   {regrouperProduitsParQuantite(commande?.groups)?.map(
                     (articl) => (
                       <TableRow key={articl.id}>
-                        <TableCell className=" p-1 text-left border-b border-black text-md font-semibold">
+                        <TableCell className=" p-1 text-left border-t border-black text-md font-semibold">
                           {articl.produit.designation}
                         </TableCell>
-                        <TableCell className="border-l border-b border-black p-1 text-center">
+                        <TableCell className="border-l border-t border-black p-1 text-center">
                           {articl.quantite}
                         </TableCell>
                       </TableRow>
@@ -129,23 +161,33 @@ export default function DevisPDFPage() {
               </Table>
             </div>
 
-            <div className="flex flex-col gap-2">
-              <PiedDevis />
-            </div>
           </div>
-          <div className="print:hidden mt-8 flex justify-end">
+          <div
+            className="flex items-center justify-between print:hidden
+print:hidden mt-5"
+          >
+            <div className="flex items-center space-x-2 ">
+              <Switch
+                id="switch"
+                checked={infosVisibilite}
+                onCheckedChange={setInfosVisibilite}
+              />
+              <Label htmlFor="switch">
+                {infosVisibilite
+                  ? "Informations de la société visibles"
+                  : "Les informations de la société sont masquées"}
+              </Label>
+            </div>
             <Button
+              className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full"
+              variant="outline"
               onClick={handlePrint}
-              className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 rounded-full hover:bg-purple-600 hover:scale-105 text-white font-semibold transition-all duration-300 transform"
             >
-              <Printer className="mr-2 h-4 w-4" />
-              Imprimer
+              <Printer className="mr-2 h-4 w-4" /> Imprimer
             </Button>
           </div>
         </div>
-      ) : (
-        <LoadingDeviPdf />
-      )}
+      ) }
     </>
   );
 }

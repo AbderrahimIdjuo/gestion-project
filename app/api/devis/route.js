@@ -41,7 +41,7 @@ export async function POST(req) {
               width: articl.width || 0,
               designation: articl.designation,
               quantite: articl.quantite,
-              prixUnite: articl.prixUnite,
+              prixUnite: articl.prixUnite || 0,
               montant: articl.quantite * articl.prixUnite,
             })),
           },
@@ -217,8 +217,8 @@ export async function GET(req) {
 
   // Search filter by numero and client name
   filters.OR = [
-    { numero: { contains: searchQuery , mode: "insensitive"  } },
-    { client: { nom: { contains: searchQuery , mode: "insensitive"  } } },
+    { numero: { contains: searchQuery, mode: "insensitive" } },
+    { client: { nom: { contains: searchQuery, mode: "insensitive" } } },
   ];
 
   // Statut filter

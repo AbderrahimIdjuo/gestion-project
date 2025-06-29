@@ -89,13 +89,7 @@ export default function NouveauDevisPage() {
       return comptes;
     },
   });
-  // const lastDevis = useQuery({
-  //   queryKey: ["lastDevis"],
-  //   queryFn: async () => {
-  //     const response = await axios.get("/api/devis/lastDevis");
-  //     return response.data;
-  //   },
-  // });
+
   useEffect(() => {
     const storedData = localStorage.getItem("lastDeviNumber");
     if (storedData) {
@@ -221,86 +215,7 @@ export default function NouveauDevisPage() {
               {/* Header Section */}
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <ComboBoxClients setClient={setClient} client={client} />
-                  {/* <Label htmlFor="customerName">Client*</Label>
-                    <br />
-                    <Popover open={open} onOpenChange={setOpen}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          ref={buttonRef}
-                          variant="outline"
-                          role="combobox"
-                          aria-expanded={open}
-                          className="w-full justify-between mt-2"
-                        >
-                          {watch("client")
-                            ? watch("client").nom.toUpperCase()
-                            : "Sélectionner..."}
-                          <ChevronDown className="opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent
-                        style={{ width: buttonWidth }}
-                        className="w-auto min-w-[25vw] p-0"
-                      >
-                        <Command>
-                          <CommandInput
-                            placeholder="Chercher un client..."
-                            className="h-9"
-                            value={searchQuery}
-                            onValueChange={setSearchQuery}
-                          />
-                          <CommandList>
-                            {isLoading ? (
-                              <div className="flex justify-center p-2">
-                                <span className="px-5 pb-5 text-gray-400 text-sm text-center">
-                                  Chargement...
-                                </span>
-                              </div>
-                            ) : clients.length === 0 ? (
-                              <CommandEmpty>
-                                <span>Aucun client trouvé.</span>
-                              </CommandEmpty>
-                            ) : (
-                              <>
-                                <ScrollArea
-                                  className="h-72 w-full"
-                                  ref={scrollAreaRef}
-                                >
-                                  <CommandGroup>
-                                    {clients.map((client) => (
-                                      <CommandItem
-                                        name="client"
-                                        key={client.id}
-                                        value={client.nom}
-                                        onSelect={() => {
-                                          setOpen(false);
-                                          setValue("client", client);
-                                          setValue("clientId", client.id);
-                                          generateDeviNumber();
-                                        }}
-                                      >
-                                        {client.nom.toUpperCase()}
-                                      </CommandItem>
-                                    ))}
-                                    <div
-                                      ref={ref}
-                                      className="flex justify-center p-2"
-                                    ></div>
-                                  </CommandGroup>
-                                  {isFetchingNextPage && (
-                                    <span className="px-5 pb-5 text-gray-400 text-sm text-center">
-                                      Chargement...
-                                    </span>
-                                  )}
-                                </ScrollArea>
-                              </>
-                            )}
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover> */}
-
+                  <ComboBoxClients setClient={setClient} client={client} />               
                   {errors.clientId && (
                     <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
                       <CircleX className="h-4 w-4" />
@@ -564,7 +479,7 @@ export default function NouveauDevisPage() {
                               </TableCell>
                               <TableCell>
                                 <Input
-                                  defaultValue={item.prixUnite}
+                                  defaultValue={0}
                                   onChange={(e) => {
                                     handleItemChange(
                                       item.key,

@@ -16,13 +16,6 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Table,
   TableBody,
   TableCell,
@@ -30,20 +23,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, Pen, Trash2, Filter, Printer } from "lucide-react";
-import { UpdateAchatCommandeForm } from "@/components/update-achat-commande-form";
+import { Search, Trash2, Filter, Printer } from "lucide-react";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
-import { AchatCommandesForm } from "@/components/achat-many-commande-form";
 import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { PriceRangeSlider } from "@/components/customUi/customSlider";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import AddCommandeFournisseur from "@/components/add-commande-fournisseur";
-import PreviewFactureDialog from "@/components/preview-facture";
-import PrintCommandeFournitureDialog from "@/components/print-commandeFourniture";
 import CustomTooltip from "@/components/customUi/customTooltip";
-import UpdateCommandeFournisseur from "@/components/update-commande-fournisseur";
+import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
+function toUTCDateOnly(localDate) {
+  return new Date(
+    Date.UTC(localDate.getFullYear(), localDate.getMonth(), localDate.getDate())
+  );
+}
 function formatDate(dateString) {
   return dateString?.split("T")[0].split("-").reverse().join("-");
 }
@@ -105,13 +97,19 @@ export default function Factures() {
       filters.statutPaiement,
     ],
     queryFn: async () => {
+      const fixedfrom = startDate
+        ? toUTCDateOnly(startDate).toISOString()
+        : undefined;
+      const fixedto = endDate
+        ? toUTCDateOnly(endDate).toISOString()
+        : undefined;
       const response = await axios.get("/api/factures", {
         params: {
           query: debouncedQuery,
           page,
           statut: filters.statut,
-          from: startDate,
-          to: endDate,
+          from: fixedfrom,
+          to: fixedto,
           minTotal: filters.montant[0],
           maxTotal: filters.montant[1],
           categorie: encodeURIComponent(filters.categorie),
@@ -119,6 +117,7 @@ export default function Factures() {
         },
       });
       console.log("factures", response.data.factures);
+      setMaxMontant(response.data.maxMontant);
       setTotalPages(response.data.totalPages);
       return response.data.factures;
     },
@@ -133,8 +132,8 @@ export default function Factures() {
         await axios.delete(`/api/factures/${currFacture.id}`);
         toast(
           <span>
-            La facture numéro : <b>{currFacture?.numero.toUpperCase()}</b> a
-            été supprimé avec succès!
+            La facture numéro : <b>{currFacture?.numero.toUpperCase()}</b> a été
+            supprimé avec succès!
           </span>,
           {
             icon: "🗑️",
@@ -208,7 +207,7 @@ export default function Factures() {
             </div>
           </div>
           <div className="flex space-x-2">
-            {/* <Sheet>
+            <Sheet>
               <SheetTrigger asChild>
                 <Button
                   variant="outline"
@@ -227,87 +226,21 @@ export default function Factures() {
                   </SheetDescription>
                 </SheetHeader>
                 <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
+                  <div className="grid grid-cols-4 items-center gap-4 my-2">
                     <Label
-                      htmlFor="categorie"
-                      className="text-right text-black"
+                      htmlFor="statut"
+                      className="col-span-1 text-left text-black"
                     >
-                      Catégorie
+                      Date :
                     </Label>
-                    <Select
-                      value={filters.categorie}
-                      onValueChange={(value) =>
-                        setFilters({ ...filters, categorie: value })
-                      }
-                    >
-                      <SelectTrigger className="col-span-3  bg-white focus:ring-purple-500">
-                        <SelectValue placeholder="Toutes les catégories" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white">
-                        <SelectItem key="all" value="all">
-                          Toutes les catégories
-                        </SelectItem>
-                        {categories.data?.map((element) => (
-                          <SelectItem
-                            key={element.id}
-                            value={element.categorie}
-                          >
-                            {element.categorie}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4 my-2">
-                    <Label htmlFor="statut" className="text-right text-black">
-                      Statut de paiement
-                    </Label>
-                    <Select
-                      value={filters.statutPaiement}
-                      name="statut"
-                      onValueChange={(value) =>
-                        setFilters({ ...filters, statutPaiement: value })
-                      }
-                    >
-                      <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
-                        <SelectValue placeholder="Séléctionner un statut" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {statusPaiement.map((statut, index) => (
-                          <SelectItem key={index} value={statut.value}>
-                            {statut.lable}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4 my-2">
-                    <Label htmlFor="statut" className="text-right text-black">
-                      Statut de livraison
-                    </Label>
-                    <Select
-                      value={filters.statut}
-                      name="statut"
-                      onValueChange={(value) =>
-                        setFilters({ ...filters, statut: value })
-                      }
-                    >
-                      <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
-                        <SelectValue placeholder="Séléctionner un statut" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {status.map((statut, index) => (
-                          <SelectItem key={index} value={statut.value}>
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={`h-2 w-2 rounded-full bg-${statut.color}`}
-                              />
-                              {statut.lable}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="col-span-3">
+                      <CustomDateRangePicker
+                        startDate={startDate}
+                        setStartDate={setStartDate}
+                        endDate={endDate}
+                        setEndDate={setEndDate}
+                      />
+                    </div>
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4 my-2">
                     <Label htmlFor="montant" className="text-right text-black">
@@ -331,7 +264,7 @@ export default function Factures() {
                   </div>
                 </div>
               </SheetContent>
-            </Sheet> */}
+            </Sheet>
             {/* <AddCommandeFournisseur /> */}
           </div>
         </div>
@@ -344,6 +277,7 @@ export default function Factures() {
                 <TableRow>
                   <TableHead>Date</TableHead>
                   <TableHead>Numéro</TableHead>
+                  <TableHead>Montant</TableHead>
                   <TableHead>Devis</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -366,10 +300,11 @@ export default function Factures() {
                       <TableCell className="!py-2" align="left">
                         <Skeleton className="h-4 w-full" />
                       </TableCell>
+                      <TableCell className="!py-2" align="left">
+                        <Skeleton className="h-4 w-full" />
+                      </TableCell>
                       <TableCell className="!py-2">
                         <div className="flex gap-2 justify-end">
-                          <Skeleton className="h-7 w-7 rounded-full" />
-                          <Skeleton className="h-7 w-7 rounded-full" />
                           <Skeleton className="h-7 w-7 rounded-full" />
                           <Skeleton className="h-7 w-7 rounded-full" />
                         </div>
@@ -387,14 +322,31 @@ export default function Factures() {
                         {facture.numero}
                       </TableCell>
                       <TableCell className="text-md !py-2">
+                        {facture.devis.total} MAD
+                      </TableCell>
+                      <TableCell className="text-md !py-2">
                         {facture.devis.numero}
                       </TableCell>
                       <TableCell className="text-right !py-2">
                         <div className="flex justify-end gap-2">
-                          <CustomTooltip message="Visualiser">
-                            <PreviewFactureDialog
-                              facture={facture}
-                            />
+                          <CustomTooltip message="imprimer">
+                            <Button
+                              name="delete btn"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 rounded-full hover:bg-green-100 hover:text-green-600"
+                              onClick={() => {
+                                localStorage.setItem(
+                                  "facture",
+                                  JSON.stringify(facture)
+                                );
+                                window.open(`/ventes/factures/imprimer`, "_blank");
+                                setCurrFacture(facture);
+                              }}
+                            >
+                              <Printer className="h-4 w-4" />
+                              <span className="sr-only">Imprimer</span>
+                            </Button>
                           </CustomTooltip>
                           <CustomTooltip message="Supprimer">
                             <Button
@@ -417,8 +369,24 @@ export default function Factures() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={10} align="center">
-                      Aucune facture trouvé
+                    <TableCell colSpan={5} align="center">
+                      <div className="text-center py-10 text-muted-foreground">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth={1.5}
+                          stroke="currentColor"
+                          className="size-14 mx-auto mb-4 opacity-50"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m5.231 13.481L15 17.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v16.5c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Zm3.75 11.625a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"
+                          />
+                        </svg>
+                        <p>Aucune facture trouvé</p>
+                      </div>
                     </TableCell>
                   </TableRow>
                 )}

@@ -4,6 +4,8 @@ import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
 import { useState } from "react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -99,6 +101,8 @@ function nombreEnLettres(n) {
 
 export default function DevisPDFPage() {
   const [devi, setDevi] = useState();
+  const [infosVisibilite, setInfosVisibilite] = useState(false);
+
   useEffect(() => {
     const storedData = localStorage.getItem("devi");
     if (storedData) {
@@ -147,37 +151,62 @@ export default function DevisPDFPage() {
             </div>
 
             {/* Company and Client Info */}
-            <div className="grid grid-cols-2 gap-8">
-              {/* Devis Info */}
-              <div className="col-span-1">
-                <h1 className="font-bold text-lg text-gray-900">
-                  DEVIS N° : {devi?.numero}
-                </h1>
-                <div className="flex items-center gap-2 mt-2 ">
-                  <Calendar className="h-3 w-3" />
-                  <p className="font-medium text-sm">
-                    <span>Date de création:</span> {formatDate(devi?.createdAt)}{" "}
-                  </p>
+            {infosVisibilite ? (
+              <div className="flex justify-between px-4">
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">
+                    STE OUDAOUDOX SARL
+                  </h3>
+                  <div className="text-sm text-gray-600">
+                    <p>Avenue Jaber Ben Hayane</p>
+                    <p>Bloc A N°01 Hay El Houda • Agadir</p>
+                    <p>Gsm : 06 61 58 53 08 • 06 63 63 72 44</p>
+                    <p>E-mail : inoxoudaoud@gmail.com</p>
+                  </div>
+                </div>
+                <div className="grid grid-rows-2 gap-4">
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">
+                      Client:
+                    </h3>
+                    <div className="text-sm text-gray-600">
+                      <p>
+                        {devi?.client.titre && devi?.client.titre + ". "}
+                        {devi?.client.nom.toUpperCase()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="col-span-1">
+                    <h3 className="font-semibold text-gray-900 mb-2">
+                      Devis N° : {devi?.numero}
+                    </h3>
+                    <div className="text-sm text-gray-600">
+                      <p>Date : {formatDate(devi?.createdAt)} </p>
+                    </div>
+                  </div>
                 </div>
               </div>
-
-              {/* Client Info */}
-              <div className="col-span-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <h2 className="font-bold text-lg text-gray-900">Client : </h2>
-                  <p className="font-bold text-lg text-gray-900">
-                    {devi?.client.titre && devi?.client.titre + ". "}
-                    {devi?.client.nom.toUpperCase()}
-                  </p>
+            ) : (
+              <div className="grid grid-cols-2  gap-4">
+                <div className="col-span-1">
+                  <h3 className="font-semibold text-gray-900 mb-2">
+                    Devis N° : {devi?.numero}
+                  </h3>
+                  <div className="text-sm text-gray-600">
+                    <p>Date : {formatDate(devi?.createdAt)} </p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 ">
-                  <Phone className="h-3 w-3" />
-                  <p className="font-medium text-sm">
-                    {formatPhoneNumber(devi?.client?.telephone)}
-                  </p>
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">Client:</h3>
+                  <div className="text-sm text-gray-600">
+                    <p>
+                      {devi?.client.titre && devi?.client.titre + ". "}
+                      {devi?.client.nom.toUpperCase()}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
             {/* Items Table */}
             <div className="overflow-hidden rounded-md border border-black mt-0 main-table-container">
               <Table className="w-full border-collapse print:w-full print:min-w-full">
@@ -260,13 +289,13 @@ export default function DevisPDFPage() {
                   <TableRow>
                     <TableCell
                       colSpan={6}
-                      className="border-b border-black p-2 text-right font-bold"
+                      className="border-black p-2 text-right font-bold"
                     >
                       Total H.T :
                     </TableCell>
                     <TableCell
                       colSpan={2}
-                      className="border-l border-b border-black p-2 text-left font-bold"
+                      className="border-l border-black p-2 text-left font-bold"
                     >
                       {devi?.sousTotal.toFixed(2)} DH
                     </TableCell>
@@ -275,13 +304,13 @@ export default function DevisPDFPage() {
                     <TableRow>
                       <TableCell
                         colSpan={6}
-                        className=" border-b border-black p-2 text-right font-bold"
+                        className=" border-t border-black p-2 text-right font-bold"
                       >
                         Réduction :
                       </TableCell>
                       <TableCell
                         colSpan={2}
-                        className="border-l border-b border-black p-2 text-left font-bold"
+                        className="border-l border-t border-black p-2 text-left font-bold"
                       >
                         {devi?.reduction} {devi?.typeReduction}
                       </TableCell>
@@ -294,13 +323,13 @@ export default function DevisPDFPage() {
                       <TableRow>
                         <TableCell
                           colSpan={6}
-                          className="border-b border-black p-2 text-right font-bold"
+                          className="border-t border-black p-2 text-right font-bold"
                         >
                           TVA :
                         </TableCell>
                         <TableCell
                           colSpan={2}
-                          className="border-l border-b border-black p-2 text-left font-bold"
+                          className="border-l border-t border-black p-2 text-left font-bold"
                         >
                           {devi?.tva.toFixed(2)} DH
                         </TableCell>
@@ -308,13 +337,13 @@ export default function DevisPDFPage() {
                       <TableRow>
                         <TableCell
                           colSpan={6}
-                          className="text-lg text-gray-900 p-2 text-right font-extrabold"
+                          className="text-lg border-t border-black text-gray-900 p-2 text-right font-extrabold"
                         >
                           Total TTC :
                         </TableCell>
                         <TableCell
                           colSpan={2}
-                          className="border-l border-black p-2 text-lg text-gray-900 text-left font-extrabold"
+                          className="border-l border-t border-black p-2 text-lg text-gray-900 text-left font-extrabold"
                         >
                           {devi?.total.toFixed(2)} DH
                         </TableCell>
@@ -394,16 +423,30 @@ export default function DevisPDFPage() {
                   </h3>
                 </div>
               </div>
-              <PiedDevis />
             </div>
           </div>
-          <div className="print:hidden mt-8 flex justify-end">
+          <div
+            className="flex items-center justify-between print:hidden
+print:hidden mt-5"
+          >
+            <div className="flex items-center space-x-2 ">
+              <Switch
+                id="switch"
+                checked={infosVisibilite}
+                onCheckedChange={setInfosVisibilite}
+              />
+              <Label htmlFor="switch">
+                {infosVisibilite
+                  ? "Informations de la société visibles"
+                  : "Les informations de la société sont masquées"}
+              </Label>
+            </div>
             <Button
+              className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full"
+              variant="outline"
               onClick={handlePrint}
-              className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 rounded-full hover:bg-purple-600 hover:scale-105 text-white font-semibold transition-all duration-300 transform"
             >
-              <Printer className="mr-2 h-4 w-4" />
-              Imprimer
+              <Printer className="mr-2 h-4 w-4" /> Imprimer
             </Button>
           </div>
         </div>

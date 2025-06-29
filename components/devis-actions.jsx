@@ -147,21 +147,9 @@ export function DevisActions({
           >
             <Printer className="h-4 w-4 text-amber-600" />
             <span className="transition-colors duration-200 group-hover:text-amber-600 group-hover:bg-amber-100">
-              Imprimer un devis
+              Imprimer
             </span>
           </DropdownMenuItem>
-          {/* <DropdownMenuItem
-            onClick={() => {
-              window.open(`/ventes/devis/${devis.id}/facture`, "_blank");
-              localStorage.setItem("devi", JSON.stringify(devis));
-            }}
-            className="flex items-center gap-2 cursor-pointer group hover:!bg-emerald-100"
-          >
-            <PrinterCheck className="h-4 w-4 text-emerald-600" />
-            <span className="transition-colors duration-200 group-hover:text-emerald-600 group-hover:bg-emerald-100">
-              Imprimer une facture
-            </span>
-          </DropdownMenuItem> */}
           <DropdownMenuItem
             onClick={() => {
               setIsFactureOpen(true);

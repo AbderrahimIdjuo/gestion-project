@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
-import { ModifyFournisseurDialog } from "@/components/modify-fournisseur-dialog ";
+import { ModifyFournisseur } from "@/components/modify-fournisseur-dialog";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import {
   Table,
@@ -16,10 +16,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import CustomPagination from "@/components/customUi/customPagination";
-import { Search, Plus, Pen, Trash2, X , Upload} from "lucide-react";
+import { Search, Trash2, Upload } from "lucide-react";
 import { FournisseurFormDialog } from "@/components/fournisseur-form-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LoadingDots } from "@/components/loading-dots";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -29,8 +28,6 @@ export default function FournisseursPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currFournisseur, setCurrFournisseur] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isAddingFournisseur, setIsAddingFournisseur] = useState(false);
-  const [isUpdatingFournisseur, setIsUpdatingFournisseur] = useState(false);
   const [page, setPage] = useState(1);
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [totalPages, setTotalPages] = useState();
@@ -124,300 +121,141 @@ export default function FournisseursPage() {
                 Importer
               </Button>
             </ImportFournisseurs>
-            {/* Botton d'ajout de fournisseur */}
-            <Button
-              onClick={() => {
-                setIsAddingFournisseur(!isAddingFournisseur);
-                if (isUpdatingFournisseur) {
-                  setIsUpdatingFournisseur(false);
-                  setIsAddingFournisseur(false);
-                }
-              }}
-              className={`${
-                isAddingFournisseur || isUpdatingFournisseur
-                  ? "bg-red-500 hover:bg-red-600"
-                  : "bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 "
-              } text-white font-semibold transition-all duration-300 transform hover:scale-105 rounded-full`}
-            >
-              {isAddingFournisseur || isUpdatingFournisseur ? (
-                <>
-                  <X className="mr-2 h-4 w-4" />
-                  Annuler
-                </>
-              ) : (
-                <>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Nouveau Fournisseur
-                </>
-              )}
-            </Button>
+            <FournisseurFormDialog />
           </div>
         </div>
 
-        <div
-          className={`grid ${
-            isAddingFournisseur || isUpdatingFournisseur
-              ? "grid-cols-3 gap-6"
-              : "grid-cols-1"
-          }`}
-        >
-          <div className="col-span-2">
-            <div
-              className={`grid gap-3 border mb-3 rounded-lg ${
-                isAddingFournisseur || isUpdatingFournisseur ? "hidden" : ""
-              } `}
-            >
-              {/* the full table  */}
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nom</TableHead>
-                    <TableHead>ICE</TableHead>
-                    <TableHead>Téléphone</TableHead>
-                    <TableHead>Adresse</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {fournisseurs.isLoading ? (
-                    [...Array(10)].map((_, index) => (
-                      <TableRow
-                        className="h-[2rem] MuiTableRow-root"
-                        role="checkbox"
-                        tabIndex={-1}
-                        key={index}
+        <div className="col-span-2">
+          <div className="border mb-3 rounded-lg">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nom</TableHead>
+                  <TableHead>ICE</TableHead>
+                  <TableHead>Téléphone</TableHead>
+                  <TableHead>Adresse</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {fournisseurs.isLoading ? (
+                  [...Array(10)].map((_, index) => (
+                    <TableRow
+                      className="h-[2rem] MuiTableRow-root"
+                      role="checkbox"
+                      tabIndex={-1}
+                      key={index}
+                    >
+                      <TableCell
+                        className="!py-2 text-sm md:text-base"
+                        align="left"
                       >
-                        <TableCell
-                          className="!py-2 text-sm md:text-base"
-                          align="left"
-                        >
-                          <Skeleton className="h-4 w-[150px]" />
-                        </TableCell>
-                        <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-[150px]" />
-                        </TableCell>
-                        <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-[150px]" />
-                        </TableCell>
-                        <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-[150px]" />
-                        </TableCell>
-                        <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-[150px]" />
-                        </TableCell>
-                        <TableCell className="!py-2">
-                          <div className="flex gap-2 justify-end">
-                            <Skeleton className="h-7 w-7 rounded-full" />
-                            <Skeleton className="h-7 w-7 rounded-full" />
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : fournisseurs.data?.length > 0 ? (
-                    fournisseurs.data.map((fournisseur) => (
-                      <TableRow
-                        className="font-medium"
-                        key={fournisseur.id}
-                      >
-                        <TableCell className="font-medium hover:text-purple-500 cursor-pointer !py-2">
-                          <div className="flex flex-row gap-2 justify-start items-center">
-                            <Avatar className="w-10 h-10">
-                              <AvatarImage
-                                src={`https://api.dicebear.com/7.x/initials/svg?seed=${fournisseur.nom}`}
-                              />
-                              <AvatarFallback>
-                                {getInitials(fournisseur.nom)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <h2 className="text-sm font-bold">
-                              {fournisseur.nom.toUpperCase()}
-                            </h2>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-md !py-2">
-                          {fournisseur.ice}
-                        </TableCell>
-                        <TableCell className="text-md !py-2">
-                          {fournisseur.telephone}
-                        </TableCell>
-                        <TableCell className="text-md !py-2">
-                          {fournisseur.adresse}
-                        </TableCell>
-                        <TableCell className="text-md !py-2">
-                          {fournisseur.email}
-                        </TableCell>
-                        <TableCell className="text-right !py-2">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
-                              onClick={() => {
-                                setCurrFournisseur(fournisseur);
-                                setIsUpdatingFournisseur(true);
-                                setIsAddingFournisseur(false);
-                              }}
-                            >
-                              <Pen className="h-4 w-4" />
-                              <span className="sr-only">Modifier</span>
-                            </Button>
-                            <Button
-                              name="delete btn"
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
-                              onClick={() => {
-                                setIsDialogOpen(true);
-                                setCurrFournisseur(fournisseur);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              <span className="sr-only">Supprimer</span>
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableCell colSpan={7} align="center">
-                      Aucun fournisseur trouvé
-                    </TableCell>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-
-            {/* the half table with the name and Action columns */}
-            <ScrollArea
-              className={`h-[35rem] w-full  grid gap-3  border mb-3 rounded-lg ${
-                !isAddingFournisseur && !isUpdatingFournisseur ? "hidden" : ""
-              } `}
-            >
-              <div>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Fournisseur</TableHead>
-
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {fournisseurs.isLoading ? (
-                      [...Array(10)].map((_, index) => (
-                        <TableRow
-                          className="h-[2rem] MuiTableRow-root"
-                          role="checkbox"
-                          tabIndex={-1}
-                          key={index}
-                        >
-                          <TableCell
-                            className="!py-2 text-sm md:text-base"
-                            align="left"
-                          >
-                            <Skeleton className="h-4 w-[150px]" />
-                          </TableCell>
-                          <TableCell className="!py-2">
-                            <div className="flex gap-2 justify-end">
-                              <Skeleton className="h-7 w-7 rounded-full" />
-                              <Skeleton className="h-7 w-7 rounded-full" />
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : fournisseurs.data?.length > 0 ? (
-                      fournisseurs.data.map((fournisseur) => (
-                        <TableRow key={fournisseur.id}>
-                          <TableCell className="font-medium cursor-pointer hover:text-purple-600">
-                            <div className="flex flex-row gap-2 justify-start items-center">
-                              <Avatar className="w-10 h-10">
-                                <AvatarImage
-                                  src={`https://api.dicebear.com/7.x/initials/svg?seed=${fournisseur.nom}`}
-                                />
-                                <AvatarFallback>
-                                  {getInitials(fournisseur.nom)}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div className="grid grid-rows-2">
-                                <h2 className="text-sm font-bold">
-                                  {fournisseur.nom.toUpperCase()}
-                                </h2>
-
-                                <p className="text-sm text-muted-foreground">
-                                  {fournisseur.telephone}
-                                </p>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
-                                onClick={() => {
-                                  setCurrFournisseur(fournisseur);
-                                  setIsUpdatingFournisseur(true);
-                                  setIsAddingFournisseur(false);
-                                }}
-                              >
-                                <Pen className="h-4 w-4" />
-                                <span className="sr-only">Modifier</span>
-                              </Button>
-                              <Button
-                                name="delete btn"
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
-                                onClick={() => {
-                                  setIsDialogOpen(true);
-                                  setCurrFournisseur(fournisseur);
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                <span className="sr-only">Supprimer</span>
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableCell colSpan={7} align="center">
-                        Aucun fournisseur trouvé
+                        <Skeleton className="h-4 w-[150px]" />
                       </TableCell>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </ScrollArea>
-            {fournisseurs.data?.length > 0 ? (
-              <CustomPagination
-                currentPage={page}
-                setCurrentPage={setPage}
-                totalPages={totalPages}
-              />
-            ) : (
-              ""
-            )}
+                      <TableCell className="!py-2" align="left">
+                        <Skeleton className="h-4 w-[150px]" />
+                      </TableCell>
+                      <TableCell className="!py-2" align="left">
+                        <Skeleton className="h-4 w-[150px]" />
+                      </TableCell>
+                      <TableCell className="!py-2" align="left">
+                        <Skeleton className="h-4 w-[150px]" />
+                      </TableCell>
+                      <TableCell className="!py-2" align="left">
+                        <Skeleton className="h-4 w-[150px]" />
+                      </TableCell>
+                      <TableCell className="!py-2">
+                        <div className="flex gap-2 justify-end">
+                          <Skeleton className="h-7 w-7 rounded-full" />
+                          <Skeleton className="h-7 w-7 rounded-full" />
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : fournisseurs.data?.length > 0 ? (
+                  fournisseurs.data.map((fournisseur) => (
+                    <TableRow className="font-medium" key={fournisseur.id}>
+                      <TableCell className="font-medium hover:text-purple-500 cursor-pointer !py-2">
+                        <div className="flex flex-row gap-2 justify-start items-center">
+                          <Avatar className="w-10 h-10">
+                            <AvatarImage
+                              src={`https://api.dicebear.com/7.x/initials/svg?seed=${fournisseur.nom}`}
+                            />
+                            <AvatarFallback>
+                              {getInitials(fournisseur.nom)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <h2 className="text-sm font-bold">
+                            {fournisseur.nom.toUpperCase()}
+                          </h2>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-md !py-2">
+                        {fournisseur.ice}
+                      </TableCell>
+                      <TableCell className="text-md !py-2">
+                        {fournisseur.telephone}
+                      </TableCell>
+                      <TableCell className="text-md !py-2">
+                        {fournisseur.adresse}
+                      </TableCell>
+                      <TableCell className="text-md !py-2">
+                        {fournisseur.email}
+                      </TableCell>
+                      <TableCell className="text-right !py-2">
+                        <div className="flex justify-end gap-2">
+                          <ModifyFournisseur currFournisseur={fournisseur} />
+                          <Button
+                            name="delete btn"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
+                            onClick={() => {
+                              setIsDialogOpen(true);
+                              setCurrFournisseur(fournisseur);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            <span className="sr-only">Supprimer</span>
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableCell colSpan={7} align="center">
+                    <div className="text-center py-10 text-muted-foreground">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.5}
+                        stroke="currentColor"
+                        className="size-14 mx-auto mb-4 opacity-50"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m5.231 13.481L15 17.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v16.5c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Zm3.75 11.625a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"
+                        />
+                      </svg>
+                      <p>Aucun fournisseur trouvé</p>
+                    </div>
+                  </TableCell>
+                )}
+              </TableBody>
+            </Table>
           </div>
-          <div className={`${!isUpdatingFournisseur && "hidden"} `}>
-            <ScrollArea className="w-full h-[85vh]">
-              {isUpdatingFournisseur && (
-                <ModifyFournisseurDialog
-                  currFournisseur={currFournisseur}
-                  fournisseurList={fournisseurs.data}
-                />
-              )}
-            </ScrollArea>
-          </div>
-          <div className={`${!isAddingFournisseur && "hidden"} `}>
-            <ScrollArea className="w-full h-[85vh]">
-              {isAddingFournisseur && (
-                <FournisseurFormDialog fournisseurList={fournisseurs.data} />
-              )}
-            </ScrollArea>
-          </div>
+          {fournisseurs.data?.length > 0 ? (
+            <CustomPagination
+              currentPage={page}
+              setCurrentPage={setPage}
+              totalPages={totalPages}
+            />
+          ) : (
+            ""
+          )}
         </div>
       </div>
       <DeleteConfirmationDialog

@@ -52,54 +52,53 @@ export function DataTable<TData, TValue>({
     getCoreRowModel: getCoreRowModel(),
   });
 
- function getHeaderLabel(column: any) {
-  const header = column.columnDef.header;
+  function getHeaderLabel(column: any) {
+    const header = column.columnDef.header;
 
-  // Si header est une string → OK
-  if (typeof header === "string") return header;
+    // Si header est une string → OK
+    if (typeof header === "string") return header;
 
-  // Si header est un élément React, on essaie de lire son contenu
-  if (React.isValidElement(header)) {
-    const element = header as React.ReactElement;
-    return typeof element.props.children === "string"
-      ? element.props.children
-      : column.id;
+    // Si header est un élément React, on essaie de lire son contenu
+    if (React.isValidElement(header)) {
+      const element = header as React.ReactElement;
+      return typeof element.props.children === "string"
+        ? element.props.children
+        : column.id;
+    }
+
+    // Sinon on retourne l'ID comme fallback
+    return column.id;
   }
-
-  // Sinon on retourne l'ID comme fallback
-  return column.id;
-}
-
 
   return (
     <div>
       <div className="flex justify-end items-center py-2">
         <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="ml-auto rounded-full">
-                Colonnes
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {table
-                .getAllColumns()
-                .filter((column) => column.getCanHide())
-                .map((column) => {
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      className="capitalize"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) =>
-                        column.toggleVisibility(!!value)
-                      }
-                    >
-                      {getHeaderLabel(column)}
-                    </DropdownMenuCheckboxItem>
-                  );
-                })}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="ml-auto rounded-full">
+              Colonnes
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {table
+              .getAllColumns()
+              .filter((column) => column.getCanHide())
+              .map((column) => {
+                return (
+                  <DropdownMenuCheckboxItem
+                    key={column.id}
+                    className="capitalize"
+                    checked={column.getIsVisible()}
+                    onCheckedChange={(value) =>
+                      column.toggleVisibility(!!value)
+                    }
+                  >
+                    {getHeaderLabel(column)}
+                  </DropdownMenuCheckboxItem>
+                );
+              })}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
       <div className="rounded-md border">
         <Table>
@@ -144,7 +143,23 @@ export function DataTable<TData, TValue>({
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  aucun BL trouvé.
+                  <div className="text-center py-10 text-muted-foreground">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                      className="size-14 mx-auto mb-4 opacity-50"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m5.231 13.481L15 17.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v16.5c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Zm3.75 11.625a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"
+                      />
+                    </svg>
+                    <p>Aucun bon trouvé</p>
+                  </div>
                 </TableCell>
               </TableRow>
             )}

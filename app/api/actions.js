@@ -124,6 +124,12 @@ export async function addtransaction(data) {
           solde: { decrement: montant },
         },
       });
+      await prisma.comptesBancaires.updateMany({
+        where: { compte: compte },
+        data: {
+          solde: { increment: montant },
+        },
+      });
     } else if (type === "depense" || type === "recette") {
       // Mise à jour d'un compte bancaire
       await prisma.comptesBancaires.updateMany({

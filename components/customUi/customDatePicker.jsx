@@ -16,7 +16,9 @@ export function CustomDatePicker({ date, onDateChange }) {
   // Handle date changes internally and pass them to the `onDateChange` prop
   const handleDateSelect = (selectedDate) => {
     if (onDateChange) {
-      onDateChange(selectedDate); // Call the parent-provided handler
+    onDateChange(selectedDate); // Call the parent-provided handler
+
+
     }
   };
 

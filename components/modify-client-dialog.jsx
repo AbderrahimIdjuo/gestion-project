@@ -108,7 +108,7 @@ export function ModifyClientDialog({ currClient }) {
           <DialogHeader>
             <DialogTitle>Modifier un client</DialogTitle>
             <DialogDescription>
-              Modifier les informations du nouveau client ici. Cliquez sur
+              Modifier les informations du client ici. Cliquez sur
               enregistrer lorsque vous avez terminé.
             </DialogDescription>
           </DialogHeader>

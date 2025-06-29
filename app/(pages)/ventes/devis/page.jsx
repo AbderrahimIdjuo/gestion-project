@@ -16,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, Pen, Trash2, Filter, Printer, FilePlus } from "lucide-react";
+import { Search, Pen, Trash2, Filter, Printer, FileText } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -42,6 +42,12 @@ import { LoadingDots } from "@/components/loading-dots";
 import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { DevisActions } from "@/components/devis-actions";
+
+function toUTCDateOnly(localDate) {
+  return new Date(
+    Date.UTC(localDate.getFullYear(), localDate.getMonth(), localDate.getDate())
+  );
+}
 
 export default function DevisPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -86,13 +92,19 @@ export default function DevisPage() {
       filters.montant,
     ],
     queryFn: async () => {
+      const fixedfrom = startDate
+        ? toUTCDateOnly(startDate).toISOString()
+        : undefined;
+      const fixedto = endDate
+        ? toUTCDateOnly(endDate).toISOString()
+        : undefined;
       const response = await axios.get("/api/devis", {
         params: {
           query: debouncedQuery,
           page,
           statut: filters.statut,
-          from: startDate,
-          to: endDate,
+          from: fixedfrom,
+          to: fixedto,
           minTotal: filters.montant[0],
           maxTotal: filters.montant[1],
         },
@@ -143,7 +155,7 @@ export default function DevisPage() {
           </span>,
           { icon: "🗑️" }
         );
-        console.log("devi supprimée avec succès !");
+        // console.log("devi supprimée avec succès !");
       } catch (error) {
         console.error("Erreur lors de la suppression :", error);
         toast.error("Échec de la suppression");
@@ -173,11 +185,11 @@ export default function DevisPage() {
   const orderGroups = useQuery({
     queryKey: ["orderGroups", currentDevi],
     queryFn: async () => {
-      console.log("Fetching order groups for devis:", currentDevi?.numero);
+      // console.log("Fetching order groups for devis:", currentDevi?.numero);
       const response = await axios.get(
         `/api/orderGroups/${currentDevi?.numero}`
       );
-      console.log("commandesFourniture", response.data.orderGroups);
+      // console.log("commandesFourniture", response.data.orderGroups);
       //setOrderGroupsList(response.data.orderGroups);
       return response.data.orderGroups;
     },
@@ -201,8 +213,8 @@ export default function DevisPage() {
     //   console.log("Filtered Orders:", list);
     return list;
   };
-  console.log("Orders:", ordersGroups);
-  console.log("Filtered Orders:", filteredOrders("DEV-9"));
+  //console.log("Orders:", ordersGroups);
+  // console.log("Filtered Orders:", filteredOrders("DEV-9"));
 
   const totalPaye = (numero) => {
     const trans = transactions?.filter((c) => c.reference === numero);
@@ -299,7 +311,7 @@ export default function DevisPage() {
                   </div>
                   <div className="grid grid-cols-4 items-start gap-4 my-4">
                     <Label htmlFor="montant" className="text-left text-black">
-                      Montant :
+                      Montant total :
                     </Label>
                     <div className="col-span-3">
                       <PriceRangeSlider
@@ -449,8 +461,24 @@ export default function DevisPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={7} align="center">
-                    Aucun devi trouvé
+                  <TableCell colSpan={10} align="center">
+                    <div className="text-center py-10 text-muted-foreground">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.5}
+                        stroke="currentColor"
+                        className="size-14 mx-auto mb-4 opacity-50"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m5.231 13.481L15 17.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v16.5c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Zm3.75 11.625a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"
+                        />
+                      </svg>
+                      <p>Aucun devis trouvé</p>
+                    </div>
                   </TableCell>
                 </TableRow>
               )}

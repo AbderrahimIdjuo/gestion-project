@@ -30,13 +30,23 @@ const articlSchema = z.object({
       .int({ message: "La quantité doit être un entier" })
       .min(1, { message: "La quantité doit être au moins 1" })
   ),
-  prixUnite: z.preprocess(
-    (value) =>
-      value === "" || value === undefined ? undefined : validateFloat(value),
-    z
-      .number({ invalid_type_error: "Ce champ doit contenir un nombre" })
-      .min(1, { message: "Le prix d'unite doit être au moins 1" })
-  ),
+  prixUnite: z.preprocess((value) => {
+    // Convert "" or undefined to undefined
+    if (value === "" || value === undefined) return undefined;
+
+    // Convert string with comma to dot notation
+    if (typeof value === "string") {
+      value = value.replace(",", ".");
+      // Remove any whitespace that might interfere
+      value = value.trim();
+    }
+
+    const number = parseFloat(value);
+    // If the conversion fails, return undefined to trigger the validation error
+    if (isNaN(number)) return undefined;
+
+    return number;
+  }, z.number({ invalid_type_error: "Ce champ doit contenir un nombre valide" }).optional()),
   length: z.preprocess((value) => {
     // Convert "" or undefined to undefined
     if (value === "" || value === undefined) return undefined;
@@ -74,55 +84,49 @@ const articlSchema = z.object({
   id: z.string(),
   unite: z.string().optional(),
 });
-const newDeviSchema = z
-  .object({
-    clientId: z.string({ required_error: "Champ obligatoir" }),
-    numero: z.string(),
-    statut: z.string(),
-    tva: z.preprocess(
-      (value) => (value === "" || value === undefined ? 0 : validateInt(value)),
-      z.number().optional()
+const newDeviSchema = z.object({
+  clientId: z.string({ required_error: "Champ obligatoir" }),
+  numero: z.string(),
+  statut: z.string(),
+  tva: z.preprocess(
+    (value) => (value === "" || value === undefined ? 0 : validateInt(value)),
+    z.number().optional()
+  ),
+  reduction: z.preprocess(
+    (value) => (value === "" || value === undefined ? 0 : validateInt(value)),
+    z.number().optional()
+  ),
+  typeReduction: z.string().default("%"),
+  note: z.string(),
+  sousTotal: z.preprocess(
+    (value) => (value === "" || value === undefined ? 0 : validateFloat(value)),
+    z
+      .number({ invalid_type_error: "Le sousTotal doit être un nombre" })
+      .optional()
+  ),
+  total: z.preprocess(
+    (value) => (value === "" || value === undefined ? 0 : validateFloat(value)),
+    z.number({ invalid_type_error: "Le total doit être un nombre" }).optional()
+  ),
+  // avance: z.preprocess(
+  //   (value) =>
+  //     value === "" || value === undefined ? 0 : validateFloat(value),
+  //   z
+  //     .number({ invalid_type_error: "L'avance' doit être un nombre" })
+  //     .optional()
+  // ),
+  // compte: z.string().optional(),
+  echeance: z.date().nullable().default(null),
+  articls: z
+    .array(articlSchema)
+    .min(1, { message: "Le devis doit contenir au moins un articl" })
+    .refine(
+      (articles) =>
+        articles.every((article) => articlSchema.safeParse(article).success),
+      {
+        message: "Un ou plusieurs articles sont invalides",
+      }
     ),
-    reduction: z.preprocess(
-      (value) => (value === "" || value === undefined ? 0 : validateInt(value)),
-      z.number().optional()
-    ),
-    typeReduction: z.string().default("%"),
-    note: z.string(),
-    sousTotal: z.preprocess(
-      (value) =>
-        value === "" || value === undefined ? 0 : validateFloat(value),
-      z
-        .number({ invalid_type_error: "Le sousTotal doit être un nombre" })
-        .optional()
-    ),
-    total: z.preprocess(
-      (value) =>
-        value === "" || value === undefined ? 0 : validateFloat(value),
-      z
-        .number({ invalid_type_error: "Le total doit être un nombre" })
-        .optional()
-    ),
-    // avance: z.preprocess(
-    //   (value) =>
-    //     value === "" || value === undefined ? 0 : validateFloat(value),
-    //   z
-    //     .number({ invalid_type_error: "L'avance' doit être un nombre" })
-    //     .optional()
-    // ),
-   // compte: z.string().optional(),
-    echeance: z.date().nullable().default(null),
-    articls: z
-      .array(articlSchema)
-      .min(1, { message: "Le devis doit contenir au moins un articl" })
-      .refine(
-        (articles) =>
-          articles.every((article) => articlSchema.safeParse(article).success),
-        {
-          message: "Un ou plusieurs articles sont invalides",
-        }
-      ),
-  });
-
+});
 
 export default newDeviSchema;

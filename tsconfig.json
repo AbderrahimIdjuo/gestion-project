@@ -29,7 +29,7 @@
     "components/client-form-dialog.jsx",
     "app/(pages)/clients/page.jsx",
     "app/(pages)/achats/fournisseurs/page.jsx",
-    "components/fournisseur-form-dialog.jsx",
+    "components/fournisseur-form-dialogOrigine.jsx",
     "components/delete-confirmation-dialog.jsx",
     "components/sidebar.jsx",
     "app/(pages)/ventes/devis/nouveau/page.jsx",

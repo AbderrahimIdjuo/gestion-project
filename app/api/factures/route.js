@@ -7,6 +7,10 @@ export async function POST(req) {
   try {
     const response = await req.json();
     const { numero, devisId, date } = response;
+    console.log("response : ", response);
+    console.log("◀ body          :", response); // raw JSON
+    console.log("◀ body.date     :", date);
+    console.log("◀ new Date(date):", new Date(date).toISOString());
     const resultat = await prisma.factures.create({
       data: {
         numero,
@@ -119,39 +123,38 @@ export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const page = parseInt(searchParams.get("page") || "1");
   const searchQuery = searchParams.get("query") || "";
-  const statutPaiement = searchParams.get("statutPaiement");
-  const categorie = searchParams.get("categorie")
-    ? decodeURIComponent(searchParams.get("categorie").trim())
-    : null;
+  const from = searchParams.get("from"); // Start date
+  const to = searchParams.get("to"); // End date
+  const minTotal = searchParams.get("minTotal");
+  const maxTotal = searchParams.get("maxTotal");
   const filters = {};
   const facturesPerPage = 10;
-
+  console.log("minTotal : ", minTotal, "maxTotal:", maxTotal);
   // Search filter by produit designation , fournisseur
   filters.OR = [
     { numero: { contains: searchQuery, mode: "insensitive" } },
     { devis: { numero: { contains: searchQuery, mode: "insensitive" } } },
   ];
+  // Date range filter
+  if (from && to) {
+    filters.date = {
+      gte: new Date(from), // Greater than or equal to "from"
+      lte: new Date(to), // Less than or equal to "to"
+    };
+  }
 
-  // // Filters par statutPaiement : "payé" ou "impayé"
-  // if (statutPaiement !== "all") {
-  //   if (statutPaiement === "true") {
-  //     filters.payer = true;
-  //   } else if (statutPaiement === "false") {
-  //     filters.payer = false;
-  //   }
-  // }
-
-  // // Filters par categorie
-  // if (categorie !== "all") {
-  //   filters.produit = {
-  //     categorie: {
-  //       equals: categorie,
-  //     },
-  //   };
-  // }
+  // total range filter
+  if (minTotal && maxTotal) {
+    filters.devis = {
+      total: {
+        gte: Number(minTotal),
+        lte: Number(maxTotal),
+      },
+    };
+  }
 
   // Fetch filtered commandes with pagination and related data
-  const [factures, totalFactures] = await Promise.all([
+  const [factures, listFactures, totalFactures] = await Promise.all([
     prisma.factures.findMany({
       where: filters,
       skip: (page - 1) * facturesPerPage,
@@ -162,10 +165,25 @@ export async function GET(req) {
           select: {
             numero: true,
             articls: true,
-            client: true,
+            client: {
+              select: {
+                nom: true,
+                ice: true,
+                titre: true,
+              },
+            },
             total: true,
             sousTotal: true,
             tva: true,
+          },
+        },
+      },
+    }),
+    prisma.factures.findMany({
+      select: {
+        devis: {
+          select: {
+            total: true,
           },
         },
       },
@@ -175,10 +193,15 @@ export async function GET(req) {
 
   // Calculate total pages for pagination
   const totalPages = Math.ceil(totalFactures / facturesPerPage);
+  // set the maxMontant
+  const factureMax = listFactures.reduce((max, f) =>
+    f.devis.total > max.devis.total ? f : max
+  );
 
   // Return the response
   return NextResponse.json({
     factures,
+    maxMontant: factureMax.devis.total,
     totalPages,
   });
 }
