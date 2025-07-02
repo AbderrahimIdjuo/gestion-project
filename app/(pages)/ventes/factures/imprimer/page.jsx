@@ -342,7 +342,7 @@ export default function DevisPDFPage() {
 
           <div className="flex flex-col gap-2">
             <h3 className="text-sm font-medium mb-0">
-              Arrêter le devis à :{" "}
+              Arrêtée la présente facture à la somme de :{" "}
               <span className="text-sm font-bold mb-0 ">
                 {nombreEnLettres(devis?.total)}{" "}
               </span>{" "}
