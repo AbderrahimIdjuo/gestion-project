@@ -346,7 +346,7 @@ export default function DevisPDFPage() {
               <span className="text-sm font-bold mb-0 ">
                 {nombreEnLettres(devis?.total)}{" "}
               </span>{" "}
-              Dirhams TTC{" "}
+              Dirhams 
             </h3>
             {/* {infosVisibilite && <PiedFactureStyle2 />} */}
           </div>
