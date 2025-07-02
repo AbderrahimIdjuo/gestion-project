@@ -1,33 +1,46 @@
 "use client";
 
-import { Printer } from "lucide-react";
-
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Printer } from "lucide-react";
+import { useState } from "react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
-  TableFooter,
 } from "@/components/ui/table";
+import { EnteteDevis } from "@/components/Entete-devis";
 
-export default function FournitureDialog({
-  devis,
-  isOpen,
-  onClose,
-  orderGroups,
-}) {
+function formatDate(dateString) {
+  return dateString.split("T")[0].split("-").reverse().join("-");
+}
+
+export default function DevisPDFPage() {
+  const [devis, setDevis] = useState();
+  const [bLGroups, setBLGroups] = useState();
+  const [infosVisibilite, setInfosVisibilite] = useState(false);
+
+  useEffect(() => {
+    const storedDevis = localStorage.getItem("devi");
+    const storedBLGroups = localStorage.getItem("bLGroups");
+    if (storedDevis) {
+      setDevis(JSON.parse(storedDevis));
+    }
+    if (storedBLGroups) {
+      setBLGroups(JSON.parse(storedBLGroups));
+    }
+  }, []);
+
   const handlePrint = () => {
     window.print();
   };
+
   const totalCommandeFourniture = (produits) => {
     return produits?.reduce((acc, produit) => {
       return acc + produit.quantite * produit.prixUnite;
@@ -40,47 +53,83 @@ export default function FournitureDialog({
   };
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto print:shadow-none print:max-h-none print:overflow-visible">
-          <DialogHeader>
-            <DialogTitle></DialogTitle>
-          </DialogHeader>
+      {devis && (
+        <>
           <div className="container mx-auto p-8 max-w-4xl bg-white print:min-h-screen print:p-0 print:max-w-none mb-10">
             {/* Document Content */}
-            <div id="print-area" className="space-y-6 print:mt-10">
+            <div id="print-area" className="space-y-6">
               {/* Header */}
-              <div className="flex justify-between items-center border-b border-[#228B8B] pb-1">
-                <img src="/images/LOGO-tete.jpg" alt="Logo" width={300} />
-                <img src="/images/LOGO-OUDAOUD.jpg" className="h-24 w-24" />
-              </div>
+              <EnteteDevis />
               {/* Company and Client Info */}
-              <div className="flex justify-between gap-8 mb-4">
-                <div className="space-y-1 col-span-1">
-                  <h3 className="font-medium text-sm text-muted-foreground">
-                    Devis N° :
-                  </h3>
-                  <p className="font-semibold">{devis.numero} </p>
-                </div>
-                <div className="space-y-1 col-span-1">
-                  <h3 className="font-medium text-sm text-muted-foreground">
-                    Client :
-                  </h3>
-                  <p className="font-semibold">{devis.client.nom} </p>
-                </div>
-                {orderGroups?.length > 0 && (
-                  <div className="space-y-1 col-span-1">
-                    <h3 className="font-medium text-sm text-muted-foreground">
-                      Total :
+              {infosVisibilite ? (
+                <div className="flex justify-between px-4">
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">
+                      STE OUDAOUDOX SARL
                     </h3>
-                    <p className="font-semibold">
-                      {totalFourniture(orderGroups)} DH
-                    </p>
+                    <div className="text-sm text-gray-600">
+                      <p>Avenue Jaber Ben Hayane</p>
+                      <p>Bloc A N°01 Hay El Houda • Agadir</p>
+                      <p>Gsm : 06 61 58 53 08 • 06 63 63 72 44</p>
+                      <p>E-mail : inoxoudaoud@gmail.com</p>
+                    </div>
                   </div>
-                )}
-              </div>
-              {orderGroups?.length > 0 ? (
+                  <div className="grid grid-rows-2 gap-4">
+                    <div>
+                      <h3 className="font-semibold text-gray-900 mb-2">
+                        Client:
+                      </h3>
+                      <div className="text-sm text-gray-600">
+                        <p>
+                          {devis?.client.titre && devis?.client.titre + ". "}
+                          {devis?.client.nom.toUpperCase()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="col-span-1">
+                      <h3 className="font-semibold text-gray-900 mb-2">
+                        Devis N° : {devis?.numero}
+                      </h3>
+                      <div className="text-sm text-gray-600">
+                        <p>Date : {formatDate(devis?.createdAt)} </p>
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900 mb-2">
+                        Total de fournitures :
+                      </h3>
+                      <div className="text-sm text-gray-600">
+                        <p>{totalFourniture(bLGroups)} DH</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex justify-between  gap-4">
+                  <div className="col-span-1">
+                    <h3 className="font-semibold text-gray-900 mb-2">
+                      Devis N° : {devis?.numero}
+                    </h3>
+                    <div className="text-sm text-gray-600">
+                      <p>Date : {formatDate(devis?.createdAt)} </p>
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">
+                      Client:
+                    </h3>
+                    <div className="text-sm text-gray-600">
+                      <p>
+                        {devis?.client.titre && devis?.client.titre + ". "}
+                        {devis?.client.nom.toUpperCase()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {bLGroups?.length > 0 ? (
                 <div className="space-y-6">
-                  {orderGroups?.map((groupe, index) => (
+                  {bLGroups?.map((groupe, index) => (
                     <div
                       key={groupe.id || index}
                       className="border border-zinc-300 print:bg-none rounded-xl shadow-sm p-4"
@@ -158,7 +207,7 @@ export default function FournitureDialog({
                                   colSpan={4}
                                   className=" p-2 text-right font-bold"
                                 >
-                                  sousTotal :
+                                  Total :
                                 </TableCell>
                                 <TableCell className=" border-zinc-500  p-2 text-left font-bold">
                                   {totalCommandeFourniture(groupe.produits)} DH
@@ -177,27 +226,38 @@ export default function FournitureDialog({
                 </div>
               )}
             </div>
-          </div>
-          <div className="flex justify-end gap-3 mt-6 print:hidden">
-            <Button
-              className="rounded-full"
-              variant="outline"
-              onClick={() => onClose()}
+            <div>
+              <h3 className=" w-full border rounded-xl font-semibold text-end text-xl text-gray-900 mb-2 p-4 my-2">
+                Total de fournitures : {totalFourniture(bLGroups)} DH
+              </h3>
+            </div>
+            <div
+              className="flex items-center justify-between print:hidden
+    print:hidden mt-5"
             >
-              Fermer
-            </Button>
-            <Button
-              className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full"
-              variant="outline"
-              onClick={() => {
-                handlePrint();
-              }}
-            >
-              <Printer className="mr-2 h-4 w-4" /> Imprimer
-            </Button>
+              <div className="flex items-center space-x-2 ">
+                <Switch
+                  id="switch"
+                  checked={infosVisibilite}
+                  onCheckedChange={setInfosVisibilite}
+                />
+                <Label htmlFor="switch">
+                  {infosVisibilite
+                    ? "Informations de la société visibles"
+                    : "Les informations de la société sont masquées"}
+                </Label>
+              </div>
+              <Button
+                className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full"
+                variant="outline"
+                onClick={handlePrint}
+              >
+                <Printer className="mr-2 h-4 w-4" /> Imprimer
+              </Button>
+            </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </>
+      )}
     </>
   );
 }

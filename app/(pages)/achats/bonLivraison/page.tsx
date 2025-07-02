@@ -110,7 +110,7 @@ export default function BonLivraison() {
           statutPaiement: filters.statutPaiement,
         },
       });
-     // console.log("last BL:", response.data.lastBonLivraison);
+      // console.log("last BL:", response.data.lastBonLivraison);
       setLastBonLivraison(response.data.lastBonLivraison);
       setTotalPages(response.data.totalPages);
       return response.data.bonLivraison;
@@ -128,13 +128,16 @@ export default function BonLivraison() {
       reference: bon.reference,
       fournisseur: bon.fournisseur.nom,
       total: bon.total,
-      produits: bon.produits,
+      groups: bon.groups,
     })) ?? [];
 
   return (
     <>
       <Toaster position="top-center" />
-      <div className="container mx-auto">
+      <div className="container mx-auto space-y-2 mb-[5rem]">
+        <div className="flex justify-between items-center mb-2">
+          <h1 className="text-3xl font-bold">Bons de livraisons</h1>
+        </div>
         <div className="flex justify-between items-center">
           <div className="relative w-full sm:w-96">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -154,6 +157,15 @@ export default function BonLivraison() {
           </div>
         </div>
         <DataTable columns={useBonLivraisonColumns()} data={listBonLivraison} />
+        {bonLivraison?.length > 0 ? (
+          <CustomPagination
+            currentPage={page}
+            setCurrentPage={setPage}
+            totalPages={totalPages}
+          />
+        ) : (
+          ""
+        )}
       </div>
     </>
   );

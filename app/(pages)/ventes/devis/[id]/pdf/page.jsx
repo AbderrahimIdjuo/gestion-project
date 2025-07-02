@@ -15,13 +15,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Phone, Calendar } from "lucide-react";
-import PiedDevis from "@/components/pied-devis";
 import LoadingDeviPdf from "@/components/loading-devi-pdf";
+import { EnteteDevis } from "@/components/Entete-devis";
 
-function formatPhoneNumber(phone) {
-  return phone?.replace(/(\d{2})(?=\d)/g, "$1 ").trim();
-}
 function nombreEnLettres(n) {
   const unites = [
     "",
@@ -145,10 +141,7 @@ export default function DevisPDFPage() {
           {/* Document Content */}
           <div id="print-area" className="space-y-3">
             {/* Header */}
-            <div className="flex justify-between items-center border-b border-[#228B8B] pb-1">
-              <img src="/images/LOGO-tete.jpg" alt="Logo" width={300} />
-              <img src="/images/LOGO-OUDAOUD.jpg" className="h-24 w-24" />
-            </div>
+            <EnteteDevis />
 
             {/* Company and Client Info */}
             {infosVisibilite ? (
@@ -417,7 +410,7 @@ export default function DevisPDFPage() {
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold mb-0 italic underline">
+                  <h3 className="text-sm font-semibold mb-0 italic underline print:mt-10">
                     En signant ce devis, le client confirme son accord et valide
                     une commande ferme et définitive.
                   </h3>

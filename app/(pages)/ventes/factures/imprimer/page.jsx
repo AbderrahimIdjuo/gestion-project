@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
+import { EnteteDevis } from "@/components/Entete-devis";
 
 function nombreEnLettres(n) {
   const unites = [
@@ -117,10 +117,8 @@ export default function DevisPDFPage() {
         {/* Document Content */}
         <div id="print-area" className="space-y-3">
           {/* Header */}
-          <div className="flex justify-between items-center border-b border-[#228B8B] pb-1">
-            <img src="/images/LOGO-tete.jpg" alt="Logo" width={300} />
-            <img src="/images/LOGO-OUDAOUD.jpg" className="h-24 w-24" />
-          </div>
+          <EnteteDevis />
+
           {infosVisibilite ? (
             <div className="flex justify-between px-4">
               <div>
@@ -270,17 +268,17 @@ export default function DevisPDFPage() {
                   </TableRow>
                 ))}
               </TableBody>
-              <TableFooter className="font-medium border-black ">
+              <TableFooter className="font-medium border-black">
                 <TableRow>
                   <TableCell
                     colSpan={6}
-                    className=" p-2 text-right font-bold"
+                    className=" p-2 text-right text-lg font-bold"
                   >
                     Total H.T :
                   </TableCell>
                   <TableCell
                     colSpan={2}
-                    className="border-l border-black p-2 text-left font-bold"
+                    className="border-l border-black p-2 text-left text-lg font-bold"
                   >
                     {devis?.sousTotal.toFixed(2)} DH
                   </TableCell>
@@ -290,13 +288,13 @@ export default function DevisPDFPage() {
                   <TableRow>
                     <TableCell
                       colSpan={6}
-                      className=" border-t border-black p-2 text-right font-bold"
+                      className=" border-t border-black p-2 text-right text-lg font-bold"
                     >
                       Réduction :
                     </TableCell>
                     <TableCell
                       colSpan={2}
-                      className="border-l border-t border-black p-2 text-left font-bold"
+                      className="border-l border-t border-black p-2 text-lg text-left font-bold"
                     >
                       {devis?.reduction} {devis?.typeReduction}
                     </TableCell>
@@ -309,13 +307,13 @@ export default function DevisPDFPage() {
                     <TableRow>
                       <TableCell
                         colSpan={6}
-                        className="border-t border-black p-2 text-right font-bold"
+                        className="border-t border-black p-2 text-right text-lg font-bold"
                       >
                         TVA :
                       </TableCell>
                       <TableCell
                         colSpan={2}
-                        className="border-l border-t border-black p-2 text-left font-bold"
+                        className="border-l border-t border-black p-2 text-lg text-left font-bold"
                       >
                         {devis?.tva.toFixed(2)} DH
                       </TableCell>
@@ -323,13 +321,13 @@ export default function DevisPDFPage() {
                     <TableRow>
                       <TableCell
                         colSpan={6}
-                        className="text-lg text-gray-900 border-t border-black  p-2 text-right font-extrabold"
+                        className=" text-gray-900 border-t border-black  text-xl p-2 text-right font-extrabold"
                       >
                         Total TTC :
                       </TableCell>
                       <TableCell
                         colSpan={2}
-                        className="border-l border-t border-black p-2 text-lg text-gray-900 text-left font-extrabold"
+                        className="border-l border-t border-black p-2 text-xl text-gray-900 text-left font-extrabold"
                       >
                         {devis?.total.toFixed(2)} DH
                       </TableCell>

@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
 import { useState } from "react";
+import { EnteteDevis } from "@/components/Entete-devis";
 import {
   Table,
   TableBody,
@@ -64,10 +65,7 @@ export default function HistoriquePaiement() {
           {/* Document Content */}
           <div id="print-area" className="space-y-6">
             {/* Header */}
-            <div className="flex justify-between items-center border-b border-[#228B8B] pb-1">
-              <img src="/images/LOGO-tete.jpg" alt="Logo" width={300} />
-              <img src="/images/LOGO-OUDAOUD.jpg" className="h-24 w-24" />
-            </div>
+            <EnteteDevis />
 
             {/* Company and Client Info */}
             <div className="grid grid-cols-2 gap-8">
@@ -146,8 +144,7 @@ export default function HistoriquePaiement() {
                         Reste à payer :
                       </TableCell>
                       <TableCell className="border-l border-black p-2 text-lg text-gray-900 text-left font-extrabold">
-                        {(commande?.total- totalPaye).toFixed(2)}{" "}
-                        DH
+                        {(commande?.total - totalPaye).toFixed(2)} DH
                       </TableCell>
                     </TableRow>
                   </TableFooter>

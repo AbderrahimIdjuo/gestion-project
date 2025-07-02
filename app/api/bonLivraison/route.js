@@ -4,19 +4,17 @@ import prisma from "../../../lib/prisma";
 export async function POST(req) {
   try {
     const response = await req.json();
-    console.log("data : ", response);
-
     const {
       date,
       numero,
       fournisseurId,
-      produits,
-    //  commandeFourniture,
+      bLGroups,
       total,
       totalPaye,
       type,
       reference,
     } = response;
+    console.log("response ##### :", response);
     const result = await prisma.$transaction(async (prisma) => {
       await prisma.bonLivraison.create({
         data: {
@@ -29,13 +27,20 @@ export async function POST(req) {
           fournisseur: {
             connect: { id: fournisseurId },
           },
-          produits: {
-            create: produits.map((produit) => ({
-              produit: {
-                connect: { id: produit.produitId },
+          groups: {
+            create: bLGroups.map((group) => ({
+              id: group.id,
+              devisNumero: group.devisNumber,
+              clientName: group.clientName,
+              produits: {
+                create: group.items.map((produit) => ({
+                  produit: {
+                    connect: { id: produit.id },
+                  },
+                  quantite: parseFloat(produit.quantite),
+                  prixUnite: parseFloat(produit.prixUnite),
+                })),
               },
-              quantite: parseFloat(produit.quantite),
-              prixUnite: parseFloat(produit.prixUnite),
             })),
           },
         },
@@ -62,32 +67,21 @@ export async function POST(req) {
       //   },
       // });
       // Étape 2 : Créer une map pour un accès rapide au nouveau prix
-      const prixMap = new Map(produits.map((p) => [p.produitId, p.prixUnite]));
+      const produits = bLGroups.flatMap((group) => group.items);
+      console.log("produits ##### :", produits);
+      const prixMap = new Map(produits.map((p) => [p.id, p.prixUnite]));
 
       // Étape 3 : Mettre à jour chaque ListProduits concerné
       const updates = [];
 
-      // for (const group of commande.groups) {
-      //   for (const produit of group.produits) {
-      //     const nouveauPrix = prixMap.get(produit.produitId);
-      //     if (nouveauPrix !== undefined) {
-      //       updates.push(
-      //         prisma.listProduits.update({
-      //           where: { id: produit.id },
-      //           data: { prixUnite: nouveauPrix },
-      //         })
-      //       );
-      //     }
-      //   }
-      // }
       // mettre a jours le prix achats des produits
 
       for (const produit of produits) {
-        const nouveauPrix = prixMap.get(produit.produitId);
+        const nouveauPrix = prixMap.get(produit.id);
         if (nouveauPrix !== undefined) {
           updates.push(
             prisma.produits.update({
-              where: { id: produit.produitId },
+              where: { id: produit.id },
               data: { prixAchat: nouveauPrix },
             })
           );
@@ -100,7 +94,7 @@ export async function POST(req) {
 
     return NextResponse.json({ result });
   } catch (error) {
-    console.error("Error creating commandeFourniture:", error);
+    console.error("Error creating BL:", error);
     return NextResponse.json(
       { message: "An unexpected error occurred." },
       { status: 500 }
@@ -195,12 +189,16 @@ export async function GET(req) {
               nom: true,
             },
           },
-          produits: {
+          groups: {
             include: {
-              produit: {
-                select: {
-                  designation: true,
-                  prixAchat: true,
+              produits: {
+                include: {
+                  produit: {
+                    select: {
+                      designation: true,
+                      prixAchat: true,
+                    },
+                  },
                 },
               },
             },

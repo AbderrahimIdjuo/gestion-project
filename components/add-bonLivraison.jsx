@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Plus, Package, Trash2 } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Plus, Package, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import ComboBoxDevis from "@/components/comboBox-devis";
 import {
   Dialog,
   DialogContent,
@@ -25,6 +26,7 @@ import { ArticleSelectionDialog } from "@/components/produits-selection-NouveauB
 import { Badge } from "@/components/ui/badge";
 import ComboBoxCommandesFournitures from "@/components/comboBox-commandesFournitures";
 import ComboBoxFournisseur from "@/components/comboBox-fournisseurs";
+import { ProduitsSelection } from "@/components/produits-selection-CMDF";
 import {
   Table,
   TableBody,
@@ -48,18 +50,24 @@ import { AddButton } from "@/components/customUi/styledButton";
 import { CustomDatePicker } from "@/components/customUi/customDatePicker";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-
+import { formatDate } from "date-fns";
+// function formatDate(dateString) {
+//   return dateString?.split("T")[0].split("-").reverse().join("-");
+// }
 export default function AddBonLivraison({ lastBonLivraison }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [date, setDate] = useState(null);
+  const [formattedDate, setFormattedDate] = useState("");
   const [currentStep, setCurrentStep] = useState(1);
   const [commandeDetails, setCommandeDetails] = useState(null);
   const [produits, setProduits] = useState([]);
   const [commande, setCommande] = useState(null);
-  const [reference, setReference] = useState(null);
+  const [reference, setReference] = useState("");
   const [type, setType] = useState();
   const [isArticleDialogOpen, setIsArticleDialogOpen] = useState(false);
   const [selectedFournisseur, setSelectedFournisseur] = useState(null);
+  const [bLGroups, setBLGroups] = useState([]);
+  const [selectedDevis, setSelectedDevis] = useState({});
 
   const queryClient = useQueryClient();
   function regrouperProduitsParQuantite(groups) {
@@ -94,6 +102,14 @@ export default function AddBonLivraison({ lastBonLivraison }) {
     }
   }, [commande]);
 
+  function formatDate(date) {
+    const d = new Date(date);
+    const day = d.getDate().toString().padStart(2, "0");
+    const month = (d.getMonth() + 1).toString().padStart(2, "0"); // mois commence à 0
+    const year = d.getFullYear();
+    return `${day}-${month}-${year}`;
+  }
+
   const generateBLNumber = () => {
     const lastNumber = lastBonLivraison
       ? Number(lastBonLivraison.numero.replace("BL-", ""))
@@ -103,71 +119,71 @@ export default function AddBonLivraison({ lastBonLivraison }) {
     console.log("numero :", `BL-${nextNumber}`);
     return `BL-${nextNumber}`;
   };
-  const handleAddArticles = (newArticles) => {
-    const produitsAjouter = newArticles.map((p) => ({
-      produitId: p.id,
-      quantite: p.quantite,
-      prixUnite: p.prixUnite,
-      produit: {
-        designation: p.designation,
-        prixAchat: p.prixUnite,
-      },
-    }));
-    setProduits((prevItems) => [
-      ...prevItems,
-      ...produitsAjouter.map((article) => ({
-        ...article,
-      })),
-    ]);
-  };
+  // const handleAddArticles = (newArticles) => {
+  //   const produitsAjouter = newArticles.map((p) => ({
+  //     produitId: p.id,
+  //     quantite: p.quantite,
+  //     prixUnite: p.prixUnite,
+  //     produit: {
+  //       designation: p.designation,
+  //       prixAchat: p.prixUnite,
+  //     },
+  //   }))
+  //setProduits((prevItems) => [
+  //  ...prevItems,
+  //  ...produitsAjouter.map((article) => ({
+  //  ...article,
+  //  })),
+  // ]);
+  //}
 
   const resetDialog = () => {
     setCurrentStep(1);
     setReference(null);
-    setCommande(null);
     setType();
     setDate(null);
-    setCommandeDetails(null);
-    setProduits([]);
+    setBLGroups([]);
+    setSelectedFournisseur(null);
+    // setCommandeDetails(null);
+    //setProduits([]);
+    // setCommande(null);
   };
 
   const total = () => {
+    const produits = bLGroups.flatMap((group) => group.items);
     return produits.reduce((acc, produit) => {
       return acc + produit.quantite * produit.prixUnite;
     }, 0);
   };
 
-  const handleItemChange = (produitId, field, value) => {
-    setProduits((prev) =>
-      prev.map((p) =>
-        p.produitId === produitId
-          ? { ...p, [field]: Number.parseFloat(value) || 0 }
-          : p
-      )
-    );
-  };
+  // const handleItemChange = (produitId, field, value) => {
+  //   setProduits((prev) =>
+  //     prev.map((p) =>
+  //       p.produitId === produitId
+  //         ? { ...p, [field]: Number.parseFloat(value) || 0 }
+  //         : p
+  //     )
+  //   );
+  // };
 
-  const removeItem = (produitId) => {
-    setProduits((prev) =>
-      prev.filter((produit) => produit.produitId !== produitId)
-    );
-  };
+  // const removeItem = (produitId) => {
+  //   setProduits((prev) =>
+  //     prev.filter((produit) => produit.produitId !== produitId)
+  //   );
+  // };
   const handleCreateBL = useMutation({
     mutationFn: async () => {
       const data = {
         numero: generateBLNumber(),
         date,
-        produits,
         reference,
-        fournisseurId: commande
-          ? commande?.fournisseurId
-          : selectedFournisseur.id,
-        //commandeFourniture: commande ? commande.numero : null,
+        fournisseurId: selectedFournisseur.id,
         total: total().toFixed(2),
         type,
         totalPaye: 0,
+        bLGroups,
       };
-      console.log("data ##### :", data);
+      console.log("#### data ##### :", data);
 
       const loadingToast = toast.loading("Ajout du bon de livraison...");
       try {
@@ -186,7 +202,115 @@ export default function AddBonLivraison({ lastBonLivraison }) {
       queryClient.invalidateQueries({ queryKey: ["bonLivraison"] });
     },
   });
+  //////////////Fonction pour gérer la sélection des Groupes de BL//////////////
+  // Ajout d'un groupe de commande
+  const addOrderGroup = useCallback(() => {
+    const newGroup = {
+      id: crypto.randomUUID(), // Génération d'un ID unique
+      items: [],
+      devisNumber: null,
+      clientName: null,
+      clientId: null,
+    };
+    setBLGroups((prev) => [...prev, newGroup]);
+  }, []);
+  // modifier le numero de commande d'un groupe
+  const updateDevisNumberOfGroup = useCallback(
+    (groupId, devisNumber, clientName, clientId, numero, totalDevi) => {
+      setBLGroups((prevGroups) =>
+        prevGroups.map((group) =>
+          group.id === groupId
+            ? {
+                ...group,
+                devisNumber,
+                clientName,
+                clientId,
+                numero,
+                totalDevi,
+              } // Met à jour la commande
+            : group
+        )
+      );
+    },
+    []
+  );
+  // Suppression d'un groupe
+  const removeOrderGroup = useCallback((groupId) => {
+    setBLGroups((prev) => prev.filter((group) => group.id !== groupId));
+    setSelectedDevis((prev) => {
+      const newState = { ...prev };
+      delete newState[groupId];
+      return newState;
+    });
+  }, []);
 
+  // Gestion des articles
+  const handleAddArticles = useCallback((groupId, newArticles) => {
+    setBLGroups((prev) =>
+      prev.map((group) => {
+        if (group.id === groupId) {
+          const existingIds = new Set(group.items.map((item) => item.id));
+          const filteredArticles = newArticles.filter(
+            (article) => !existingIds.has(article.id)
+          );
+
+          return {
+            ...group,
+            items: [
+              ...group.items,
+              ...filteredArticles.map((article) => ({
+                ...article,
+                uniqueKey: `${article.id}-${crypto.randomUUID()}`, // Clé vraiment unique
+              })),
+            ],
+          };
+        }
+        return group;
+      })
+    );
+  }, []);
+
+  // Suppression d'un article
+  const removeItem = useCallback((groupId, itemId) => {
+    setBLGroups((prev) =>
+      prev.map((group) => {
+        if (group.id === groupId) {
+          return {
+            ...group,
+            items: group.items.filter((item) => item.uniqueKey !== itemId),
+          };
+        }
+        return group;
+      })
+    );
+  }, []);
+
+  // Mise à jour d'un article
+  const handleItemChange = useCallback((groupId, itemId, field, value) => {
+    setBLGroups((prev) =>
+      prev.map((group) => {
+        if (group.id === groupId) {
+          return {
+            ...group,
+            items: group.items.map((item) =>
+              item.uniqueKey === itemId
+                ? { ...item, [field]: Number(value) || 0 }
+                : item
+            ),
+          };
+        }
+        return group;
+      })
+    );
+  }, []);
+
+  // Mise à jour de la commande sélectionnée
+  const handleDevisSelect = useCallback((groupId, devis) => {
+    setSelectedDevis((prev) => ({
+      ...prev,
+      [groupId]: devis,
+    }));
+  }, []);
   return (
     <div className="">
       <div className="flex items-center justify-between">
@@ -204,18 +328,14 @@ export default function AddBonLivraison({ lastBonLivraison }) {
             </Button>
           </DialogTrigger>
 
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Package className="h-6 w-6" />
-                {currentStep === 1
-                  ? "Sélectionner une commande"
-                  : "Nouveau bon de livraison"}
+                Nouveau bon de livraison
               </DialogTitle>
               <DialogDescription>
-                {currentStep === 1
-                  ? "Choisissez une commande de fourniture pour créer le bon de livraison"
-                  : "Vérifiez et modifiez les informations avant de créer le BL"}
+                Vérifiez et modifiez les informations avant de créer le BL
               </DialogDescription>
             </DialogHeader>
 
@@ -260,11 +380,17 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                     />
                   </div>
                   <div className="w-full space-y-2">
+                    <ComboBoxFournisseur
+                      fournisseur={selectedFournisseur}
+                      setFournisseur={setSelectedFournisseur}
+                    />
+                  </div>
+                  {/* <div className="w-full space-y-2">
                     <ComboBoxCommandesFournitures
                       setCommande={setCommande}
                       commande={commande}
                     />
-                  </div>
+                  </div> */}
                 </div>
                 {commande !== null && (
                   <Card>
@@ -321,11 +447,15 @@ export default function AddBonLivraison({ lastBonLivraison }) {
 
             {currentStep === 2 && (
               <div className="space-y-6 ">
-                <div
-                  className={`grid gap-4 mb-4 p-4 border-t border-gray-300 ${
-                    commande ? "grid-cols-4" : "grid-cols-4"
-                  }`}
-                >
+                <div className="grid gap-4 mb-4 p-4 border-t border-gray-300 grid-cols-5">
+                  {date && (
+                    <div className="space-y-1 col-span-1">
+                      <h3 className="font-medium text-sm text-muted-foreground">
+                        Date :
+                      </h3>
+                      <p className="font-semibold">{formatDate(date)} </p>
+                    </div>
+                  )}
                   {reference && (
                     <div className="space-y-1 col-span-1">
                       <h3 className="font-medium text-sm text-muted-foreground">
@@ -342,6 +472,22 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                       <p className="font-semibold">{type} </p>
                     </div>
                   )}
+                  {selectedFournisseur && (
+                    <div className="space-y-1 col-span-1">
+                      <h3 className="font-medium text-sm text-muted-foreground">
+                        Fournisseur :
+                      </h3>
+                      <p className="font-semibold">
+                        {selectedFournisseur?.nom}{" "}
+                      </p>
+                    </div>
+                  )}
+                  <div className="space-y-1 col-span-1">
+                    <h3 className="font-medium text-sm text-muted-foreground">
+                      Total :
+                    </h3>
+                    <p className="font-semibold">{total().toFixed()} DH</p>
+                  </div>
                   {commande ? (
                     <>
                       {" "}
@@ -361,43 +507,188 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                       </div>{" "}
                     </>
                   ) : (
-                    <div className="w-full col-span-2">
-                      <ComboBoxFournisseur
-                        fournisseur={selectedFournisseur}
-                        setFournisseur={setSelectedFournisseur}
-                      />
-                    </div>
+                    ""
                   )}
                 </div>
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex justify-between items-center gap-2">
-                      <div className="flex gap-2 items-center">
-                        Produits
-                        <Badge
-                          variant="secondary"
-                          className="rounded-full bg-purple-50 text-violet-700"
+                {/* <Card>
+                <CardHeader>
+                  <CardTitle className="flex justify-between items-center gap-2">
+                    <div className="flex gap-2 items-center">
+                      Produits
+                      <Badge
+                        variant="secondary"
+                        className="rounded-full bg-purple-50 text-violet-700"
+                      >
+                        {produits.length} articles
+                      </Badge>
+                    </div>
+
+                    <AddButton
+                      type="button"
+                      onClick={() => setIsArticleDialogOpen(true)}
+                      title="Ajouter des produits"
+                    />
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {
+                      <div className="overflow-hidden border rounded-lg">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="w-[60%]">
+                                Désignation
+                              </TableHead>
+                              <TableHead>Quantité</TableHead>
+                              <TableHead>Prix unitaire</TableHead>
+                              <TableHead className="text-right">
+                                Action
+                              </TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {produits.map((articl) => (
+                              <TableRow key={articl.id}>
+                                <TableCell>
+                                  <span className="text-md">
+                                    {articl.produit.designation}
+                                  </span>
+                                </TableCell>
+                                <TableCell>
+                                  <Input
+                                    value={articl.quantite}
+                                    onChange={(e) =>
+                                      handleItemChange(
+                                        articl.produitId,
+                                        "quantite",
+                                        e.target.value
+                                      )
+                                    }
+                                    className="focus:!ring-purple-500 w-20"
+                                    type="number"
+                                    min="1"
+                                  />
+                                </TableCell>
+                                <TableCell>
+                                  <Input
+                                    value={articl.prixUnite}
+                                    onChange={(e) =>
+                                      handleItemChange(
+                                        articl.produitId,
+                                        "prixUnite",
+                                        e.target.value
+                                      )
+                                    }
+                                    className="focus:!ring-purple-500 w-20"
+                                    type="number"
+                                    min="1"
+                                  />
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => removeItem(articl.produitId)}
+                                    className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                          <TableFooter className="font-medium ">
+                            <TableRow>
+                              <TableCell
+                                colSpan={2}
+                                className=" p-4 text-right font-bold  text-xl"
+                              >
+                                Total :
+                              </TableCell>
+                              <TableCell
+                                colSpan={2}
+                                className=" border-zinc-500  p-4 text-left font-bold text-xl "
+                              >
+                                {total().toFixed(2)} DH
+                              </TableCell>
+                            </TableRow>
+                          </TableFooter>
+                        </Table>
+                      </div>
+                    }
+                  </div>
+                </CardContent>
+              </Card> */}
+
+                {bLGroups.map((group) => (
+                  <Card key={group.id}>
+                    <CardHeader className="p-4 pb-2">
+                      <div className="flex justify-between items-center">
+                        <h3 className="text-lg font-semibold">
+                          Groupe{" "}
+                          {bLGroups.findIndex((g) => g.id === group.id) + 1}
+                        </h3>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeOrderGroup(group.id)}
+                          className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
                         >
-                          {produits.length} articles
-                        </Badge>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="flex justify-between items-center mt-2">
+                        <div className="w-1/2 pr-2">
+                          <ComboBoxDevis
+                            onSelect={(devis) => {
+                              handleDevisSelect(group.id, devis);
+                              updateDevisNumberOfGroup(
+                                group.id,
+                                devis.numero,
+                                devis.client.nom,
+                                devis.clientId,
+                                `CMD-${devis?.numero?.slice(4, 13)}`,
+                                devis.total
+                              );
+                            }}
+                            setSelectedDevis={(devis) =>
+                              setSelectedDevis((prev) => ({
+                                ...prev,
+                                [group.id]: devis,
+                              }))
+                            }
+                          />
+                        </div>
+                        <div className="w-1/2 pr-2">
+                          <div className="col-span-2 grid gap-3">
+                            <Label className="text-left text-black">
+                              Client :
+                            </Label>
+                            <span className="text-md text-left text-gray-900 rounded-lg p-2 pl-4 bg-purple-50 h-[2.5rem]">
+                              {selectedDevis[group.id]?.client?.nom ||
+                                "Non sélectionné"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-2">
+                      <div className="flex justify-end items-center gap-3 mb-4">
+                        <ProduitsSelection
+                          onArticlesAdd={(articles) =>
+                            handleAddArticles(group.id, articles)
+                          }
+                        />
                       </div>
 
-                      <AddButton
-                        type="button"
-                        onClick={() => setIsArticleDialogOpen(true)}
-                        title="Ajouter des produits"
-                      />
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {
+                      {group.items?.length > 0 && (
                         <div className="overflow-hidden border rounded-lg">
                           <Table>
                             <TableHeader>
                               <TableRow>
                                 <TableHead className="w-[60%]">
-                                  Désignation
+                                  Produits
                                 </TableHead>
                                 <TableHead>Quantité</TableHead>
                                 <TableHead>Prix unitaire</TableHead>
@@ -407,19 +698,20 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {produits.map((articl) => (
-                                <TableRow key={articl.id}>
+                              {group.items.map((item) => (
+                                <TableRow key={item.uniqueKey}>
                                   <TableCell>
                                     <span className="text-md">
-                                      {articl.produit.designation}
+                                      {item.designation}
                                     </span>
                                   </TableCell>
                                   <TableCell>
                                     <Input
-                                      value={articl.quantite}
+                                      value={item.quantite}
                                       onChange={(e) =>
                                         handleItemChange(
-                                          articl.produitId,
+                                          group.id,
+                                          item.uniqueKey,
                                           "quantite",
                                           e.target.value
                                         )
@@ -431,10 +723,11 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                                   </TableCell>
                                   <TableCell>
                                     <Input
-                                      value={articl.prixUnite}
+                                      value={item.prixUnite}
                                       onChange={(e) =>
                                         handleItemChange(
-                                          articl.produitId,
+                                          group.id,
+                                          item.uniqueKey,
                                           "prixUnite",
                                           e.target.value
                                         )
@@ -449,7 +742,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                                       variant="ghost"
                                       size="icon"
                                       onClick={() =>
-                                        removeItem(articl.produitId)
+                                        removeItem(group.id, item.uniqueKey)
                                       }
                                       className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
                                     >
@@ -459,28 +752,19 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                                 </TableRow>
                               ))}
                             </TableBody>
-                            <TableFooter className="font-medium ">
-                              <TableRow>
-                                <TableCell
-                                  colSpan={2}
-                                  className=" p-4 text-right font-bold  text-xl"
-                                >
-                                  Total :
-                                </TableCell>
-                                <TableCell
-                                  colSpan={2}
-                                  className=" border-zinc-500  p-4 text-left font-bold text-xl "
-                                >
-                                  {total().toFixed(2)} DH
-                                </TableCell>
-                              </TableRow>
-                            </TableFooter>
                           </Table>
                         </div>
-                      }
-                    </div>
-                  </CardContent>
-                </Card>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+                <div className="w-fit">
+                  <AddButton
+                    type="button"
+                    onClick={addOrderGroup}
+                    title="Ajouter un groupe"
+                  />
+                </div>
               </div>
             )}
 
@@ -492,6 +776,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                   onClick={() => {
                     setCurrentStep(2);
                   }}
+                  disabled={!selectedFournisseur}
                 >
                   Suivant
                 </Button>

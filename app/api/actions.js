@@ -104,7 +104,16 @@ export async function addInfoEntreprise(info) {
 }
 
 export async function addtransaction(data) {
-  const { numero, type, montant, compte, lable, description } = data;
+  const {
+    numero,
+    type,
+    montant,
+    compte,
+    lable,
+    description,
+    date,
+    methodePaiement,
+  } = data;
   const result = await prisma.$transaction(async (prisma) => {
     await prisma.transactions.create({
       data: {
@@ -114,6 +123,8 @@ export async function addtransaction(data) {
         compte: type === "vider" ? "caisse" : compte,
         lable,
         description,
+        methodePaiement,
+        date: date || new Date(),
       },
     });
 

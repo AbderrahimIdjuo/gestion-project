@@ -18,6 +18,7 @@ import {
   TableRow,
   TableFooter,
 } from "@/components/ui/table";
+import { EnteteDevis } from "@/components/Entete-devis";
 
 function formatDate(dateString) {
   return dateString?.split("T")[0].split("-").reverse().join("-");
@@ -30,7 +31,16 @@ export default function PreviewBonLivraisonDialog({
   const handlePrint = () => {
     window.print();
   };
-
+  const totalFournitureDevis = (produits) => {
+    return produits?.reduce((acc, produit) => {
+      return acc + produit.quantite * produit.prixUnite;
+    }, 0);
+  };
+  const totalBL = (group) => {
+    return group?.reduce((acc, order) => {
+      return acc + totalFournitureDevis(order.produits);
+    }, 0);
+  };
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
@@ -42,10 +52,7 @@ export default function PreviewBonLivraisonDialog({
             {/* Document Content */}
             <div id="print-area" className="space-y-6 print:mt-10">
               {/* Header */}
-              <div className="flex justify-between items-center border-b border-[#228B8B] pb-1">
-                <img src="/images/LOGO-tete.jpg" alt="Logo" width={300} />
-                <img src="/images/LOGO-OUDAOUD.jpg" className="h-24 w-24" />
-              </div>
+              <EnteteDevis />
 
               <div className="flex justify-between gap-8">
                 {/* BL Info */}
@@ -76,67 +83,106 @@ export default function PreviewBonLivraisonDialog({
                   </h3>
                   <p className="font-semibold">{bonLivraison?.fournisseur}</p>
                 </div>
+                <div className="space-y-1 col-span-1">
+                  <h3 className="font-medium text-sm text-muted-foreground">
+                    Total :
+                  </h3>
+                  <p className="font-semibold">
+                    {totalBL(bonLivraison?.groups)} DH
+                  </p>
+                </div>
               </div>
               <div className="space-y-6">
-                <div className="border rounded-lg">
-                  {bonLivraison?.produits &&
-                  bonLivraison?.produits.length > 0 ? (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Produit</TableHead>
-                          <TableHead className="text-center !py-2">
-                            Qté
-                          </TableHead>
-                          <TableHead className="text-center !py-2">
-                            Prix
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {bonLivraison?.produits.map((product, productIndex) => (
-                          <TableRow key={product.id || productIndex}>
-                            <TableCell className=" font-semibold !py-2">
-                              {product.produit.designation}
-                            </TableCell>
-                            <TableCell className="text-center !py-2">
-                              {product.quantite}
-                            </TableCell>
-                            <TableCell className="text-center !py-2">
-                              {product.prixUnite} DH
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                      <TableFooter className="font-medium ">
-                        <TableRow>
-                          <TableCell
-                            colSpan={2}
-                            className=" p-4 text-right px-1 font-bold  text-xl"
-                          >
-                            Total :
-                          </TableCell>
-                          <TableCell
-                            colSpan={2}
-                            className=" border-zinc-500  px-1 text-left font-bold text-xl "
-                          >
-                            {bonLivraison?.total} DH
-                          </TableCell>
-                        </TableRow>
-                      </TableFooter>
-                    </Table>
-                  ) : (
-                    <p className="text-center text-muted-foreground py-4">
-                      aucun produit ajouter
-                    </p>
+                <div className="space-y-6">
+                  {bonLivraison?.groups.map((group, index) => (
+                    <div
+                      key={group.id || index}
+                      className="border print:bg-none rounded-xl shadow-sm"
+                    >
+                      <div className="p-4 pb-2 border-b">
+                        <div className="flex justify-between items-center">
+                          {group.devisNumero ? (
+                            <>
+                              <div className="space-y-1">
+                                <h3 className="font-medium text-sm text-muted-foreground">
+                                  Devis numéro :
+                                </h3>
+                                <p className="font-semibold">
+                                  {group.devisNumero}
+                                </p>
+                              </div>
+                              <div className="space-y-1 text-left">
+                                <h3 className="font-medium text-sm text-muted-foreground">
+                                  Client
+                                </h3>
+                                <p className="font-semibold">
+                                  {group.clientName}
+                                </p>
+                              </div>
+                            </>
+                          ) : (
+                            <p className="font-semibold">Atelier</p>
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        {group.produits && group.produits.length > 0 ? (
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Produit</TableHead>
+                                <TableHead className="text-center !py-2">
+                                  Qté
+                                </TableHead>
+                                <TableHead className="text-center !py-2">
+                                  Prix
+                                </TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {group.produits.map((product, productIndex) => (
+                                <TableRow key={product.id || productIndex}>
+                                  <TableCell className=" font-semibold !py-2">
+                                    {product.produit.designation}
+                                  </TableCell>
+                                  <TableCell className="text-center !py-2">
+                                    {product.quantite}
+                                  </TableCell>
+                                  <TableCell className="text-center !py-2">
+                                    {product.prixUnite} DH
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                            <TableFooter className="font-medium bg-none">
+                              <TableRow>
+                                <TableCell
+                                  colSpan={2}
+                                  className=" p-2 text-right font-bold"
+                                >
+                                  Total :
+                                </TableCell>
+                                <TableCell className="p-2 text-left font-bold">
+                                  {totalFournitureDevis(group.produits)} DH
+                                </TableCell>
+                              </TableRow>
+                            </TableFooter>
+                          </Table>
+                        ) : (
+                          <p className="text-center text-muted-foreground py-4">
+                            aucun produit ajouter
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+
+                  {bonLivraison?.groups.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      aucun produit trouvé
+                    </div>
                   )}
                 </div>
-
-                {bonLivraison?.produits.length === 0 && (
-                  <div className="text-center py-8 text-muted-foreground">
-                    aucun produit trouvé
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -152,7 +198,11 @@ export default function PreviewBonLivraisonDialog({
               className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full"
               variant="outline"
               onClick={() => {
-                handlePrint();
+                window.open(`/achats/bonLivraison/imprimer`, "_blank");
+                localStorage.setItem(
+                  "bonLivraison",
+                  JSON.stringify(bonLivraison)
+                );
               }}
             >
               <Printer className="mr-2 h-4 w-4" /> Imprimer

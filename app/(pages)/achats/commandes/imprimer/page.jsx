@@ -15,8 +15,7 @@ import {
 } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import PiedDevis from "@/components/pied-devis";
-import LoadingDeviPdf from "@/components/loading-devi-pdf";
+import { EnteteDevis } from "@/components/Entete-devis";
 
 function regrouperProduitsParQuantite(groups) {
   const produitMap = new Map();
@@ -67,10 +66,7 @@ export default function DevisPDFPage() {
           {/* Document Content */}
           <div id="print-area" className="space-y-3">
             {/* Header */}
-            <div className="flex justify-between items-center border-b border-[#228B8B] pb-1">
-              <img src="/images/LOGO-tete.jpg" alt="Logo" width={300} />
-              <img src="/images/LOGO-OUDAOUD.jpg" className="h-24 w-24" />
-            </div>
+            <EnteteDevis />
 
             {/* Company and Client Info */}
 
@@ -160,7 +156,6 @@ export default function DevisPDFPage() {
                 </TableBody>
               </Table>
             </div>
-
           </div>
           <div
             className="flex items-center justify-between print:hidden
@@ -187,7 +182,7 @@ print:hidden mt-5"
             </Button>
           </div>
         </div>
-      ) }
+      )}
     </>
   );
 }

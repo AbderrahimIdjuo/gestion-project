@@ -49,8 +49,8 @@ export default function CommandesPDFPage() {
   return (
     <>
       {commande ? (
-<div className="container mx-auto p-4 max-w-4xl bg-white min-h-screen print:p-0 print:max-w-none mb-10">         
-   {/* Document Content */}
+        <div className="container mx-auto p-4 max-w-4xl bg-white min-h-screen print:p-0 print:max-w-none mb-10">
+          {/* Document Content */}
           <div id="print-area" className="space-y-6">
             {/* Header */}
             <div className="flex justify-between items-center border-b border-[#228B8B] pb-1">
@@ -68,7 +68,7 @@ export default function CommandesPDFPage() {
                   <div className="flex items-center gap-2 mt-2 ">
                     <Calendar className="h-3 w-3" />
                     <p className="font-medium text-sm">
-                      <span>Date limite de livraison:</span>{" "}
+                      <span>Échéance de livraison :</span>{" "}
                       {formatDate(commande?.echeance)}{" "}
                     </p>
                   </div>

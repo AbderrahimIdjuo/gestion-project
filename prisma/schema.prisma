@@ -50,7 +50,7 @@ model Produits {
   achatsCommandes      AchatsCommandes[]
   CommandesProduits    CommandesProduits[]
   groupProduits        ListProduits[]
-  bonLivraisonProduits BonLivraisonProduits[]
+  bonLivraisonGroups    BlGroupsProduits[]
 }
 
 model Items {
@@ -150,6 +150,15 @@ model OrdersGroups {
   produits             ListProduits[]
 }
 
+model BLGroups {
+  id                   String              @id @default(uuid())
+  devisNumero          String?
+  clientName           String?
+  bonLivraison   BonLivraison? @relation(fields: [bonLivraisonId], references: [id], onDelete: Cascade)
+  bonLivraisonId String?
+  produits             BlGroupsProduits[]
+}
+
 model ListProduits {
   id        String       @id @default(uuid())
   group     OrdersGroups @relation(fields: [groupId], references: [id], onDelete: Cascade)
@@ -160,16 +169,26 @@ model ListProduits {
   prixUnite Float @default(0)
   @@unique([groupId, produitId])
 }
-
-model BonLivraisonProduits {
-  id             String       @id @default(uuid())
-  bonLivraisonId String
-  bonLivraison   BonLivraison @relation(fields: [bonLivraisonId], references: [id], onDelete: Cascade)
-  produitId      String
-  produit        Produits     @relation(fields: [produitId], references: [id], onDelete: Cascade)
-  quantite       Float
-  prixUnite      Float
+model BlGroupsProduits {
+  id        String       @id @default(uuid())
+  group     BLGroups @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId   String
+  produit   Produits     @relation(fields: [produitId], references: [id], onDelete: Cascade)
+  produitId String
+  quantite  Float
+  prixUnite Float @default(0)
+  @@unique([groupId, produitId])
 }
+
+// model BonLivraisonProduits {
+//   id             String       @id @default(uuid())
+//   bonLivraisonId String
+//   bonLivraison   BonLivraison @relation(fields: [bonLivraisonId], references: [id], onDelete: Cascade)
+//   produitId      String
+//   produit        Produits     @relation(fields: [produitId], references: [id], onDelete: Cascade)
+//   quantite       Float
+//   prixUnite      Float
+// }
 
 model Articls {
   id          String   @id @default(uuid())
@@ -227,10 +246,11 @@ model BonLivraison {
   totalPaye      Float?
   statutPaiement String?
   type           String?
-  produits       BonLivraisonProduits[]
+   groups        BLGroups[]
   fournisseur    Fournisseurs           @relation(fields: [fournisseurId], references: [id], onDelete: Cascade)
   createdAt      DateTime               @default(now())
   updatedAt      DateTime               @updatedAt
+   
 }
 
 // model Factures {
@@ -266,6 +286,8 @@ model Transactions {
   lable       String?
   reference   String?
   description String?
+  methodePaiement String?
+  date        DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

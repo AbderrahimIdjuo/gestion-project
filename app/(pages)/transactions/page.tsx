@@ -46,6 +46,9 @@ import {
 import TransactionDialog from "@/components/new-transaction";
 import { LoadingDots } from "@/components/loading-dots";
 
+function formatDate(dateString: string) {
+  return dateString?.split("T")[0].split("-").reverse().join("-");
+}
 type Transaction = {
   id: string;
   createdAt: string;
@@ -55,6 +58,8 @@ type Transaction = {
   reference: string;
   lable: string;
   description: string;
+  methodePaiement: string;
+  date: string;
 };
 type Compte = {
   compte: string;
@@ -357,11 +362,12 @@ export default function Banques() {
               <Table className="w-full">
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[150px]">Date-Time</TableHead>
+                    <TableHead className="w-[150px]">Date</TableHead>
                     <TableHead>Réference</TableHead>
                     <TableHead>Label</TableHead>
                     <TableHead>Montant</TableHead>
                     <TableHead>Type</TableHead>
+                    <TableHead>Méthode</TableHead>
                     <TableHead>Compte</TableHead>
                     <TableHead>Description</TableHead>
 
@@ -398,6 +404,9 @@ export default function Banques() {
                         <TableCell className="!py-2" align="left">
                           <Skeleton className="h-4 w-[100px]" />
                         </TableCell>
+                        <TableCell className="!py-2" align="left">
+                          <Skeleton className="h-4 w-[100px]" />
+                        </TableCell>
                         <TableCell className="!py-2 " align="right">
                           <Skeleton className="h-7 w-7 rounded-full" />
                         </TableCell>
@@ -407,10 +416,8 @@ export default function Banques() {
                     transactions.data?.map((transaction: Transaction) => (
                       <TableRow key={transaction.id}>
                         <TableCell className="font-medium py-1">
-                          {format(transaction.createdAt, "dd-MM-yyyy")}
-                          <br />
-
-                          {transaction.createdAt.split("T")[1].split(".")[0]}
+                          {formatDate(transaction.date) ||
+                            formatDate(transaction.createdAt)}
                         </TableCell>
 
                         <TableCell className="font-medium py-0">
@@ -430,6 +437,12 @@ export default function Banques() {
                           >
                             {handleTypeLableColor(transaction.type).lable}
                           </span>
+                        </TableCell>
+                        <TableCell className="font-medium py-0">
+                          {transaction.methodePaiement === "espece"
+                            ? "Espèce"
+                            : transaction.methodePaiement === "cheque" &&
+                              "Chèque"}
                         </TableCell>
                         <TableCell className="font-medium py-0">
                           {transaction.compte}

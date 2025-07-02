@@ -135,6 +135,8 @@ export async function GET(req) {
     { numero: { contains: searchQuery, mode: "insensitive" } },
     { devis: { numero: { contains: searchQuery, mode: "insensitive" } } },
   ];
+  console.log("from : ", from, "to:", to);
+  
   // Date range filter
   if (from && to) {
     filters.date = {

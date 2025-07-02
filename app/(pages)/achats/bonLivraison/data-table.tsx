@@ -2,6 +2,7 @@
 import * as React from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import CustomPagination from "@/components/customUi/customPagination";
 import {
   ColumnDef,
   flexRender,
@@ -37,7 +38,6 @@ export function DataTable<TData, TValue>({
   columns,
   data,
 }: DataTableProps<TData, TValue>) {
-  const [searchQuery, setSearchQuery] = useState("");
 
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
@@ -72,7 +72,7 @@ export function DataTable<TData, TValue>({
 
   return (
     <div>
-      <div className="flex justify-end items-center py-2">
+      <div className="flex justify-end items-center mb-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="ml-auto rounded-full">
@@ -100,7 +100,7 @@ export function DataTable<TData, TValue>({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <div className="rounded-md border">
+      <div className="rounded-md border mb-2">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

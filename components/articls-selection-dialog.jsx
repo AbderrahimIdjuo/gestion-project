@@ -83,11 +83,11 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
       };
     });
   };
-    const generateUniqueKey = () => {
-      const digits = "1234567890";
-      const nanoidCustom = customAlphabet(digits, 6);
-      return nanoidCustom();
-    };
+  const generateUniqueKey = () => {
+    const digits = "1234567890";
+    const nanoidCustom = customAlphabet(digits, 6);
+    return nanoidCustom();
+  };
   const handleAddItems = () => {
     const articlesToAdd = Object.values(selectedArticles)
       .filter((article) => article.quantite > 0)
@@ -96,6 +96,7 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
         key: generateUniqueKey(),
         designation: designation,
         quantite,
+        prixUnite: 0,
       }));
 
     onArticlesAdd(articlesToAdd);

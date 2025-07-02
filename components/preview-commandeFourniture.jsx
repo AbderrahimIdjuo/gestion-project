@@ -32,7 +32,12 @@ export default function PreviewCommandeFournitureDialog({ commande }) {
   const handlePrint = () => {
     window.print();
   };
-
+  const total = () => {
+    const produits = groups.flatMap((group) => group.items);
+    return produits.reduce((acc, produit) => {
+      return acc + produit.quantite * produit.prixUnite;
+    }, 0);
+  };
   return (
     <>
       <CustomTooltip message="Visualiser">

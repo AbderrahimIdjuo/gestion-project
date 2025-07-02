@@ -30,7 +30,7 @@ export function DevisActions({
   setDeleteDialogOpen,
   setCurrentDevi,
   transactions,
-  orderGroups,
+  bLGroups,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [compte, setCompte] = useState("");
@@ -46,34 +46,7 @@ export function DevisActions({
     const trans = transactions?.filter((c) => c.reference === numero);
     return trans;
   };
-  const createTransaction = useMutation({
-    mutationFn: async () => {
-      const data = {
-        montant: Number(montant),
-        compte,
-        numero: devis.numero,
-        type: "recette",
-        lable: "",
-        description: "",
-      };
-
-      console.log("transData : ", data);
-      const loadingToast = toast.loading("Paiement en cours...");
-      try {
-        await addtransaction(data);
-        toast.success("Paiement éffectué avec succès");
-      } catch (error) {
-        toast.error("Échec de l'opération!");
-        throw error;
-      } finally {
-        toast.dismiss(loadingToast);
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(["transactions"]);
-      queryClient.invalidateQueries(["devis"]);
-    },
-  });
+ 
 
   return (
     <>
@@ -125,9 +98,9 @@ export function DevisActions({
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => {
-              setIsFournitureOpen(true);
-              setMenuOpen(false);
-              setCurrentDevi(devis);
+              window.open(`/ventes/devis/imprimerFournitures`, "_blank");
+              localStorage.setItem("devi", JSON.stringify(devis));
+              localStorage.setItem("bLGroups", JSON.stringify(bLGroups));
             }}
             className="flex items-center gap-2 cursor-pointer group hover:!bg-fuchsia-100"
           >
@@ -174,7 +147,7 @@ export function DevisActions({
         isOpen={isBankDialogOpen}
         onClose={() => setIsBankDialogOpen(false)}
         onConfirm={() => {
-          createTransaction.mutate();
+         // createTransaction.mutate();
           setIsBankDialogOpen(false);
         }}
       />
@@ -182,7 +155,7 @@ export function DevisActions({
         devis={devis}
         isOpen={isFournitureOpen}
         onClose={() => setIsFournitureOpen(false)}
-        orderGroups={orderGroups}
+        bLGroups={bLGroups}
       />
       <FactureDialog
         devis={devis}

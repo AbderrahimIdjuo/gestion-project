@@ -97,19 +97,14 @@ export default function Factures() {
       filters.statutPaiement,
     ],
     queryFn: async () => {
-      const fixedfrom = startDate
-        ? toUTCDateOnly(startDate).toISOString()
-        : undefined;
-      const fixedto = endDate
-        ? toUTCDateOnly(endDate).toISOString()
-        : undefined;
+      // Les dates viennent déjà au format ISO string UTC depuis le DateRangePicker
       const response = await axios.get("/api/factures", {
         params: {
           query: debouncedQuery,
           page,
           statut: filters.statut,
-          from: fixedfrom,
-          to: fixedto,
+          from: startDate, // Utilisation directe
+          to: endDate, // Utilisation directe
           minTotal: filters.montant[0],
           maxTotal: filters.montant[1],
           categorie: encodeURIComponent(filters.categorie),
@@ -122,7 +117,7 @@ export default function Factures() {
       return response.data.factures;
     },
     keepPreviousData: true, // Keeps old data visible while fetching new page
-    refetchOnWindowFocus: false,
+    reflechOnWindowFocus: false,
   });
 
   const deleteFacture = useMutation({
@@ -340,7 +335,10 @@ export default function Factures() {
                                   "facture",
                                   JSON.stringify(facture)
                                 );
-                                window.open(`/ventes/factures/imprimer`, "_blank");
+                                window.open(
+                                  `/ventes/factures/imprimer`,
+                                  "_blank"
+                                );
                                 setCurrFacture(facture);
                               }}
                             >

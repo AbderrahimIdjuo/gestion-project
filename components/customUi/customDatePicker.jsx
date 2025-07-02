@@ -14,11 +14,25 @@ import { cn } from "@/lib/utils";
 import { fr } from "date-fns/locale";
 export function CustomDatePicker({ date, onDateChange }) {
   // Handle date changes internally and pass them to the `onDateChange` prop
+
+
+ // Fonction pour convertir en UTC à minuit
+  const toUTCDateOnly = (localDate) => {
+    return new Date(
+      Date.UTC(
+        localDate.getFullYear(),
+        localDate.getMonth(),
+        localDate.getDate()
+      )
+    );
+  };
+
+  // Handle date changes internally and pass them to the `onDateChange` prop
   const handleDateSelect = (selectedDate) => {
-    if (onDateChange) {
-    onDateChange(selectedDate); // Call the parent-provided handler
-
-
+    if (selectedDate && onDateChange) {
+      // Convertir la date sélectionnée en UTC à minuit
+      const fixedDate = toUTCDateOnly(selectedDate);
+      onDateChange(fixedDate.toISOString()); // Call the parent-provided handler
     }
   };
 

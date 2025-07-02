@@ -49,23 +49,23 @@ export async function POST(req) {
       });
 
       //créer une transaction : paiement d'avance
-      if (avance > 0) {
-        await prisma.transactions.create({
-          data: {
-            reference: numero,
-            type: "recette",
-            montant: avance,
-            compte,
-            lable: "avance",
-          },
-        });
-        await prisma.comptesBancaires.updateMany({
-          where: { compte },
-          data: {
-            solde: { increment: avance },
-          },
-        });
-      }
+      // if (avance > 0) {
+      //   await prisma.transactions.create({
+      //     data: {
+      //       reference: numero,
+      //       type: "recette",
+      //       montant: avance,
+      //       compte,
+      //       lable: "avance",
+      //     },
+      //   });
+      //   await prisma.comptesBancaires.updateMany({
+      //     where: { compte },
+      //     data: {
+      //       solde: { increment: avance },
+      //     },
+      //   });
+      // }
     });
     return NextResponse.json({ result });
   } catch (error) {
@@ -279,10 +279,10 @@ export async function GET(req) {
   });
 
   // Fetch ordersGroups
-  const ordersGroupdsList = await prisma.ordersGroups.findMany({
+  const bLGroupdsList = await prisma.bLGroups.findMany({
     where: { devisNumero: { in: devisNumbers } },
     include: {
-      commandeFourniture: {
+      bonLivraison: {
         select: {
           numero: true,
           fournisseur: {
@@ -311,7 +311,7 @@ export async function GET(req) {
     maxMontant: deviMaxTotal?.total || 0,
     totalDevis,
     transactionsList,
-    ordersGroupdsList,
+    bLGroupdsList,
     lastDevi,
   });
 }

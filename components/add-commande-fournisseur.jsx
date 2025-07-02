@@ -52,14 +52,6 @@ export default function AddCommandeFournisseur({ lastCommande }) {
   } = useForm();
   const selectedDate = watch("date");
 
-  // const lastCommande = useQuery({
-  //   queryKey: ["lastCommande"],
-  //   queryFn: async () => {
-  //     const response = await axios.get("/api/achats-commandes/lastCommande");
-  //     return response.data;
-  //   },
-  // });
-
   const generateCommandeNumber = () => {
     console.log("lastCommande", lastCommande?.numero);
 
@@ -188,6 +180,8 @@ export default function AddCommandeFournisseur({ lastCommande }) {
   const queryClient = useQueryClient();
   const ajouterCommande = useMutation({
     mutationFn: async (data) => {
+      console.log("data to submit:", data);
+
       const loadingToast = toast.loading("Ajout de la commande...");
       try {
         const response = await axios.post("/api/achats-commandes", data);
@@ -219,7 +213,7 @@ export default function AddCommandeFournisseur({ lastCommande }) {
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-[100vw] max-h-[100vh] overflow-y-auto">
+        <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Commande fourniture</DialogTitle>
           </DialogHeader>

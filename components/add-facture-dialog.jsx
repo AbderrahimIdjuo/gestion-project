@@ -55,21 +55,10 @@ export default function FactureDialog({ devis, isOpen, onClose }) {
   const queryClient = useQueryClient();
   const router = useRouter();
 
-  function toUTCDateOnly(localDate) {
-    return new Date(
-      Date.UTC(
-        localDate.getFullYear(),
-        localDate.getMonth(),
-        localDate.getDate()
-      )
-    );
-  }
   const createFacture = useMutation({
     mutationFn: async () => {
-      // Ensure UTC midnight before converting to ISO string
-      const fixedDate = toUTCDateOnly(date);
       const data = {
-        date: fixedDate.toISOString(),
+        date,
         devisId: devis.id,
         numero,
       };

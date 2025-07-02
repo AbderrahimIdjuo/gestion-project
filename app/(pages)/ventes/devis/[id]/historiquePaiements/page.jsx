@@ -18,26 +18,27 @@ import { Phone, MapPin, Smartphone } from "lucide-react";
 import LoadingHistoriquePaiements from "@/components/loading-historique-paiements";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import axios from "axios";
+import { EnteteDevis } from "@/components/Entete-devis";
 
 function formatDate(dateString) {
   return dateString?.split("T")[0].split("-").reverse().join("-");
 }
 
 function formatPhoneNumber(phone) {
-  return phone.replace(/(\d{2})(?=\d)/g, "$1 ").trim();
+  return phone?.replace(/(\d{2})(?=\d)/g, "$1 ").trim();
 }
 
 export default function HistoriquePaiement() {
-  const [commande, setCommande] = useState();
+  const [devis, setDevis] = useState();
   const [transactions, setTransactions] = useState();
   const handlePrint = () => {
     window.print();
   };
   useEffect(() => {
-    const commandeDetails = localStorage.getItem("commande");
-    console.log("commandeDetails", JSON.parse(commandeDetails));
-    if (commandeDetails) {
-      setCommande(JSON.parse(commandeDetails));
+    const devisDetails = localStorage.getItem("devis");
+    console.log("devisDetails", JSON.parse(devisDetails));
+    if (devisDetails) {
+      setDevis(JSON.parse(devisDetails));
     }
 
     const transactionsDetails = localStorage.getItem("transactions");
@@ -59,25 +60,22 @@ export default function HistoriquePaiement() {
   });
   return (
     <>
-      {commande ? (
+      {devis ? (
         <div className="container mx-auto p-8 max-w-4xl bg-white min-h-screen print:p-0 print:max-w-none mb-10">
           {/* Document Content */}
           <div id="print-area" className="space-y-6">
             {/* Header */}
-            <div className="flex justify-between items-center border-b border-[#228B8B] pb-1">
-              <img src="/images/LOGO-tete.jpg" alt="Logo" width={300} />
-              <img src="/images/LOGO-OUDAOUD.jpg" className="h-24 w-24" />
-            </div>
+            <EnteteDevis />
 
             {/* Company and Client Info */}
             <div className="grid grid-cols-2 gap-8">
               {/* Company Info */}
               <div className="col-span-1">
                 <h1 className="font-bold text-lg text-gray-900">
-                  Devis N° : {commande?.numero}
+                  Devis N° : {devis?.numero}
                 </h1>
                 <h1 className="font-bold text-lg text-gray-900">
-                  Total TTC : {commande?.total} DH
+                  Total TTC : {devis?.total} DH
                 </h1>
               </div>
               {/* Client Info */}
@@ -85,14 +83,14 @@ export default function HistoriquePaiement() {
                 <div className="flex items-center gap-2 mb-2">
                   <h2 className="font-bold text-lg text-gray-900">Client : </h2>
                   <p className="font-bold text-lg text-gray-900">
-                    {commande?.client.titre && commande?.client.titre + ". "}
-                    {commande?.client.nom.toUpperCase()}
+                    {devis?.client.titre && devis?.client.titre + ". "}
+                    {devis?.client.nom.toUpperCase()}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 ">
                   <Phone className="h-3 w-3" />
                   <p className="font-medium text-sm">
-                    {formatPhoneNumber(commande?.client.telephone)}
+                    {formatPhoneNumber(devis?.client.telephone)}
                   </p>
                 </div>
               </div>
@@ -108,6 +106,9 @@ export default function HistoriquePaiement() {
                       <TableHead className="text-black font-bold text-left border-b border-black">
                         Date
                       </TableHead>
+                      <TableHead className="text-black  font-bold text-left border-l border-b border-black">
+                        Méthode de paiement
+                      </TableHead>
                       <TableHead className="text-black font-bold border-l border-b border-black text-left">
                         Montant
                       </TableHead>
@@ -117,8 +118,16 @@ export default function HistoriquePaiement() {
                     {transactions?.map((transaction) => (
                       <TableRow key={transaction.id}>
                         <TableCell className=" p-2 text-left border-b border-black font-semibold">
-                          {formatDate(transaction.createdAt)}{" "}
+                          {formatDate(transaction.date) ||
+                            formatDate(transaction.createdAt)}{" "}
                         </TableCell>
+                        <TableCell className=" p-2 text-left border-l border-b border-black font-semibold">
+                          {transaction.methodePaiement === "espece"
+                            ? "Espèce"
+                            : transaction.methodePaiement === "cheque" &&
+                              "Chèque"}
+                        </TableCell>
+
                         <TableCell className="border-l border-b border-black p-2 text-left font-semibold">
                           {transaction.montant} DH
                         </TableCell>
@@ -128,7 +137,7 @@ export default function HistoriquePaiement() {
                   <TableFooter className="font-medium">
                     <TableRow>
                       <TableCell
-                        colSpan={1}
+                        colSpan={2}
                         className="text-lg border-b border-black text-gray-900 p-2 text-right font-extrabold"
                       >
                         Total payé :
@@ -140,14 +149,13 @@ export default function HistoriquePaiement() {
 
                     <TableRow>
                       <TableCell
-                        colSpan={1}
+                        colSpan={2}
                         className="text-lg text-gray-900 p-2 text-right font-extrabold"
                       >
                         Reste à payer :
                       </TableCell>
                       <TableCell className="border-l border-black p-2 text-lg text-gray-900 text-left font-extrabold">
-                        {(commande?.total- totalPaye).toFixed(2)}{" "}
-                        DH
+                        {(devis?.total - totalPaye).toFixed(2)} DH
                       </TableCell>
                     </TableRow>
                   </TableFooter>

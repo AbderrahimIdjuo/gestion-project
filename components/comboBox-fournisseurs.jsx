@@ -82,7 +82,7 @@ export default function ComboBoxFournisseur({ fournisseur, setFournisseur }) {
 
   return (
     <div className="w-full">
-      <Label className="text-sm font-medium block">Fournisseur :</Label>
+      <Label className="text-sm font-medium block pt-1">Fournisseur :</Label>
       <Popover open={openComboBox} onOpenChange={setOpenComboBox}>
         <PopoverTrigger asChild>
           <Button

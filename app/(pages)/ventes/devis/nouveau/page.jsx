@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -75,7 +75,7 @@ export default function NouveauDevisPage() {
     resolver: zodResolver(newDeviSchema),
   });
   const selectedDate = watch("echeance");
-
+  const router = useRouter();
   const status = [
     { lable: "En attente", color: "amber-500" },
     { lable: "Accepté", color: "green-500" },
@@ -95,7 +95,6 @@ export default function NouveauDevisPage() {
     if (storedData) {
       setLastDeviNumber(JSON.parse(storedData));
     }
-    console.log("lastDeviNumber", JSON.parse(storedData));
   }, []);
   const generateDeviNumber = () => {
     const numero = Number(lastDeviNumber.replace("DEV-", "")) || 0;
@@ -116,7 +115,7 @@ export default function NouveauDevisPage() {
         try {
           const response = await axios.post("/api/devis", data);
           console.log("Devi ajouté avec succès");
-          //router.push("/ventes/devis");
+          router.push("/ventes/devis");
           reset();
           setItems([]);
           setClient(null);
@@ -213,9 +212,9 @@ export default function NouveauDevisPage() {
           <Card className="w-full">
             <CardContent className="p-6 space-y-6">
               {/* Header Section */}
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <ComboBoxClients setClient={setClient} client={client} />               
+                  <ComboBoxClients setClient={setClient} client={client} />
                   {errors.clientId && (
                     <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
                       <CircleX className="h-4 w-4" />
@@ -224,35 +223,7 @@ export default function NouveauDevisPage() {
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="statut" className="text-right text-black">
-                    Statut
-                  </Label>
-                  <Select
-                    value={watch("statut")}
-                    name="statut"
-                    onValueChange={(value) => setValue("statut", value)}
-                  >
-                    <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
-                      <SelectValue placeholder="Tous les statuts" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {status.map((statut, index) => (
-                        <SelectItem key={index} value={statut.lable}>
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`h-2 w-2 rounded-full bg-${statut.color}`}
-                            />
-                            {statut.lable}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="grid gap-6 grid-cols-3">
-                <div className="space-y-1">
-                  <Label htmlFor="client">Date limite de livraison : </Label>
+                  <Label htmlFor="client">Échéance de livraison : </Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
@@ -304,7 +275,35 @@ export default function NouveauDevisPage() {
                     </p>
                   )}
                 </div>
-
+                <div className="space-y-2">
+                  <Label htmlFor="statut" className="text-right text-black">
+                    Statut
+                  </Label>
+                  <Select
+                    value={watch("statut")}
+                    name="statut"
+                    onValueChange={(value) => setValue("statut", value)}
+                  >
+                    <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
+                      <SelectValue placeholder="Tous les statuts" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {status.map((statut, index) => (
+                        <SelectItem key={index} value={statut.lable}>
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`h-2 w-2 rounded-full bg-${statut.color}`}
+                            />
+                            {statut.lable}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid gap-6 grid-cols-3">
+                {/* 
                 <div className="space-y-1">
                   <Label htmlFor="orderNumber">Avance :</Label>
                   <div className="relative w-full flex">
@@ -351,7 +350,7 @@ export default function NouveauDevisPage() {
                       {errors.compte.message}
                     </p>
                   )}
-                </div>
+                </div> */}
               </div>
 
               {/* Items Table */}
@@ -479,7 +478,7 @@ export default function NouveauDevisPage() {
                               </TableCell>
                               <TableCell>
                                 <Input
-                                  defaultValue={0}
+                                  defaultValue={item.prixUnite}
                                   onChange={(e) => {
                                     handleItemChange(
                                       item.key,
@@ -574,7 +573,7 @@ export default function NouveauDevisPage() {
               </div>
               <div className="grid gap-6 w-full p-5">
                 <Label htmlFor="noteClient" className="text-left text-black">
-                  Note de client
+                  Note :
                 </Label>
                 <Textarea
                   name="note"
