@@ -56,7 +56,7 @@ export default function DevisPDFPage() {
               <h3 className="font-medium text-sm text-muted-foreground">
                 Date
               </h3>
-              <p className="font-semibold">{formatDate(bonLivraison?.date)}</p>
+              <p className="font-semibold">{bonLivraison?.date}</p>
             </div>
             <div className="col-span-1">
               <h3 className="font-medium text-sm text-muted-foreground">

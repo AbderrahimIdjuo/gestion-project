@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
@@ -268,6 +268,16 @@ export default function DevisPage() {
     return trans;
   };
 
+  const statutPaiement = (numero, devisTotal) => {
+    if (totalPaye(numero) === devisTotal || totalPaye(numero) > devisTotal) {
+      return { lable: "Payé", color: "bg-green-100 text-green-600" };
+    } else if (totalPaye(numero) > 0 && totalPaye(numero) < devisTotal) {
+      return { lable: "En partie", color: "bg-orange-100 text-orange-500" };
+    } else if (totalPaye(numero) === 0) {
+      return { lable: "Impayé", color: "bg-slate-100 text-slate-600" };
+    }
+  };
+
   return (
     <>
       <Toaster position="top-center"></Toaster>
@@ -403,7 +413,6 @@ export default function DevisPage() {
                 <TableHead>Payé</TableHead>
                 <TableHead>Reste</TableHead>
                 <TableHead>Statut</TableHead>
-
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -416,36 +425,15 @@ export default function DevisPage() {
                     tabIndex={-1}
                     key={index}
                   >
-                    <TableCell
-                      className="!py-2 text-sm md:text-base"
-                      align="left"
-                    >
-                      <Skeleton className="h-4 w-full" />
-                    </TableCell>
-                    <TableCell className="!py-2" align="left">
-                      <Skeleton className="h-4 w-full" />
-                    </TableCell>
-                    <TableCell className="!py-2" align="left">
-                      <Skeleton className="h-4 w-full" />
-                    </TableCell>
-                    <TableCell className="!py-2" align="left">
-                      <Skeleton className="h-4 w-full" />
-                    </TableCell>
-                    <TableCell className="!py-2" align="left">
-                      <Skeleton className="h-4 w-full" />
-                    </TableCell>
-                    <TableCell className="!py-2" align="left">
-                      <Skeleton className="h-4 w-full" />
-                    </TableCell>
-                    <TableCell className="!py-2" align="left">
-                      <Skeleton className="h-4 w-full" />
-                    </TableCell>
-                    <TableCell className="!py-2" align="left">
-                      <Skeleton className="h-4 w-full" />
-                    </TableCell>
-                    <TableCell className="!py-2" align="left">
-                      <Skeleton className="h-4 w-full" />
-                    </TableCell>
+                    {[...Array(9)].map((_, cellIndex) => (
+                      <TableCell
+                        key={cellIndex}
+                        className="!py-2 text-sm md:text-base"
+                        align="left"
+                      >
+                        <Skeleton className="h-4 w-full" />
+                      </TableCell>
+                    ))}
                     <TableCell className="!py-2">
                       <div className="flex gap-2 justify-end">
                         <Skeleton className="h-7 w-7 rounded-full" />
@@ -456,180 +444,195 @@ export default function DevisPage() {
               ) : devis.data?.length > 0 ? (
                 devis.data?.map((devis) => (
                   <>
-                    <TableRow key={devis.id}>
-                      <TableCell className="!py-2">
-                        {formatDate(devis.createdAt)}
-                      </TableCell>
-                      <TableCell
-                        onClick={() => {
-                          toggleExpand(devis.id);
-                          if (totalPaye(devis.numero) !== 0) {
-                            if (currentDevi?.id === devis.id) {
-                              setInfo(!info);
-                            } else setInfo(true);
-                            setCurrentDevi(devis);
-                          }
-                        }}
-                        className={`font-medium !py-2  ${
-                          (totalPaye(devis.numero) === devis.total ||
-                            totalPaye(devis.numero) > devis.total) &&
-                          "cursor-pointer hover:text-green-400"
-                        } 
+                    <Fragment key={devis.id}>
+                      <TableRow>
+                        <TableCell className="!py-2">
+                          {formatDate(devis.createdAt)}
+                        </TableCell>
+                        <TableCell
+                          onClick={() => {
+                            toggleExpand(devis.id);
+                            if (totalPaye(devis.numero) !== 0) {
+                              if (currentDevi?.id === devis.id) {
+                                setInfo(!info);
+                              } else setInfo(true);
+                              setCurrentDevi(devis);
+                            }
+                          }}
+                          className={`flex gap-2 font-medium !py-2  ${
+                            (totalPaye(devis.numero) === devis.total ||
+                              totalPaye(devis.numero) > devis.total) &&
+                            "cursor-pointer hover:text-green-400"
+                          } 
                         
                         ${
                           totalPaye(devis.numero) !== 0 &&
                           totalPaye(devis.numero) < devis.total &&
                           "cursor-pointer hover:text-orange-400"
                         }`}
-                      >
-                        {devis.numero}
-                      </TableCell>
-                      <TableCell className="!py-2">
-                        {devis.client.nom.toUpperCase()}
-                      </TableCell>
-                      <TableCell className="!py-2">{devis.total} DH</TableCell>
-                      <TableCell className="!py-2">
-                        {totalFourniture(filteredOrders(devis.numero))?.toFixed(
-                          2
-                        )}{" "}
-                        DH
-                      </TableCell>
-                      <TableCell className="!py-2">
-                        {(
-                          devis.total -
-                          totalFourniture(filteredOrders(devis.numero))
-                        )?.toFixed(2)}{" "}
-                        DH
-                      </TableCell>
-                      <TableCell className="!py-2">
-                        {totalPaye(devis.numero)?.toFixed(2)} DH
-                      </TableCell>
-                      <TableCell className="!py-2">
-                        {(devis.total - totalPaye(devis.numero))?.toFixed(2)} DH
-                      </TableCell>
-                      <TableCell className="!py-2">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`h-2 w-2 rounded-full ${getStatusColor(
-                              devis.statut
-                            )}`}
-                          />
-                          <span className="text-sm text-muted-foreground">
-                            {devis.statut}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right !py-2">
-                        <DevisActions
-                          transactions={transactions}
-                          devis={devis}
-                          setDeleteDialogOpen={setDeleteDialogOpen}
-                          setCurrentDevi={setCurrentDevi}
-                          bLGroups={filteredOrders(devis.numero)}
-                        />
-                      </TableCell>
-                    </TableRow>
-                    {info && expandedDevis === devis.id && (
-                      <TableRow className="">
-                        <TableCell colSpan={10} className="p-0">
-                          <div className="px-8 py-6 animate-in slide-in-from-top-2 duration-200">
-                            <div className="space-y-6">
-                              {/* Header Section */}
-                              <div className="flex justify-between items-center">
-                                <h4 className="text-lg font-semibold text-gray-900">
-                                  Historique des paiements
-                                </h4>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full"
-                                  onClick={() => {
-                                    window.open(
-                                      `/ventes/devis/${devis.id}/historiquePaiements`,
-                                      "_blank"
-                                    );
-                                    localStorage.setItem(
-                                      "devis",
-                                      JSON.stringify(devis)
-                                    );
-                                    localStorage.setItem(
-                                      "transactions",
-                                      JSON.stringify(
-                                        transactionsDevis(devis.numero)
-                                      )
-                                    );
-                                  }}
-                                >
-                                  <Printer className="h-4 w-4" />
-                                  Imprimer
-                                </Button>
-                              </div>
-
-                              {/* Table Section */}
-                              <div className="border rounded-lg overflow-hidden">
-                                <Table>
-                                  <TableBody>
-                                    {transactionsDevis(devis.numero)?.map(
-                                      (trans, index) => (
-                                        <TableRow
-                                          key={index}
-                                          className="hover:bg-gray-50/50 transition-colors"
-                                        >
-                                          <TableCell className="font-medium">
-                                            <div className="flex items-center gap-3">
-                                              <div className="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
-                                                <CalendarDays className="h-4 w-4" />
-                                              </div>
-                                              <span className="text-gray-900">
-                                                {formatDate(trans.date) ||
-                                                  formatDate(trans.createdAt)}
-                                              </span>
-                                            </div>
-                                          </TableCell>
-                                          <TableCell>
-                                            <div className="flex items-center gap-3">
-                                              <div className="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center">
-                                                <CircleDollarSign className="h-4 w-4" />
-                                              </div>
-                                              <span className="font-semibold text-emerald-700">
-                                                {trans.montant} DH
-                                              </span>
-                                            </div>
-                                          </TableCell>
-                                          <TableCell>
-                                            <div className="flex items-center gap-3">
-                                              <div className="w-8 h-8 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center">
-                                                <Landmark className="h-4 w-4" />
-                                              </div>
-                                              <span className="text-gray-700 font-medium">
-                                                {trans.compte}
-                                              </span>
-                                            </div>
-                                          </TableCell>
-                                          <TableCell className="text-right">
-                                            <Button
-                                              variant="ghost"
-                                              size="sm"
-                                              className="h-8 w-8 p-0 rounded-full hover:bg-red-100 hover:text-red-600"
-                                              onClick={() => {
-                                                setDeleteTransDialog(true);
-                                                setDeletedTrans(trans);
-                                              }}
-                                            >
-                                              <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                          </TableCell>
-                                        </TableRow>
-                                      )
-                                    )}
-                                  </TableBody>
-                                </Table>
-                              </div>
-                            </div>
+                        >
+                          {devis.numero}
+                          <div>
+                            <span
+                              className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold uppercase ${
+                                statutPaiement(devis.numero, devis.total)?.color
+                              }`}
+                            >
+                              {statutPaiement(devis.numero, devis.total)?.lable}
+                            </span>
                           </div>
                         </TableCell>
+                        <TableCell className="!py-2">
+                          {devis.client.nom.toUpperCase()}
+                        </TableCell>
+                        <TableCell className="!py-2">
+                          {devis.total} DH
+                        </TableCell>
+                        <TableCell className="!py-2">
+                          {totalFourniture(
+                            filteredOrders(devis.numero)
+                          )?.toFixed(2)}{" "}
+                          DH
+                        </TableCell>
+                        <TableCell className="!py-2">
+                          {(
+                            devis.total -
+                            totalFourniture(filteredOrders(devis.numero))
+                          )?.toFixed(2)}{" "}
+                          DH
+                        </TableCell>
+                        <TableCell className="!py-2">
+                          {totalPaye(devis.numero)?.toFixed(2)} DH
+                        </TableCell>
+
+                        <TableCell className="!py-2">
+                          {(devis.total - totalPaye(devis.numero))?.toFixed(2)}{" "}
+                          DH
+                        </TableCell>
+                        <TableCell className="!py-2">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`h-2 w-2 rounded-full ${getStatusColor(
+                                devis.statut
+                              )}`}
+                            />
+                            <span className="text-sm text-muted-foreground">
+                              {devis.statut}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right !py-2">
+                          <DevisActions
+                            transactions={transactions}
+                            devis={devis}
+                            setDeleteDialogOpen={setDeleteDialogOpen}
+                            setCurrentDevi={setCurrentDevi}
+                            bLGroups={filteredOrders(devis.numero)}
+                          />
+                        </TableCell>
                       </TableRow>
-                    )}
+                      {info && expandedDevis === devis.id && (
+                        <TableRow>
+                          <TableCell colSpan={10} className="p-0">
+                            <div className="px-8 py-6 animate-in slide-in-from-top-2 duration-200">
+                              <div className="space-y-6">
+                                {/* Header Section */}
+                                <div className="flex justify-between items-center">
+                                  <h4 className="text-lg font-semibold text-gray-900">
+                                    Historique des paiements
+                                  </h4>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full"
+                                    onClick={() => {
+                                      window.open(
+                                        `/ventes/devis/${devis.id}/historiquePaiements`,
+                                        "_blank"
+                                      );
+                                      localStorage.setItem(
+                                        "devis",
+                                        JSON.stringify(devis)
+                                      );
+                                      localStorage.setItem(
+                                        "transactions",
+                                        JSON.stringify(
+                                          transactionsDevis(devis.numero)
+                                        )
+                                      );
+                                    }}
+                                  >
+                                    <Printer className="h-4 w-4" />
+                                    Imprimer
+                                  </Button>
+                                </div>
+
+                                {/* Table Section */}
+                                <div className="border rounded-lg overflow-hidden">
+                                  <Table>
+                                    <TableBody>
+                                      {transactionsDevis(devis.numero)?.map(
+                                        (trans) => (
+                                          <TableRow
+                                            key={trans.id}
+                                            className="hover:bg-gray-50/50 transition-colors"
+                                          >
+                                            <TableCell className="font-medium">
+                                              <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
+                                                  <CalendarDays className="h-4 w-4" />
+                                                </div>
+                                                <span className="text-gray-900">
+                                                  {formatDate(trans.date) ||
+                                                    formatDate(trans.createdAt)}
+                                                </span>
+                                              </div>
+                                            </TableCell>
+                                            <TableCell>
+                                              <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center">
+                                                  <CircleDollarSign className="h-4 w-4" />
+                                                </div>
+                                                <span className="font-semibold text-emerald-700">
+                                                  {trans.montant} DH
+                                                </span>
+                                              </div>
+                                            </TableCell>
+                                            <TableCell>
+                                              <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center">
+                                                  <Landmark className="h-4 w-4" />
+                                                </div>
+                                                <span className="text-gray-700 font-medium">
+                                                  {trans.compte}
+                                                </span>
+                                              </div>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                              <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-8 w-8 p-0 rounded-full hover:bg-red-100 hover:text-red-600"
+                                                onClick={() => {
+                                                  setDeleteTransDialog(true);
+                                                  setDeletedTrans(trans);
+                                                }}
+                                              >
+                                                <Trash2 className="h-4 w-4" />
+                                              </Button>
+                                            </TableCell>
+                                          </TableRow>
+                                        )
+                                      )}
+                                    </TableBody>
+                                  </Table>
+                                </div>
+                              </div>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </Fragment>
                   </>
                 ))
               ) : (

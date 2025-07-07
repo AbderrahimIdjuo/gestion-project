@@ -5,7 +5,6 @@ export async function POST(req) {
   try {
     const response = await req.json();
     const { date, numero, fournisseurId, orderGroups } = response;
-    console.log("response commande ##### :", response);
     const DevisNumbers = orderGroups.map((g) => g.devisNumber);
     await prisma.devis.updateMany({
       where: {

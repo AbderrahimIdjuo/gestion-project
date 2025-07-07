@@ -28,8 +28,8 @@ export async function POST(req) {
       id: row.id || undefined, // Prisma will generate a UUID if not provided
       designation: row.designation || "",
       categorie: row.categorie || null,
-      prixAchat: row.prixAchat || 0,
-      stock: row.stock || 0,
+      prixAchat: parseFloat(row.prixAchat) || 0,
+      Unite: row.unite || null,
       reference: row.reference || "",
     }));
 

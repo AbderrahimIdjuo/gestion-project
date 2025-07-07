@@ -57,31 +57,16 @@ export default function ProduitsPage() {
   const [page, setPage] = useState(1);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [debouncedQuery, setDebouncedQuery] = useState();
-  const [debouncedValues, setDebouncedValues] = useState({
-    stock: undefined,
-    prixAchat: undefined,
-  });
   const [totalPages, setTotalPages] = useState();
   const [maxPrixAchat, setMaxPrixAchat] = useState();
   const [maxPrixVente, setMaxPrixVente] = useState();
-  const [maxStock, setMaxStock] = useState();
   const [currProduct, setCurrProduct] = useState(null);
   const [filters, setFilters] = useState({
     categorie: "all",
     statut: "all",
     prixAchat: [0, maxPrixAchat],
-    stock: [0, maxStock],
   });
 
-  // const stockStatuts = (stock) => {
-  //   if (stock > 19) {
-  //     return "En stock";
-  //   } else if (stock < 20 && stock > 0) {
-  //     return "Limité";
-  //   } else if (stock == 0) {
-  //     return "En rupture";
-  //   }
-  // };
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedQuery(searchQuery);
@@ -93,16 +78,6 @@ export default function ProduitsPage() {
     };
   }, [searchQuery]);
 
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValues({
-        stock: filters.stock,
-        prixAchat: filters.prixAchat,
-      });
-    }, 800);
-
-    return () => clearTimeout(handler);
-  }, [filters.stock, filters.prixVente, filters.prixAchat]);
   const queryClient = useQueryClient();
   const produits = useQuery({
     queryKey: [
@@ -111,7 +86,6 @@ export default function ProduitsPage() {
       debouncedQuery,
       page,
       filters.categorie,
-      debouncedValues, // On utilise debouncedValues pour éviter d'envoyer plusieurs requêtes au serveur en même temps.
     ],
     queryFn: async () => {
       const response = await axios.get("/api/produits", {
@@ -122,15 +96,13 @@ export default function ProduitsPage() {
           categorie: filters.categorie,
           minPrixAchats: filters.prixAchat[0],
           maxPrixAchats: filters.prixAchat[1],
-          minimumStock: filters.stock[0],
-          maximumStock: filters.stock[1],
         },
       });
       setTotalPages(response.data.totalPages);
       setMaxPrixAchat(response.data.maxPrixAchat);
       setMaxPrixVente(response.data.maxPrixVente);
-      setMaxStock(response.data.maxStock);
-      console.log("produits :", response.data.produits);
+
+      //  console.log("### produits ###:", response.data.produits);
 
       return response.data;
     },
@@ -158,10 +130,10 @@ export default function ProduitsPage() {
   useEffect(() => {
     setFilters((prevFilters) => ({
       ...prevFilters,
-      stock: [0, maxStock],
+
       prixAchat: [0, maxPrixAchat],
     }));
-  }, [maxStock, maxPrixAchat, maxPrixVente]);
+  }, [maxPrixAchat, maxPrixVente]);
 
   const categories = useQuery({
     queryKey: ["categories"],
@@ -170,26 +142,6 @@ export default function ProduitsPage() {
       return response.data.categories;
     },
   });
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "En stock":
-        return "bg-emerald-500";
-      case "En rupture":
-        return "bg-red-500";
-      case "Limité":
-        return "bg-amber-500";
-      default:
-        return "bg-gray-500";
-    }
-  };
-
-  const status = [
-    { value: "all", lable: "Tous les statut", color: "" },
-    { value: "En stock", lable: "En stock", color: "green-500" },
-    { value: "En rupture", lable: "En rupture", color: "red-500" },
-    { value: "Limité", lable: "Limité", color: "amber-500" },
-  ];
 
   return (
     <>
@@ -265,34 +217,6 @@ export default function ProduitsPage() {
                     </Select>
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4 my-2">
-                    <Label htmlFor="statut" className="text-right text-black">
-                      Statut
-                    </Label>
-                    <Select
-                      value={filters.statut}
-                      name="statut"
-                      onValueChange={(value) =>
-                        setFilters({ ...filters, statut: value })
-                      }
-                    >
-                      <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
-                        <SelectValue placeholder="Séléctionner un statut" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {status.map((statut, index) => (
-                          <SelectItem key={index} value={statut.value}>
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={`h-2 w-2 rounded-full bg-${statut.color}`}
-                              />
-                              {statut.lable}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4 my-2">
                     <Label htmlFor="montant" className="text-right text-black">
                       Prix:
                     </Label>
@@ -312,26 +236,6 @@ export default function ProduitsPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="grid grid-cols-4 items-center gap-4 my-2">
-                    <Label htmlFor="montant" className="text-right text-black">
-                      Stock :
-                    </Label>
-                    <div className="col-span-3">
-                      <PriceRangeSlider
-                        min={0}
-                        max={maxStock}
-                        step={10}
-                        value={filters.stock}
-                        onValueChange={(value) =>
-                          setFilters({ ...filters, stock: value })
-                        }
-                      />
-                      <div className="flex justify-between mt-2">
-                        <span>{filters.stock[0]} </span>
-                        <span>{filters.stock[1]} </span>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               </SheetContent>
             </Sheet>
@@ -345,189 +249,128 @@ export default function ProduitsPage() {
               </Button>
             </ImportProduits>
             <ProductFormDialog />
-            {/* <Button
-              onClick={() => {
-                setIsAddingProduct(!isAddingProduct);
-                if (isUpdatingProduct || isPurchasingProduct) {
-                  setIsUpdatingProduct(false);
-                  setIsAddingProduct(false);
-                  setIsPurchasingProduct(false);
-                }
-              }}
-              className={`${
-                isAddingProduct || isUpdatingProduct || isPurchasingProduct
-                  ? "bg-red-500 hover:bg-red-600"
-                  : "bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 "
-              } text-white font-semibold transition-all duration-300 transform hover:scale-105 rounded-full`}
-            >
-              {isAddingProduct || isUpdatingProduct || isPurchasingProduct ? (
-                <>
-                  <X className="mr-2 h-4 w-4" />
-                  Annuler
-                </>
-              ) : (
-                <>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Ajouter un produit
-                </>
-              )}
-            </Button> */}
           </div>
         </div>
 
         <div className="col-span-2 mb-10">
-            <div className="grid  gap-3 border mb-5 rounded-lg">
-              <Table>
-                <TableHeader>
-                  <TableRow>
+          <div className="grid  gap-3 border mb-5 rounded-lg">
+            <Table>
+              <TableHeader>
+                <TableRow>
                   <TableHead>Réference</TableHead>
-                    <TableHead>Désignation</TableHead>
-                    <TableHead>Catégorie</TableHead>
-                    <TableHead>Prix</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {produits.isLoading ? (
-                    [...Array(10)].map((_, index) => (
-                      <TableRow
-                        className="h-[2rem] MuiTableRow-root"
-                        role="checkbox"
-                        tabIndex={-1}
-                        key={index}
+                  <TableHead>Désignation</TableHead>
+                  <TableHead>Catégorie</TableHead>
+                  <TableHead>Prix</TableHead>
+                  <TableHead>Unite</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {produits.isLoading ? (
+                  [...Array(10)].map((_, index) => (
+                    <TableRow
+                      className="h-[2rem] MuiTableRow-root"
+                      role="checkbox"
+                      tabIndex={-1}
+                      key={index}
+                    >
+                      <TableCell
+                        className="!py-2 text-sm md:text-base"
+                        align="left"
                       >
-                        <TableCell
-                          className="!py-2 text-sm md:text-base"
-                          align="left"
-                        >
-                          <Skeleton className="h-4 w-[150px]" />
-                        </TableCell>
-                        <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-[150px]" />
-                        </TableCell>
-                        <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-[150px]" />
-                        </TableCell>
-                        <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-[90px]" />
-                        </TableCell>
-                        <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-[90px]" />
-                        </TableCell>
-                        <TableCell className="!py-2">
-                          <div className="flex gap-2 justify-end">
-                            <Skeleton className="h-7 w-7 rounded-full" />
-                            <Skeleton className="h-7 w-7 rounded-full" />
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : produits.data?.produits.length > 0 ? (
-                    produits.data?.produits.map((product) => (
-                      <TableRow key={product.id}>
-                        <TableCell className="font-medium !py-2">
-                          {product.reference}
-                        </TableCell>
-                        <TableCell className="font-medium !py-2">
-                          {product.designation}
-                        </TableCell>
-                        <TableCell className="!py-2">
-                          {product.categorie}
-                        </TableCell>
-                        <TableCell className="!py-2">
-                          {product.prixAchat.toFixed(2)} DH
-                        </TableCell>
-
-                        {/* <TableCell className="!py-2">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`h-2 w-2 rounded-full ${getStatusColor(
-                                stockStatuts(product.stock)
-                              )}`}
-                            />
-                            <span className="text-sm text-muted-foreground">
-                              {stockStatuts(product.stock)}
-                            </span>
-                          </div>
-                        </TableCell> */}
-
-                        <TableCell className="!py-2">
-                          <CustomTooltip message={product.description}>
-                            {product.description && (
-                              <span className="cursor-default">
-                                {product.description.slice(0, 10)}
-                              </span>
-                            )}
-                          </CustomTooltip>
-                        </TableCell>
-                        <TableCell className="text-right !py-2">
-                          <div className="flex justify-end gap-2">
-                            <CustomTooltip message="Modifier">
-                              <ModifyProductDialog currProduct={product} />
-                              {/* <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
-                                onClick={() => {
-                                  setCurrProduct(product);
-                                  setIsUpdatingProduct(true);
-                                  setIsAddingProduct(false);
-                                }}
-                              >
-                                <Pen className="h-4 w-4" />
-                              </Button> */}
-                            </CustomTooltip>
-                            <CustomTooltip message="Supprimer">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
-                                onClick={() => {
-                                  setDeleteDialogOpen(true);
-                                  setCurrProduct(product);
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </CustomTooltip>
-                            <CustomTooltip message="Commander">
-                              {/* <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 rounded-full hover:bg-green-100 hover:text-green-600"
-                                onClick={() => {
-                                  setCurrProduct(product);
-                                  setIsPurchasingProduct(!isPurchasingProduct);
-                                  setIsUpdatingProduct(false);
-                                  setIsAddingProduct(false);
-                                }}
-                              >
-                                <ShoppingBag className="h-4 w-4" />
-                              </Button> */}
-                            </CustomTooltip>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={8} align="center">
-                        Aucun produit trouvé
+                        <Skeleton className="h-4 w-[150px]" />
+                      </TableCell>
+                      <TableCell className="!py-2" align="left">
+                        <Skeleton className="h-4 w-[150px]" />
+                      </TableCell>
+                      <TableCell className="!py-2" align="left">
+                        <Skeleton className="h-4 w-[150px]" />
+                      </TableCell>
+                      <TableCell className="!py-2" align="left">
+                        <Skeleton className="h-4 w-[90px]" />
+                      </TableCell>
+                      <TableCell className="!py-2" align="left">
+                        <Skeleton className="h-4 w-[90px]" />
+                      </TableCell>
+                      <TableCell className="!py-2">
+                        <div className="flex gap-2 justify-end">
+                          <Skeleton className="h-7 w-7 rounded-full" />
+                          <Skeleton className="h-7 w-7 rounded-full" />
+                        </div>
                       </TableCell>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-            {produits.data?.produits.length > 0 && (
-              <CustomPagination
-                currentPage={page}
-                setCurrentPage={setPage}
-                totalPages={totalPages}
-              />
-            )}
+                  ))
+                ) : produits.data?.produits.length > 0 ? (
+                  produits.data?.produits.map((product) => (
+                    <TableRow key={product.id}>
+                      <TableCell className="font-medium !py-2">
+                        {product.reference}
+                      </TableCell>
+                      <TableCell className="font-medium !py-2">
+                        {product.designation}
+                      </TableCell>
+                      <TableCell className="!py-2">
+                        {product.categorie}
+                      </TableCell>
+                      <TableCell className="!py-2">
+                        {product.prixAchat.toFixed(2)} DH
+                      </TableCell>
+                      <TableCell className="!py-2">{product.Unite}</TableCell>
+                      <TableCell className="text-right !py-2">
+                        <div className="flex justify-end gap-2">
+                          <ModifyProductDialog currProduct={product} />
+
+                          <CustomTooltip message="Supprimer">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
+                              onClick={() => {
+                                setDeleteDialogOpen(true);
+                                setCurrProduct(product);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </CustomTooltip>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={8} align="center">
+                      <div className="text-center py-10 text-muted-foreground">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth={1.5}
+                          stroke="currentColor"
+                          className="size-14 mx-auto mb-4 opacity-50"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m5.231 13.481L15 17.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v16.5c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Zm3.75 11.625a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"
+                          />
+                        </svg>
+                        <p>Aucun produit trouvé</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
           </div>
+          {produits.data?.produits.length > 0 && (
+            <CustomPagination
+              currentPage={page}
+              setCurrentPage={setPage}
+              totalPages={totalPages}
+            />
+          )}
+        </div>
 
         <DeleteConfirmationDialog
           recordName={currProduct?.designation}

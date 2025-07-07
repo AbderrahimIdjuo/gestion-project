@@ -156,6 +156,12 @@ export default function AddBonLivraison({ lastBonLivraison }) {
     }, 0);
   };
 
+  const sousTotal = (group) => {
+    return group.items.reduce((acc, produit) => {
+      return acc + produit.quantite * produit.prixUnite;
+    }, 0);
+  };
+
   // const handleItemChange = (produitId, field, value) => {
   //   setProduits((prev) =>
   //     prev.map((p) =>
@@ -484,7 +490,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                   )}
                   <div className="space-y-1 col-span-1">
                     <h3 className="font-medium text-sm text-muted-foreground">
-                      Total :
+                      Total du BL:
                     </h3>
                     <p className="font-semibold">{total().toFixed()} DH</p>
                   </div>
@@ -510,117 +516,6 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                     ""
                   )}
                 </div>
-                {/* <Card>
-                <CardHeader>
-                  <CardTitle className="flex justify-between items-center gap-2">
-                    <div className="flex gap-2 items-center">
-                      Produits
-                      <Badge
-                        variant="secondary"
-                        className="rounded-full bg-purple-50 text-violet-700"
-                      >
-                        {produits.length} articles
-                      </Badge>
-                    </div>
-
-                    <AddButton
-                      type="button"
-                      onClick={() => setIsArticleDialogOpen(true)}
-                      title="Ajouter des produits"
-                    />
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {
-                      <div className="overflow-hidden border rounded-lg">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead className="w-[60%]">
-                                Désignation
-                              </TableHead>
-                              <TableHead>Quantité</TableHead>
-                              <TableHead>Prix unitaire</TableHead>
-                              <TableHead className="text-right">
-                                Action
-                              </TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {produits.map((articl) => (
-                              <TableRow key={articl.id}>
-                                <TableCell>
-                                  <span className="text-md">
-                                    {articl.produit.designation}
-                                  </span>
-                                </TableCell>
-                                <TableCell>
-                                  <Input
-                                    value={articl.quantite}
-                                    onChange={(e) =>
-                                      handleItemChange(
-                                        articl.produitId,
-                                        "quantite",
-                                        e.target.value
-                                      )
-                                    }
-                                    className="focus:!ring-purple-500 w-20"
-                                    type="number"
-                                    min="1"
-                                  />
-                                </TableCell>
-                                <TableCell>
-                                  <Input
-                                    value={articl.prixUnite}
-                                    onChange={(e) =>
-                                      handleItemChange(
-                                        articl.produitId,
-                                        "prixUnite",
-                                        e.target.value
-                                      )
-                                    }
-                                    className="focus:!ring-purple-500 w-20"
-                                    type="number"
-                                    min="1"
-                                  />
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => removeItem(articl.produitId)}
-                                    className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                          <TableFooter className="font-medium ">
-                            <TableRow>
-                              <TableCell
-                                colSpan={2}
-                                className=" p-4 text-right font-bold  text-xl"
-                              >
-                                Total :
-                              </TableCell>
-                              <TableCell
-                                colSpan={2}
-                                className=" border-zinc-500  p-4 text-left font-bold text-xl "
-                              >
-                                {total().toFixed(2)} DH
-                              </TableCell>
-                            </TableRow>
-                          </TableFooter>
-                        </Table>
-                      </div>
-                    }
-                  </div>
-                </CardContent>
-              </Card> */}
-
                 {bLGroups.map((group) => (
                   <Card key={group.id}>
                     <CardHeader className="p-4 pb-2">
@@ -692,6 +587,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                                 </TableHead>
                                 <TableHead>Quantité</TableHead>
                                 <TableHead>Prix unitaire</TableHead>
+                                <TableHead>Montant</TableHead>
                                 <TableHead className="text-right">
                                   Action
                                 </TableHead>
@@ -737,6 +633,9 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                                       min="1"
                                     />
                                   </TableCell>
+                                  <TableCell>
+                                    {item.prixUnite * item.quantite} DH
+                                  </TableCell>
                                   <TableCell className="text-right">
                                     <Button
                                       variant="ghost"
@@ -752,6 +651,22 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                                 </TableRow>
                               ))}
                             </TableBody>
+                            <TableFooter>
+                              <TableRow>
+                                <TableCell
+                                  colSpan={3}
+                                  className="text-right text-xl font-semibold"
+                                >
+                                  Total :
+                                </TableCell>
+                                <TableCell
+                                  colSpan={2}
+                                  className="text-left text-xl font-semibold"
+                                >
+                                  {sousTotal(group)} DH
+                                </TableCell>
+                              </TableRow>
+                            </TableFooter>
                           </Table>
                         </div>
                       )}

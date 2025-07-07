@@ -43,8 +43,7 @@ model Produits {
   categorie            String?
   reference            String?
   prixAchat            Float?
-  stock                Int?
-  description          String?
+   Unite               String?
   createdAt            DateTime               @default(now())
   updatedAt            DateTime               @updatedAt
   achatsCommandes      AchatsCommandes[]

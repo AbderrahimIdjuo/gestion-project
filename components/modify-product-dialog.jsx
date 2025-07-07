@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import toast from "react-hot-toast";
 import { Input } from "@/components/ui/input";
@@ -27,18 +27,11 @@ import axios from "axios";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { CircleX } from "lucide-react";
-import { useInView } from "react-intersection-observer";
-import {
-  useQuery,
-  useQueryClient,
-  useInfiniteQuery,
-  useMutation,
-} from "@tanstack/react-query";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { CategoriesSelectMenu } from "@/components/select-categories-produits";
+
 export function ModifyProductDialog({ currProduct }) {
   const [open, setOpen] = useState(false);
-  const [debouncedQuery, setDebouncedQuery] = useState("");
-  const { ref, inView } = useInView();
-  const [searchQuery, setSearchQuery] = useState("");
   const queryClient = useQueryClient();
   const productSchema = z.object({
     id: z.string(),
@@ -48,28 +41,11 @@ export function ModifyProductDialog({ currProduct }) {
       if (value === "" || value === undefined) return undefined; // Handle empty input
       return typeof value === "string" ? parseFloat(value) : value;
     }, z.number({ invalid_type_error: "Le prix d'achat doit être un nombre" }).optional()),
-    stock: z.preprocess(
-      (value) => {
-        if (value === "" || value === undefined) return undefined; // Handle empty input
-        if (typeof value === "string") {
-          return parseFloat(value.replace(",", ".")); // Replace comma with dot
-        }
-        return value;
-      },
-      z
-        .number()
-        .refine(
-          (value) => Number.isInteger(value), // Ensure the value is an integer
-          { message: "Le stock doit être un entier" } // Custom error message
-        )
-        .optional()
-    ),
     reference: z.string().optional(),
-    description: z.string().optional(),
+    unite: z.string().optional(),
   });
   const {
     register,
-    reset,
     watch,
     setValue,
     handleSubmit,
@@ -80,23 +56,13 @@ export function ModifyProductDialog({ currProduct }) {
       designation: currProduct?.designation,
       categorie: currProduct?.categorie,
       prixAchat: currProduct?.prixAchat,
-      stock: currProduct?.stock,
-      description: currProduct?.description,
+      unite: currProduct?.Unite,
       reference: currProduct?.reference,
     },
     resolver: zodResolver(productSchema),
   });
-
-  const categories = useQuery({
-    queryKey: ["categories"],
-    queryFn: async () => {
-      const response = await axios.get("/api/categoriesProduits");
-      const categories = response.data.categories;
-      console.log("categories : ", categories);
-      return categories;
-    },
-  });
-
+  
+  const uniteList = ["ML", "M²", "U"];
   const modifierProduit = useMutation({
     mutationFn: async (data) => {
       const loadingToast = toast.loading("Modification du produit...");
@@ -121,45 +87,6 @@ export function ModifyProductDialog({ currProduct }) {
     modifierProduit.mutate(data);
   };
 
-  // infinite scrolling fournisseurs comboBox
-  const { data, fetchNextPage, isLoading, isFetchingNextPage, hasNextPage } =
-    useInfiniteQuery({
-      queryKey: ["fournisseurs", debouncedQuery],
-      queryFn: async ({ pageParam = null }) => {
-        const response = await axios.get(
-          "/api/fournisseurs/infinitPagination",
-          {
-            params: {
-              limit: 10,
-              query: debouncedQuery,
-              cursor: pageParam,
-            },
-          }
-        );
-
-        return response.data;
-      },
-      getNextPageParam: (lastPage) => lastPage.nextCursor || null,
-      keepPreviousData: true,
-    });
-
-  const fournisseurs = data?.pages.flatMap((page) => page.fournisseurs) || [];
-
-  useEffect(() => {
-    if (inView && hasNextPage) {
-      fetchNextPage();
-    }
-  }, [inView, hasNextPage, fetchNextPage]);
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedQuery(searchQuery);
-    }, 500);
-
-    return () => clearTimeout(handler);
-  }, [searchQuery]);
-  const handleErrors = (errors) => {
-    console.log("Validation errors: ", errors);
-  };
   return (
     <>
       <Dialog open={open} onOpenChange={setOpen}>
@@ -173,7 +100,7 @@ export function ModifyProductDialog({ currProduct }) {
           </Button>
         </DialogTrigger>
         <DialogContent className="sm:max-w-[400px] max-h-[90vh] overflow-y-auto">
-          <form onSubmit={handleSubmit(onSubmit, handleErrors)}>
+          <form onSubmit={handleSubmit(onSubmit)}>
             <DialogHeader>
               <DialogTitle>Modifier produit</DialogTitle>
               <DialogDescription>
@@ -204,7 +131,7 @@ export function ModifyProductDialog({ currProduct }) {
               </div>
               <div className="w-full grid grid-cols-1">
                 <Label htmlFor="reference" className="text-left mb-3">
-                Référence
+                  Référence
                 </Label>
                 <Input
                   id="reference"
@@ -226,22 +153,12 @@ export function ModifyProductDialog({ currProduct }) {
                 <Label htmlFor="categorie" className="text-left mb-2 mb-2">
                   Catégorie
                 </Label>
-                <Select
-                  name="categorie"
-                  onValueChange={(value) => setValue("categorie", value)}
-                  value={watch("categorie")}
-                >
-                  <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
-                    <SelectValue placeholder="Sélectionner ..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.data?.map((element) => (
-                      <SelectItem key={element.id} value={element.categorie}>
-                        {element.categorie}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <CategoriesSelectMenu
+                  categorie={watch("categorie")}
+                  setCategorie={(value) => {
+                    setValue("categorie", value);
+                  }}
+                />
               </div>
               <div className="relative w-full grid grid-cols-1">
                 <Label htmlFor="prixAchat" className="text-left mb-2 mb-2">
@@ -267,31 +184,27 @@ export function ModifyProductDialog({ currProduct }) {
                   </p>
                 )}
               </div>
-              <div className="relative w-full grid grid-cols-1">
-                <Label htmlFor="stock" className="text-left mb-2 mb-2">
-                  Stock
+              <div className="w-full grid grid-cols-1">
+                <Label htmlFor="unite" className="text-left mb-2 mb-2">
+                  Unité
                 </Label>
-                <Input
-                  id="stock"
-                  name="stock"
-                  {...register("stock")}
-                  className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-purple-500"
-                />
-                {errors.stock && (
-                  <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
-                    <CircleX className="h-4 w-4" />
-                    {errors.stock.message}
-                  </p>
-                )}
-              </div>
-              <div className="relative w-full grid grid-cols-1">
-                <Label htmlFor="description" className="text-left mb-2 mb-2">
-                  Description
-                </Label>
-                <Textarea
-                  {...register("description")}
-                  className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-purple-500"
-                />
+                <Select
+                  name="unite"
+                  onValueChange={(value) => setValue("unite", value)}
+                  value={watch("unite")}
+                  //defaultValue={watch("unite")}
+                >
+                  <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
+                    <SelectValue placeholder="Sélectionner ..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {uniteList.map((element, index) => (
+                      <SelectItem key={index} value={element}>
+                        {element}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <DialogFooter>

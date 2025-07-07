@@ -51,13 +51,14 @@ export default function DevisPDFPage() {
       return acc + totalCommandeFourniture(order.produits);
     }, 0);
   };
+  const listProduits = bLGroups?.flatMap((groupe) => groupe.produits) || [];
   return (
     <>
       {devis && (
         <>
-          <div className="container mx-auto p-8 max-w-4xl bg-white print:min-h-screen print:p-0 print:max-w-none mb-10">
+          <div className="container mx-auto px-8 pt-2 max-w-4xl bg-white print:min-h-screen print:p-0 print:max-w-none pb-10">
             {/* Document Content */}
-            <div id="print-area" className="space-y-6">
+            <div id="print-area" className="space-y-6 ">
               {/* Header */}
               <EnteteDevis />
               {/* Company and Client Info */}
@@ -116,6 +117,14 @@ export default function DevisPDFPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-2">
+                      Total de fournitures :
+                    </h3>
+                    <div className="text-sm text-gray-600">
+                      <p>{totalFourniture(bLGroups)} DH</p>
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">
                       Client:
                     </h3>
                     <div className="text-sm text-gray-600">
@@ -128,28 +137,18 @@ export default function DevisPDFPage() {
                 </div>
               )}
               {bLGroups?.length > 0 ? (
-                <div className="space-y-6">
+                <div className="space-y-2">
                   {bLGroups?.map((groupe, index) => (
-                    <div
-                      key={groupe.id || index}
-                      className="border border-zinc-300 print:bg-none rounded-xl shadow-sm p-4"
-                    >
-                      <div className="flex justify-between gap-8 mb-4">
+                    <div key={groupe.id || index} className=" print:bg-non">
+                      <div className="flex justify-between gap-8 mb-1">
                         {/* commande Info */}
 
-                        <div className="space-y-1 col-span-1">
-                          <h3 className="font-medium text-sm text-muted-foreground">
-                            Fournisseur
-                          </h3>
+                        <div>
                           <p className="font-semibold">
-                            {" "}
                             {groupe?.bonLivraison?.fournisseur.nom}
                           </p>
                         </div>
-                        <div className="col-span-1">
-                          <h3 className="font-medium text-sm text-muted-foreground">
-                            bon de livraison N°
-                          </h3>
+                        <div>
                           <p className="font-semibold">
                             {groupe?.bonLivraison?.numero}
                           </p>
@@ -205,11 +204,11 @@ export default function DevisPDFPage() {
                               <TableRow>
                                 <TableCell
                                   colSpan={4}
-                                  className=" p-2 text-right font-bold"
+                                  className=" p-1 text-right text-lg font-bold"
                                 >
                                   Total :
                                 </TableCell>
-                                <TableCell className=" border-zinc-500  p-2 text-left font-bold">
+                                <TableCell className=" border-zinc-500 text-lg  p-1 text-left font-bold">
                                   {totalCommandeFourniture(groupe.produits)} DH
                                 </TableCell>
                               </TableRow>
@@ -225,6 +224,69 @@ export default function DevisPDFPage() {
                   aucune commande trouvé
                 </div>
               )}
+
+              {/* {listProduits.length > 0 && (
+                <div className="overflow-hidden rounded-md border border-zinc-500 mt-0">
+                  <Table className="w-full border-collapse">
+                    <TableHeader className="text-[1rem] border-none">
+                      <TableRow className="!py-0">
+                        <TableHead className="text-sm  border-b border-zinc-500 text-black font-medium text-left !py-0">
+                          #
+                        </TableHead>
+                        <TableHead className="text-sm  border-b border-zinc-500 text-black font-medium text-left !py-0">
+                          Produit
+                        </TableHead>
+                        <TableHead className="text-sm  border-b border-zinc-500 text-black font-medium  text-center !py-0">
+                          Qté
+                        </TableHead>
+                        <TableHead className="text-sm  border-b border-zinc-500 text-black font-medium  text-center !py-0">
+                          Prix unitaire
+                        </TableHead>
+                        <TableHead className="text-sm  border-b border-zinc-500 text-black font-medium  text-center !py-0">
+                          Montant
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {listProduits.map((produit, index) => (
+                        <TableRow
+                          key={produit.id || index}
+                          className="border-none"
+                        >
+                          <TableCell className="p-1 text-left  border-t border-zinc-500 text-md font-semibold pl-4">
+                            {index + 1}
+                          </TableCell>
+                          <TableCell className="p-1 text-left  border-t border-zinc-500 text-md font-semibold p-0">
+                            {produit.produit.designation}
+                          </TableCell>
+                          <TableCell className=" p-1  border-t border-zinc-500 text-center p-0">
+                            {produit.quantite}
+                          </TableCell>
+                          <TableCell className="  border-t border-zinc-500  p-1 text-center p-0">
+                            {produit.prixUnite} DH{" "}
+                          </TableCell>
+                          <TableCell className="  border-t border-zinc-500  p-1 text-center p-0">
+                            {produit.quantite * produit.prixUnite} DH{" "}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                    <TableFooter className="font-medium border-zinc-500  ">
+                      <TableRow>
+                        <TableCell
+                          colSpan={4}
+                          className=" p-1 text-right text-lg font-bold"
+                        >
+                          Total :
+                        </TableCell>
+                        <TableCell className=" border-zinc-500 text-lg  p-1 text-left font-bold">
+                          {totalCommandeFourniture(listProduits)} DH
+                        </TableCell>
+                      </TableRow>
+                    </TableFooter>
+                  </Table>
+                </div>
+              )} */}
             </div>
             <div>
               <h3 className=" w-full border rounded-xl font-semibold text-end text-xl text-gray-900 mb-2 p-4 my-2">
@@ -233,7 +295,7 @@ export default function DevisPDFPage() {
             </div>
             <div
               className="flex items-center justify-between print:hidden
-    print:hidden mt-5"
+    print:hidden my-5"
             >
               <div className="flex items-center space-x-2 ">
                 <Switch

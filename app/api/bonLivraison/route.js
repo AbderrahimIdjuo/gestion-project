@@ -15,6 +15,7 @@ export async function POST(req) {
       reference,
     } = response;
     console.log("response ##### :", response);
+
     const result = await prisma.$transaction(async (prisma) => {
       await prisma.bonLivraison.create({
         data: {
@@ -45,6 +46,15 @@ export async function POST(req) {
           },
         },
       });
+      const DevisNumbers = bLGroups.map((g) => g.devisNumber);
+      await prisma.devis.updateMany({
+        where: {
+          numero: { in: DevisNumbers },
+        },
+        data: {
+          statut: "Accepté",
+        },
+      });
       // Mettre a jour les prixUnite des produits dans la CMDF
       // Étape 1 : Récupérer la commande fourniture
       // const commande = await prisma.commandeFourniture.findUnique({
@@ -68,7 +78,6 @@ export async function POST(req) {
       // });
       // Étape 2 : Créer une map pour un accès rapide au nouveau prix
       const produits = bLGroups.flatMap((group) => group.items);
-      console.log("produits ##### :", produits);
       const prixMap = new Map(produits.map((p) => [p.id, p.prixUnite]));
 
       // Étape 3 : Mettre à jour chaque ListProduits concerné
