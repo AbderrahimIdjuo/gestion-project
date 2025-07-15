@@ -11,11 +11,8 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
-
 import {
   Select,
   SelectContent,
@@ -23,11 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
-import { Plus, CalendarIcon, FileText, Send, ChevronDown } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { FileText, Send, ChevronDown } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import ComboBoxFournisseur from "@/components/comboBox-fournisseurs";
 import {
@@ -35,12 +28,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Command,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
 import { X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 export default function RapportDialog() {
@@ -138,7 +125,7 @@ export default function RapportDialog() {
                   </SelectTrigger>
                   <SelectContent>
                     {Types.map((type) => (
-                      <SelectItem value={type.Value}>
+                      <SelectItem key={type.Value} value={type.Value}>
                         <span className="flex items-center gap-2">
                           <div
                             className={`w-2 h-2 rounded-full ${type.Color}`}
@@ -271,7 +258,7 @@ export default function RapportDialog() {
                     </SelectItem>
                     <SelectItem value="cette-annee">Cette année</SelectItem>
                     <SelectItem value="annee-derniere">
-                      L'année dernière
+                      L&apos;année dernière
                     </SelectItem>
                     <SelectItem value="trimestre-actuel">
                       Trimestre actuel
