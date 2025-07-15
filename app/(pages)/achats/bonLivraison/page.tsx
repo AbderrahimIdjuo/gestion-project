@@ -45,7 +45,7 @@ import AddBonLivraison from "@/components/add-bonLivraison";
 import PreviewCommandeFournitureDialog from "@/components/preview-commandeFourniture";
 import PrintCommandeFournitureDialog from "@/components/print-commandeFourniture";
 import CustomTooltip from "@/components/customUi/customTooltip";
-
+import RapportDialog from "@/components/rapport-dialog";
 function formatDate(dateString: String) {
   return dateString?.split("T")[0].split("-").reverse().join("-");
 }
@@ -152,8 +152,10 @@ export default function BonLivraison() {
               {isFetching && !isLoading && <LoadingDots />}
             </div>
           </div>
+
           <div className="flex gap-3">
             <AddBonLivraison lastBonLivraison={lastBonLivraison} />
+            <RapportDialog />
           </div>
         </div>
         <DataTable columns={useBonLivraisonColumns()} data={listBonLivraison} />

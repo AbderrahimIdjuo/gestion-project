@@ -106,11 +106,14 @@ export default function DevisPDFPage() {
     }
     console.log("devi", JSON.parse(storedData));
   }, []);
-  const { devis, date, numero } = facture ? facture : {};
+  const { articls, date, numero, total, client } = facture ? facture : {};
   const handlePrint = () => {
     window.print();
   };
 
+  const tva = (total) => parseFloat(total * 0.2).toFixed(2);
+  const totalTTC = (total) =>
+    (parseFloat(total) + parseFloat(tva(total))).toFixed(2);
   return (
     <>
       <div className="container mx-auto p-4 max-w-4xl bg-white min-h-screen print:p-0 print:max-w-none mb-10">
@@ -139,13 +142,13 @@ export default function DevisPDFPage() {
                   <h3 className="font-semibold text-gray-900 mb-2">Client:</h3>
                   <div className="text-sm text-gray-600">
                     <p>
-                      {devis?.client.titre && devis?.client.titre + ". "}
-                      {devis?.client.nom.toUpperCase()}
+                      {client?.titre && client?.titre + ". "}
+                      {client?.nom.toUpperCase()}
                     </p>
-                    {devis?.client.ice && (
+                    {client?.ice && (
                       <div className="flex items-center gap-2 ">
                         <p className="font-medium text-sm">
-                          ICE : {devis?.client.ice}
+                          ICE : {client?.ice}
                         </p>
                       </div>
                     )}
@@ -175,14 +178,12 @@ export default function DevisPDFPage() {
                 <h3 className="font-semibold text-gray-900 mb-2">Client:</h3>
                 <div className="text-sm text-gray-600">
                   <p>
-                    {devis?.client.titre && devis?.client.titre + ". "}
-                    {devis?.client.nom.toUpperCase()}
+                    {client?.titre && client?.titre + ". "}
+                    {client?.nom.toUpperCase()}
                   </p>
-                  {devis?.client.ice && (
+                  {client?.ice && (
                     <div className="flex items-center gap-2 ">
-                      <p className="font-medium text-sm">
-                        ICE : {devis?.client.ice}
-                      </p>
+                      <p className="font-medium text-sm">ICE : {client?.ice}</p>
                     </div>
                   )}
                 </div>
@@ -242,7 +243,7 @@ export default function DevisPDFPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {devis?.articls?.map((articl) => (
+                {articls?.map((articl) => (
                   <TableRow key={articl.id}>
                     <TableCell className=" p-1 text-left border-b border-black text-md font-semibold">
                       {articl.designation}{" "}
@@ -263,7 +264,7 @@ export default function DevisPDFPage() {
                       {articl.prixUnite} DH
                     </TableCell>
                     <TableCell className="border-l border-b border-black p-1 text-center font-bold">
-                      {articl.montant} DH
+                      {articl.prixUnite * articl.quantite} DH
                     </TableCell>
                   </TableRow>
                 ))}
@@ -280,62 +281,38 @@ export default function DevisPDFPage() {
                     colSpan={2}
                     className="border-l border-black p-2 text-left text-lg font-bold"
                   >
-                    {devis?.sousTotal.toFixed(2)} DH
+                    {total?.toFixed(2)} DH
                   </TableCell>
                 </TableRow>
 
-                {devis?.reduction > 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={6}
-                      className=" border-t border-black p-2 text-right text-lg font-bold"
-                    >
-                      Réduction :
-                    </TableCell>
-                    <TableCell
-                      colSpan={2}
-                      className="border-l border-t border-black p-2 text-lg text-left font-bold"
-                    >
-                      {devis?.reduction} {devis?.typeReduction}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  ""
-                )}
-                {devis?.tva > 0 ? (
-                  <>
-                    <TableRow>
-                      <TableCell
-                        colSpan={6}
-                        className="border-t border-black p-2 text-right text-lg font-bold"
-                      >
-                        TVA :
-                      </TableCell>
-                      <TableCell
-                        colSpan={2}
-                        className="border-l border-t border-black p-2 text-lg text-left font-bold"
-                      >
-                        {devis?.tva.toFixed(2)} DH
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell
-                        colSpan={6}
-                        className=" text-gray-900 border-t border-black  text-xl p-2 text-right font-extrabold"
-                      >
-                        Total TTC :
-                      </TableCell>
-                      <TableCell
-                        colSpan={2}
-                        className="border-l border-t border-black p-2 text-xl text-gray-900 text-left font-extrabold"
-                      >
-                        {devis?.total.toFixed(2)} DH
-                      </TableCell>
-                    </TableRow>
-                  </>
-                ) : (
-                  ""
-                )}
+                <TableRow>
+                  <TableCell
+                    colSpan={6}
+                    className="border-t border-black p-2 text-right text-lg font-bold"
+                  >
+                    TVA :
+                  </TableCell>
+                  <TableCell
+                    colSpan={2}
+                    className="border-l border-t border-black p-2 text-lg text-left font-bold"
+                  >
+                    {tva(total)} DH
+                  </TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell
+                    colSpan={6}
+                    className=" text-gray-900 border-t border-black  text-xl p-2 text-right font-extrabold"
+                  >
+                    Total TTC:
+                  </TableCell>
+                  <TableCell
+                    colSpan={2}
+                    className="border-l border-t border-black p-2 text-xl text-gray-900 text-left font-extrabold"
+                  >
+                    {totalTTC(total)} DH
+                  </TableCell>
+                </TableRow>
               </TableFooter>
             </Table>
           </div>
@@ -344,9 +321,9 @@ export default function DevisPDFPage() {
             <h3 className="text-sm font-medium mb-0">
               Arrêtée la présente facture à la somme de :{" "}
               <span className="text-sm font-bold mb-0 ">
-                {nombreEnLettres(devis?.total)}{" "}
+                {nombreEnLettres(total)}{" "}
               </span>{" "}
-              Dirhams 
+              Dirhams
             </h3>
             {/* {infosVisibilite && <PiedFactureStyle2 />} */}
           </div>

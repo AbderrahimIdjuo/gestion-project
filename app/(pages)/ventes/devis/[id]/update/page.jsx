@@ -78,7 +78,6 @@ export default function UpdateDevisPage({ params }) {
   const getDevisById = async () => {
     const result = await axios.get(`/api/devis/${params.id}`);
     const { devi } = result.data;
-
     setValue("articls", devi?.articls);
     setClient(devi?.client);
     setValue("statut", devi?.statut);

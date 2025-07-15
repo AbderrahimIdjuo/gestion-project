@@ -23,7 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, Trash2, Filter, Printer } from "lucide-react";
+import { Search, Trash2, Filter, Printer, Pen } from "lucide-react";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -31,6 +31,8 @@ import { PriceRangeSlider } from "@/components/customUi/customSlider";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import CustomTooltip from "@/components/customUi/customTooltip";
 import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
+import CreateFactureDialog from "@/components/create-facture-dialog";
+import UpdateFactureDialog from "@/components/update-facture-dialog";
 function toUTCDateOnly(localDate) {
   return new Date(
     Date.UTC(localDate.getFullYear(), localDate.getMonth(), localDate.getDate())
@@ -42,6 +44,7 @@ function formatDate(dateString) {
 export default function Factures() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false); // Delete dialog
+  const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
   const [currFacture, setCurrFacture] = useState("");
   const [maxMontant, setMaxMontant] = useState();
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -260,7 +263,7 @@ export default function Factures() {
                 </div>
               </SheetContent>
             </Sheet>
-            {/* <AddCommandeFournisseur /> */}
+            <CreateFactureDialog />
           </div>
         </div>
 
@@ -272,7 +275,8 @@ export default function Factures() {
                 <TableRow>
                   <TableHead>Date</TableHead>
                   <TableHead>Numéro</TableHead>
-                  <TableHead>Montant</TableHead>
+                  <TableHead>Total</TableHead>
+                  <TableHead>Client</TableHead>
                   <TableHead>Devis</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -298,8 +302,12 @@ export default function Factures() {
                       <TableCell className="!py-2" align="left">
                         <Skeleton className="h-4 w-full" />
                       </TableCell>
+                      <TableCell className="!py-2" align="left">
+                        <Skeleton className="h-4 w-full" />
+                      </TableCell>
                       <TableCell className="!py-2">
                         <div className="flex gap-2 justify-end">
+                          <Skeleton className="h-7 w-7 rounded-full" />
                           <Skeleton className="h-7 w-7 rounded-full" />
                           <Skeleton className="h-7 w-7 rounded-full" />
                         </div>
@@ -317,11 +325,15 @@ export default function Factures() {
                         {facture.numero}
                       </TableCell>
                       <TableCell className="text-md !py-2">
-                        {facture.devis.total} MAD
+                        {facture.total} MAD
                       </TableCell>
                       <TableCell className="text-md !py-2">
-                        {facture.devis.numero}
+                        {facture.client.nom}
                       </TableCell>
+                      <TableCell className="text-md !py-2">
+                        {facture.devisNumero}
+                      </TableCell>
+
                       <TableCell className="text-right !py-2">
                         <div className="flex justify-end gap-2">
                           <CustomTooltip message="imprimer">
@@ -359,6 +371,21 @@ export default function Factures() {
                             >
                               <Trash2 className="h-4 w-4" />
                               <span className="sr-only">Supprimer</span>
+                            </Button>
+                          </CustomTooltip>
+                          <CustomTooltip message="Modifier">
+                            <Button
+                              name="update btn"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
+                              onClick={() => {
+                                setIsUpdateDialogOpen(true);
+                                setCurrFacture(facture);
+                              }}
+                            >
+                              <Pen className="h-4 w-4" />
+                              <span className="sr-only">Modifier</span>
                             </Button>
                           </CustomTooltip>
                         </div>
@@ -412,6 +439,11 @@ export default function Factures() {
         }}
         itemType="factures"
       ></DeleteConfirmationDialog>
+      <UpdateFactureDialog
+        facture={currFacture}
+        isOpen={isUpdateDialogOpen}
+        onClose={() => setIsUpdateDialogOpen(false)}
+      />
     </>
   );
 }

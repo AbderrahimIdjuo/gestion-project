@@ -22,6 +22,7 @@ model Clients {
   updatedAt DateTime    @updatedAt
   commandes Commandes[]
   devies    Devis[]
+  factures  Factures[]
 }
 
 model Employes {
@@ -38,18 +39,18 @@ model Employes {
 }
 
 model Produits {
-  id                   String                 @id @default(uuid())
-  designation          String
-  categorie            String?
-  reference            String?
-  prixAchat            Float?
-   Unite               String?
-  createdAt            DateTime               @default(now())
-  updatedAt            DateTime               @updatedAt
-  achatsCommandes      AchatsCommandes[]
-  CommandesProduits    CommandesProduits[]
-  groupProduits        ListProduits[]
-  bonLivraisonGroups    BlGroupsProduits[]
+  id                 String              @id @default(uuid())
+  designation        String
+  categorie          String?
+  reference          String?
+  prixAchat          Float?
+  Unite              String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  achatsCommandes    AchatsCommandes[]
+  bonLivraisonGroups BlGroupsProduits[]
+  CommandesProduits  CommandesProduits[]
+  groupProduits      ListProduits[]
 }
 
 model Items {
@@ -86,8 +87,8 @@ model Fournisseurs {
   updatedAt            DateTime             @updatedAt
   ice                  String?
   telephoneSecondaire  String?
-  commandesFournitures CommandeFourniture[]
   bonLivraisons        BonLivraison[]
+  commandesFournitures CommandeFourniture[]
 }
 
 model Commandes {
@@ -131,63 +132,55 @@ model AchatsCommandes {
 model CommandeFourniture {
   id            String         @id @default(uuid())
   numero        String         @unique
-  fournisseur   Fournisseurs   @relation(fields: [fournisseurId], references: [id], onDelete: Cascade)
   fournisseurId String
   date          DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  fournisseur   Fournisseurs   @relation(fields: [fournisseurId], references: [id], onDelete: Cascade)
   groups        OrdersGroups[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 model OrdersGroups {
   id                   String              @id @default(uuid())
   devisNumero          String?
   clientName           String?
-  commandeFourniture   CommandeFourniture? @relation(fields: [commandeFournitureId], references: [id], onDelete: Cascade)
   commandeFournitureId String?
   produits             ListProduits[]
+  commandeFourniture   CommandeFourniture? @relation(fields: [commandeFournitureId], references: [id], onDelete: Cascade)
 }
 
 model BLGroups {
-  id                   String              @id @default(uuid())
-  devisNumero          String?
-  clientName           String?
-  bonLivraison   BonLivraison? @relation(fields: [bonLivraisonId], references: [id], onDelete: Cascade)
+  id             String             @id @default(uuid())
+  devisNumero    String?
+  clientName     String?
   bonLivraisonId String?
-  produits             BlGroupsProduits[]
+  bonLivraison   BonLivraison?      @relation(fields: [bonLivraisonId], references: [id], onDelete: Cascade)
+  produits       BlGroupsProduits[]
 }
 
 model ListProduits {
   id        String       @id @default(uuid())
+  groupId   String
+  produitId String
+  quantite  Float
+  prixUnite Float        @default(0)
   group     OrdersGroups @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  groupId   String
   produit   Produits     @relation(fields: [produitId], references: [id], onDelete: Cascade)
-  produitId String
-  quantite  Float
-  prixUnite Float @default(0)
-  @@unique([groupId, produitId])
-}
-model BlGroupsProduits {
-  id        String       @id @default(uuid())
-  group     BLGroups @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  groupId   String
-  produit   Produits     @relation(fields: [produitId], references: [id], onDelete: Cascade)
-  produitId String
-  quantite  Float
-  prixUnite Float @default(0)
+
   @@unique([groupId, produitId])
 }
 
-// model BonLivraisonProduits {
-//   id             String       @id @default(uuid())
-//   bonLivraisonId String
-//   bonLivraison   BonLivraison @relation(fields: [bonLivraisonId], references: [id], onDelete: Cascade)
-//   produitId      String
-//   produit        Produits     @relation(fields: [produitId], references: [id], onDelete: Cascade)
-//   quantite       Float
-//   prixUnite      Float
-// }
+model BlGroupsProduits {
+  id        String   @id @default(uuid())
+  groupId   String
+  produitId String
+  quantite  Float
+  prixUnite Float    @default(0)
+  group     BLGroups @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  produit   Produits @relation(fields: [produitId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, produitId])
+}
 
 model Articls {
   id          String   @id @default(uuid())
@@ -222,22 +215,39 @@ model Devis {
   echeance      DateTime?
   articls       Articls[]
   client        Clients   @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  facture       Factures[]
 }
 
 model Factures {
-  id            String    @id @default(uuid())
-  date          DateTime?
-  numero        String?    
-  devisId       String
-  devis         Devis   @relation(fields: [devisId], references: [id], onDelete: Cascade)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt 
+  id          String            @id @default(uuid())
+  date        DateTime?
+  numero      String?
+  devisNumero String?
+  total       Float?
+  clientId    String
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  client      Clients           @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  articls     FacturesArticls[]
+}
+
+model FacturesArticls {
+  id          String   @id @default(uuid())
+  factureId   String
+  designation String
+  quantite    Int
+  prixUnite   Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  width       Float?
+  length      Float?
+  unite       String   @default("U")
+ // key         String   @unique
+  facture     Factures @relation(fields: [factureId], references: [id], onDelete: Cascade)
 }
 
 model BonLivraison {
-  id             String                 @id @default(uuid())
-  numero         String                 @unique
+  id             String       @id @default(uuid())
+  numero         String       @unique
   reference      String?
   fournisseurId  String
   date           DateTime?
@@ -245,26 +255,11 @@ model BonLivraison {
   totalPaye      Float?
   statutPaiement String?
   type           String?
-   groups        BLGroups[]
-  fournisseur    Fournisseurs           @relation(fields: [fournisseurId], references: [id], onDelete: Cascade)
-  createdAt      DateTime               @default(now())
-  updatedAt      DateTime               @updatedAt
-   
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  groups         BLGroups[]
+  fournisseur    Fournisseurs @relation(fields: [fournisseurId], references: [id], onDelete: Cascade)
 }
-
-// model Factures {
-//   id            String    @id @default(uuid())
-//   lable         String
-//   numero        String    @unique
-//   type          String
-//   montant       Float?
-//   payer         Boolean   @default(false)
-//   dateEmission  Int?
-//   dateReglement DateTime?
-//   description   String?
-//   createdAt     DateTime  @default(now())
-//   updatedAt     DateTime  @updatedAt
-// }
 
 model DepensesVariantes {
   id          String   @id @default(uuid())
@@ -278,17 +273,17 @@ model DepensesVariantes {
 }
 
 model Transactions {
-  id          String   @id @default(uuid())
-  type        String
-  montant     Float
-  compte      String?
-  lable       String?
-  reference   String?
-  description String?
+  id              String    @id @default(uuid())
+  type            String
+  montant         Float
+  compte          String?
+  lable           String?
+  reference       String?
+  description     String?
   methodePaiement String?
-  date        DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  date            DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 }
 
 model TachesEmployes {

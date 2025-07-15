@@ -92,12 +92,14 @@ export default function NouveauDevisPage() {
 
   useEffect(() => {
     const storedData = localStorage.getItem("lastDeviNumber");
+    console.log("storedData", JSON.parse(storedData));
+
     if (storedData) {
       setLastDeviNumber(JSON.parse(storedData));
-    }
+    } else setLastDeviNumber("DEV-0");
   }, []);
   const generateDeviNumber = () => {
-    const numero = Number(lastDeviNumber.replace("DEV-", "")) || 0;
+    const numero = Number(lastDeviNumber?.replace("DEV-", "")) || 0;
     return `DEV-${numero + 1}`;
   };
 
@@ -302,57 +304,6 @@ export default function NouveauDevisPage() {
                   </Select>
                 </div>
               </div>
-              <div className="grid gap-6 grid-cols-3">
-                {/* 
-                <div className="space-y-1">
-                  <Label htmlFor="orderNumber">Avance :</Label>
-                  <div className="relative w-full flex">
-                    <div className="absolute border-2 border-gray-300 bg-white inset-y-0 right-0 w-12 flex items-center justify-center  rounded-r-md">
-                      <span className="text-sm text-gray-800">MAD</span>
-                    </div>
-                    <Input
-                      id="avance"
-                      name="avance"
-                      {...register("avance")}
-                      className="focus:!ring-purple-500 pr-14 text-left rounded-r-md"
-                    />
-                  </div>
-                  {errors.avance && (
-                    <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
-                      <CircleX className="h-4 w-4" />
-                      {errors.avance.message}
-                    </p>
-                  )}
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="orderNumber">Compte :</Label>
-                  <Select
-                    value={watch("compte")}
-                    name="compte"
-                    onValueChange={(value) => setValue("compte", value)}
-                  >
-                    <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500 mt-2">
-                      <SelectValue placeholder="Séléctionner..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {comptes.data?.map((element) => (
-                        <SelectItem key={element.id} value={element.compte}>
-                          <div className="flex items-center gap-2">
-                            {element.compte}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {errors.compte && (
-                    <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
-                      <CircleX className="h-4 w-4" />
-                      {errors.compte.message}
-                    </p>
-                  )}
-                </div> */}
-              </div>
-
               {/* Items Table */}
               <div className="space-y-4">
                 {items.length > 0 && (

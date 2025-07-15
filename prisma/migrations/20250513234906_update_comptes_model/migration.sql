@@ -1,2 +1,0 @@
--- AlterTable
-ALTER TABLE "ComptesBancaires" ADD COLUMN     "solde" DOUBLE PRECISION NOT NULL DEFAULT 0;

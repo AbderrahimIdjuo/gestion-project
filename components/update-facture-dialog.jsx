@@ -12,6 +12,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Trash2 } from "lucide-react";
+import { AddButton } from "@/components/customUi/styledButton";
+import { ArticleSelectionDialog } from "@/components/articls-selection-dialog";
 import {
   Table,
   TableBody,
@@ -32,20 +34,35 @@ import axios from "axios";
 import { CustomDatePicker } from "@/components/customUi/customDatePicker";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import { useRouter } from "next/navigation";
-import { AddButton } from "@/components/customUi/styledButton";
-import { ArticleSelectionDialog } from "@/components/articls-selection-dialog";
+import ComboBoxClients from "@/components/comboBox-clients";
+import { customAlphabet } from "nanoid";
 
-export default function FactureDialog({ devis, isOpen, onClose }) {
+export default function UpdateFactureDialog({ facture, isOpen, onClose }) {
   const [items, setItems] = useState([]);
-  const [isArticleDialogOpen, setIsArticleDialogOpen] = useState(false);
   const [date, setDate] = useState(null);
-  const [numero, setNumero] = useState(null);
+  const [numero, setNumero] = useState("");
+  const [client, setClient] = useState(null);
+  const [isArticleDialogOpen, setIsArticleDialogOpen] = useState(false);
+
   const queryClient = useQueryClient();
-  const router = useRouter();
+  const generateUniqueKey = () => {
+    const digits = "1234567890";
+    const nanoidCustom = customAlphabet(digits, 6);
+    return nanoidCustom();
+  };
   useEffect(() => {
-    setItems(devis.articls);
-  }, [devis]);
+    // console.log("facture ###", facture);
+    if (facture?.articls) {
+      const articlsWithKeys = facture.articls.map((item) => ({
+        ...item,
+        key: generateUniqueKey(),
+      }));
+      setItems(articlsWithKeys);
+    }
+    setDate(facture.date);
+    setClient(facture.client);
+    setNumero(facture.numero);
+  }, [facture]);
   const handleItemChange = (key, field, value) => {
     setItems((prevItems) =>
       prevItems.map((item) =>
@@ -53,21 +70,22 @@ export default function FactureDialog({ devis, isOpen, onClose }) {
       )
     );
   };
-  const createFacture = useMutation({
+  const updateFacture = useMutation({
     mutationFn: async () => {
       const data = {
+        id: facture.id,
         date: date || new Date(),
-        devisNumero: devis.numero,
+        // devisNumero: factur.numero,
         numero,
         articls: items,
         total: total(),
-        clientId: devis.client.id,
+        clientId: client.id,
       };
 
       console.log("Facture data : ", data);
       const loadingToast = toast.loading("Opération en cours...");
       try {
-        const response = await axios.post("/api/factures", data);
+        const response = await axios.put("/api/factures", data);
         toast.success("Opération éffectué avec succès");
         return response.data;
       } catch (error) {
@@ -79,7 +97,7 @@ export default function FactureDialog({ devis, isOpen, onClose }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["factures"]);
-      router.push("/ventes/factures");
+      onClose();
     },
   });
   const removeItem = (deletedItem) => {
@@ -126,19 +144,25 @@ export default function FactureDialog({ devis, isOpen, onClose }) {
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-[90vw] max-h-[90vh] overflow-y-auto print:shadow-none print:max-h-none print:overflow-visible">
           <DialogHeader>
-            <DialogTitle>Créer une facture</DialogTitle>
+            <DialogTitle>Modifier une facture</DialogTitle>
           </DialogHeader>
           <div className="space-y-6">
             <div className="grid grid-cols-3 gap-3">
-              <div className="w-full space-y-2">
-                <Label className="text-sm font-medium block pt-1">Devis</Label>
-                <Input
-                  id="numero"
-                  value={devis.numero}
-                  className="col-span-3 focus:!ring-purple-500 "
-                  spellCheck={false}
-                />
-              </div>
+              {facture?.devisNumero ? (
+                <div className="w-full space-y-2">
+                  <Label className="text-sm font-medium block pt-1">
+                    Devis
+                  </Label>
+                  <div className="rounded-lg bg-purple-50 p-2">
+                    <span>{facture?.devisNumero}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="w-full space-y-2">
+                  <ComboBoxClients setClient={setClient} client={client} />
+                </div>
+              )}
+
               <div className="w-full space-y-2">
                 <Label className="text-sm font-medium block pt-1">Numéro</Label>
                 <Input
@@ -159,7 +183,7 @@ export default function FactureDialog({ devis, isOpen, onClose }) {
           </div>
           {/* Items Table */}
           <div className="space-y-4">
-            {items.length > 0 && (
+            {items?.length > 0 && (
               <>
                 <div className="overflow-hidden border rounded-lg">
                   <Table>
@@ -185,7 +209,7 @@ export default function FactureDialog({ devis, isOpen, onClose }) {
                     </TableHeader>
                     <TableBody>
                       {items.map((item, index) => (
-                        <TableRow key={item.key}>
+                        <TableRow key={item.id}>
                           <TableCell>
                             <Input
                               spellCheck="false"
@@ -332,11 +356,10 @@ export default function FactureDialog({ devis, isOpen, onClose }) {
                 className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full"
                 variant="outline"
                 onClick={() => {
-                  createFacture.mutate();
-                  onClose();
+                  updateFacture.mutate();
                 }}
               >
-                Enregisrer
+                Enregistrer
               </Button>
             </div>
           </DialogFooter>

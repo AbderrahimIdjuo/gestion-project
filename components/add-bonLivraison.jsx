@@ -119,23 +119,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
     console.log("numero :", `BL-${nextNumber}`);
     return `BL-${nextNumber}`;
   };
-  // const handleAddArticles = (newArticles) => {
-  //   const produitsAjouter = newArticles.map((p) => ({
-  //     produitId: p.id,
-  //     quantite: p.quantite,
-  //     prixUnite: p.prixUnite,
-  //     produit: {
-  //       designation: p.designation,
-  //       prixAchat: p.prixUnite,
-  //     },
-  //   }))
-  //setProduits((prevItems) => [
-  //  ...prevItems,
-  //  ...produitsAjouter.map((article) => ({
-  //  ...article,
-  //  })),
-  // ]);
-  //}
+
 
   const resetDialog = () => {
     setCurrentStep(1);
@@ -144,9 +128,6 @@ export default function AddBonLivraison({ lastBonLivraison }) {
     setDate(null);
     setBLGroups([]);
     setSelectedFournisseur(null);
-    // setCommandeDetails(null);
-    //setProduits([]);
-    // setCommande(null);
   };
 
   const total = () => {
@@ -162,21 +143,6 @@ export default function AddBonLivraison({ lastBonLivraison }) {
     }, 0);
   };
 
-  // const handleItemChange = (produitId, field, value) => {
-  //   setProduits((prev) =>
-  //     prev.map((p) =>
-  //       p.produitId === produitId
-  //         ? { ...p, [field]: Number.parseFloat(value) || 0 }
-  //         : p
-  //     )
-  //   );
-  // };
-
-  // const removeItem = (produitId) => {
-  //   setProduits((prev) =>
-  //     prev.filter((produit) => produit.produitId !== produitId)
-  //   );
-  // };
   const handleCreateBL = useMutation({
     mutationFn: async () => {
       const data = {
@@ -189,9 +155,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
         totalPaye: 0,
         bLGroups,
       };
-      console.log("#### data ##### :", data);
-
-      const loadingToast = toast.loading("Ajout du bon de livraison...");
+  const loadingToast = toast.loading("Ajout du bon de livraison...");
       try {
         await axios.post("/api/bonLivraison", data);
         toast.success("bon ajouter avec succès");

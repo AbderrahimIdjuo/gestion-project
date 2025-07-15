@@ -1,17 +1,20 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Trash2 } from "lucide-react";
+import { ArticleSelectionDialog } from "@/components/articls-selection-dialog";
+import { Trash2, Copy, Plus } from "lucide-react";
+import { customAlphabet } from "nanoid";
 import {
   Table,
   TableBody,
@@ -29,23 +32,25 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import axios from "axios";
+import { AddButton } from "@/components/customUi/styledButton";
 import { CustomDatePicker } from "@/components/customUi/customDatePicker";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import { useRouter } from "next/navigation";
-import { AddButton } from "@/components/customUi/styledButton";
-import { ArticleSelectionDialog } from "@/components/articls-selection-dialog";
+import ComboBoxClients from "@/components/comboBox-clients";
 
-export default function FactureDialog({ devis, isOpen, onClose }) {
+export default function CreateFactureDialog() {
   const [items, setItems] = useState([]);
-  const [isArticleDialogOpen, setIsArticleDialogOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [client, setClient] = useState(null);
   const [date, setDate] = useState(null);
   const [numero, setNumero] = useState(null);
+  const [isArticleDialogOpen, setIsArticleDialogOpen] = useState(false);
   const queryClient = useQueryClient();
-  const router = useRouter();
-  useEffect(() => {
-    setItems(devis.articls);
-  }, [devis]);
+  const generateUniqueKey = () => {
+    const digits = "1234567890";
+    const nanoidCustom = customAlphabet(digits, 6);
+    return nanoidCustom();
+  };
   const handleItemChange = (key, field, value) => {
     setItems((prevItems) =>
       prevItems.map((item) =>
@@ -57,11 +62,10 @@ export default function FactureDialog({ devis, isOpen, onClose }) {
     mutationFn: async () => {
       const data = {
         date: date || new Date(),
-        devisNumero: devis.numero,
         numero,
         articls: items,
         total: total(),
-        clientId: devis.client.id,
+        clientId: client.id,
       };
 
       console.log("Facture data : ", data);
@@ -79,7 +83,7 @@ export default function FactureDialog({ devis, isOpen, onClose }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["factures"]);
-      router.push("/ventes/factures");
+       setIsDialogOpen(false);
     },
   });
   const removeItem = (deletedItem) => {
@@ -88,7 +92,13 @@ export default function FactureDialog({ devis, isOpen, onClose }) {
     setItems((prev) => prev.filter((item) => item.key !== deletedItem.key));
   };
   const unites = ["U", "m²", "m"];
-
+  const resetDialog = () => {
+    setItems([]);
+    setClient(null);
+    setDate(null);
+    setNumero(null);
+    setIsArticleDialogOpen(false);
+  };
   const total = () => {
     return parseFloat(
       items
@@ -123,21 +133,27 @@ export default function FactureDialog({ devis, isOpen, onClose }) {
   };
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={onClose}>
+      <Dialog
+        open={isDialogOpen}
+        onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) resetDialog();
+        }}
+      >
+        <DialogTrigger asChild>
+          <Button className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 text-white font-semibold transition-all duration-300 transform hover:scale-105 rounded-full">
+            <Plus className="mr-2 h-4 w-4" />
+            Ajouter une facture
+          </Button>
+        </DialogTrigger>
         <DialogContent className="max-w-[90vw] max-h-[90vh] overflow-y-auto print:shadow-none print:max-h-none print:overflow-visible">
           <DialogHeader>
             <DialogTitle>Créer une facture</DialogTitle>
           </DialogHeader>
           <div className="space-y-6">
             <div className="grid grid-cols-3 gap-3">
-              <div className="w-full space-y-2">
-                <Label className="text-sm font-medium block pt-1">Devis</Label>
-                <Input
-                  id="numero"
-                  value={devis.numero}
-                  className="col-span-3 focus:!ring-purple-500 "
-                  spellCheck={false}
-                />
+              <div>
+                <ComboBoxClients setClient={setClient} client={client} />
               </div>
               <div className="w-full space-y-2">
                 <Label className="text-sm font-medium block pt-1">Numéro</Label>
@@ -290,6 +306,36 @@ export default function FactureDialog({ devis, isOpen, onClose }) {
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
+                              <Button
+                                type="button" // <- important pour ne PAS soumettre
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                  const origineItem = items.find(
+                                    (i) => i.key === item.key
+                                  );
+                                  //   console.log("origineItem", origineItem);
+
+                                  setItems((prevItems) => [
+                                    ...prevItems,
+                                    {
+                                      ...item,
+                                      designation: origineItem.designation,
+                                      quantite: origineItem.quantite,
+                                      prixUnite: origineItem.prixUnite,
+                                      length: origineItem.length,
+                                      width: origineItem.width,
+                                      unite: origineItem.unite,
+                                      key: generateUniqueKey(),
+                                    },
+                                  ]);
+                                  //  console.log("Cloned item");
+                                  // console.log("items", items);
+                                }}
+                                className="h-8 w-8 rounded-full hover:bg-blue-100 hover:text-blue-600"
+                              >
+                                <Copy className="h-4 w-4" />
+                              </Button>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -333,7 +379,6 @@ export default function FactureDialog({ devis, isOpen, onClose }) {
                 variant="outline"
                 onClick={() => {
                   createFacture.mutate();
-                  onClose();
                 }}
               >
                 Enregisrer

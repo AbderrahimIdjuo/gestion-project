@@ -38,7 +38,7 @@ export default function DashboardPage() {
         },
       });
       console.log("statistiques", response.data);
-      
+
       return response.data;
     },
     refetchOnWindowFocus: false,
@@ -186,9 +186,7 @@ export default function DashboardPage() {
               <div className="absolute inset-0 bg-white"></div>
             </div>
             <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2 pt-4">
-              <CardTitle className="text-sm font-medium">
-                Produits
-              </CardTitle>
+              <CardTitle className="text-sm font-medium">Produits</CardTitle>
               <Package className="h-6 w-6 text-muted-foreground" />
             </CardHeader>
             <CardContent className="relative">
@@ -213,9 +211,7 @@ export default function DashboardPage() {
               <div className="absolute inset-0 bg-white"></div>
             </div>
             <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2 pt-4">
-              <CardTitle className="text-sm font-medium">
-                Caisse
-              </CardTitle>
+              <CardTitle className="text-sm font-medium">Caisse</CardTitle>
               <Wallet className="h-6 w-6 text-muted-foreground" />
             </CardHeader>
             <CardContent className="relative">

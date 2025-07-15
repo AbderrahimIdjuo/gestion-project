@@ -459,7 +459,7 @@ export default function DevisPage() {
                               setCurrentDevi(devis);
                             }
                           }}
-                          className={`flex gap-2 font-medium !py-2  ${
+                          className={`font-medium !py-2  ${
                             (totalPaye(devis.numero) === devis.total ||
                               totalPaye(devis.numero) > devis.total) &&
                             "cursor-pointer hover:text-green-400"
@@ -471,8 +471,8 @@ export default function DevisPage() {
                           "cursor-pointer hover:text-orange-400"
                         }`}
                         >
-                          {devis.numero}
                           <div>
+                            <span className="mr-2">{devis.numero}</span>
                             <span
                               className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold uppercase ${
                                 statutPaiement(devis.numero, devis.total)?.color
