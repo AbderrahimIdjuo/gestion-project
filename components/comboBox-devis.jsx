@@ -67,7 +67,6 @@ export default function ComboBoxDevis({
 
   const devis = data?.pages.flatMap((page) => page.devis) || [];
   const currentDevis = devis.find((d) => d.numero === Devisnumero);
-  console.log("currentDevis", currentDevis);
   useEffect(() => {
     setSelectedDevis(currentDevis);
   }, [currentDevis]);

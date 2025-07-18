@@ -1,0 +1,489 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import { Package, Trash2, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import ComboBoxDevis from "@/components/comboBox-devis";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArticleSelectionDialog } from "@/components/produits-selection-NouveauBL";
+import ComboBoxFournisseur from "@/components/comboBox-fournisseurs";
+import { ProduitsSelection } from "@/components/produits-selection-CMDF";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableFooter,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import axios from "axios";
+import { AddButton } from "@/components/customUi/styledButton";
+import { CustomDatePicker } from "@/components/customUi/customDatePicker";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
+
+export default function UpdateBonLivraison({ isOpen, onClose, bonLivraison }) {
+  const [date, setDate] = useState(null);
+  const [reference, setReference] = useState("");
+  const [type, setType] = useState();
+  const [isArticleDialogOpen, setIsArticleDialogOpen] = useState(false);
+  const [selectedFournisseur, setSelectedFournisseur] = useState(null);
+  const [bLGroups, setBLGroups] = useState([]);
+  const [selectedDevis, setSelectedDevis] = useState({});
+  const queryClient = useQueryClient();
+
+  const formatCommandeGroups = (groups) => {
+    return groups?.map((group) => ({
+      id: group.id,
+      devisNumber: group.devisNumero,
+      items: group.produits?.map((produit) => ({
+        id: produit.produitId,
+        quantite: produit.quantite,
+        designation: produit.produit.designation,
+        prixUnite: produit.prixUnite,
+        uniqueKey: `${produit.produitId}-${crypto.randomUUID()}`,
+      })),
+    }));
+  };
+
+  useEffect(() => {
+    if (typeof bonLivraison?.date === "string") {
+      const [day, month, year] = bonLivraison?.date?.split("-");
+      const isoDate = `${year}-${month}-${day}`;
+      const dateObj = new Date(isoDate);
+      setDate(dateObj);
+    }
+    setReference(bonLivraison?.reference);
+    setSelectedFournisseur({
+      id: bonLivraison?.fournisseurId,
+      nom: bonLivraison?.fournisseur,
+    });
+    setType(bonLivraison?.type);
+    setBLGroups(formatCommandeGroups(bonLivraison?.groups));
+  }, [bonLivraison]);
+
+  const total = () => {
+    const produits = bLGroups.flatMap((group) => group.items);
+    return produits.reduce((acc, produit) => {
+      return acc + produit.quantite * produit.prixUnite;
+    }, 0);
+  };
+
+  const sousTotal = (group) => {
+    return group.items.reduce((acc, produit) => {
+      return acc + produit.quantite * produit.prixUnite;
+    }, 0);
+  };
+  const statutPaiement = () => {
+    if (
+      bonLivraison?.statutPaiement === "paye" &&
+      bonLivraison?.totalPaye < parseFloat(total())
+    ) {
+      return "enPartie";
+    } else bonLivraison?.statutPaiement;
+  };
+  const handleUpdateBL = useMutation({
+    mutationFn: async () => {
+      const data = {
+        id: bonLivraison?.id,
+        date,
+        reference,
+        fournisseurId: selectedFournisseur.id,
+        total: total().toFixed(2),
+        type,
+        bLGroups,
+        statutPaiement: statutPaiement(),
+      };
+      console.log("data", data);
+
+      const loadingToast = toast.loading("Opération en cours ...");
+      try {
+        await axios.put("/api/bonLivraison", data);
+        toast.success("Opération éffectué avec succès");
+      } catch (error) {
+        toast.error("Échec de l'opération!");
+        throw error;
+      } finally {
+        toast.dismiss(loadingToast);
+      }
+    },
+    onSuccess: () => {
+      onClose();
+      queryClient.invalidateQueries({ queryKey: ["bonLivraison"] });
+    },
+  });
+
+  // Ajout d'un groupe de commande
+  const addOrderGroup = useCallback(() => {
+    const newGroup = {
+      id: crypto.randomUUID(), // Génération d'un ID unique
+      items: [],
+      devisNumber: null,
+      clientName: null,
+      clientId: null,
+    };
+    setBLGroups((prev) => [...prev, newGroup]);
+  }, []);
+  // modifier le numero de commande d'un groupe
+  const updateDevisNumberOfGroup = useCallback(
+    (groupId, devisNumber, clientName, clientId, numero, totalDevi) => {
+      setBLGroups((prevGroups) =>
+        prevGroups.map((group) =>
+          group.id === groupId
+            ? {
+                ...group,
+                devisNumber,
+                clientName,
+                clientId,
+                numero,
+                totalDevi,
+              } // Met à jour la commande
+            : group
+        )
+      );
+    },
+    []
+  );
+  // Suppression d'un groupe
+  const removeOrderGroup = useCallback((groupId) => {
+    setBLGroups((prev) => prev.filter((group) => group.id !== groupId));
+    setSelectedDevis((prev) => {
+      const newState = { ...prev };
+      delete newState[groupId];
+      return newState;
+    });
+  }, []);
+
+  // Gestion des articles
+  const handleAddArticles = useCallback((groupId, newArticles) => {
+    setBLGroups((prev) =>
+      prev.map((group) => {
+        if (group.id === groupId) {
+          const existingIds = new Set(group.items.map((item) => item.id));
+          const filteredArticles = newArticles.filter(
+            (article) => !existingIds.has(article.id)
+          );
+
+          return {
+            ...group,
+            items: [
+              ...group.items,
+              ...filteredArticles.map((article) => ({
+                ...article,
+                uniqueKey: `${article.id}-${crypto.randomUUID()}`, // Clé vraiment unique
+              })),
+            ],
+          };
+        }
+        return group;
+      })
+    );
+  }, []);
+
+  // Suppression d'un article
+  const removeItem = useCallback((groupId, itemId) => {
+    setBLGroups((prev) =>
+      prev.map((group) => {
+        if (group.id === groupId) {
+          return {
+            ...group,
+            items: group.items.filter((item) => item.uniqueKey !== itemId),
+          };
+        }
+        return group;
+      })
+    );
+  }, []);
+
+  // Mise à jour d'un article
+  const handleItemChange = useCallback((groupId, itemId, field, value) => {
+    setBLGroups((prev) =>
+      prev.map((group) => {
+        if (group.id === groupId) {
+          return {
+            ...group,
+            items: group.items.map((item) =>
+              item.uniqueKey === itemId
+                ? { ...item, [field]: Number(value) || 0 }
+                : item
+            ),
+          };
+        }
+        return group;
+      })
+    );
+  }, []);
+
+  // Mise à jour de la commande sélectionnée
+  const handleDevisSelect = useCallback((groupId, devis) => {
+    setSelectedDevis((prev) => ({
+      ...prev,
+      [groupId]: devis,
+    }));
+  }, []);
+  return (
+    <div className="">
+      <div className="flex items-center justify-between">
+        <Dialog open={isOpen} onOpenChange={onClose}>
+          <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Package className="h-6 w-6" />
+                Modifier bon de livraison
+              </DialogTitle>
+              <DialogDescription>
+                Vérifiez et modifiez les informations avant de créer le BL
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 grid-rows-2 gap-3">
+                <div className="w-full space-y-2">
+                  <Label htmlFor="client">Date : </Label>
+                  <CustomDatePicker date={date} onDateChange={setDate} />
+                </div>
+                <div className="w-full space-y-2">
+                  <Label className="text-sm font-medium block pt-1">Type</Label>
+                  <Select
+                    value={type}
+                    onValueChange={(value) => setType(value)}
+                  >
+                    <SelectTrigger className="w-full col-span-3 bg-white focus:ring-purple-500">
+                      <SelectValue placeholder="Séléctionnez ..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectItem value="achats">Achats</SelectItem>
+                        <SelectItem value="retour">Retour</SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="w-full space-y-2">
+                  <Label className="text-sm font-medium block pt-1">
+                    Référence
+                  </Label>
+                  <Input
+                    id="reference"
+                    value={reference}
+                    onChange={(e) => {
+                      setReference(e.target.value);
+                    }}
+                    className="col-span-3 focus:!ring-purple-500 "
+                    spellCheck={false}
+                  />
+                </div>
+                <div className="w-full space-y-2">
+                  <ComboBoxFournisseur
+                    fournisseur={selectedFournisseur}
+                    setFournisseur={setSelectedFournisseur}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="space-y-6 ">
+              {bLGroups?.map((group) => (
+                <Card key={group.id}>
+                  <CardHeader className="p-4 pb-2">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-lg font-semibold">
+                        Groupe{" "}
+                        {bLGroups?.findIndex((g) => g.id === group.id) + 1}
+                      </h3>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeOrderGroup(group.id)}
+                        className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="flex justify-between items-center mt-2">
+                      <div className="w-1/2 pr-2">
+                        <ComboBoxDevis
+                          onSelect={(devis) => {
+                            handleDevisSelect(group.id, devis);
+                            updateDevisNumberOfGroup(
+                              group.id,
+                              devis.numero,
+                              devis.client.nom,
+                              devis.clientId,
+                              `CMD-${devis?.numero?.slice(4, 13)}`,
+                              devis.total
+                            );
+                          }}
+                          setSelectedDevis={(devis) =>
+                            setSelectedDevis((prev) => ({
+                              ...prev,
+                              [group.id]: devis,
+                            }))
+                          }
+                          Devisnumero={group.devisNumber}
+                        />
+                      </div>
+                      <div className="w-1/2 pr-2">
+                        <div className="col-span-2 grid gap-3">
+                          <Label className="text-left text-black">
+                            Client :
+                          </Label>
+                          <span className="text-md text-left text-gray-900 rounded-lg p-2 pl-4 bg-purple-50 h-[2.5rem]">
+                            {selectedDevis[group.id]?.client?.nom ||
+                              "Non sélectionné"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-4 pt-2">
+                    <div className="flex justify-end items-center gap-3 mb-4">
+                      <ProduitsSelection
+                        onArticlesAdd={(articles) =>
+                          handleAddArticles(group.id, articles)
+                        }
+                      />
+                    </div>
+
+                    {group.items?.length > 0 && (
+                      <div className="overflow-hidden border rounded-lg">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="w-[60%]">
+                                Produits
+                              </TableHead>
+                              <TableHead>Quantité</TableHead>
+                              <TableHead>Prix unitaire</TableHead>
+                              <TableHead>Montant</TableHead>
+                              <TableHead className="text-right">
+                                Action
+                              </TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {group.items.map((item) => (
+                              <TableRow key={item.uniqueKey}>
+                                <TableCell>
+                                  <span className="text-md">
+                                    {item.designation}
+                                  </span>
+                                </TableCell>
+                                <TableCell>
+                                  <Input
+                                    value={item.quantite}
+                                    onChange={(e) =>
+                                      handleItemChange(
+                                        group.id,
+                                        item.uniqueKey,
+                                        "quantite",
+                                        e.target.value
+                                      )
+                                    }
+                                    className="focus:!ring-purple-500 w-20"
+                                    type="number"
+                                    min="1"
+                                  />
+                                </TableCell>
+                                <TableCell>
+                                  <Input
+                                    value={item.prixUnite}
+                                    onChange={(e) =>
+                                      handleItemChange(
+                                        group.id,
+                                        item.uniqueKey,
+                                        "prixUnite",
+                                        e.target.value
+                                      )
+                                    }
+                                    className="focus:!ring-purple-500 w-20"
+                                    type="number"
+                                    min="1"
+                                  />
+                                </TableCell>
+                                <TableCell>
+                                  {item.prixUnite * item.quantite} DH
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() =>
+                                      removeItem(group.id, item.uniqueKey)
+                                    }
+                                    className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                          <TableFooter>
+                            <TableRow>
+                              <TableCell
+                                colSpan={3}
+                                className="text-right text-xl font-semibold"
+                              >
+                                Total :
+                              </TableCell>
+                              <TableCell
+                                colSpan={2}
+                                className="text-left text-xl font-semibold"
+                              >
+                                {sousTotal(group)} DH
+                              </TableCell>
+                            </TableRow>
+                          </TableFooter>
+                        </Table>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+              <div className="w-fit">
+                <AddButton
+                  type="button"
+                  onClick={addOrderGroup}
+                  title="Ajouter un groupe"
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full"
+                variant="outline"
+                onClick={() => handleUpdateBL.mutate()}
+              >
+                Enregistrer
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+      <ArticleSelectionDialog
+        open={isArticleDialogOpen}
+        onOpenChange={setIsArticleDialogOpen}
+        onArticlesAdd={handleAddArticles}
+      />
+    </div>
+  );
+}

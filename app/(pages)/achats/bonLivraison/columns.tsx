@@ -1,33 +1,16 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import {
-  MoreHorizontal,
-  Pen,
-  Trash2,
-  CircleDollarSign,
-  Eye,
-  Printer,
-} from "lucide-react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
-import axios from "axios";
-import toast from "react-hot-toast";
+import { MoreHorizontal, Pen, Trash2, Eye, Printer } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
-import PaiementBLDialog from "@/components/paiement-BL";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
-import { useDeleteBonLivraison } from "@/hooks/useDeleteBonLivraison";
-import PreviewBonLivraisonDialog from "@/components/preview-bonLivraison";
-// This type is used to define the shape of our data.
-// You can use a Zod schema here if you want.
+
 export type BonLivraisonT = {
   id: string;
   numero: string;
@@ -38,13 +21,17 @@ export type BonLivraisonT = {
   reference: string;
 };
 
-export function useBonLivraisonColumns() {
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
-  const [paiementDialogOpen, setPaiementDialogOpen] = useState(false);
-  const [currentBL, setCurrentBL] = useState<BonLivraisonT>();
-  const deleteDevi = useDeleteBonLivraison();
-
+export function useBonLivraisonColumns({
+  setCurrentBL,
+  setPreviewDialogOpen,
+  setDeleteDialogOpen,
+  setUpdateDialogOpen,
+}: {
+  setCurrentBL: (bl: BonLivraisonT) => void;
+  setPreviewDialogOpen: (val: boolean) => void;
+  setDeleteDialogOpen: (val: boolean) => void;
+  setUpdateDialogOpen: (val: boolean) => void;
+}) {
   const columns: ColumnDef<BonLivraisonT>[] = [
     {
       accessorKey: "date",
@@ -53,6 +40,35 @@ export function useBonLivraisonColumns() {
     {
       accessorKey: "numero",
       header: "Numéro",
+      cell: ({ row }) => {
+        const numero = row.getValue("numero") as string | null;
+        const total = parseFloat(row.getValue("total"));
+        const totalPaye = parseFloat(row.getValue("totalPaye"));
+        const rest = total - totalPaye;
+        let colorClass = "bg-gray-200 text-gray-700";
+        let label = "Indéterminé";
+        if (rest > 0 && totalPaye > 0) {
+          colorClass = "bg-amber-100 text-amber-700";
+          label = "En partie";
+        } else if (rest === 0 && totalPaye > 0) {
+          colorClass = "bg-green-100 text-green-700";
+          label = "Payé";
+        } else if (rest > 0 && totalPaye === 0) {
+          colorClass = "bg-red-100 text-red-700";
+          label = "Impayé";
+        }
+
+        return (
+          <div>
+            {numero}
+            <span
+              className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold uppercase ${colorClass}`}
+            >
+              {label}
+            </span>
+          </div>
+        );
+      },
     },
     {
       accessorKey: "reference",
@@ -72,16 +88,16 @@ export function useBonLivraisonColumns() {
         let label = "Indéterminé";
 
         if (type === "achats") {
-          colorClass = "bg-green-100 text-green-700";
+          colorClass = "bg-lime-100 text-lime-700";
           label = "Achats";
         } else if (type === "retour") {
-          colorClass = "bg-red-100 text-red-700";
+          colorClass = "bg-rose-100 text-rose-700";
           label = "Retour";
         }
 
         return (
           <span
-            className={`px-2 py-1 rounded-full text-xs font-semibold uppercase ${colorClass}`}
+            className={`px-2 py-1 rounded-lg  text-xs font-semibold uppercase ${colorClass}`}
           >
             {label}
           </span>
@@ -132,9 +148,10 @@ export function useBonLivraisonColumns() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-72 rounded-md">
                 <DropdownMenuItem
-                  onClick={() =>
-                    console.log("modifier un BL ", bonLivraison.id)
-                  }
+                  onClick={() => {
+                    setUpdateDialogOpen(true);
+                    setCurrentBL(bonLivraison);
+                  }}
                   className="flex items-center gap-2 cursor-pointer group hover:!bg-purple-100"
                 >
                   <Pen className="h-4 w-4 text-purple-600" />
@@ -179,40 +196,8 @@ export function useBonLivraisonColumns() {
                     Imprimer
                   </span>
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => {
-                    setCurrentBL(bonLivraison);
-                    setPaiementDialogOpen(true);
-                  }}
-                  className="flex items-center gap-2 cursor-pointer group hover:!bg-green-100"
-                >
-                  <CircleDollarSign className="h-4 w-4 text-green-600" />
-
-                  <span className="transition-colors duration-200 group-hover:text-green-600 group-hover:bg-green-100">
-                    Paiement
-                  </span>
-                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <DeleteConfirmationDialog
-              recordName={currentBL?.numero}
-              isOpen={deleteDialogOpen}
-              onClose={() => setDeleteDialogOpen(false)}
-              onConfirm={() => {
-                setDeleteDialogOpen(false);
-                deleteDevi.mutate(currentBL);
-              }}
-            />
-            <PreviewBonLivraisonDialog
-              bonLivraison={currentBL}
-              isOpen={previewDialogOpen}
-              onClose={() => setPreviewDialogOpen(false)}
-            />
-            <PaiementBLDialog
-              bonLivraison={currentBL}
-              isOpen={paiementDialogOpen}
-              onClose={() => setPaiementDialogOpen(false)}
-            />
           </>
         );
       },
@@ -221,4 +206,3 @@ export function useBonLivraisonColumns() {
 
   return columns;
 }
-

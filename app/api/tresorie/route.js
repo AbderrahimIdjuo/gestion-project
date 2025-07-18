@@ -59,19 +59,6 @@ export async function DELETE(req) {
     await prisma.transactions.delete({
       where: { id },
     });
-    // if (
-    //   deletedTransaction.reference &&
-    //   deletedTransaction.reference?.slice(0, 3) === "CMD"
-    // ) {
-    //   await prisma.commandes.update({
-    //     where: { numero: deletedTransaction.reference },
-    //     data: {
-    //       totalPaye: {
-    //         decrement: deletedTransaction.montant,
-    //       },
-    //     },
-    //   });
-    // }
     if (
       deletedTransaction.reference &&
       deletedTransaction.reference?.slice(0, 2) === "BL"
@@ -108,6 +95,12 @@ export async function DELETE(req) {
               ? { decrement: deletedTransaction.montant }
               : { increment: deletedTransaction.montant },
         },
+      });
+    }
+    if (deletedTransaction.lable === "paiement fournisseur") {
+      await prisma.fournisseurs.update({
+        where: { id: deletedTransaction.reference },
+        data: { dette: { increment: deletedTransaction.montant } },
       });
     }
   });

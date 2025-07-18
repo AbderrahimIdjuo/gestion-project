@@ -178,36 +178,24 @@ export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const page = parseInt(searchParams.get("page") || "1");
   const searchQuery = searchParams.get("query") || "";
-  const statutPaiement = searchParams.get("statutPaiement");
-  const categorie = searchParams.get("categorie")
-    ? decodeURIComponent(searchParams.get("categorie").trim())
-    : null;
+  const from = searchParams.get("from"); // Start date
+  const to = searchParams.get("to"); // End date
   const filters = {};
   const commandesPerPage = 10;
 
   // Search filter by produit designation , fournisseur
   filters.OR = [
     { fournisseur: { nom: { contains: searchQuery, mode: "insensitive" } } },
-    { numero: { contains: searchQuery } },
+    { numero: { contains: searchQuery, mode: "insensitive" } },
   ];
 
-  // // Filters par statutPaiement : "payé" ou "impayé"
-  // if (statutPaiement !== "all") {
-  //   if (statutPaiement === "true") {
-  //     filters.payer = true;
-  //   } else if (statutPaiement === "false") {
-  //     filters.payer = false;
-  //   }
-  // }
-
-  // // Filters par categorie
-  // if (categorie !== "all") {
-  //   filters.produit = {
-  //     categorie: {
-  //       equals: categorie,
-  //     },
-  //   };
-  // }
+  // Date range filter
+  if (from && to) {
+    filters.date = {
+      gte: new Date(from), // Greater than or equal to "from"
+      lte: new Date(to), // Less than or equal to "to"
+    };
+  }
 
   // Fetch filtered commandes with pagination and related data
   const [commandes, lastCommande, totalCommandes] = await Promise.all([

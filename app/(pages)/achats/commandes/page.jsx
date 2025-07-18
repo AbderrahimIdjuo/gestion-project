@@ -16,13 +16,6 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Table,
   TableBody,
   TableCell,
@@ -30,18 +23,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, Pen, Trash2, Filter, Printer } from "lucide-react";
-import { UpdateAchatCommandeForm } from "@/components/update-achat-commande-form";
+import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
+import { Search, Trash2, Filter, Printer } from "lucide-react";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
-import { AchatCommandesForm } from "@/components/achat-many-commande-form";
 import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { PriceRangeSlider } from "@/components/customUi/customSlider";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import AddCommandeFournisseur from "@/components/add-commande-fournisseur";
 import PreviewCommandeFournitureDialog from "@/components/preview-commandeFourniture";
-import PrintCommandeFournitureDialog from "@/components/print-commandeFourniture";
 import CustomTooltip from "@/components/customUi/customTooltip";
 import UpdateCommandeFournisseur from "@/components/update-commande-fournisseur";
 function formatDate(dateString) {
@@ -60,20 +49,6 @@ export default function CommandesAchats() {
   const [totalPages, setTotalPages] = useState();
   const queryClient = useQueryClient();
 
-  const [filters, setFilters] = useState({
-    categorie: "all",
-    statut: "all",
-    statutPaiement: "all",
-    montant: [0, maxMontant],
-  });
-
-  useEffect(() => {
-    setFilters({
-      ...filters,
-      montant: [0, maxMontant],
-    });
-  }, [maxMontant]);
-
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedQuery(searchQuery);
@@ -85,41 +60,18 @@ export default function CommandesAchats() {
     };
   }, [searchQuery]);
 
-  const categories = useQuery({
-    queryKey: ["categories"],
-    queryFn: async () => {
-      const response = await axios.get("/api/categoriesProduits");
-      return response.data.categories;
-    },
-  });
-
   const commandes = useQuery({
-    queryKey: [
-      "commandeFournisseur",
-      filters.statut,
-      debouncedQuery,
-      page,
-      startDate,
-      endDate,
-      filters.montant,
-      filters.categorie,
-      filters.statutPaiement,
-    ],
+    queryKey: ["commandeFournisseur", debouncedQuery, page, startDate, endDate],
     queryFn: async () => {
       const response = await axios.get("/api/achats-commandes", {
         params: {
           query: debouncedQuery,
           page,
-          statut: filters.statut,
           from: startDate,
           to: endDate,
-          minTotal: filters.montant[0],
-          maxTotal: filters.montant[1],
-          categorie: encodeURIComponent(filters.categorie),
-          statutPaiement: filters.statutPaiement,
         },
       });
-      console.log("commandesFourniture", response.data.commandes);
+
       setLastCommande(response.data.lastCommande);
       setTotalPages(response.data.totalPages);
       return response.data.commandes;
@@ -155,42 +107,10 @@ export default function CommandesAchats() {
     },
   });
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "Livrée":
-        return "bg-emerald-500";
-      case "Annulé":
-        return "bg-red-500";
-      case "En cours":
-        return "bg-amber-500";
-      case "Expédier":
-        return "bg-blue-500";
-      default:
-        return "bg-gray-500";
-    }
-  };
-  const getStatusPaiemenetColor = (status) => {
-    if (status) {
-      return "bg-emerald-100 text-green-600 font-semibold";
-    } else return "bg-red-100 text-red-600 font-semibold";
-  };
-  const status = [
-    { value: "all", lable: "Tous les statut", color: "" },
-    { value: "En cours", lable: "En cours", color: "amber-500" },
-    { value: "Expédier", lable: "Expédier", color: "blue-500" },
-    { value: "Livrée", lable: "Livrée", color: "emerald-500" },
-    { value: "Annulé", lable: "Annulé", color: "red-500" },
-  ];
-  const statusPaiement = [
-    { value: "all", lable: "Tous les statut" },
-    { value: true, lable: "Payé" },
-    { value: false, lable: "Impayé" },
-  ];
-
   return (
     <>
       <Toaster position="top-center" />
-      <div className="space-y-6 caret-transparent">
+      <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Commandes Fournitures</h1>
         </div>
@@ -210,7 +130,7 @@ export default function CommandesAchats() {
             </div>
           </div>
           <div className="flex space-x-2">
-            {/* <Sheet>
+            <Sheet>
               <SheetTrigger asChild>
                 <Button
                   variant="outline"
@@ -229,111 +149,25 @@ export default function CommandesAchats() {
                   </SheetDescription>
                 </SheetHeader>
                 <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
+                  <div className="grid grid-cols-4 items-center gap-4 my-2">
                     <Label
-                      htmlFor="categorie"
-                      className="text-right text-black"
+                      htmlFor="statut"
+                      className="col-span-1 text-left text-black"
                     >
-                      Catégorie
-                    </Label>
-                    <Select
-                      value={filters.categorie}
-                      onValueChange={(value) =>
-                        setFilters({ ...filters, categorie: value })
-                      }
-                    >
-                      <SelectTrigger className="col-span-3  bg-white focus:ring-purple-500">
-                        <SelectValue placeholder="Toutes les catégories" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white">
-                        <SelectItem key="all" value="all">
-                          Toutes les catégories
-                        </SelectItem>
-                        {categories.data?.map((element) => (
-                          <SelectItem
-                            key={element.id}
-                            value={element.categorie}
-                          >
-                            {element.categorie}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4 my-2">
-                    <Label htmlFor="statut" className="text-right text-black">
-                      Statut de paiement
-                    </Label>
-                    <Select
-                      value={filters.statutPaiement}
-                      name="statut"
-                      onValueChange={(value) =>
-                        setFilters({ ...filters, statutPaiement: value })
-                      }
-                    >
-                      <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
-                        <SelectValue placeholder="Séléctionner un statut" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {statusPaiement.map((statut, index) => (
-                          <SelectItem key={index} value={statut.value}>
-                            {statut.lable}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4 my-2">
-                    <Label htmlFor="statut" className="text-right text-black">
-                      Statut de livraison
-                    </Label>
-                    <Select
-                      value={filters.statut}
-                      name="statut"
-                      onValueChange={(value) =>
-                        setFilters({ ...filters, statut: value })
-                      }
-                    >
-                      <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
-                        <SelectValue placeholder="Séléctionner un statut" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {status.map((statut, index) => (
-                          <SelectItem key={index} value={statut.value}>
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={`h-2 w-2 rounded-full bg-${statut.color}`}
-                              />
-                              {statut.lable}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4 my-2">
-                    <Label htmlFor="montant" className="text-right text-black">
-                      Montant
+                      Date :
                     </Label>
                     <div className="col-span-3">
-                      <PriceRangeSlider
-                        min={0}
-                        max={maxMontant}
-                        step={100}
-                        value={filters.montant}
-                        onValueChange={(value) =>
-                          setFilters({ ...filters, montant: value })
-                        }
+                      <CustomDateRangePicker
+                        startDate={startDate}
+                        setStartDate={setStartDate}
+                        endDate={endDate}
+                        setEndDate={setEndDate}
                       />
-                      <div className="flex justify-between mt-2">
-                        <span>{filters.montant[0]} DH</span>
-                        <span>{filters.montant[1]} DH</span>
-                      </div>
                     </div>
                   </div>
                 </div>
               </SheetContent>
-            </Sheet> */}
+            </Sheet>
             <AddCommandeFournisseur lastCommande={lastCommande} />
           </div>
         </div>

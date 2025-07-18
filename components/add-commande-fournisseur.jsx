@@ -218,11 +218,11 @@ export default function AddCommandeFournisseur({ lastCommande }) {
             <DialogTitle>Commande fourniture</DialogTitle>
           </DialogHeader>
 
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex justify-between items-end mb-4">
             <div className="w-1/3 pr-2">
               <ComboBoxFournisseur setFournisseur={setSelectedFournisseur} />
             </div>
-            <div className="w-1/3 pr-2">
+            <div className="w-1/3 px-2 space-y-2">
               <Label htmlFor="client">Date : </Label>
               <Popover>
                 <PopoverTrigger asChild>

@@ -1,8 +1,6 @@
 "use client";
 import * as React from "react";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import CustomPagination from "@/components/customUi/customPagination";
 import {
   ColumnDef,
   flexRender,
@@ -10,9 +8,6 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import { LoadingDots } from "@/components/loading-dots";
-import AddBonLivraison from "@/components/add-bonLivraison";
-import { Search, Pen, Trash2, Filter, Printer } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -27,7 +22,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useState } from "react";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -38,7 +32,6 @@ export function DataTable<TData, TValue>({
   columns,
   data,
 }: DataTableProps<TData, TValue>) {
-
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
 

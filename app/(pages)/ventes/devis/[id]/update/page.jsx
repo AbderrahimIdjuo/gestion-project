@@ -297,6 +297,9 @@ export default function UpdateDevisPage({ params }) {
                           <TableRow>
                             <TableHead className="w-[30%]">Articls</TableHead>
                             <TableHead className="w-[10%] text-center">
+                              Hauteur
+                            </TableHead>
+                            <TableHead className="w-[10%] text-center">
                               Longueur
                             </TableHead>
                             <TableHead className="w-[10%] text-center">
@@ -332,6 +335,27 @@ export default function UpdateDevisPage({ params }) {
                                     "!border-red-500"
                                   }`}
                                 />
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  defaultValue={item.height}
+                                  onChange={(e) => {
+                                    handleItemChange(
+                                      item.key,
+                                      "height",
+                                      Number(e.target.value)
+                                    );
+                                  }}
+                                  className={`focus:!ring-purple-500 w-24 ${
+                                    errors.articls?.[index]?.height &&
+                                    "!border-red-500"
+                                  }`}
+                                />
+                                {errors.articls?.[index]?.height && (
+                                  <p className="text-xs text-red-500 mt-1">
+                                    {errors.articls[index].height.message}
+                                  </p>
+                                )}
                               </TableCell>
                               <TableCell>
                                 <Input

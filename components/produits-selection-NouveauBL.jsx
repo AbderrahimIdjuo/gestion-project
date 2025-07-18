@@ -142,9 +142,7 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
           cursor: pageParam,
           categorie: filters.categorie,
         },
-      });
-      console.log("Produits : ", response.data);
-      
+      });      
       return response.data;
     },
     getNextPageParam: (lastPage) => lastPage.nextCursor || null,

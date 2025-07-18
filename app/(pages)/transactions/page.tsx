@@ -363,14 +363,12 @@ export default function Banques() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[150px]">Date</TableHead>
-                    <TableHead>Réference</TableHead>
                     <TableHead>Label</TableHead>
                     <TableHead>Montant</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Méthode</TableHead>
                     <TableHead>Compte</TableHead>
                     <TableHead>Description</TableHead>
-
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -407,9 +405,6 @@ export default function Banques() {
                         <TableCell className="!py-2" align="left">
                           <Skeleton className="h-4 w-[100px]" />
                         </TableCell>
-                        <TableCell className="!py-2 " align="right">
-                          <Skeleton className="h-7 w-7 rounded-full" />
-                        </TableCell>
                       </TableRow>
                     ))
                   ) : transactions.data?.length > 0 ? (
@@ -418,10 +413,6 @@ export default function Banques() {
                         <TableCell className="font-medium py-1">
                           {formatDate(transaction.date) ||
                             formatDate(transaction.createdAt)}
-                        </TableCell>
-
-                        <TableCell className="font-medium py-0">
-                          {transaction.reference}
                         </TableCell>
                         <TableCell className="font-medium py-0">
                           {transaction.lable}

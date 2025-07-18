@@ -72,8 +72,8 @@ export default function UpdateCommandeFournisseur({ commande }) {
 
     setOrderGroups(formatCommandeGroups(commande?.groups));
     // console.log("commande", commande);
-    console.log("commande groups", commande?.groups);
-    console.log("formatCommandeGroups", formatCommandeGroups(commande?.groups));
+   // console.log("commande groups", commande?.groups);
+   // console.log("formatCommandeGroups", formatCommandeGroups(commande?.groups));
   }, [commande]);
 
   const generateCommandeNumber = () => {
@@ -124,8 +124,8 @@ export default function UpdateCommandeFournisseur({ commande }) {
 
   // Gestion des articles
   const handleAddArticles = useCallback((groupId, newArticles) => {
-    console.log("newArticles", newArticles);
-    console.log("orderGroups", orderGroups);
+    //console.log("newArticles", newArticles);
+    //console.log("orderGroups", orderGroups);
     setOrderGroups((prev) =>
       prev.map((group) => {
         if (group.id === groupId) {
@@ -233,15 +233,15 @@ export default function UpdateCommandeFournisseur({ commande }) {
             <DialogTitle>Commande fourniture</DialogTitle>
           </DialogHeader>
 
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex justify-between items-end mb-4">
             <div className="w-1/3 pr-2">
               <ComboBoxFournisseur
                 fournisseur={commande?.fournisseur}
                 setFournisseur={setSelectedFournisseur}
               />
             </div>
-            <div className="w-1/3 pr-2">
-              <Label htmlFor="client">Date : </Label>
+            <div className="w-1/3 px-2 space-y-2">
+              <Label htmlFor="client" >Date : </Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button

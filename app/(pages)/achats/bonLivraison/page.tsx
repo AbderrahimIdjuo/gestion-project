@@ -4,13 +4,18 @@ import { useBonLivraisonColumns, BonLivraisonT } from "./columns";
 import { DataTable } from "./data-table";
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
-import toast, { Toaster } from "react-hot-toast";
+import { Toaster } from "react-hot-toast";
 import CustomPagination from "@/components/customUi/customPagination";
-import { Label } from "@/components/ui/label";
 import { LoadingDots } from "@/components/loading-dots";
+import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
+import PreviewBonLivraisonDialog from "@/components/preview-bonLivraison";
+import { Search } from "lucide-react";
+import { useDeleteBonLivraison } from "@/hooks/useDeleteBonLivraison";
+import AddBonLivraison from "@/components/add-bonLivraison";
+import UpdateBonLivraison from "@/components/update-bonLivraison";
+import RapportDialog from "@/components/rapport-dialog";
 import {
   Sheet,
   SheetContent,
@@ -19,54 +24,49 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Filter } from "lucide-react";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Search, Pen, Trash2, Filter, Printer } from "lucide-react";
-import { UpdateAchatCommandeForm } from "@/components/update-achat-commande-form";
-import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
-import { AchatCommandesForm } from "@/components/achat-many-commande-form";
-import { Skeleton } from "@/components/ui/skeleton";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { PriceRangeSlider } from "@/components/customUi/customSlider";
-import AddBonLivraison from "@/components/add-bonLivraison";
-import PreviewCommandeFournitureDialog from "@/components/preview-commandeFourniture";
-import PrintCommandeFournitureDialog from "@/components/print-commandeFourniture";
-import CustomTooltip from "@/components/customUi/customTooltip";
-import RapportDialog from "@/components/rapport-dialog";
+import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
+
 function formatDate(dateString: String) {
   return dateString?.split("T")[0].split("-").reverse().join("-");
 }
 
 export default function BonLivraison() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [currCommande, setCurrCommande] = useState("");
-  const [maxMontant, setMaxMontant] = useState<number | null>(null);
+  const [maxMontant, setMaxMontant] = useState<number | undefined>(undefined);
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [startDate, setStartDate] = useState<string | null>(null);
   const [endDate, setEndDate] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState<number | null>(null);
   const [lastBonLivraison, setLastBonLivraison] = useState();
+  const [currentBL, setCurrentBL] = useState<BonLivraisonT | null>(null);
+  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
   const [filters, setFilters] = useState({
-    categorie: "all",
-    statut: "all",
-    statutPaiement: "all",
-    montant: [0, maxMontant],
+    type: "",
+    statutPaiement: "",
+    montant: [0, typeof maxMontant === "number" ? maxMontant : 0],
   });
+  const deleteDevi = useDeleteBonLivraison();
+  useEffect(() => {
+    setFilters({
+      ...filters,
+      montant: [0, typeof maxMontant === "number" ? maxMontant : 0],
+    });
+  }, [maxMontant]);
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedQuery(searchQuery);
@@ -78,8 +78,6 @@ export default function BonLivraison() {
     };
   }, [searchQuery]);
 
-  const queryClient = useQueryClient();
-
   const {
     data: bonLivraison,
     isLoading,
@@ -87,13 +85,12 @@ export default function BonLivraison() {
   } = useQuery({
     queryKey: [
       "bonLivraison",
-      filters.statut,
+      filters.type,
       debouncedQuery,
       page,
       startDate,
       endDate,
       filters.montant,
-      filters.categorie,
       filters.statutPaiement,
     ],
     queryFn: async () => {
@@ -101,16 +98,15 @@ export default function BonLivraison() {
         params: {
           query: debouncedQuery,
           page,
-          statut: filters.statut,
+          type: filters.type,
           from: startDate,
           to: endDate,
           minTotal: filters.montant[0],
           maxTotal: filters.montant[1],
-          categorie: decodeURIComponent(filters.categorie),
           statutPaiement: filters.statutPaiement,
         },
       });
-      // console.log("last BL:", response.data.lastBonLivraison);
+      setMaxMontant(response.data.maxMontant);
       setLastBonLivraison(response.data.lastBonLivraison);
       setTotalPages(response.data.totalPages);
       return response.data.bonLivraison;
@@ -127,8 +123,10 @@ export default function BonLivraison() {
       totalPaye: bon.totalPaye,
       reference: bon.reference,
       fournisseur: bon.fournisseur.nom,
+      fournisseurId: bon.fournisseur.id,
       total: bon.total,
       groups: bon.groups,
+      statutPaiement: bon.statutPaiement,
     })) ?? [];
 
   return (
@@ -154,11 +152,149 @@ export default function BonLivraison() {
           </div>
 
           <div className="flex gap-3">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="border-purple-500 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900 rounded-full"
+                >
+                  <Filter className="mr-2 h-4 w-4" />
+                  Filtres
+                </Button>
+              </SheetTrigger>
+              <SheetContent className="border-l-purple-200 bg-white">
+                <SheetHeader>
+                  <SheetTitle className="text-black">Filtres</SheetTitle>
+                  <SheetDescription className="text-gray-600">
+                    Ajustez les filtres pour affiner votre recherche de
+                    bons de livraison.
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4 my-2">
+                    <Label
+                      htmlFor="statut"
+                      className="col-span-1 text-left text-black"
+                    >
+                      Date :
+                    </Label>
+                    <div className="col-span-3">
+                      <CustomDateRangePicker
+                        startDate={startDate}
+                        setStartDate={setStartDate}
+                        endDate={endDate}
+                        setEndDate={setEndDate}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4 my-2">
+                    <Label className="col-span-1 text-sm font-medium block pt-1">
+                      Type :
+                    </Label>
+                    <div className="col-span-3">
+                      <Select
+                        value={filters.type}
+                        onValueChange={(value) =>
+                          setFilters({ ...filters, type: value })
+                        }
+                      >
+                        <SelectTrigger className="w-full col-span-3 bg-white focus:ring-purple-500">
+                          <SelectValue placeholder="Séléctionnez ..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectItem value="achats">Achats</SelectItem>
+                            <SelectItem value="retour">Retour</SelectItem>
+                            <SelectItem value="all">Tous</SelectItem>
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4 my-2">
+                    <Label className="col-span-1 text-sm font-medium block pt-1">
+                      Statut :
+                    </Label>
+                    <div className="col-span-3">
+                      <Select
+                        value={filters.statutPaiement}
+                        onValueChange={(value) =>
+                          setFilters({ ...filters, statutPaiement: value })
+                        }
+                      >
+                        <SelectTrigger className="w-full col-span-3 bg-white focus:ring-purple-500">
+                          <SelectValue placeholder="Séléctionnez ..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectItem value="paye">
+                              <div className="flex items-center gap-2">
+                                <span className="h-2 w-2 rounded-full bg-green-500" />
+                                Payé
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="impaye">
+                              <div className="flex items-center gap-2">
+                                <span className="h-2 w-2 rounded-full bg-red-500" />
+                                Impayé
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="enPartie">
+                              <div className="flex items-center gap-2">
+                                <span className="h-2 w-2 rounded-full bg-amber-500" />
+                                En partie
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="all">
+                              <div className="flex items-center gap-2">
+                                <span className="h-2 w-2 rounded-full bg-slate-500" />
+                                Tout
+                              </div>
+                            </SelectItem>
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4 my-2">
+                    <Label
+                      htmlFor="montant"
+                      className="col-span-1 text-left text-black"
+                    >
+                      Montant :
+                    </Label>
+                    <div className="col-span-3">
+                      <PriceRangeSlider
+                        min={0}
+                        max={maxMontant}
+                        step={100}
+                        value={filters.montant}
+                        onValueChange={(value) =>
+                          setFilters({ ...filters, montant: value })
+                        }
+                      />
+                      <div className="flex justify-between mt-2">
+                        <span>{filters.montant[0]} DH</span>
+                        <span>{filters.montant[1]} DH</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
             <AddBonLivraison lastBonLivraison={lastBonLivraison} />
             <RapportDialog />
           </div>
         </div>
-        <DataTable columns={useBonLivraisonColumns()} data={listBonLivraison} />
+        <DataTable
+          columns={useBonLivraisonColumns({
+            setCurrentBL,
+            setPreviewDialogOpen,
+            setDeleteDialogOpen,
+            setUpdateDialogOpen,
+          })}
+          data={listBonLivraison}
+        />
         {bonLivraison?.length > 0 ? (
           <CustomPagination
             currentPage={page}
@@ -169,6 +305,25 @@ export default function BonLivraison() {
           ""
         )}
       </div>
+      <UpdateBonLivraison
+        bonLivraison={currentBL}
+        isOpen={updateDialogOpen}
+        onClose={() => setUpdateDialogOpen(false)}
+      />
+      <DeleteConfirmationDialog
+        recordName={currentBL?.numero}
+        isOpen={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        onConfirm={() => {
+          setDeleteDialogOpen(false);
+          deleteDevi.mutate(currentBL);
+        }}
+      />
+      <PreviewBonLivraisonDialog
+        bonLivraison={currentBL}
+        isOpen={previewDialogOpen}
+        onClose={() => setPreviewDialogOpen(false)}
+      />
     </>
   );
 }

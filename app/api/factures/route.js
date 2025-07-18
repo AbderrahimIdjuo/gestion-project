@@ -223,7 +223,7 @@ export async function GET(req) {
   // Return the response
   return NextResponse.json({
     factures,
-    maxMontant: factureMaxMontant.total || 0,
+    maxMontant: factureMaxMontant?.total || 0,
     totalPages,
   });
 }

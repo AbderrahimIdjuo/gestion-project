@@ -36,6 +36,7 @@ export async function POST(req) {
           articls: {
             create: articls.map((articl) => ({
               key: articl.key, //permet de supprimer un articl doublon
+              height: articl.height || 0,
               length: articl.length || 0,
               unite: articl.unite || "U",
               width: articl.width || 0,
@@ -148,8 +149,9 @@ export async function PUT(req) {
               where: { id: articl.id },
               data: {
                 key: articl.key,
+                height: articl.height,
                 length: articl.length,
-                width: articl.width || 0,
+                width: articl.width,
                 unite: articl.unite,
                 designation: articl.designation,
                 quantite: articl.quantite,

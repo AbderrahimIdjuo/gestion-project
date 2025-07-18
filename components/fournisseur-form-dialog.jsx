@@ -7,7 +7,6 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CircleX } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -20,13 +19,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 export function FournisseurFormDialog() {
   const [open, setOpen] = useState(false);
   const fournisseurSchema = z.object({
@@ -35,6 +27,7 @@ export function FournisseurFormDialog() {
     telephone: z.string().optional(),
     telephoneSecondaire: z.string().optional(),
     ice: z.string().optional(),
+    dette: z.string().optional(),
     adresse: z.string().optional(),
   });
   const {
@@ -192,6 +185,17 @@ export function FournisseurFormDialog() {
                 id="adresse"
                 name="adresse"
                 {...register("adresse")}
+                className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
+              />
+            </div>
+            <div className="w- full grid grid-cols-1">
+              <Label htmlFor="dette" className="text-left mb-2 mb-2">
+                Dettte
+              </Label>
+              <Input
+                id="dette"
+                name="dette"
+                {...register("dette")}
                 className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
               />
             </div>

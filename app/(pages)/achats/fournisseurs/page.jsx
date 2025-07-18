@@ -16,14 +16,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import CustomPagination from "@/components/customUi/customPagination";
-import { Search, Trash2, Upload } from "lucide-react";
+import { Search, Trash2, Upload , CircleDollarSign} from "lucide-react";
 import { FournisseurFormDialog } from "@/components/fournisseur-form-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LoadingDots } from "@/components/loading-dots";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import ImportFournisseurs from "@/components/importer-fournisseur";
-
+import PaiementFournisseurDialog from "@/components/paiement-fournisseur";
 export default function FournisseursPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currFournisseur, setCurrFournisseur] = useState("");
@@ -31,7 +31,7 @@ export default function FournisseursPage() {
   const [page, setPage] = useState(1);
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [totalPages, setTotalPages] = useState();
-
+  const [paiementDialogOpen, setPaiementDialogOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const fournisseurs = useQuery({
@@ -131,6 +131,7 @@ export default function FournisseursPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nom</TableHead>
+                  <TableHead>Dette</TableHead>
                   <TableHead>ICE</TableHead>
                   <TableHead>Téléphone</TableHead>
                   <TableHead>Adresse</TableHead>
@@ -151,6 +152,9 @@ export default function FournisseursPage() {
                         className="!py-2 text-sm md:text-base"
                         align="left"
                       >
+                        <Skeleton className="h-4 w-[150px]" />
+                      </TableCell>
+                      <TableCell className="!py-2" align="left">
                         <Skeleton className="h-4 w-[150px]" />
                       </TableCell>
                       <TableCell className="!py-2" align="left">
@@ -192,6 +196,9 @@ export default function FournisseursPage() {
                         </div>
                       </TableCell>
                       <TableCell className="text-md !py-2">
+                        {fournisseur.dette} DH
+                      </TableCell>
+                      <TableCell className="text-md !py-2">
                         {fournisseur.ice}
                       </TableCell>
                       <TableCell className="text-md !py-2">
@@ -218,6 +225,19 @@ export default function FournisseursPage() {
                           >
                             <Trash2 className="h-4 w-4" />
                             <span className="sr-only">Supprimer</span>
+                          </Button>
+                          <Button
+                            name="paiement btn"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full hover:bg-green-100 hover:text-green-600"
+                            onClick={() => {
+                              setPaiementDialogOpen(true);
+                              setCurrFournisseur(fournisseur);
+                            }}
+                          >
+                            <CircleDollarSign className="h-4 w-4" />
+                            <span className="sr-only">paiement </span>
                           </Button>
                         </div>
                       </TableCell>
@@ -269,6 +289,11 @@ export default function FournisseursPage() {
         }}
         itemType="fournisseur"
       ></DeleteConfirmationDialog>
+      <PaiementFournisseurDialog
+        fournisseur={currFournisseur}
+        isOpen={paiementDialogOpen}
+        onClose={() => setPaiementDialogOpen(false)}
+      />
     </>
   );
 }

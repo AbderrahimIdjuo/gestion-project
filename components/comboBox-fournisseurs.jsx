@@ -33,10 +33,7 @@ export default function ComboBoxFournisseur({ fournisseur, setFournisseur }) {
   const { watch, setValue } = useForm({
     defaultValues: { fournisseur },
   });
-  useEffect(() => {
-    //setValue("fournisseur", fournisseur);
-    console.log("fournisseur", fournisseur);
-  }, [fournisseur]);
+
   useEffect(() => {
     if (buttonRef.current) {
       setButtonWidth(buttonRef.current.offsetWidth);

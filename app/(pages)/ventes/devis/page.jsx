@@ -269,7 +269,10 @@ export default function DevisPage() {
   };
 
   const statutPaiement = (numero, devisTotal) => {
-    if (totalPaye(numero) === devisTotal || totalPaye(numero) > devisTotal) {
+    if (
+      devisTotal > 0 &&
+      (totalPaye(numero) === devisTotal || totalPaye(numero) > devisTotal)
+    ) {
       return { lable: "Payé", color: "bg-green-100 text-green-600" };
     } else if (totalPaye(numero) > 0 && totalPaye(numero) < devisTotal) {
       return { lable: "En partie", color: "bg-orange-100 text-orange-500" };
@@ -460,6 +463,7 @@ export default function DevisPage() {
                             }
                           }}
                           className={`font-medium !py-2  ${
+                            devis.total > 0 &&
                             (totalPaye(devis.numero) === devis.total ||
                               totalPaye(devis.numero) > devis.total) &&
                             "cursor-pointer hover:text-green-400"

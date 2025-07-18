@@ -110,7 +110,7 @@ export default function NouveauDevisPage() {
   };
 
   const onSubmit = async (data) => {
-    console.log("data######", data);
+//    console.log("data######", data);
 
     toast.promise(
       (async () => {
@@ -314,6 +314,9 @@ export default function NouveauDevisPage() {
                           <TableRow>
                             <TableHead className="w-[30%]">Articls</TableHead>
                             <TableHead className="w-[10%] text-center">
+                              Hauteur
+                            </TableHead>
+                            <TableHead className="w-[10%] text-center">
                               Longueur
                             </TableHead>
                             <TableHead className="w-[10%] text-center">
@@ -349,6 +352,27 @@ export default function NouveauDevisPage() {
                                     "!border-red-500"
                                   }`}
                                 />
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  defaultValue={item.height}
+                                  onChange={(e) => {
+                                    handleItemChange(
+                                      item.key,
+                                      "height",
+                                      validateFloat(e.target.value)
+                                    );
+                                  }}
+                                  className={`focus:!ring-purple-500 w-24 ${
+                                    errors.articls?.[index]?.height &&
+                                    "!border-red-500"
+                                  }`}
+                                />
+                                {errors.articls?.[index]?.height && (
+                                  <p className="text-xs text-red-500 mt-1">
+                                    {errors.articls[index].height.message}
+                                  </p>
+                                )}
                               </TableCell>
                               <TableCell>
                                 <Input

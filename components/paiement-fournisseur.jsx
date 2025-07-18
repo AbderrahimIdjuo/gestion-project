@@ -25,8 +25,11 @@ import axios from "axios";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 
-export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
- 
+export default function PaiementFournisseurDialog({
+  fournisseur,
+  isOpen,
+  onClose,
+}) {
   const {
     register,
     reset,
@@ -39,20 +42,33 @@ export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
 
   const createTransaction = useMutation({
     mutationFn: async (data) => {
-      const { compte, description, lable, montant, numero, type } = data;
-      const transData = {
+      const {
         compte,
         description,
-        lable: "paiement BL",
+        lable,
         montant,
-        numero: bonLivraison?.numero,
+        numero,
+        type,
+        typePaiement,
+      } = data;
+      const transData = {
+        fournisseurId: fournisseur.id,
+        compte,
+        description: "paiement du fournisseur " + fournisseur.nom,
+        lable: "paiement fournisseur",
+        montant,
         type: "depense",
+        methodePaiement: typePaiement,
       };
       console.log("transData", transData);
       const loadingToast = toast.loading("Paiement en cours...");
       try {
-        await addtransaction(transData);
+        const result = await axios.post(
+          "/api/fournisseurs/paiement",
+          transData
+        );
         toast.success("Paiement éffectué avec succès");
+        return result.data;
       } catch (error) {
         toast.error("Échec de l'opération!");
         throw error;
@@ -62,7 +78,7 @@ export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["transactions"]);
-      queryClient.invalidateQueries({ queryKey: ["bonLivraison"] });
+      queryClient.invalidateQueries({ queryKey: ["fournisseurs"] });
       queryClient.invalidateQueries({ queryKey: ["statistiques"] });
     },
   });
@@ -86,7 +102,7 @@ export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogHeader>
-            <DialogTitle>Paiement du {bonLivraison?.numero}</DialogTitle>
+            <DialogTitle>Paiement de {fournisseur?.nom}</DialogTitle>
             <DialogDescription>
               Sélectionnez le type de paiement et remplissez les détails
               nécessaires.

@@ -394,7 +394,7 @@ export default function Factures() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={5} align="center">
+                    <TableCell colSpan={6} align="center">
                       <div className="text-center py-10 text-muted-foreground">
                         <svg
                           xmlns="http://www.w3.org/2000/svg"

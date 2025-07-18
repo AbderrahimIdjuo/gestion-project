@@ -81,6 +81,23 @@ const articlSchema = z.object({
 
     return number;
   }, z.number({ invalid_type_error: "Ce champ doit contenir un nombre valide" }).optional()),
+   height: z.preprocess((value) => {
+    // Convert "" or undefined to undefined
+    if (value === "" || value === undefined) return undefined;
+
+    // Convert string with comma to dot notation
+    if (typeof value === "string") {
+      value = value.replace(",", ".");
+      // Remove any whitespace that might interfere
+      value = value.trim();
+    }
+
+    const number = parseFloat(value);
+    // If the conversion fails, return undefined to trigger the validation error
+    if (isNaN(number)) return undefined;
+
+    return number;
+  }, z.number({ invalid_type_error: "Ce champ doit contenir un nombre valide" }).optional()),
   id: z.string(),
   unite: z.string().optional(),
 });

@@ -15,16 +15,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArticleSelectionDialog } from "@/components/produits-selection-NouveauBL";
-import { Badge } from "@/components/ui/badge";
-import ComboBoxCommandesFournitures from "@/components/comboBox-commandesFournitures";
 import ComboBoxFournisseur from "@/components/comboBox-fournisseurs";
 import { ProduitsSelection } from "@/components/produits-selection-CMDF";
 import {
@@ -41,23 +33,18 @@ import {
   SelectContent,
   SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import axios from "axios";
 import { AddButton } from "@/components/customUi/styledButton";
 import { CustomDatePicker } from "@/components/customUi/customDatePicker";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import { formatDate } from "date-fns";
-// function formatDate(dateString) {
-//   return dateString?.split("T")[0].split("-").reverse().join("-");
-// }
+
 export default function AddBonLivraison({ lastBonLivraison }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [date, setDate] = useState(null);
-  const [formattedDate, setFormattedDate] = useState("");
   const [currentStep, setCurrentStep] = useState(1);
   const [commandeDetails, setCommandeDetails] = useState(null);
   const [produits, setProduits] = useState([]);
@@ -120,7 +107,6 @@ export default function AddBonLivraison({ lastBonLivraison }) {
     return `BL-${nextNumber}`;
   };
 
-
   const resetDialog = () => {
     setCurrentStep(1);
     setReference(null);
@@ -155,7 +141,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
         totalPaye: 0,
         bLGroups,
       };
-  const loadingToast = toast.loading("Ajout du bon de livraison...");
+      const loadingToast = toast.loading("Ajout du bon de livraison...");
       try {
         await axios.post("/api/bonLivraison", data);
         toast.success("bon ajouter avec succès");
@@ -655,7 +641,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                   onClick={() => {
                     setCurrentStep(2);
                   }}
-                  disabled={!selectedFournisseur}
+                  disabled={!selectedFournisseur || !type}
                 >
                   Suivant
                 </Button>

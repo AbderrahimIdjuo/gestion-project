@@ -28,6 +28,7 @@ export function ModifyFournisseur({ currFournisseur }) {
     telephone: z.string().optional(),
     telephoneSecondaire: z.string().optional(),
     ice: z.string().optional(),
+    dette: z.string().optional(),
     adresse: z.string().optional(),
   });
 
@@ -35,6 +36,7 @@ export function ModifyFournisseur({ currFournisseur }) {
   const {
     register,
     reset,
+    watch,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm({
@@ -46,6 +48,7 @@ export function ModifyFournisseur({ currFournisseur }) {
       telephoneSecondaire: currFournisseur?.telephoneSecondaire,
       adresse: currFournisseur?.adresse,
       ice: currFournisseur?.ice,
+      dette: currFournisseur?.dette,
     },
   });
 
@@ -63,6 +66,7 @@ export function ModifyFournisseur({ currFournisseur }) {
         console.log("Client ajouté avec succès");
         reset();
         queryClient.invalidateQueries(["fournisseurs"]);
+
         setOpen(false);
       })(),
       {
@@ -195,6 +199,17 @@ export function ModifyFournisseur({ currFournisseur }) {
                 id="adresse"
                 name="adresse"
                 {...register("adresse")}
+                className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
+              />
+            </div>
+            <div className="w- full grid grid-cols-1">
+              <Label htmlFor="dette" className="text-left mb-2 mb-2">
+                Dettte
+              </Label>
+              <Input
+                id="dette"
+                name="dette"
+                {...register("dette")}
                 className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
               />
             </div>

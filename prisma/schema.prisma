@@ -87,6 +87,7 @@ model Fournisseurs {
   updatedAt            DateTime             @updatedAt
   ice                  String?
   telephoneSecondaire  String?
+  dette                Float                @default(0)
   bonLivraisons        BonLivraison[]
   commandesFournitures CommandeFourniture[]
 }
@@ -193,6 +194,7 @@ model Articls {
   updatedAt   DateTime @updatedAt
   width       Float?
   length      Float?
+  height      Float?   @default(0)
   unite       String   @default("U")
   key         String   @unique
   devi        Devis    @relation(fields: [deviId], references: [id], onDelete: Cascade)
@@ -241,7 +243,7 @@ model FacturesArticls {
   width       Float?
   length      Float?
   unite       String   @default("U")
- // key         String   @unique
+  // key         String   @unique
   facture     Factures @relation(fields: [factureId], references: [id], onDelete: Cascade)
 }
 
@@ -252,8 +254,8 @@ model BonLivraison {
   fournisseurId  String
   date           DateTime?
   total          Float
-  totalPaye      Float?
-  statutPaiement String?
+  totalPaye      Float?       @default(0)
+  statutPaiement String?      @default("impaye")
   type           String?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt

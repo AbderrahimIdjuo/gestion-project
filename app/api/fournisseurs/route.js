@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../lib/prisma";
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export async function POST(req) {
   try {
     const resopns = await req.json();
-    const { nom, email, telephone, adresse, ice, telephoneSecondaire } =
+    const { nom, email, telephone, adresse, ice, telephoneSecondaire , dette } =
       resopns;
     const result = await prisma.fournisseurs.create({
       data: {
@@ -15,6 +15,7 @@ export async function POST(req) {
         adresse,
         ice,
         telephoneSecondaire,
+        dette : parseFloat(dette) || 0,
       },
     });
     return NextResponse.json({ result });
@@ -30,8 +31,16 @@ export async function POST(req) {
 export async function PUT(req) {
   try {
     const resopns = await req.json();
-    const { id, nom, email, telephone, adresse, ice, telephoneSecondaire } =
-      resopns;
+    const {
+      id,
+      nom,
+      email,
+      telephone,
+      adresse,
+      ice,
+      telephoneSecondaire,
+      dette,
+    } = resopns;
     const result = await prisma.fournisseurs.update({
       where: { id },
       data: {
@@ -41,6 +50,7 @@ export async function PUT(req) {
         adresse,
         ice,
         telephoneSecondaire,
+        dette: parseFloat(dette),
       },
     });
 
@@ -65,10 +75,10 @@ export async function GET(req) {
 
   // Search filter by numero and client name
   filters.OR = [
-    { nom: { contains: searchQuery , mode: "insensitive" } },
-    { adresse: { contains: searchQuery , mode: "insensitive" } },
+    { nom: { contains: searchQuery, mode: "insensitive" } },
+    { adresse: { contains: searchQuery, mode: "insensitive" } },
     { telephone: { contains: searchQuery } },
-    { email: { contains: searchQuery , mode: "insensitive" } },
+    { email: { contains: searchQuery, mode: "insensitive" } },
     { ice: { contains: searchQuery } },
   ];
 
