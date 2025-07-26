@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,9 +27,6 @@ export default function PreviewBonLivraisonDialog({
   isOpen,
   onClose,
 }) {
-  const handlePrint = () => {
-    window.print();
-  };
   const totalFournitureDevis = (produits) => {
     return produits?.reduce((acc, produit) => {
       return acc + produit.quantite * produit.prixUnite;

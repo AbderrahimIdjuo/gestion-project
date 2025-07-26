@@ -11,7 +11,6 @@ import {
   Pen,
   Trash2,
   Printer,
-  PrinterCheck,
   MoreVertical,
   CircleDollarSign,
   TruckIcon,
@@ -20,33 +19,19 @@ import {
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { PaiementDialog } from "@/components/paiement-dialog";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { addtransaction } from "@/app/api/actions";
-import toast from "react-hot-toast";
 import FournitureDialog from "@/components/fourniture-dialog";
 import FactureDialog from "@/components/add-facture-dialog";
 export function DevisActions({
   devis,
   setDeleteDialogOpen,
   setCurrentDevi,
-  transactions,
   bLGroups,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [compte, setCompte] = useState("");
   const [isBankDialogOpen, setIsBankDialogOpen] = useState(false);
   const [isFournitureOpen, setIsFournitureOpen] = useState(false);
   const [isFactureOpen, setIsFactureOpen] = useState(false);
-
-  const [montant, setMontant] = useState("");
   const router = useRouter();
-  const queryClient = useQueryClient();
-
-  const transactionsDevis = (numero) => {
-    const trans = transactions?.filter((c) => c.reference === numero);
-    return trans;
-  };
- 
 
   return (
     <>
@@ -140,16 +125,8 @@ export function DevisActions({
       </DropdownMenu>
       <PaiementDialog
         devis={devis}
-        transactions={transactionsDevis(devis.numero)}
-        setCompte={setCompte}
-        compte={compte}
-        setMontant={setMontant}
         isOpen={isBankDialogOpen}
         onClose={() => setIsBankDialogOpen(false)}
-        onConfirm={() => {
-         // createTransaction.mutate();
-          setIsBankDialogOpen(false);
-        }}
       />
       <FournitureDialog
         devis={devis}

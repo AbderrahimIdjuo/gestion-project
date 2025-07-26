@@ -22,7 +22,6 @@ import axios from "axios";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Label } from "@/components/ui/label";
 import { useForm } from "react-hook-form";
-import { Badge } from "@/components/ui/badge";
 function formatDate(dateString) {
   return dateString.split("T")[0].split("-").reverse().join("-");
 }
@@ -41,12 +40,12 @@ export default function ComboBoxCommandesFournitures({
     if (commande) {
       setValue("commande", commande);
     }
-  }, [commande]);
+  }, [commande, setValue]);
   useEffect(() => {
     if (buttonRef.current) {
       setButtonWidth(buttonRef.current.offsetWidth);
     }
-  }, [buttonRef.current, openComboBox]);
+  }, [openComboBox]);
 
   // infinite scrolling commandes fourniture comboBox
   const { data, fetchNextPage, isLoading, isFetchingNextPage, hasNextPage } =
@@ -98,7 +97,6 @@ export default function ComboBoxCommandesFournitures({
             role="combobox"
             aria-expanded={openComboBox}
             className="w-full justify-between mt-2"
-            
           >
             {watch("commande")
               ? watch("commande").numero

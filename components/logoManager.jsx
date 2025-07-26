@@ -5,37 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Plus, Pen } from "lucide-react";
 import { LoadingDots } from "@/components/loading-dots";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useQueryClient } from "@tanstack/react-query";
 
 export function LogoManager({ logoUrl , setImageUrl }) {
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
-  //const [logoUrl, setLogoUrl] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const fileRef = useRef();
-  const queryClient = useQueryClient();
-
-  // Fetch the logo on component mount
-  //   useEffect(() => {
-  //     const fetchLogo = async () => {
-  //       try {
-  //         const response = await fetch("/api/infoEntreprise");
-  //         if (!response.ok) {
-  //           throw new Error("Failed to fetch logo");
-  //         }
-  //         const data = await response.json();
-  //         setLogoUrl(data.infoEntreprise[0].logoUrl);
-  //       } catch (error) {
-  //         console.error("Error fetching logo:", error);
-  //         setError("Failed to fetch logo");
-  //       } finally {
-  //         setLoading(false);
-  //       }
-  //     };
-
-  //     fetchLogo();
-  //   }, []);
 
   // Upload the file automatically when it changes
   useEffect(() => {
@@ -80,10 +55,6 @@ export function LogoManager({ logoUrl , setImageUrl }) {
       //queryClient.invalidateQueries({ queryKey: ["infoEntreprise"] });
     }
   };
-
-  if (loading) {
-    return <LoadingDots />;
-  }
 
   return (
     <div>

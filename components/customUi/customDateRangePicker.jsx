@@ -2,8 +2,7 @@
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";
-import { ChevronRight , MoveRight } from "lucide-react";
-import { Label } from "@/components/ui/label";
+import { ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -60,7 +59,11 @@ function CustomDateRangePicker({
             )}
           >
             <CalendarIcon />
-            {startDate ? format(new Date(startDate), "dd-MM-yyyy") : <span>début</span>}
+            {startDate ? (
+              format(new Date(startDate), "dd-MM-yyyy")
+            ) : (
+              <span>début</span>
+            )}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0">
@@ -84,7 +87,11 @@ function CustomDateRangePicker({
             )}
           >
             <CalendarIcon />
-            {endDate ? format(new Date(endDate), "dd-MM-yyyy") : <span>fin</span>}
+            {endDate ? (
+              format(new Date(endDate), "dd-MM-yyyy")
+            ) : (
+              <span>fin</span>
+            )}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0">

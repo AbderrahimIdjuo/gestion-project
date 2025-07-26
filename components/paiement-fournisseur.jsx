@@ -9,7 +9,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { addtransaction } from "@/app/api/actions";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -44,17 +43,13 @@ export default function PaiementFournisseurDialog({
     mutationFn: async (data) => {
       const {
         compte,
-        description,
-        lable,
         montant,
-        numero,
-        type,
         typePaiement,
       } = data;
       const transData = {
         fournisseurId: fournisseur.id,
         compte,
-        description: "paiement du fournisseur " + fournisseur.nom,
+        description: "bénéficiaire :" + fournisseur.nom,
         lable: "paiement fournisseur",
         montant,
         type: "depense",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { Plus, Package, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ComboBoxDevis from "@/components/comboBox-devis";
@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ArticleSelectionDialog } from "@/components/produits-selection-NouveauBL";
 import ComboBoxFournisseur from "@/components/comboBox-fournisseurs";
 import { ProduitsSelection } from "@/components/produits-selection-CMDF";
@@ -46,48 +46,13 @@ export default function AddBonLivraison({ lastBonLivraison }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [date, setDate] = useState(null);
   const [currentStep, setCurrentStep] = useState(1);
-  const [commandeDetails, setCommandeDetails] = useState(null);
-  const [produits, setProduits] = useState([]);
-  const [commande, setCommande] = useState(null);
   const [reference, setReference] = useState("");
   const [type, setType] = useState();
   const [isArticleDialogOpen, setIsArticleDialogOpen] = useState(false);
   const [selectedFournisseur, setSelectedFournisseur] = useState(null);
   const [bLGroups, setBLGroups] = useState([]);
   const [selectedDevis, setSelectedDevis] = useState({});
-
   const queryClient = useQueryClient();
-  function regrouperProduitsParQuantite(groups) {
-    const produitMap = new Map();
-
-    for (const group of groups) {
-      for (const item of group.produits) {
-        const id = item.produitId;
-
-        if (produitMap.has(id)) {
-          // Ajouter la quantité à l'existant
-          produitMap.get(id).quantite += item.quantite;
-        } else {
-          // Cloner l'objet produit pour éviter les effets de bord
-          produitMap.set(id, {
-            ...item,
-            quantite: item.quantite,
-          });
-        }
-      }
-    }
-
-    // Retourner une liste de produits avec les quantités cumulées
-    return Array.from(produitMap.values());
-  }
-
-  useEffect(() => {
-    if (Array.isArray(commande?.groups)) {
-      setProduits(regrouperProduitsParQuantite(commande?.groups));
-    } else {
-      console.warn("groups n’est pas un tableau :", commande?.groups);
-    }
-  }, [commande]);
 
   function formatDate(date) {
     const d = new Date(date);
@@ -341,63 +306,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                       setFournisseur={setSelectedFournisseur}
                     />
                   </div>
-                  {/* <div className="w-full space-y-2">
-                    <ComboBoxCommandesFournitures
-                      setCommande={setCommande}
-                      commande={commande}
-                    />
-                  </div> */}
                 </div>
-                {commande !== null && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">
-                        Détails de la commande
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <Label className="text-sm font-medium">
-                              Numéro
-                            </Label>
-                            <p className="text-sm text-muted-foreground">
-                              {commande?.numero}
-                            </p>
-                          </div>
-                          <div>
-                            <Label className="text-sm font-medium">
-                              Fournisseur
-                            </Label>
-                            <p className="text-sm text-muted-foreground">
-                              {commande?.fournisseur?.nom.toUpperCase()}
-                            </p>
-                          </div>
-                        </div>
-                        <div>
-                          <Label className="text-sm font-medium">
-                            Produits
-                          </Label>
-                          <div className="mt-2 space-y-1">
-                            {Array.isArray(commande.groups) &&
-                              regrouperProduitsParQuantite(
-                                commande?.groups
-                              )?.map((articl) => (
-                                <div
-                                  key={articl.id}
-                                  className="text-sm text-muted-foreground"
-                                >
-                                  • {articl.produit.designation} (Qté:{" "}
-                                  {articl.quantite})
-                                </div>
-                              ))}
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
               </div>
             )}
 
@@ -444,27 +353,6 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                     </h3>
                     <p className="font-semibold">{total().toFixed()} DH</p>
                   </div>
-                  {commande ? (
-                    <>
-                      {" "}
-                      <div className="space-y-1 col-span-1">
-                        <h3 className="font-medium text-sm text-muted-foreground">
-                          Fournisseur :
-                        </h3>
-                        <p className="font-semibold">
-                          {commande?.fournisseur.nom.toUpperCase()}{" "}
-                        </p>
-                      </div>
-                      <div className="space-y-1 col-span-1">
-                        <h3 className="font-medium text-sm text-muted-foreground">
-                          Numero de commande :
-                        </h3>
-                        <p className="font-semibold">{commande?.numero} </p>
-                      </div>{" "}
-                    </>
-                  ) : (
-                    ""
-                  )}
                 </div>
                 {bLGroups.map((group) => (
                   <Card key={group.id}>

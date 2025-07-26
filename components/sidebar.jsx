@@ -4,13 +4,11 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  TestTubeDiagonal,
   LayoutDashboard,
   Users,
   Package,
   FileText,
   Truck,
-  ShoppingCart,
   ChevronDown,
   ChevronRight,
   ContactRound,

@@ -41,7 +41,6 @@ export default function CommandesAchats() {
   const [isDialogOpen, setIsDialogOpen] = useState(false); // Delete dialog
   const [currCommande, setCurrCommande] = useState("");
   const [lastCommande, setLastCommande] = useState();
-  const [maxMontant, setMaxMontant] = useState();
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [startDate, setStartDate] = useState();
   const [endDate, setEndDate] = useState();

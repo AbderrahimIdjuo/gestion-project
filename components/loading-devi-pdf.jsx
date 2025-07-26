@@ -12,17 +12,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Phone , Calendar } from "lucide-react";
+import { Phone, Calendar } from "lucide-react";
+import { EnteteDevis } from "@/components/Entete-devis";
 
 export default function LoadingDeviPdf() {
   return (
     <div className="container mx-auto p-4 max-w-4xl bg-white min-h-screen print:p-0 print:max-w-none mb-10">
       <div className="space-y-3">
         {/* Static Header */}
-        <div className="flex justify-between items-center border-b border-[#228B8B] pb-1">
-          <img src="/images/LOGO-tete.jpg" alt="Logo" width={300} />
-          <img src="/images/LOGO-OUDAOUD.jpg" className="h-24 w-24" />
-        </div>
+        <EnteteDevis />
 
         {/* Company and Client Info */}
         <div className="grid grid-cols-2 gap-8">
@@ -57,22 +55,40 @@ export default function LoadingDeviPdf() {
           <Table className="w-full border-collapse print:w-full print:min-w-full">
             <TableHeader className="text-[1rem] border-black">
               <TableRow>
-                <TableHead rowSpan="2" className="w-[40%] max-w-[45%] text-black font-bold text-center border-b border-black">
+                <TableHead
+                  rowSpan="2"
+                  className="w-[40%] max-w-[45%] text-black font-bold text-center border-b border-black"
+                >
                   Désignation
                 </TableHead>
-                <TableHead colSpan="2" className="text-black font-bold border-l border-b border-black text-center p-1">
+                <TableHead
+                  colSpan="2"
+                  className="text-black font-bold border-l border-b border-black text-center p-1"
+                >
                   Dimension
                 </TableHead>
-                <TableHead rowSpan="2" className="text-black font-bold border-l border-b border-black text-center p-1">
+                <TableHead
+                  rowSpan="2"
+                  className="text-black font-bold border-l border-b border-black text-center p-1"
+                >
                   U
                 </TableHead>
-                <TableHead rowSpan="2" className="text-black font-bold border-l border-b border-black text-center p-1">
+                <TableHead
+                  rowSpan="2"
+                  className="text-black font-bold border-l border-b border-black text-center p-1"
+                >
                   Qté
                 </TableHead>
-                <TableHead rowSpan="2" className="text-black font-bold border-l border-b border-black p-2 text-center p-1">
+                <TableHead
+                  rowSpan="2"
+                  className="text-black font-bold border-l border-b border-black p-2 text-center p-1"
+                >
                   P.U/m²
                 </TableHead>
-                <TableHead rowSpan="2" className="text-black font-bold border-l border-b border-black p-2 text-center">
+                <TableHead
+                  rowSpan="2"
+                  className="text-black font-bold border-l border-b border-black p-2 text-center"
+                >
                   Montant
                 </TableHead>
               </TableRow>
@@ -114,26 +130,44 @@ export default function LoadingDeviPdf() {
             </TableBody>
             <TableFooter className="font-medium border-black bg-[#228b8b1d]">
               <TableRow>
-                <TableCell colSpan={6} className="border-b border-black p-2 text-right font-bold">
+                <TableCell
+                  colSpan={6}
+                  className="border-b border-black p-2 text-right font-bold"
+                >
                   Total H.T :
                 </TableCell>
-                <TableCell colSpan={2} className="border-l border-b border-black p-2 text-left font-bold">
+                <TableCell
+                  colSpan={2}
+                  className="border-l border-b border-black p-2 text-left font-bold"
+                >
                   <Skeleton className="h-5 w-20" />
                 </TableCell>
               </TableRow>
               <TableRow>
-                <TableCell colSpan={6} className="border-b border-black p-2 text-right font-bold">
+                <TableCell
+                  colSpan={6}
+                  className="border-b border-black p-2 text-right font-bold"
+                >
                   TVA :
                 </TableCell>
-                <TableCell colSpan={2} className="border-l border-b border-black p-2 text-left font-bold">
+                <TableCell
+                  colSpan={2}
+                  className="border-l border-b border-black p-2 text-left font-bold"
+                >
                   <Skeleton className="h-5 w-20" />
                 </TableCell>
               </TableRow>
               <TableRow>
-                <TableCell colSpan={6} className="text-lg text-gray-900 p-2 text-right font-extrabold">
+                <TableCell
+                  colSpan={6}
+                  className="text-lg text-gray-900 p-2 text-right font-extrabold"
+                >
                   Total TTC :
                 </TableCell>
-                <TableCell colSpan={2} className="border-l border-black p-2 text-lg text-gray-900 text-left font-extrabold">
+                <TableCell
+                  colSpan={2}
+                  className="border-l border-black p-2 text-lg text-gray-900 text-left font-extrabold"
+                >
                   <Skeleton className="h-6 w-24" />
                 </TableCell>
               </TableRow>
@@ -194,8 +228,8 @@ export default function LoadingDeviPdf() {
           </div>
           <div>
             <h3 className="text-sm font-semibold mb-0 italic underline">
-              En signant ce devis, le client confirme son accord et valide
-              une commande ferme et définitive.
+              En signant ce devis, le client confirme son accord et valide une
+              commande ferme et définitive.
             </h3>
           </div>
           <div
@@ -209,8 +243,8 @@ export default function LoadingDeviPdf() {
             }}
           >
             <div style={{ fontSize: "14px", fontWeight: "medium" }}>
-              STE OUDAOUDOX SARL AU Au Capital : 500 000 DH - Avenue Jaber
-              Ben Hayane Bloc A N°01 Hay El Houda - Agadir
+              STE OUDAOUDOX SARL AU Au Capital : 500 000 DH - Avenue Jaber Ben
+              Hayane Bloc A N°01 Hay El Houda - Agadir
             </div>
             <div style={{ marginTop: "5px", fontSize: "13px" }}>
               Gsm : 06 61 58 53 08 - 06 63 63 72 44 - E-mail :
@@ -224,8 +258,7 @@ export default function LoadingDeviPdf() {
               }}
             />
             <div style={{ fontSize: "13px" }}>
-              RC : 53805 - TP : 67504461 - IF : 53290482 - ICE :
-              003172063000061
+              RC : 53805 - TP : 67504461 - IF : 53290482 - ICE : 003172063000061
             </div>
           </div>
         </div>

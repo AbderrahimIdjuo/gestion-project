@@ -5,8 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import toast, { Toaster } from "react-hot-toast";
 import CustomTooltip from "@/components/customUi/customTooltip";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { AchatCommandeForm } from "@/components/achat-commande-form";
 import {
   Table,
   TableBody,
@@ -17,13 +15,9 @@ import {
 } from "@/components/ui/table";
 import CustomPagination from "@/components/customUi/customPagination";
 import {
-  Plus,
   Search,
-  Pen,
   Trash2,
   Filter,
-  X,
-  ShoppingBag,
   Upload,
 } from "lucide-react";
 import { ProductFormDialog } from "@/components/product-form-dialog";

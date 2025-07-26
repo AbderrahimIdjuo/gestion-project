@@ -51,7 +51,6 @@ export default function DevisPDFPage() {
       return acc + totalCommandeFourniture(order.produits);
     }, 0);
   };
-  const listProduits = bLGroups?.flatMap((groupe) => groupe.produits) || [];
   return (
     <>
       {devis && (

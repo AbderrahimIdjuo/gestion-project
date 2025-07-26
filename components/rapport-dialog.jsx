@@ -9,7 +9,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
@@ -20,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FileText, Send, ChevronDown, Printer } from "lucide-react";
+import { FileText, ChevronDown, Printer } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import ComboBoxFournisseur from "@/components/comboBox-fournisseurs";
 import {
@@ -30,7 +29,7 @@ import {
 } from "@/components/ui/popover";
 import { X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
   Table,
   TableBody,

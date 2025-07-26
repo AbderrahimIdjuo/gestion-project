@@ -3,8 +3,6 @@
 import { useState, useEffect, Fragment } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useRouter } from "next/navigation";
-import CustomTooltip from "@/components/customUi/customTooltip";
 import Link from "next/link";
 import { AddButton } from "@/components/customUi/styledButton";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
@@ -18,11 +16,9 @@ import {
 } from "@/components/ui/table";
 import {
   Search,
-  Pen,
   Trash2,
   Filter,
   Printer,
-  FileText,
   CalendarDays,
   CircleDollarSign,
   Landmark,
@@ -52,12 +48,6 @@ import { LoadingDots } from "@/components/loading-dots";
 import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { DevisActions } from "@/components/devis-actions";
-
-function toUTCDateOnly(localDate) {
-  return new Date(
-    Date.UTC(localDate.getFullYear(), localDate.getMonth(), localDate.getDate())
-  );
-}
 
 export default function DevisPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -93,10 +83,6 @@ export default function DevisPage() {
         throw error;
       } finally {
         toast.dismiss(loadingToast);
-        // const updatedTransactions = transactions.filter(
-        //   (transaction) => transaction.id !== deleteTrans.id
-        // );
-        // console.log("Updated Transactions:", updatedTransactions);
       }
     },
     onSuccess: () => {
@@ -107,7 +93,6 @@ export default function DevisPage() {
   const toggleExpand = (devisId) => {
     setExpandedDevis(expandedDevis === devisId ? null : devisId);
   };
-  useEffect;
   const [filters, setFilters] = useState({
     dateStart: "",
     dateEnd: "",
@@ -115,7 +100,6 @@ export default function DevisPage() {
     statut: "all",
   });
   const queryClient = useQueryClient();
-  const router = useRouter();
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedQuery(searchQuery);
@@ -148,7 +132,6 @@ export default function DevisPage() {
           maxTotal: filters.montant[1],
         },
       });
-      //console.log("LastDevi:", response.data.lastDevi);
       setLastDevi(response.data.lastDevi);
       setOrdersGroups(response.data.bLGroupdsList);
       setTransactions(response.data.transactionsList);
@@ -162,7 +145,7 @@ export default function DevisPage() {
 
   // intialiser les valeure du monatant total handler
   useEffect(() => {
-    setFilters({ ...filters, montant: [0, maxMontant] });
+    setFilters((prev) => ({ ...prev, montant: [0, maxMontant] }));
   }, [maxMontant]);
 
   const getStatusColor = (status) => {
@@ -221,19 +204,6 @@ export default function DevisPage() {
     { value: "Expiré", lable: "Expiré", color: "gray-500" },
   ];
 
-  const orderGroups = useQuery({
-    queryKey: ["orderGroups", currentDevi],
-    queryFn: async () => {
-      // console.log("Fetching order groups for devis:", currentDevi?.numero);
-      const response = await axios.get(
-        `/api/orderGroups/${currentDevi?.numero}`
-      );
-      // console.log("commandesFourniture", response.data.orderGroups);
-      //setOrderGroupsList(response.data.orderGroups);
-      return response.data.orderGroups;
-    },
-  });
-
   const totalCommandeFourniture = (produits) => {
     return produits?.reduce((acc, produit) => {
       return acc + produit.quantite * produit.prixUnite;
@@ -249,11 +219,9 @@ export default function DevisPage() {
     const list = ordersGroups?.filter((order) => {
       return order.devisNumero === numero;
     });
-    //   console.log("Filtered Orders:", list);
     return list;
   };
-  //console.log("Orders:", ordersGroups);
-  // console.log("Filtered Orders:", filteredOrders("DEV-9"));
+
 
   const totalPaye = (numero) => {
     const trans = transactions?.filter((c) => c.reference === numero);
@@ -527,7 +495,6 @@ export default function DevisPage() {
                         </TableCell>
                         <TableCell className="text-right !py-2">
                           <DevisActions
-                            transactions={transactions}
                             devis={devis}
                             setDeleteDialogOpen={setDeleteDialogOpen}
                             setCurrentDevi={setCurrentDevi}

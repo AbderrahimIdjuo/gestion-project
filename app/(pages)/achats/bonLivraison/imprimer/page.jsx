@@ -17,9 +17,6 @@ import {
 } from "@/components/ui/table";
 import { EnteteDevis } from "@/components/Entete-devis";
 
-function formatDate(dateString) {
-  return dateString?.split("T")[0].split("-").reverse().join("-");
-}
 export default function DevisPDFPage() {
   const [bonLivraison, setBonLivraison] = useState();
   const [infosVisibilite, setInfosVisibilite] = useState(false);

@@ -32,7 +32,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { CircleX } from "lucide-react";
 import newDeviSchema from "@/app/zodSchemas/newDeviSchema";
 import { Switch } from "@/components/ui/switch";
-import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { AddButton } from "@/components/customUi/styledButton";
 import {
@@ -81,15 +80,6 @@ export default function NouveauDevisPage() {
     { lable: "Accepté", color: "green-500" },
     { lable: "Annulé", color: "red-500" },
   ];
-  const comptes = useQuery({
-    queryKey: ["comptes"],
-    queryFn: async () => {
-      const response = await axios.get("/api/comptesBancaires");
-      const comptes = response.data.comptes;
-      return comptes;
-    },
-  });
-
   useEffect(() => {
     const storedData = localStorage.getItem("lastDeviNumber");
     console.log("storedData", JSON.parse(storedData));
@@ -110,8 +100,6 @@ export default function NouveauDevisPage() {
   };
 
   const onSubmit = async (data) => {
-//    console.log("data######", data);
-
     toast.promise(
       (async () => {
         try {

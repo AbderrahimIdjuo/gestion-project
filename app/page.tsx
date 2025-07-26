@@ -21,7 +21,7 @@ import {
 import { PerformanceChart } from "@/components/performance-chart";
 import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
-import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
+//import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function DashboardPage() {

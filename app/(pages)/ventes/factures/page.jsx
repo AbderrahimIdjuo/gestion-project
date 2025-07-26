@@ -33,11 +33,7 @@ import CustomTooltip from "@/components/customUi/customTooltip";
 import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
 import CreateFactureDialog from "@/components/create-facture-dialog";
 import UpdateFactureDialog from "@/components/update-facture-dialog";
-function toUTCDateOnly(localDate) {
-  return new Date(
-    Date.UTC(localDate.getFullYear(), localDate.getMonth(), localDate.getDate())
-  );
-}
+
 function formatDate(dateString) {
   return dateString?.split("T")[0].split("-").reverse().join("-");
 }
@@ -62,10 +58,10 @@ export default function Factures() {
   });
 
   useEffect(() => {
-    setFilters({
-      ...filters,
+    setFilters((prev) => ({
+      ...prev,
       montant: [0, maxMontant],
-    });
+    }));
   }, [maxMontant]);
 
   useEffect(() => {
@@ -78,14 +74,6 @@ export default function Factures() {
       clearTimeout(handler);
     };
   }, [searchQuery]);
-
-  const categories = useQuery({
-    queryKey: ["categories"],
-    queryFn: async () => {
-      const response = await axios.get("/api/categoriesProduits");
-      return response.data.categories;
-    },
-  });
 
   const factures = useQuery({
     queryKey: [
@@ -149,38 +137,6 @@ export default function Factures() {
       queryClient.invalidateQueries(["factures"]);
     },
   });
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "Livrée":
-        return "bg-emerald-500";
-      case "Annulé":
-        return "bg-red-500";
-      case "En cours":
-        return "bg-amber-500";
-      case "Expédier":
-        return "bg-blue-500";
-      default:
-        return "bg-gray-500";
-    }
-  };
-  const getStatusPaiemenetColor = (status) => {
-    if (status) {
-      return "bg-emerald-100 text-green-600 font-semibold";
-    } else return "bg-red-100 text-red-600 font-semibold";
-  };
-  const status = [
-    { value: "all", lable: "Tous les statut", color: "" },
-    { value: "En cours", lable: "En cours", color: "amber-500" },
-    { value: "Expédier", lable: "Expédier", color: "blue-500" },
-    { value: "Livrée", lable: "Livrée", color: "emerald-500" },
-    { value: "Annulé", lable: "Annulé", color: "red-500" },
-  ];
-  const statusPaiement = [
-    { value: "all", lable: "Tous les statut" },
-    { value: true, lable: "Payé" },
-    { value: false, lable: "Impayé" },
-  ];
 
   return (
     <>

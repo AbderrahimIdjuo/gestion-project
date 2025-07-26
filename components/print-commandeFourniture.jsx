@@ -2,9 +2,7 @@
 
 import { useState } from "react";
 import { Printer, PrinterIcon } from "lucide-react";
-
 import { Button } from "@/components/ui/button";
-import PiedFacture from "@/components/pied-facture";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import CustomTooltip from "@/components/customUi/customTooltip";
+import { EnteteDevis } from "@/components/Entete-devis";
 
 function regrouperProduitsParQuantite(groups) {
   const produitMap = new Map();
@@ -49,7 +48,7 @@ export default function PrintCommandeFournitureDialog({ commande }) {
   const [open, setOpen] = useState(false);
 
   // Extract order data
-  const {echeance ,  fournisseur, groups, numero } = commande;
+  const { echeance, fournisseur, groups, numero } = commande;
 
   const handlePrint = () => {
     window.print();
@@ -76,10 +75,8 @@ export default function PrintCommandeFournitureDialog({ commande }) {
             {/* Document Content */}
             <div id="print-area" className="space-y-6 print:my-0">
               {/* Header */}
-              <div className="flex justify-between items-center border-b border-[#228B8B] pb-1">
-                <img src="/images/LOGO-tete.jpg" alt="Logo" width={300} />
-                <img src="/images/LOGO-OUDAOUD.jpg" className="h-24 w-24" />
-              </div>
+              <EnteteDevis />
+
               {/* Company and Client Info */}
               <div className="grid grid-cols-3 gap-8">
                 {/* commande Info */}
@@ -89,7 +86,7 @@ export default function PrintCommandeFournitureDialog({ commande }) {
                   </h3>
                   <p className="font-semibold">{fournisseur?.nom}</p>
                 </div>
-                 <div className="space-y-1 col-span-2">
+                <div className="space-y-1 col-span-2">
                   <h3 className="font-medium text-sm text-muted-foreground">
                     Écheance
                   </h3>

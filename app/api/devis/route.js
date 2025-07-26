@@ -15,9 +15,7 @@ export async function POST(req) {
       total,
       typeReduction,
       note,
-      avance,
       echeance,
-      compte,
     } = resopns;
 
     const result = await prisma.$transaction(async (prisma) => {
@@ -48,25 +46,6 @@ export async function POST(req) {
           },
         },
       });
-
-      //créer une transaction : paiement d'avance
-      // if (avance > 0) {
-      //   await prisma.transactions.create({
-      //     data: {
-      //       reference: numero,
-      //       type: "recette",
-      //       montant: avance,
-      //       compte,
-      //       lable: "avance",
-      //     },
-      //   });
-      //   await prisma.comptesBancaires.updateMany({
-      //     where: { compte },
-      //     data: {
-      //       solde: { increment: avance },
-      //     },
-      //   });
-      // }
     });
     return NextResponse.json({ result });
   } catch (error) {
@@ -172,14 +151,6 @@ export async function PUT(req) {
           },
         },
       });
-
-      //Modifier le totalDevis de la commande associé
-      // await tx.commandes.updateMany({
-      //   where: { numero: "CMD-" + devi.numero.slice(4, 13) },
-      //   data: {
-      //     totalDevi: total,
-      //   },
-      // });
     });
 
     return NextResponse.json({ result });

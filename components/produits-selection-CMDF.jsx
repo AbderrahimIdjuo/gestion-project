@@ -11,7 +11,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Search, Check, Plus, Minus, Tags, DollarSign } from "lucide-react";
+import { Search, Check, Plus, Minus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import axios from "axios";
@@ -127,29 +127,23 @@ export function ProduitsSelection({ onArticlesAdd }) {
     },
   });
   // infinite scrolling produits comboBox
-  const {
-    data,
-    fetchNextPage,
-    isLoading,
-    isFetchingNextPage,
-    isFetching,
-    hasNextPage,
-  } = useInfiniteQuery({
-    queryKey: ["produits", debouncedQuery, filters.categorie],
-    queryFn: async ({ pageParam = null }) => {
-      const response = await axios.get("/api/produits/infinitPagination", {
-        params: {
-          limit: 10,
-          query: debouncedQuery,
-          cursor: pageParam,
-          categorie: filters.categorie,
-        },
-      });
-      return response.data;
-    },
-    getNextPageParam: (lastPage) => lastPage.nextCursor || null,
-    keepPreviousData: true,
-  });
+  const { data, fetchNextPage, isLoading, isFetching, hasNextPage } =
+    useInfiniteQuery({
+      queryKey: ["produits", debouncedQuery, filters.categorie],
+      queryFn: async ({ pageParam = null }) => {
+        const response = await axios.get("/api/produits/infinitPagination", {
+          params: {
+            limit: 10,
+            query: debouncedQuery,
+            cursor: pageParam,
+            categorie: filters.categorie,
+          },
+        });
+        return response.data;
+      },
+      getNextPageParam: (lastPage) => lastPage.nextCursor || null,
+      keepPreviousData: true,
+    });
 
   const produits = data?.pages.flatMap((page) => page.produits) || [];
 
@@ -241,11 +235,10 @@ export function ProduitsSelection({ onArticlesAdd }) {
                               {article.designation}
                             </p>
                             <div className="flex justify-between">
-                             
-                                <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                 Prix d&apos;unité : {article.prixAchat.toFixed(2) || "0"} MAD
-                                </p>
-                             
+                              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                Prix d&apos;unité :{" "}
+                                {article.prixAchat.toFixed(2) || "0"} MAD
+                              </p>
                             </div>
                           </div>
                           <div

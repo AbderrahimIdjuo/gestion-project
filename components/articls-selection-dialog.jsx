@@ -119,29 +119,23 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
     },
   });
   // infinite scrolling articls comboBox
-  const {
-    data,
-    fetchNextPage,
-    isLoading,
-    isFetchingNextPage,
-    isFetching,
-    hasNextPage,
-  } = useInfiniteQuery({
-    queryKey: ["articls", debouncedQuery, filters.categorie],
-    queryFn: async ({ pageParam = null }) => {
-      const response = await axios.get("/api/articls/infinitPagination", {
-        params: {
-          limit: 10,
-          query: debouncedQuery,
-          cursor: pageParam,
-          categorie: filters.categorie,
-        },
-      });
-      return response.data;
-    },
-    getNextPageParam: (lastPage) => lastPage.nextCursor || null,
-    keepPreviousData: true,
-  });
+  const { data, fetchNextPage, isLoading, isFetching, hasNextPage } =
+    useInfiniteQuery({
+      queryKey: ["articls", debouncedQuery, filters.categorie],
+      queryFn: async ({ pageParam = null }) => {
+        const response = await axios.get("/api/articls/infinitPagination", {
+          params: {
+            limit: 10,
+            query: debouncedQuery,
+            cursor: pageParam,
+            categorie: filters.categorie,
+          },
+        });
+        return response.data;
+      },
+      getNextPageParam: (lastPage) => lastPage.nextCursor || null,
+      keepPreviousData: true,
+    });
 
   const articls = data?.pages.flatMap((page) => page.articls) || [];
 

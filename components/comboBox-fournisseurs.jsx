@@ -38,7 +38,7 @@ export default function ComboBoxFournisseur({ fournisseur, setFournisseur }) {
     if (buttonRef.current) {
       setButtonWidth(buttonRef.current.offsetWidth);
     }
-  }, [buttonRef.current, openComboBox]);
+  }, [openComboBox]);
 
   // infinite scrolling fournisseurs comboBox
   const { data, fetchNextPage, isLoading, isFetchingNextPage, hasNextPage } =

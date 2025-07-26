@@ -293,6 +293,11 @@ model TachesEmployes {
   tache String
 }
 
+model Charges {
+  id     String @id @default(uuid())
+  charge String
+}
+
 model CategoriesProduits {
   id        String @id @default(uuid())
   categorie String

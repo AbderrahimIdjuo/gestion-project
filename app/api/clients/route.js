@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../lib/prisma";
-import { uploadPart } from "@vercel/blob";
 export const dynamic = "force-dynamic";
 
 export async function POST(req) {

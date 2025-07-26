@@ -9,7 +9,12 @@ export async function GET(req) {
   const type = searchParams.get("type") || "all";
   const from = searchParams.get("from"); // Start date
   const to = searchParams.get("to"); // End date
-  const transactionsPerPage = 10;
+  const fournisseurId = searchParams.get("fournisseurId");
+  const methodePaiement = searchParams.get("methodePaiement");
+  const imprimer = searchParams.get("imprimer");
+  const limit = parseInt(searchParams.get("limit") || "10");
+  const skip = (page - 1) * limit;
+  const transactionsPerPage = limit;
   const filters = {};
 
   // Search filter
@@ -27,6 +32,11 @@ export async function GET(req) {
     filters.compte = compte;
   }
 
+  // methode de paiement filter
+  if (methodePaiement !== "all") {
+    filters.methodePaiement = methodePaiement;
+  }
+
   // Date range filter
   if (from && to) {
     filters.createdAt = {
@@ -35,16 +45,24 @@ export async function GET(req) {
     };
   }
 
+  // Fournisseur filter
+  console.log("fournisseurId", fournisseurId);
+  if (fournisseurId) {
+    filters.reference = fournisseurId;
+  }
   // Fetch filtered transactions with pagination
   const transactions = await prisma.transactions.findMany({
     where: filters,
-    skip: (page - 1) * transactionsPerPage,
-    take: transactionsPerPage,
+    skip: imprimer ? undefined : skip,
+    take: imprimer ? undefined : limit,
     orderBy: { updatedAt: "desc" },
   });
 
   const totalTransactions = await prisma.transactions.count({ where: filters });
-  const totalPages = Math.ceil(totalTransactions / transactionsPerPage);
+  const totalPages = imprimer
+    ? 1
+    : Math.ceil(totalTransactions / transactionsPerPage);
+  console.log("totalPages", totalPages);
 
   return NextResponse.json({ transactions, totalPages });
 }

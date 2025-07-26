@@ -83,7 +83,7 @@ export default function CreateFactureDialog() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["factures"]);
-       setIsDialogOpen(false);
+      setIsDialogOpen(false);
     },
   });
   const removeItem = (deletedItem) => {
@@ -200,7 +200,7 @@ export default function CreateFactureDialog() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {items.map((item, index) => (
+                      {items.map((item) => (
                         <TableRow key={item.key}>
                           <TableCell>
                             <Input

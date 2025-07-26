@@ -29,13 +29,6 @@ import {
 } from "@/components/ui/select";
 import axios from "axios";
 
-const generateNumber = () => {
-  const digits = "1234567890";
-  const nanoidCustom = customAlphabet(digits, 8);
-  const customId = nanoidCustom();
-  return `FACT-${customId}`;
-};
-
 export function AddFactureVarianteForm() {
   const factureSchema = z.object({
     numero: z.string(),

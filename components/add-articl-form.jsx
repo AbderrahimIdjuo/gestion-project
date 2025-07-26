@@ -1,12 +1,10 @@
 "use client";
 
-import { SaveButton } from "./customUi/styledButton";
 import toast from "react-hot-toast";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";

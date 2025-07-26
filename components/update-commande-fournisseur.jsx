@@ -25,7 +25,7 @@ import ComboBoxFournisseur from "@/components/comboBox-fournisseurs";
 import ComboBoxDevis from "@/components/comboBox-devis";
 import { ProduitsSelection } from "@/components/produits-selection-CMDF";
 import axios from "axios";
-import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import {
   Popover,
@@ -45,7 +45,6 @@ export default function UpdateCommandeFournisseur({ commande }) {
   const [selectedDevis, setSelectedDevis] = useState({});
 
   const {
-    setValue,
     watch,
     control,
     formState: { isSubmitting },
@@ -69,17 +68,9 @@ export default function UpdateCommandeFournisseur({ commande }) {
   //Initialisation
   useEffect(() => {
     setSelectedFournisseur(commande?.fournisseur);
-
     setOrderGroups(formatCommandeGroups(commande?.groups));
-    // console.log("commande", commande);
-   // console.log("commande groups", commande?.groups);
-   // console.log("formatCommandeGroups", formatCommandeGroups(commande?.groups));
   }, [commande]);
 
-  const generateCommandeNumber = () => {
-    const numero = 0;
-    return `CMDF-${numero + 1}`;
-  };
   // Ajout d'un groupe de commande
   const addOrderGroup = useCallback(() => {
     const newGroup = {
@@ -241,7 +232,7 @@ export default function UpdateCommandeFournisseur({ commande }) {
               />
             </div>
             <div className="w-1/3 px-2 space-y-2">
-              <Label htmlFor="client" >Date : </Label>
+              <Label htmlFor="client">Date : </Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button

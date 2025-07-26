@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import PiedFacture, { PiedFactureStyle2 } from "@/components/pied-facture";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -22,6 +21,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import CustomTooltip from "@/components/customUi/customTooltip";
+import { EnteteDevis } from "@/components/Entete-devis";
+
 function formatDate(dateString) {
   return dateString?.split("T")[0].split("-").reverse().join("-");
 }
@@ -132,10 +133,7 @@ export default function PreviewFactureDialog({ facture }) {
             {/* Document Content */}
             <div id="print-area" className="space-y-3 print:mt-10">
               {/* Header */}
-              <div className="flex justify-between items-center border-b border-[#228B8B] pb-1">
-                <img src="/images/LOGO-tete.jpg" alt="Logo" width={300} />
-                <img src="/images/LOGO-OUDAOUD.jpg" className="h-24 w-24" />
-              </div>
+              <EnteteDevis />
               {infosVisibilite ? (
                 <div className="flex justify-between px-4">
                   <div>
@@ -217,7 +215,7 @@ export default function PreviewFactureDialog({ facture }) {
 
               {/* Items Table */}
               <div className="overflow-hidden rounded-md border border-black mt-0 main-table-container">
-              <Table className="w-full border-collapse print:w-full print:min-w-full">
+                <Table className="w-full border-collapse print:w-full print:min-w-full">
                   <TableHeader className="text-[1rem] border-black">
                     <TableRow>
                       <TableHead

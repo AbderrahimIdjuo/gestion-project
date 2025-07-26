@@ -15,8 +15,8 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Pen } from "lucide-react";
 import axios from "axios";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import toast, { Toaster } from "react-hot-toast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -49,7 +49,7 @@ export default function UpdatSolde({ solde , id }) {
     watch,
     handleSubmit,
     setValue,
-    formState: { errors, isSubmiting },
+    formState: { isSubmiting },
   } = useForm({
     resolver: zodResolver(soldeSchema),
   });

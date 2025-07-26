@@ -31,22 +31,23 @@ export default function ComboBoxClients({ setClient, client }) {
   const [buttonWidth, setButtonWidth] = useState(0);
   const buttonRef = useRef(null);
   const { watch, setValue } = useForm();
-  // setValue("client", client? client : null);
+
   useEffect(() => {
     setValue("client", client);
-  }, [client]);
+  }, [client, setValue]);
+
   useEffect(() => {
     if (buttonRef.current) {
       setButtonWidth(buttonRef.current.offsetWidth);
     }
-  }, [buttonRef.current, openComboBox]);
+  }, [openComboBox]);
 
   // infinite scrolling clients comboBox
   const { data, fetchNextPage, isLoading, isFetchingNextPage, hasNextPage } =
     useInfiniteQuery({
       queryKey: ["clients", debouncedQuery],
       queryFn: async ({ pageParam = null }) => {
-        const response = await axios.get("/api/commandes/nouveau", {
+        const response = await axios.get("/api/clients/clientsList", {
           params: {
             limit: 15,
             query: debouncedQuery,

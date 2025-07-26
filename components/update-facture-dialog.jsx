@@ -208,7 +208,7 @@ export default function UpdateFactureDialog({ facture, isOpen, onClose }) {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {items.map((item, index) => (
+                      {items.map((item) => (
                         <TableRow key={item.id}>
                           <TableCell>
                             <Input

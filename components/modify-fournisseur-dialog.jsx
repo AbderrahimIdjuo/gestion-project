@@ -36,7 +36,6 @@ export function ModifyFournisseur({ currFournisseur }) {
   const {
     register,
     reset,
-    watch,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm({

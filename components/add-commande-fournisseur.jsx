@@ -21,12 +21,11 @@ import {
 } from "@/components/ui/table";
 import { AddButton } from "@/components/customUi/styledButton";
 import { Label } from "@/components/ui/label";
-import { customAlphabet } from "nanoid";
 import ComboBoxFournisseur from "@/components/comboBox-fournisseurs";
 import ComboBoxDevis from "@/components/comboBox-devis";
 import { ProduitsSelection } from "@/components/produits-selection-CMDF";
 import axios from "axios";
-import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import {
   Popover,

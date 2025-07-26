@@ -38,13 +38,13 @@ export default function ComboBoxDevis({
 
   useEffect(() => {
     setSearchQuery(Devisnumero);
-  }, []);
+  }, [Devisnumero, setSearchQuery]);
 
   useEffect(() => {
     if (buttonRef.current) {
       setButtonWidth(buttonRef.current.offsetWidth);
     }
-  }, [buttonRef.current, openComboBox]);
+  }, [openComboBox]);
 
   // infinite scrolling fournisseurs comboBox
   const { data, fetchNextPage, isLoading, isFetchingNextPage, hasNextPage } =
@@ -69,7 +69,7 @@ export default function ComboBoxDevis({
   const currentDevis = devis.find((d) => d.numero === Devisnumero);
   useEffect(() => {
     setSelectedDevis(currentDevis);
-  }, [currentDevis]);
+  }, [currentDevis , setSelectedDevis]);
   useEffect(() => {
     if (inView && hasNextPage) {
       fetchNextPage();
@@ -96,7 +96,9 @@ export default function ComboBoxDevis({
             aria-expanded={openComboBox}
             className="w-full justify-between mt-2"
           >
-            {watch("devis") ? watch("devis").numero : (Devisnumero || "sélectionnez ...")}
+            {watch("devis")
+              ? watch("devis").numero
+              : Devisnumero || "sélectionnez ..."}
             <ChevronDown className="opacity-50" />
           </Button>
         </PopoverTrigger>

@@ -53,7 +53,7 @@ export async function POST(req) {
 export async function PUT(req) {
   try {
     const response = await req.json();
-    const { id, date, numero, fournisseurId, orderGroups } = response;
+    const { id, date, fournisseurId, orderGroups } = response;
 
     // 1. Récupérer les groups existants
     const existing = await prisma.commandeFourniture.findUnique({

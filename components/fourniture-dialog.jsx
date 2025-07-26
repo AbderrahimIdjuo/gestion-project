@@ -1,7 +1,6 @@
 "use client";
 
 import { Printer } from "lucide-react";
-
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -18,6 +17,7 @@ import {
   TableRow,
   TableFooter,
 } from "@/components/ui/table";
+import { EnteteDevis } from "@/components/Entete-devis";
 
 export default function FournitureDialog({
   devis,
@@ -49,10 +49,7 @@ export default function FournitureDialog({
             {/* Document Content */}
             <div id="print-area" className="space-y-6 print:mt-10">
               {/* Header */}
-              <div className="flex justify-between items-center border-b border-[#228B8B] pb-1">
-                <img src="/images/LOGO-tete.jpg" alt="Logo" width={300} />
-                <img src="/images/LOGO-OUDAOUD.jpg" className="h-24 w-24" />
-              </div>
+              <EnteteDevis />
               {/* Company and Client Info */}
               <div className="flex justify-between gap-8 mb-4">
                 <div className="space-y-1 col-span-1">

@@ -34,7 +34,6 @@ import { AddButton } from "@/components/customUi/styledButton";
 import { ArticleSelectionDialog } from "@/components/articls-selection-dialog";
 import { LoadingDots } from "@/components/loading-dots";
 import { Switch } from "@/components/ui/switch";
-import { useQuery } from "@tanstack/react-query";
 import {
   Popover,
   PopoverContent,

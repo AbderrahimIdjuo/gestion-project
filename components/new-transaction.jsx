@@ -1,9 +1,9 @@
 "use client";
 
-//import type React from "react"
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -13,6 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { CustomDatePicker } from "@/components/customUi/customDatePicker";
 import { addtransaction } from "@/app/api/actions";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,11 +31,15 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
+import { addCharge } from "@/app/api/actions";
 
 import z from "zod";
 export default function TransactionDialog() {
   const [open, setOpen] = useState(false);
+  const [isCharge, setIsCharge] = useState(false);
+  const [isChecked, setIsChecked] = useState(false);
+  const [date, setDate] = useState(null);
   const newTransactionSchema = z
     .object({
       type: z.enum(["recette", "depense", "vider"]),
@@ -45,6 +50,7 @@ export default function TransactionDialog() {
         .optional(),
       compte: z.string().optional(),
       description: z.string().optional(),
+      methodePaiement: z.string().optional(),
     })
     .superRefine((data, ctx) => {
       if (["recette", "depense"].includes(data.type)) {
@@ -55,14 +61,6 @@ export default function TransactionDialog() {
             message: "Le label est requis pour une recette ou une dépense.",
           });
         }
-        // if (!data.numero || data.numero.trim() === "") {
-        //   ctx.addIssue({
-        //     path: ["numero"],
-        //     code: z.ZodIssueCode.custom,
-        //     message:
-        //       "La référence est requise pour une recette ou une dépense.",
-        //   });
-        // }
         if (typeof data.montant !== "number" || data.montant <= 0) {
           ctx.addIssue({
             path: ["montant"],
@@ -106,19 +104,35 @@ export default function TransactionDialog() {
     resolver: zodResolver(newTransactionSchema),
   });
   const queryClient = useQueryClient();
-
+  useEffect(() => {
+    setDate(null);
+  }, [watch("type")]);
+  const charges = useQuery({
+    queryKey: ["charges"],
+    queryFn: async () => {
+      const response = await axios.get("/api/charges");
+      return response.data.charges;
+    },
+  });
+  const addCharges = useMutation({
+    mutationFn: async (charge) => {
+      const loadingToast = toast.loading("Opération en cours...");
+      try {
+        await addCharge(charge);
+        toast.success("Opération efféctué avec succès");
+      } catch (error) {
+        toast.error("Échec de l'opération!");
+        throw error;
+      } finally {
+        toast.dismiss(loadingToast);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["charges"] });
+    },
+  });
   const createTransaction = useMutation({
     mutationFn: async (data) => {
-      const { compte, description, lable, montant, numero, type } = data;
-      const transData = {
-        compte,
-        description,
-        lable,
-        montant,
-        numero,
-        type,
-      };
-      console.log("transData", transData);
       const loadingToast = toast.loading("Paiement en cours...");
       try {
         await addtransaction(data);
@@ -132,14 +146,18 @@ export default function TransactionDialog() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["transactions"]);
-      queryClient.invalidateQueries({ queryKey: ["commandes"] });
       queryClient.invalidateQueries({ queryKey: ["factures"] });
       queryClient.invalidateQueries({ queryKey: ["statistiques"] });
     },
   });
   const onSubmit = async (data) => {
-    createTransaction.mutate(data);
-    console.log("Transaction soumise:", data);
+    const Data = { ...data, date };
+    console.log("Data", Data);
+    if (isChecked && !isCharge) {
+      console.log("enrgistrer la charge");
+      addCharges.mutate(watch("lable"));
+    }
+    createTransaction.mutate(Data);
     setOpen(false);
     reset();
   };
@@ -219,7 +237,7 @@ export default function TransactionDialog() {
               </div>
             </RadioGroup>
 
-            {(watch("type") === "recette" || watch("type") === "depense") && (
+            {watch("type") === "recette" && (
               <div className="space-y-4">
                 <div className="grid w-full items-center gap-1.5">
                   <Label htmlFor="label">Label</Label>
@@ -235,13 +253,17 @@ export default function TransactionDialog() {
                     </p>
                   )}
                 </div>
+                <div className="w-full">
+                  <Label htmlFor="client">Date : </Label>
+                  <CustomDatePicker date={date} onDateChange={setDate} />
+                </div>
                 <div className="grid w-full items-center gap-1.5">
-                  <Label htmlFor="numero">Référence</Label>
+                  <Label htmlFor="numero">Numero de devis</Label>
                   <Input
                     {...register("numero")}
                     className="w-full focus-visible:ring-purple-500"
                     id="numero"
-                    placeholder="Entrez une référence"
+                    placeholder="Exemple : DEV-12"
                   />
                   {errors.numero && (
                     <p className="text-red-500 text-sm">
@@ -256,8 +278,7 @@ export default function TransactionDialog() {
                     className="w-full focus-visible:ring-purple-500"
                     id="montant"
                     type="number"
-                    placeholder="0.00"
-                    step="0.01"
+                    placeholder="Entrez le montant"
                   />
                   {errors.montant && (
                     <p className="text-red-500 text-sm">
@@ -272,7 +293,151 @@ export default function TransactionDialog() {
                     name="compte"
                     onValueChange={(value) => setValue("compte", value)}
                   >
-                    <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500 mt-2">
+                    <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
+                      <SelectValue placeholder="Séléctionner..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {comptes.data?.map((element) => (
+                        <SelectItem key={element.id} value={element.compte}>
+                          <div className="flex items-center gap-2">
+                            {element.compte}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.compte && (
+                    <p className="text-red-500 text-sm">
+                      {errors.compte.message}
+                    </p>
+                  )}
+                </div>
+                <div className="grid w-full items-center gap-1.5">
+                  <Label htmlFor="compte">Méthode de paiement</Label>
+                  <Select
+                    value={watch("methodePaiement")}
+                    name="methodePaiement"
+                    onValueChange={(value) =>
+                      setValue("methodePaiement", value)
+                    }
+                  >
+                    <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
+                      <SelectValue placeholder="Séléctionner..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="espece">Éspece</SelectItem>
+                      <SelectItem value="cheque">Chèque</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid w-full items-center gap-1.5">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    {...register("description")}
+                    id="description"
+                    className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-purple-500"
+                  />
+                </div>
+              </div>
+            )}
+            {watch("type") === "depense" && (
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2 ">
+                  <Switch
+                    id="switch"
+                    checked={isCharge}
+                    onCheckedChange={setIsCharge}
+                  />
+                  <Label htmlFor="switch">
+                    {isCharge ? "Charges récurrentes" : "Charges variantes"}
+                  </Label>
+                </div>
+
+                {isCharge ? (
+                  <div className="grid w-full items-center gap-1.5">
+                    <Label htmlFor="label">Label</Label>
+                    <Select
+                      value={watch("label")}
+                      name="label"
+                      onValueChange={(value) => setValue("lable", value)}
+                    >
+                      <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
+                        <SelectValue placeholder="Séléctionner..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {charges.data?.map((element) => (
+                          <SelectItem key={element.id} value={element.charge}>
+                            <div className="flex items-center gap-2">
+                              {element.charge}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ) : (
+                  <div className="grid w-full items-center gap-1.5">
+                    <Label htmlFor="label">Label</Label>
+                    <div className="grid  gap-2">
+                      <Input
+                        {...register("lable")}
+                        className="w-full focus-visible:ring-purple-500"
+                        id="lable"
+                        placeholder="Entrez un label"
+                      />
+                      {errors.label && (
+                        <p className="text-red-500 text-sm">
+                          {errors.label.message}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+                <div className="w-full space-y-1">
+                  <Label htmlFor="client">Date : </Label>
+                  <CustomDatePicker date={date} onDateChange={setDate} />
+                </div>
+                <div className="grid w-full items-center gap-1.5">
+                  <Label htmlFor="compte">Méthode de paiement</Label>
+                  <Select
+                    value={watch("methodePaiement")}
+                    name="methodePaiement"
+                    onValueChange={(value) =>
+                      setValue("methodePaiement", value)
+                    }
+                  >
+                    <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500 ">
+                      <SelectValue placeholder="Séléctionner..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="espece">Éspece</SelectItem>
+                      <SelectItem value="cheque">Chèque</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid w-full items-center gap-1.5">
+                  <Label htmlFor="montant">Montant</Label>
+                  <Input
+                    {...register("montant", { valueAsNumber: true })}
+                    className="w-full focus-visible:ring-purple-500"
+                    id="montant"
+                    type="number"
+                    placeholder="Entrez le montant"
+                  />
+                  {errors.montant && (
+                    <p className="text-red-500 text-sm">
+                      {errors.montant.message}
+                    </p>
+                  )}
+                </div>
+                <div className="grid w-full items-center gap-1.5">
+                  <Label htmlFor="compte">Compte bancaire</Label>
+                  <Select
+                    value={watch("compte")}
+                    name="compte"
+                    onValueChange={(value) => setValue("compte", value)}
+                  >
+                    <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500 ">
                       <SelectValue placeholder="Séléctionner..." />
                     </SelectTrigger>
                     <SelectContent>
@@ -296,12 +461,25 @@ export default function TransactionDialog() {
                   <Textarea
                     {...register("description")}
                     id="description"
-                    className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-purple-500 mt-2"
+                    className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-purple-500 "
                   />
                 </div>
+                {!isCharge && (
+                  <div className="flex items-center gap-3">
+                    <Checkbox
+                      id="terms"
+                      checked={isChecked}
+                      onCheckedChange={(checked) => {
+                        setIsChecked(checked === true); // force un boolean
+                      }}
+                    />
+                    <Label htmlFor="terms">
+                      Ajouter à la liste des charges récurrentes
+                    </Label>
+                  </div>
+                )}
               </div>
             )}
-
             {watch("type") === "vider" && (
               <>
                 <div className="grid w-full items-center gap-1.5">
@@ -311,8 +489,7 @@ export default function TransactionDialog() {
                     className="w-full focus-visible:ring-purple-500"
                     id="montant-vider"
                     type="number"
-                    placeholder="0.00 DH"
-                    step="1"
+                    placeholder="Entrez le montant"
                   />
                 </div>
                 <div className="grid w-full items-center gap-1.5">
@@ -344,6 +521,18 @@ export default function TransactionDialog() {
 
           <DialogFooter>
             <Button
+              onClick={() => {
+                const result = newTransactionSchema.safeParse(watch());
+
+                if (result.success) {
+                  console.log("✅ Données valides :", watch());
+                } else {
+                  console.log(
+                    "❌ Erreurs de validation :",
+                    result.error.format()
+                  );
+                }
+              }}
               className="bg-[#00e701] hover:bg-[#00e701] shadow-lg hover:scale-105 text-white text-md rounded-full font-bold transition-all duration-300 transform"
               type="submit"
               disabled={isSubmiting}

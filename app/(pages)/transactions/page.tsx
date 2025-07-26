@@ -13,7 +13,7 @@ import {
 import CustomPagination from "@/components/customUi/customPagination";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Trash2, Filter, Search, ChevronRight, Plus } from "lucide-react";
+import { Trash2, Filter, Search, ChevronRight, Printer } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
@@ -45,6 +45,7 @@ import {
 } from "@/components/ui/popover";
 import TransactionDialog from "@/components/new-transaction";
 import { LoadingDots } from "@/components/loading-dots";
+import ComboBoxFournisseur from "@/components/comboBox-fournisseurs";
 
 function formatDate(dateString: string) {
   return dateString?.split("T")[0].split("-").reverse().join("-");
@@ -61,6 +62,20 @@ type Transaction = {
   methodePaiement: string;
   date: string;
 };
+
+type Fournisseur = {
+  id: string;
+  nom: string;
+  adresse: string | null;
+  email: string | null;
+  telephone: string | null;
+  telephoneSecondaire: string | null;
+  ice: string | null;
+  dette: number;
+  createdAt: string; // ou Date, selon ce que tu utilises dans ton code
+  updatedAt: string; // ou Date
+};
+
 type Compte = {
   compte: string;
 };
@@ -73,9 +88,13 @@ export default function Banques() {
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
+  const [selectedFournisseur, setSelectedFournisseur] =
+    useState<Fournisseur | null>();
+
   const [filters, setFilters] = useState({
     compte: "all",
     type: "all",
+    methodePaiement: "all",
   });
   const queryClient = useQueryClient();
 
@@ -97,10 +116,12 @@ export default function Banques() {
       debouncedQuery,
       page,
       filters.type,
+      filters.methodePaiement,
       filters.compte,
       startDate,
       endDate,
-    ], // Include filters & page
+      selectedFournisseur,
+    ],
     queryFn: async () => {
       const response = await axios.get("/api/tresorie", {
         params: {
@@ -110,15 +131,16 @@ export default function Banques() {
           compte: filters.compte,
           from: startDate,
           to: endDate,
+          fournisseurId: selectedFournisseur?.id,
+          methodePaiement: filters.methodePaiement,
         },
       });
       setTotalPages(response.data.totalPages);
-      console.log("transactions : ", response.data.transactions);
-
       return response.data.transactions;
     },
     keepPreviousData: true, // Keeps old data visible while fetching new page
   });
+
   const deleteTrans = useMutation({
     mutationFn: async () => {
       const loadingToast = toast.loading("Suppression...");
@@ -219,7 +241,7 @@ export default function Banques() {
                   </SheetDescription>
                 </SheetHeader>
                 <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4 my-2">
+                  <div className="grid items-center gap-3 my-2">
                     <Label htmlFor="type" className="text-left text-black">
                       Type :
                     </Label>
@@ -262,7 +284,28 @@ export default function Banques() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="grid grid-cols-4 items-center gap-4 my-2">
+                  <div className="grid items-center gap-3 my-2">
+                    <Label htmlFor="type" className="text-left text-black">
+                      Méthode de paiement :
+                    </Label>
+                    <Select
+                      value={filters.methodePaiement}
+                      name="methodePaiement"
+                      onValueChange={(value) =>
+                        setFilters({ ...filters, methodePaiement: value })
+                      }
+                    >
+                      <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
+                        <SelectValue placeholder="Séléctionner un statut" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tous</SelectItem>
+                        <SelectItem value="espece">Éspece</SelectItem>
+                        <SelectItem value="cheque">Chèque</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid items-center gap-3 my-2">
                     <Label htmlFor="compte" className="text-left text-black">
                       Compte :
                     </Label>
@@ -348,10 +391,34 @@ export default function Banques() {
                       </Popover>
                     </div>
                   </div>
+                  <div className="w-full space-y-2">
+                    <ComboBoxFournisseur
+                      fournisseur={selectedFournisseur}
+                      setFournisseur={setSelectedFournisseur}
+                    />
+                  </div>
                 </div>
               </SheetContent>
             </Sheet>
-
+            <Button
+              variant="outline"
+              onClick={() => {
+                const params = {
+                  type: filters.type,
+                  compte: filters.compte,
+                  methodePaiement: filters.methodePaiement,
+                  from: startDate,
+                  to: endDate,
+                  fournisseurId: selectedFournisseur?.id,
+                };
+                localStorage.setItem("params", JSON.stringify(params));
+                window.open("/transactions/impression", "_blank");
+              }}
+              className="border-purple-500 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900 rounded-full"
+            >
+              <Printer className="h-4 w-4" />
+              Imprimer
+            </Button>
             <TransactionDialog />
           </div>
         </div>

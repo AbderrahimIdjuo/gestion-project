@@ -4,8 +4,6 @@ import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
 import { useState } from "react";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -22,7 +20,6 @@ function formatDate(dateString) {
 }
 export default function DevisPDFPage() {
   const [bonLivraison, setBonLivraison] = useState();
-  const [infosVisibilite, setInfosVisibilite] = useState(false);
   useEffect(() => {
     const storedData = localStorage.getItem("bonLivraison-rapport");
     if (storedData) {
@@ -119,18 +116,6 @@ export default function DevisPDFPage() {
           className="flex items-center justify-end print:hidden
 print:hidden mt-5"
         >
-          {/* <div className="flex items-center space-x-2 ">
-            <Switch
-              id="switch"
-              checked={infosVisibilite}
-              onCheckedChange={setInfosVisibilite}
-            />
-            <Label htmlFor="switch">
-              {infosVisibilite
-                ? "Informations de la société visibles"
-                : "Les informations de la société sont masquées"}
-            </Label>
-          </div> */}
           <Button
             className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full"
             variant="outline"

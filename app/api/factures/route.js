@@ -1,7 +1,6 @@
 "use server";
 import { NextResponse } from "next/server";
 import prisma from "../../../lib/prisma";
-import { connect } from "http2";
 
 export async function POST(req) {
   try {
@@ -125,28 +124,6 @@ export async function PUT(req) {
     );
   }
 }
-
-// export async function PUT(req) {
-//   try {
-//     const response = await req.json();
-//     const { id, numero, lable, type, montant, description, payer } = response;
-//     const result = await prisma.factures.update({
-//       where: { id },
-//       data: {
-//         numero,
-//         lable,
-//         type,
-//         montant,
-//         description,
-//         payer,
-//       },
-//     });
-
-//     return NextResponse.json({ result });
-//   } catch (error) {
-//     console.log(error);
-//   }
-// }
 
 export async function GET(req) {
   const { searchParams } = new URL(req.url);

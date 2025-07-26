@@ -26,7 +26,6 @@ import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 
 export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
- 
   const {
     register,
     reset,
@@ -39,7 +38,7 @@ export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
 
   const createTransaction = useMutation({
     mutationFn: async (data) => {
-      const { compte, description, lable, montant, numero, type } = data;
+      const { compte, description, montant } = data;
       const transData = {
         compte,
         description,

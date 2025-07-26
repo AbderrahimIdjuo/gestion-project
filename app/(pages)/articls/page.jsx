@@ -14,7 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import CustomPagination from "@/components/customUi/customPagination";
-import { Plus, Search, Pen, Trash2, X , Upload } from "lucide-react";
+import { Plus, Search, Pen, Trash2, Upload } from "lucide-react";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -32,37 +32,8 @@ export default function ProduitsPage() {
   const [currArticl, setCurrArticl] = useState();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [debouncedQuery, setDebouncedQuery] = useState();
-  const [debouncedValues, setDebouncedValues] = useState({
-    stock: undefined,
-    prixVente: undefined,
-    prixAchat: undefined,
-  });
   const [totalPages, setTotalPages] = useState();
-  const [maxPrixAchat, setMaxPrixAchat] = useState();
-  const [maxPrixVente, setMaxPrixVente] = useState();
-  const [maxStock, setMaxStock] = useState();
-  const [currProduct, setCurrProduct] = useState(null);
-  const [isAddingProduct, setIsAddingProduct] = useState(false);
-  const [isUpdatingProduct, setIsUpdatingProduct] = useState(false);
-  const [isPurchasingProduct, setIsPurchasingProduct] = useState(false);
 
-  const [filters, setFilters] = useState({
-    categorie: "all",
-    statut: "all",
-    prixAchat: [0, maxPrixAchat],
-    prixVente: [0, maxPrixVente],
-    stock: [0, maxStock],
-  });
-
-  const stockStatuts = (stock) => {
-    if (stock > 19) {
-      return "En stock";
-    } else if (stock < 20 && stock > 0) {
-      return "Limité";
-    } else if (stock == 0) {
-      return "En rupture";
-    }
-  };
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedQuery(searchQuery);
@@ -74,26 +45,9 @@ export default function ProduitsPage() {
     };
   }, [searchQuery]);
 
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValues({
-        stock: filters.stock,
-        prixVente: filters.prixVente,
-        prixAchat: filters.prixAchat,
-      });
-    }, 800);
-
-    return () => clearTimeout(handler);
-  }, [filters.stock, filters.prixVente, filters.prixAchat]);
   const queryClient = useQueryClient();
   const articls = useQuery({
-    queryKey: [
-      "articls",
-      filters.statut,
-      debouncedQuery,
-      page,
-      debouncedValues, // On utilise debouncedValues pour éviter d'envoyer plusieurs requêtes au serveur en même temps.
-    ],
+    queryKey: ["articls", debouncedQuery, page],
     queryFn: async () => {
       const response = await axios.get("/api/articls", {
         params: {
@@ -125,42 +79,6 @@ export default function ProduitsPage() {
       console.log(e);
     }
   };
-  useEffect(() => {
-    setFilters((prevFilters) => ({
-      ...prevFilters,
-      stock: [0, maxStock],
-      prixAchat: [0, maxPrixAchat],
-      prixVente: [0, maxPrixVente],
-    }));
-  }, [maxStock, maxPrixAchat, maxPrixVente]);
-
-  const categories = useQuery({
-    queryKey: ["categories"],
-    queryFn: async () => {
-      const response = await axios.get("/api/categoriesProduits");
-      return response.data.categories;
-    },
-  });
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "En stock":
-        return "bg-emerald-500";
-      case "En rupture":
-        return "bg-red-500";
-      case "Limité":
-        return "bg-amber-500";
-      default:
-        return "bg-gray-500";
-    }
-  };
-
-  const status = [
-    { value: "all", lable: "Tous les statut", color: "" },
-    { value: "En stock", lable: "En stock", color: "green-500" },
-    { value: "En rupture", lable: "En rupture", color: "red-500" },
-    { value: "Limité", lable: "Limité", color: "amber-500" },
-  ];
 
   return (
     <>
@@ -185,154 +103,127 @@ export default function ProduitsPage() {
             </div>
           </div>
           <div className="flex space-x-2">
-            <ArticlForm />
             <ImportArticls>
-            <Button
-              variant="outline"
-              className="border-purple-500 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900 rounded-full"
-            >
-              <Upload className="mr-2 h-4 w-4" />
-              Importer
-            </Button>
+              <Button
+                variant="outline"
+                className="border-purple-500 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900 rounded-full"
+              >
+                <Upload className="mr-2 h-4 w-4" />
+                Importer
+              </Button>
             </ImportArticls>
             <Button
               onClick={() => {
                 setAddDialogOpen(true);
               }}
-              className={`${
-                isAddingProduct || isUpdatingProduct || isPurchasingProduct
-                  ? "bg-red-500 hover:bg-red-600"
-                  : "bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 "
-              } text-white font-semibold transition-all duration-300 transform hover:scale-105 rounded-full`}
+              className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 text-white font-semibold transition-all duration-300 transform hover:scale-105 rounded-full"
             >
-              {isAddingProduct || isUpdatingProduct || isPurchasingProduct ? (
-                <>
-                  <X className="mr-2 h-4 w-4" />
-                  Annuler
-                </>
-              ) : (
-                <>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Ajouter un articl
-                </>
-              )}
+              <Plus className="mr-2 h-4 w-4" />
+              Ajouter un articl
             </Button>
           </div>
         </div>
 
-        <div
-          className={`grid pb-5 ${
-            isAddingProduct || isUpdatingProduct || isPurchasingProduct
-              ? "grid-cols-3 gap-6"
-              : "grid-cols-1"
-          }`}
-        >
-          <div className="col-span-2 mb-10">
-            <div
-              className={`grid  gap-3 border mb-5 rounded-lg ${
-                (isAddingProduct || isUpdatingProduct || isPurchasingProduct) &&
-                "hidden"
-              } `}
-            >
-              {/* the full table  */}
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Désignation</TableHead>
-                    <TableHead>Catégorie</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {articls.isLoading ? (
-                    [...Array(10)].map((_, index) => (
-                      <TableRow
-                        className="h-[2rem] MuiTableRow-root"
-                        role="checkbox"
-                        tabIndex={-1}
-                        key={index}
+        <div className="col-span-2 mb-10">
+          <div className="border mb-5 rounded-lg">
+            {/* the full table  */}
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Désignation</TableHead>
+                  <TableHead>Catégorie</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {articls.isLoading ? (
+                  [...Array(10)].map((_, index) => (
+                    <TableRow
+                      className="h-[2rem] MuiTableRow-root"
+                      role="checkbox"
+                      tabIndex={-1}
+                      key={index}
+                    >
+                      <TableCell
+                        className="!py-2 text-sm md:text-base"
+                        align="left"
                       >
-                        <TableCell
-                          className="!py-2 text-sm md:text-base"
-                          align="left"
-                        >
-                          <Skeleton className="h-4 w-[150px]" />
-                        </TableCell>
-                        <TableCell
-                          className="!py-2 text-sm md:text-base"
-                          align="left"
-                        >
-                          <Skeleton className="h-4 w-[150px]" />
-                        </TableCell>
-                        <TableCell className="!py-2">
-                          <div className="flex gap-2 justify-end">
-                            <Skeleton className="h-7 w-7 rounded-full" />
-                            <Skeleton className="h-7 w-7 rounded-full" />
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : articls.data?.length > 0 ? (
-                    articls.data?.map((articl) => (
-                      <TableRow key={articl.id}>
-                        <TableCell className="font-medium !py-2">
-                          {articl.designation}
-                        </TableCell>
-                        <TableCell className="font-medium !py-2">
-                          {articl.categorie}
-                        </TableCell>
-                        <TableCell className="text-right !py-2">
-                          <div className="flex justify-end gap-2">
-                            <CustomTooltip message="Modifier">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
-                                onClick={() => {
-                                  setCurrArticl(articl);
-                                  setUpdateDialogOpen(true);
-                                  console.log("modifier un articl", articl);
-                                }}
-                              >
-                                <Pen className="h-4 w-4" />
-                              </Button>
-                            </CustomTooltip>
-                            <CustomTooltip message="Supprimer">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
-                                onClick={() => {
-                                  setCurrArticl(articl);
-                                  setDeleteDialogOpen(true);
-                                  console.log("delete un articl", articl);
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </CustomTooltip>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={3} align="center">
-                        Aucun articl trouvé
+                        <Skeleton className="h-4 w-[150px]" />
+                      </TableCell>
+                      <TableCell
+                        className="!py-2 text-sm md:text-base"
+                        align="left"
+                      >
+                        <Skeleton className="h-4 w-[150px]" />
+                      </TableCell>
+                      <TableCell className="!py-2">
+                        <div className="flex gap-2 justify-end">
+                          <Skeleton className="h-7 w-7 rounded-full" />
+                          <Skeleton className="h-7 w-7 rounded-full" />
+                        </div>
                       </TableCell>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-            {articls.data?.length > 0 && (
-              <CustomPagination
-                currentPage={page}
-                setCurrentPage={setPage}
-                totalPages={totalPages}
-              />
-            )}
+                  ))
+                ) : articls.data?.length > 0 ? (
+                  articls.data?.map((articl) => (
+                    <TableRow key={articl.id}>
+                      <TableCell className="font-medium !py-2">
+                        {articl.designation}
+                      </TableCell>
+                      <TableCell className="font-medium !py-2">
+                        {articl.categorie}
+                      </TableCell>
+                      <TableCell className="text-right !py-2">
+                        <div className="flex justify-end gap-2">
+                          <CustomTooltip message="Modifier">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
+                              onClick={() => {
+                                setCurrArticl(articl);
+                                setUpdateDialogOpen(true);
+                                console.log("modifier un articl", articl);
+                              }}
+                            >
+                              <Pen className="h-4 w-4" />
+                            </Button>
+                          </CustomTooltip>
+                          <CustomTooltip message="Supprimer">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
+                              onClick={() => {
+                                setCurrArticl(articl);
+                                setDeleteDialogOpen(true);
+                                console.log("delete un articl", articl);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </CustomTooltip>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={3} align="center">
+                      Aucun articl trouvé
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
           </div>
+          {articls.data?.length > 0 && (
+            <CustomPagination
+              currentPage={page}
+              setCurrentPage={setPage}
+              totalPages={totalPages}
+            />
+          )}
         </div>
 
         <DeleteConfirmationDialog

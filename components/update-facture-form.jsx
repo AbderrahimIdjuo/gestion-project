@@ -18,15 +18,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { CircleX } from "lucide-react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import axios from "axios";
 
 export function UpdateFactureForm({ currFacture, setIsUpdatingfacture }) {
@@ -50,7 +41,6 @@ export function UpdateFactureForm({ currFacture, setIsUpdatingfacture }) {
   const {
     register,
     watch,
-    setValue,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm({
@@ -73,7 +63,6 @@ export function UpdateFactureForm({ currFacture, setIsUpdatingfacture }) {
       try {
         const response = await axios.put("/api/factures", data);
         toast.success("facture modifier avec succès");
-
         return response.data;
       } catch (error) {
         toast.error("Échec de la modification de la facture");
@@ -88,15 +77,9 @@ export function UpdateFactureForm({ currFacture, setIsUpdatingfacture }) {
     },
   });
   const onSubmit = async (data) => {
-    console.log("Data : ", data);
-
     updateFacture.mutate(data);
   };
 
-  const types = [
-    { value: "récurrente", lable: "récurrente" },
-    { value: "variante", lable: "variante" },
-  ];
 
   return (
     <Card className="w-full grid gap-2 h-full px-2">

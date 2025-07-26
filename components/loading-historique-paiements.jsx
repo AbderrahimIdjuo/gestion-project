@@ -9,28 +9,23 @@ import {
   TableFooter,
   TableRow,
 } from "@/components/ui/table";
-import { Phone, MapPin, Smartphone } from "lucide-react";
+import { Phone } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { EnteteDevis } from "@/components/Entete-devis";
 
 function LoadingHistoriquePaiements() {
   return (
     <div className="container mx-auto p-8 max-w-4xl bg-white min-h-screen print:p-0 print:max-w-none">
       {/* Document Content */}
       <div id="print-area" className="space-y-6">
-        <div className="flex justify-between items-center border-b border-[#228B8B] pb-1">
-          <img src="/images/LOGO-tete.jpg" alt="Logo" width={300} />
-          <img src="/images/LOGO-OUDAOUD.jpg" className="h-24 w-24" />
-        </div>
+        <EnteteDevis />
 
         {/* Company and Client Info */}
         <div className="grid grid-cols-2 gap-8">
           {/* Company Info */}
           <div className="col-span-1">
             <div className="flex items-center gap-2 mb-2">
-              <h1 className="font-bold text-lg text-gray-900">
-                Commande N° :
-              </h1>
+              <h1 className="font-bold text-lg text-gray-900">Commande N° :</h1>
               <Skeleton className="h-4 w-[150px] my-2" />
             </div>
             <div className="flex items-center gap-2 mb-2">
@@ -40,10 +35,8 @@ function LoadingHistoriquePaiements() {
           </div>
           {/* Client Info */}
           <div className="col-span-1">
-          <div className="flex items-center gap-2 mb-2">
-              <h1 className="font-bold text-lg text-gray-900">
-              Client :
-              </h1>
+            <div className="flex items-center gap-2 mb-2">
+              <h1 className="font-bold text-lg text-gray-900">Client :</h1>
               <Skeleton className="h-4 w-[200px] my-2" />
             </div>
             <div className="flex items-center gap-2 ">

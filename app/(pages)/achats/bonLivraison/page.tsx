@@ -61,12 +61,12 @@ export default function BonLivraison() {
     montant: [0, typeof maxMontant === "number" ? maxMontant : 0],
   });
   const deleteDevi = useDeleteBonLivraison();
-  useEffect(() => {
-    setFilters({
-      ...filters,
-      montant: [0, typeof maxMontant === "number" ? maxMontant : 0],
-    });
-  }, [maxMontant]);
+useEffect(() => {
+  setFilters((prev) => ({
+    ...prev,
+    montant: [0, typeof maxMontant === "number" ? maxMontant : 0],
+  }));
+}, [maxMontant]);
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedQuery(searchQuery);

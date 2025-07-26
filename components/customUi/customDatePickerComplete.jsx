@@ -1,7 +1,7 @@
 "use client";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import React, { useEffect, useState } from "react";
+import { useEffect } from "react";
 import {
   Popover,
   PopoverContent,
@@ -13,14 +13,11 @@ import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
 import { fr } from "date-fns/locale";
-const CustomDatePickerComplete = ({ label, date, setDate }) => {
-  const {
-    watch,
-    control,
-  } = useForm();
+const CustomDatePickerComplete = ({ label }) => {
+  const { watch, control } = useForm();
   const selectedDate = watch("echeance");
-  
-  useEffect
+
+  useEffect;
 
   return (
     <>

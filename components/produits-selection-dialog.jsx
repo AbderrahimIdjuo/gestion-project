@@ -129,7 +129,6 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
     data,
     fetchNextPage,
     isLoading,
-    isFetchingNextPage,
     isFetching,
     hasNextPage,
   } = useInfiniteQuery({
@@ -277,7 +276,7 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
                 </div>
                 <ScrollArea className="h-[100%] w-full mt-3">
                   <div className="space-y-3 ">
-                    {Object.values(selectedArticles).map((article , index) => (
+                    {Object.values(selectedArticles).map((article) => (
                       <div
                         key={article.id}
                         className="flex items-center justify-between p-3 border rounded-lg w-full"

@@ -1,6 +1,6 @@
-import { Bell } from "lucide-react";
-import { Button } from "@/components/ui/button";
+"use client";
 import Link from "next/link";
+import Image from "next/image";
 
 export function Navbar() {
   return (
@@ -8,15 +8,14 @@ export function Navbar() {
       <div className="flex justify-between items-center">
         <Link href="/">
           <div className="flex items-center py-1">
-            <img src="/images/LOGO-tete.jpg" alt="Logo" width={250} />
+            <Image
+              src="/images/LOGO-tete.jpg"
+              alt="Logo"
+              width={250}
+              height={70}
+            />{" "}
           </div>
         </Link>
-        {/* <div className="flex items-center">
-          <Button variant="ghost" size="icon" className="rounded-full">
-            <Bell className="h-5 w-5" />
-            <span className="sr-only">Notifications</span>
-          </Button>
-        </div> */}
       </div>
     </nav>
   );

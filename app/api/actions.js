@@ -31,6 +31,17 @@ export async function addCategorieProduits(categorie) {
   }
 }
 
+export async function addCharge(charge) {
+  if (charge !== "") {
+    const result = await prisma.charges.create({
+      data: {
+        charge,
+      },
+    });
+    return result;
+  }
+}
+
 export async function deleteCategorieProduits(id) {
   const result = await prisma.categoriesProduits.delete({
     where: { id },

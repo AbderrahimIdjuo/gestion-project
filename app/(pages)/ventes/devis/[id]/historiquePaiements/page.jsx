@@ -13,11 +13,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useQuery } from "@tanstack/react-query";
-import { Phone, MapPin, Smartphone } from "lucide-react";
+import { Phone } from "lucide-react";
 import LoadingHistoriquePaiements from "@/components/loading-historique-paiements";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import axios from "axios";
 import { EnteteDevis } from "@/components/Entete-devis";
 
 function formatDate(dateString) {
@@ -50,14 +47,7 @@ export default function HistoriquePaiement() {
   const totalPaye = transactions?.reduce((acc, transaction) => {
     return acc + transaction.montant;
   }, 0);
-  const info = useQuery({
-    queryKey: ["infoEntreprise"],
-    queryFn: async () => {
-      const response = await axios.get("/api/infoEntreprise");
-      const infoEntreprise = response.data.infoEntreprise;
-      return infoEntreprise;
-    },
-  });
+
   return (
     <>
       {devis ? (

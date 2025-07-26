@@ -14,7 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import ImportClients from "@/components/importer-clients";
-import { Search, Plus, X, Pen, Trash2, Upload } from "lucide-react";
+import { Search, Trash2, Upload } from "lucide-react";
 import { ClientFormDialog } from "@/components/client-form-dialog";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import { ClientInfoDialog } from "@/components/client-info";
@@ -22,7 +22,6 @@ import { ModifyClientDialog } from "@/components/modify-client-dialog";
 import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { LoadingDots } from "@/components/loading-dots";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -30,8 +29,6 @@ export default function ClientsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currClient, setcurrClient] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isAddingClient, setIsAddingClient] = useState(false);
-  const [isUpdatingClient, setIsUpdatingClient] = useState(false);
   const [page, setPage] = useState(1);
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [totalPages, setTotalPages] = useState();
@@ -132,134 +129,126 @@ export default function ClientsPage() {
           </div>
         </div>
 
-        <div
-          className={`grid ${
-            isAddingClient || isUpdatingClient
-              ? "grid-cols-3 gap-6"
-              : "grid-cols-1"
-          }`}
-        >
-          <div className="grid gap-3 border mb-3 rounded-lg">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nom</TableHead>
-                  <TableHead>Téléphone</TableHead>
-                  <TableHead>Adresse</TableHead>
-                  <TableHead>ICE</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {clients.isLoading ? (
-                  [...Array(10)].map((_, index) => (
-                    <TableRow
-                      className="h-[2rem] MuiTableRow-root !py-2"
-                      role="checkbox"
-                      tabIndex={-1}
-                      key={index}
+        <div className="grid gap-3 border mb-3 rounded-lg">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nom</TableHead>
+                <TableHead>Téléphone</TableHead>
+                <TableHead>Adresse</TableHead>
+                <TableHead>ICE</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {clients.isLoading ? (
+                [...Array(10)].map((_, index) => (
+                  <TableRow
+                    className="h-[2rem] MuiTableRow-root !py-2"
+                    role="checkbox"
+                    tabIndex={-1}
+                    key={index}
+                  >
+                    <TableCell
+                      className="!py-2 text-sm md:text-base"
+                      align="left"
                     >
-                      <TableCell
-                        className="!py-2 text-sm md:text-base"
-                        align="left"
-                      >
-                        <div className="flex gap-2 items-center">
-                          <Skeleton className="h-10 w-10 rounded-full" />
-                          <Skeleton className="h-4 w-[80%]" />
+                      <div className="flex gap-2 items-center">
+                        <Skeleton className="h-10 w-10 rounded-full" />
+                        <Skeleton className="h-4 w-[80%]" />
+                      </div>
+                    </TableCell>
+                    <TableCell className="!py-2" align="left">
+                      <Skeleton className="h-4 w-full" />
+                    </TableCell>
+                    <TableCell className="!py-2" align="left">
+                      <Skeleton className="h-4 w-full" />
+                    </TableCell>
+                    <TableCell className="!py-2" align="left">
+                      <Skeleton className="h-4 w-full" />
+                    </TableCell>
+                    <TableCell className="!py-2">
+                      <div className="flex gap-2 justify-end">
+                        <Skeleton className="h-7 w-7 rounded-full" />
+                        <Skeleton className="h-7 w-7 rounded-full" />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : clients.data?.length > 0 ? (
+                clients.data?.map((client) => (
+                  <TableRow className="font-medium" key={client.id}>
+                    <ClientInfoDialog client={client}>
+                      <TableCell className="font-medium hover:text-purple-500 cursor-pointer !py-2">
+                        <div className="flex flex-row gap-2 justify-start items-center">
+                          <Avatar className="w-8 h-8">
+                            <AvatarImage
+                              src={`https://api.dicebear.com/7.x/initials/svg?seed=${client.nom}`}
+                            />
+                            <AvatarFallback>
+                              {getInitials(client.nom)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <h2 className="text-sm font-bold">
+                            {client.titre
+                              ? client.titre + ". " + client.nom.toUpperCase()
+                              : client.nom.toUpperCase()}
+                          </h2>
                         </div>
                       </TableCell>
-                      <TableCell className="!py-2" align="left">
-                        <Skeleton className="h-4 w-full" />
-                      </TableCell>
-                      <TableCell className="!py-2" align="left">
-                        <Skeleton className="h-4 w-full" />
-                      </TableCell>
-                      <TableCell className="!py-2" align="left">
-                        <Skeleton className="h-4 w-full" />
-                      </TableCell>
-                      <TableCell className="!py-2">
-                        <div className="flex gap-2 justify-end">
-                          <Skeleton className="h-7 w-7 rounded-full" />
-                          <Skeleton className="h-7 w-7 rounded-full" />
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : clients.data?.length > 0 ? (
-                  clients.data?.map((client) => (
-                    <TableRow className="font-medium" key={client.id}>
-                      <ClientInfoDialog client={client}>
-                        <TableCell className="font-medium hover:text-purple-500 cursor-pointer !py-2">
-                          <div className="flex flex-row gap-2 justify-start items-center">
-                            <Avatar className="w-8 h-8">
-                              <AvatarImage
-                                src={`https://api.dicebear.com/7.x/initials/svg?seed=${client.nom}`}
-                              />
-                              <AvatarFallback>
-                                {getInitials(client.nom)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <h2 className="text-sm font-bold">
-                              {client.titre
-                                ? client.titre + ". " + client.nom.toUpperCase()
-                                : client.nom.toUpperCase()}
-                            </h2>
-                          </div>
-                        </TableCell>
-                      </ClientInfoDialog>
-                      <TableCell className="text-md !py-2">
-                        {client.telephone}
-                      </TableCell>
-                      <TableCell className="text-md !py-2">
-                        {client.adresse}
-                      </TableCell>
-                      <TableCell className="text-md !py-2">
-                        {client.ice}
-                      </TableCell>
-                      <TableCell className="text-right !py-2">
-                        <div className="flex justify-end gap-2">
-                          <ModifyClientDialog currClient={client} />
-                          <Button
-                            name="delete btn"
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
-                            onClick={() => {
-                              setIsDialogOpen(true);
-                              setcurrClient(client);
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            <span className="sr-only">Supprimer</span>
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableCell colSpan={6} align="center">
-                    <div className="text-center py-10 text-muted-foreground">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={1.5}
-                        stroke="currentColor"
-                        className="size-14 mx-auto mb-4 opacity-50"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m5.231 13.481L15 17.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v16.5c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Zm3.75 11.625a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"
-                        />
-                      </svg>
-                      <p>Aucun client trouvé</p>
-                    </div>
-                  </TableCell>
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                    </ClientInfoDialog>
+                    <TableCell className="text-md !py-2">
+                      {client.telephone}
+                    </TableCell>
+                    <TableCell className="text-md !py-2">
+                      {client.adresse}
+                    </TableCell>
+                    <TableCell className="text-md !py-2">
+                      {client.ice}
+                    </TableCell>
+                    <TableCell className="text-right !py-2">
+                      <div className="flex justify-end gap-2">
+                        <ModifyClientDialog currClient={client} />
+                        <Button
+                          name="delete btn"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
+                          onClick={() => {
+                            setIsDialogOpen(true);
+                            setcurrClient(client);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">Supprimer</span>
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableCell colSpan={6} align="center">
+                  <div className="text-center py-10 text-muted-foreground">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                      className="size-14 mx-auto mb-4 opacity-50"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m5.231 13.481L15 17.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v16.5c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Zm3.75 11.625a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"
+                      />
+                    </svg>
+                    <p>Aucun client trouvé</p>
+                  </div>
+                </TableCell>
+              )}
+            </TableBody>
+          </Table>
         </div>
       </div>
       {clients.data?.length > 0 ? (
