@@ -214,8 +214,8 @@ export default function FacturesPage() {
                       className="w-full [&_[role=slider]]:bg-purple-500 [&_[role=slider]]:border-purple-500 [&_[role=slider]]:focus:ring-purple-500 [&_[role=track]]:bg-purple-100 [&_[role=range]]:bg-purple-300"
                     />
                     <div className="flex justify-between mt-2">
-                      <span>{filters.montant[0]}€</span>
-                      <span>{filters.montant[1]}€</span>
+                      <span>{filters.montant[0]}DH</span>
+                      <span>{filters.montant[1]}DH</span>
                     </div>
                   </div>
                 </div>
@@ -269,7 +269,7 @@ export default function FacturesPage() {
                 <TableCell className="font-medium">{facture.id}</TableCell>
                 <TableCell>{facture.client}</TableCell>
                 <TableCell>{facture.date}</TableCell>
-                <TableCell>{facture.montant.toFixed(2)} €</TableCell>
+                <TableCell>{facture.montant.toFixed(2)} DH</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <span

@@ -38,7 +38,7 @@ export default function ComboBoxDevis({
 
   useEffect(() => {
     setSearchQuery(Devisnumero);
-  }, [Devisnumero, setSearchQuery]);
+  }, [Devisnumero]);
 
   useEffect(() => {
     if (buttonRef.current) {
@@ -69,7 +69,7 @@ export default function ComboBoxDevis({
   const currentDevis = devis.find((d) => d.numero === Devisnumero);
   useEffect(() => {
     setSelectedDevis(currentDevis);
-  }, [currentDevis , setSelectedDevis]);
+  }, [currentDevis]);
   useEffect(() => {
     if (inView && hasNextPage) {
       fetchNextPage();

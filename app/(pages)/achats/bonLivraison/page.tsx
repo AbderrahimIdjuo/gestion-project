@@ -61,12 +61,12 @@ export default function BonLivraison() {
     montant: [0, typeof maxMontant === "number" ? maxMontant : 0],
   });
   const deleteDevi = useDeleteBonLivraison();
-useEffect(() => {
-  setFilters((prev) => ({
-    ...prev,
-    montant: [0, typeof maxMontant === "number" ? maxMontant : 0],
-  }));
-}, [maxMontant]);
+  useEffect(() => {
+    setFilters((prev) => ({
+      ...prev,
+      montant: [0, typeof maxMontant === "number" ? maxMontant : 0],
+    }));
+  }, [maxMontant]);
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedQuery(searchQuery);
@@ -166,8 +166,8 @@ useEffect(() => {
                 <SheetHeader>
                   <SheetTitle className="text-black">Filtres</SheetTitle>
                   <SheetDescription className="text-gray-600">
-                    Ajustez les filtres pour affiner votre recherche de
-                    bons de livraison.
+                    Ajustez les filtres pour affiner votre recherche de bons de
+                    livraison.
                   </SheetDescription>
                 </SheetHeader>
                 <div className="grid gap-4 py-4">
@@ -294,6 +294,7 @@ useEffect(() => {
             setUpdateDialogOpen,
           })}
           data={listBonLivraison}
+          isLoading={isLoading}
         />
         {bonLivraison?.length > 0 ? (
           <CustomPagination
