@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Package, Trash2, X } from "lucide-react";
+import { Package, Trash2, X , Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ComboBoxDevis from "@/components/comboBox-devis";
 import {
@@ -56,7 +56,8 @@ export default function UpdateBonLivraison({ isOpen, onClose, bonLivraison }) {
       id: group.id,
       devisNumber: group.devisNumero,
       items: group.produits?.map((produit) => ({
-        id: produit.produitId,
+        id: produit.id,
+        produitId: produit.produitId,
         quantite: produit.quantite,
         designation: produit.produit.designation,
         prixUnite: produit.prixUnite,
@@ -91,7 +92,7 @@ export default function UpdateBonLivraison({ isOpen, onClose, bonLivraison }) {
   const sousTotal = (group) => {
     return group.items.reduce((acc, produit) => {
       return acc + produit.quantite * produit.prixUnite;
-    }, 0);
+    }, 0).toFixed(2);
   };
   const statutPaiement = () => {
     if (
@@ -178,19 +179,19 @@ export default function UpdateBonLivraison({ isOpen, onClose, bonLivraison }) {
     setBLGroups((prev) =>
       prev.map((group) => {
         if (group.id === groupId) {
-          const existingIds = new Set(group.items.map((item) => item.id));
-          const filteredArticles = newArticles.filter(
-            (article) => !existingIds.has(article.id)
-          );
-
           return {
             ...group,
             items: [
               ...group.items,
-              ...filteredArticles.map((article) => ({
-                ...article,
-                uniqueKey: `${article.id}-${crypto.randomUUID()}`, // Clé vraiment unique
-              })),
+              ...newArticles.map((article) => {
+                const uuid = crypto.randomUUID();
+                return {
+                  ...article,
+                  id: uuid, // assign a unique UUID as the ID
+                  produitId: article.id,
+                  uniqueKey: `${article.id}-${uuid}`, // ensure key is still unique and traceable
+                };
+              }),
             ],
           };
         }
@@ -240,6 +241,45 @@ export default function UpdateBonLivraison({ isOpen, onClose, bonLivraison }) {
       [groupId]: devis,
     }));
   }, []);
+
+  const handlCopyItem = (groupId, item) => {
+    setBLGroups((prev) =>
+      prev.map((group) => {
+        if (group.id === groupId) {
+          return {
+            ...group,
+            items: [
+              ...group.items,
+              {
+                ...item,
+                designation: item.designation,
+                quantite: item.quantite,
+                prixUnite: item.prixUnite,
+                id: crypto.randomUUID(),
+                produitId: item.produitId,
+                uniqueKey: `${item.id}-${crypto.randomUUID()}`, // Clé vraiment unique,
+              },
+            ],
+          };
+        }
+        return group;
+      })
+    );
+  };
+  const validateFloat = (value) => {
+    if (typeof value === "string") {
+      value = value.replace(",", ".");
+      // Remove any whitespace that might interfere
+      value = value.trim();
+    }
+    // const number = parseFloat(value);
+    const parsed = parseFloat(value);
+    if (isNaN(parsed)) {
+      // throw new Error("The value must be a float.");
+      return false;
+    }
+    return parsed;
+  };
   return (
     <div className="">
       <div className="flex items-center justify-between">
@@ -388,50 +428,61 @@ export default function UpdateBonLivraison({ isOpen, onClose, bonLivraison }) {
                                 </TableCell>
                                 <TableCell>
                                   <Input
-                                    value={item.quantite}
+                                    defaultValue={item.quantite}
                                     onChange={(e) =>
                                       handleItemChange(
                                         group.id,
                                         item.uniqueKey,
                                         "quantite",
-                                        e.target.value
+                                        validateFloat(e.target.value)
                                       )
                                     }
                                     className="focus:!ring-purple-500 w-20"
-                                    type="number"
-                                    min="1"
                                   />
                                 </TableCell>
                                 <TableCell>
                                   <Input
-                                    value={item.prixUnite}
+                                    defaultValue={item.prixUnite}
                                     onChange={(e) =>
                                       handleItemChange(
                                         group.id,
                                         item.uniqueKey,
                                         "prixUnite",
-                                        e.target.value
+                                        validateFloat(e.target.value)
                                       )
                                     }
                                     className="focus:!ring-purple-500 w-20"
-                                    type="number"
-                                    min="1"
                                   />
                                 </TableCell>
                                 <TableCell>
-                                  {item.prixUnite * item.quantite} DH
+                                  {(item.prixUnite * item.quantite).toFixed(2)}{" "}
+                                  DH
                                 </TableCell>
                                 <TableCell className="text-right">
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() =>
-                                      removeItem(group.id, item.uniqueKey)
-                                    }
-                                    className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
+                                  <div className="flex justify-end gap-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() =>
+                                        removeItem(group.id, item.uniqueKey)
+                                      }
+                                      className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      type="button" // <- important pour ne PAS soumettre
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => {
+                                        handlCopyItem(group.id, item);
+                                        console.log("bLGroups", bLGroups);
+                                      }}
+                                      className="h-8 w-8 rounded-full hover:bg-blue-100 hover:text-blue-600"
+                                    >
+                                      <Copy className="h-4 w-4" />
+                                    </Button>
+                                  </div>
                                 </TableCell>
                               </TableRow>
                             ))}

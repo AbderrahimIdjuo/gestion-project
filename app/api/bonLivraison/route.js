@@ -152,21 +152,21 @@ export async function PUT(req) {
     for (const group of bLGroups) {
       const existingProduits = await prisma.blGroupsProduits.findMany({
         where: { groupId: group.id },
-        select: { produitId: true },
+        select: { id: true },
       });
 
-      const existingProduitIds = existingProduits.map((p) => p.produitId);
+      const existingProduitIds = existingProduits.map((p) => p.id);
       const incomingProduitIds = group.items.map((p) => p.id);
 
       const produitsToDelete = existingProduitIds.filter(
-        (produitId) => !incomingProduitIds.includes(produitId)
+        (id) => !incomingProduitIds.includes(id)
       );
 
       if (produitsToDelete.length > 0) {
         await prisma.blGroupsProduits.deleteMany({
           where: {
             groupId: group.id,
-            produitId: { in: produitsToDelete },
+            id: { in: produitsToDelete },
           },
         });
       }
@@ -193,23 +193,20 @@ export async function PUT(req) {
               produits: {
                 upsert: group.items.map((produit) => ({
                   where: {
-                    groupId_produitId: {
-                      groupId: group.id,
-                      produitId: produit.id,
-                    },
+                    id: produit.id,
                   },
                   update: {
                     quantite: parseFloat(produit.quantite),
                     prixUnite: parseFloat(produit.prixUnite),
                     produit: {
-                      connect: { id: produit.id },
+                      connect: { id: produit.produitId },
                     },
                   },
                   create: {
                     quantite: parseFloat(produit.quantite),
                     prixUnite: parseFloat(produit.prixUnite),
                     produit: {
-                      connect: { id: produit.id },
+                      connect: { id: produit.produitId },
                     },
                   },
                 })),
@@ -224,7 +221,7 @@ export async function PUT(req) {
                   quantite: parseFloat(produit.quantite),
                   prixUnite: parseFloat(produit.prixUnite),
                   produit: {
-                    connect: { id: produit.id },
+                    connect: { id: produit.produitId },
                   },
                 })),
               },

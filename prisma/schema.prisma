@@ -179,8 +179,6 @@ model BlGroupsProduits {
   prixUnite Float    @default(0)
   group     BLGroups @relation(fields: [groupId], references: [id], onDelete: Cascade)
   produit   Produits @relation(fields: [produitId], references: [id], onDelete: Cascade)
-
-  @@unique([groupId, produitId])
 }
 
 model Articls {
@@ -284,8 +282,23 @@ model Transactions {
   description     String?
   methodePaiement String?
   date            DateTime?
+  chequeId        String?
+  cheque          Cheques?  @relation(fields: [chequeId], references: [id], onDelete: Cascade)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+}
+
+model Cheques {
+  id            String         @id @default(uuid())
+  type          String
+  montant       Float
+  compte        String?
+  numero        String?
+  beneficiaire  String?
+  dateReglement DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  transactions  Transactions[]
 }
 
 model TachesEmployes {

@@ -169,6 +169,8 @@ export function useBonLivraisonColumns({
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => {
+                    console.log("bonLivraison", bonLivraison);
+
                     setCurrentBL(bonLivraison);
                     setPreviewDialogOpen(true);
                   }}
