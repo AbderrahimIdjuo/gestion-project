@@ -90,6 +90,7 @@ model Fournisseurs {
   dette                Float                @default(0)
   bonLivraisons        BonLivraison[]
   commandesFournitures CommandeFourniture[]
+  Cheques              Cheques[]
 }
 
 model Commandes {
@@ -282,23 +283,24 @@ model Transactions {
   description     String?
   methodePaiement String?
   date            DateTime?
-  chequeId        String?
+  chequeId        String?   @unique
   cheque          Cheques?  @relation(fields: [chequeId], references: [id], onDelete: Cascade)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 }
 
 model Cheques {
-  id            String         @id @default(uuid())
+  id            String        @id @default(uuid())
   type          String
   montant       Float
   compte        String?
   numero        String?
-  beneficiaire  String?
+  fournisseurId String?
+  fournisseur   Fournisseurs? @relation(fields: [fournisseurId], references: [id], onDelete: Cascade)
   dateReglement DateTime?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  transactions  Transactions[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  transaction   Transactions?
 }
 
 model TachesEmployes {

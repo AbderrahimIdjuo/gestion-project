@@ -1,5 +1,5 @@
 "use client";
-
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { CustomDatePicker } from "@/components/customUi/customDatePicker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -29,6 +30,8 @@ export default function PaiementFournisseurDialog({
   isOpen,
   onClose,
 }) {
+  const [date, setDate] = useState(null);
+
   const {
     register,
     reset,
@@ -41,11 +44,7 @@ export default function PaiementFournisseurDialog({
 
   const createTransaction = useMutation({
     mutationFn: async (data) => {
-      const {
-        compte,
-        montant,
-        typePaiement,
-      } = data;
+      const { compte, montant, typePaiement, numero } = data;
       const transData = {
         fournisseurId: fournisseur.id,
         compte,
@@ -54,6 +53,8 @@ export default function PaiementFournisseurDialog({
         montant,
         type: "depense",
         methodePaiement: typePaiement,
+        numeroCheque: numero,
+        dateReglement: date,
       };
       console.log("transData", transData);
       const loadingToast = toast.loading("Paiement en cours...");
@@ -94,10 +95,10 @@ export default function PaiementFournisseurDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[1000px] max-h-[90vh] overflow-y-auto">
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogHeader>
-            <DialogTitle>Paiement de {fournisseur?.nom}</DialogTitle>
+            <DialogTitle>Paiement en faveur de {fournisseur?.nom}</DialogTitle>
             <DialogDescription>
               Sélectionnez le type de paiement et remplissez les détails
               nécessaires.
@@ -109,6 +110,7 @@ export default function PaiementFournisseurDialog({
               onValueChange={(value) => {
                 reset();
                 setValue("typePaiement", value);
+                setDate(null);
               }}
               className="flex flex-row flex-wrap gap-4 justify-evenly"
             >
@@ -141,7 +143,11 @@ export default function PaiementFournisseurDialog({
             </RadioGroup>
 
             {watch("typePaiement") === "espece" && (
-              <div className="space-y-4">
+              <div className="space-y-4 items-end grid grid-cols-3 gap-4">
+                <div className="w-full space-y-1.5">
+                  <Label htmlFor="client">Date : </Label>
+                  <CustomDatePicker date={date} onDateChange={setDate} />
+                </div>
                 <div className="grid w-full items-center gap-1.5">
                   <Label htmlFor="montant">Montant</Label>
                   <Input
@@ -179,8 +185,12 @@ export default function PaiementFournisseurDialog({
               </div>
             )}
             {watch("typePaiement") === "cheque" && (
-              <div className="space-y-4">
-                <div className="grid w-full items-center gap-1.5">
+              <div className="space-y-4 items-end grid grid-cols-3 grid-rows-2 gap-4">
+                <div className="w-full space-y-1.5">
+                  <Label htmlFor="client">Date : </Label>
+                  <CustomDatePicker date={date} onDateChange={setDate} />
+                </div>
+                <div className="grid w-full items-center gap-2">
                   <Label htmlFor="montant">Montant</Label>
                   <Input
                     {...register("montant", { valueAsNumber: true })}
@@ -188,14 +198,14 @@ export default function PaiementFournisseurDialog({
                     id="montant"
                   />
                 </div>
-                <div className="grid w-full items-center gap-1.5">
+                <div className="grid w-full items-center gap-2">
                   <Label htmlFor="compte">Compte bancaire</Label>
                   <Select
                     value={watch("compte")}
                     name="compte"
                     onValueChange={(value) => setValue("compte", value)}
                   >
-                    <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500 mt-2">
+                    <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
                       <SelectValue placeholder="Séléctionner..." />
                     </SelectTrigger>
                     <SelectContent>
@@ -210,11 +220,14 @@ export default function PaiementFournisseurDialog({
                         ))}
                     </SelectContent>
                   </Select>
-                  {errors.compte && (
-                    <p className="text-red-500 text-sm">
-                      {errors.compte.message}
-                    </p>
-                  )}
+                </div>
+                <div className="grid w-full items-center gap-2 col-span-3">
+                  <Label htmlFor="numero">Numéro de chèque</Label>
+                  <Input
+                    {...register("numero")}
+                    className="w-full focus-visible:ring-purple-500"
+                    id="numero"
+                  />
                 </div>
               </div>
             )}

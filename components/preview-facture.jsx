@@ -114,7 +114,7 @@ export default function PreviewFactureDialog({ facture }) {
   }
   return (
     <>
-      <CustomTooltip message="Visualiser">
+      <CustomTooltip message="Aperçu">
         <Button
           variant="ghost"
           size="icon"

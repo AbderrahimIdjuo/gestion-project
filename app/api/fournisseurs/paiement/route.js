@@ -13,11 +13,28 @@ export async function POST(req) {
       compte,
       lable,
       description,
-      date,
       methodePaiement,
       fournisseurId,
+      dateReglement,
+      numeroCheque,
     } = resopns;
     const result = await prisma.$transaction(async (prisma) => {
+      //Creation du chèque
+      let cheque = null;
+
+      if (methodePaiement === "cheque") {
+        cheque = await prisma.cheques.create({
+          data: {
+            type: "EMIS",
+            montant,
+            compte,
+            numero: numeroCheque, // ou une autre logique
+            fournisseurId: fournisseurId || null,
+            dateReglement: dateReglement || new Date(),
+          },
+        });
+      }
+
       // creation de la transaction
       await prisma.transactions.create({
         data: {
@@ -28,7 +45,12 @@ export async function POST(req) {
           lable,
           description,
           methodePaiement,
-          date: date || new Date(),
+          date: dateReglement || new Date(),
+          cheque: cheque
+            ? {
+                connect: { id: cheque.id }, // ✅ association one-to-one
+              }
+            : undefined,
         },
       }),
         // mise à jour du solde du compte bancaire

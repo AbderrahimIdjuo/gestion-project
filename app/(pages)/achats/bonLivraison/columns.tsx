@@ -179,7 +179,7 @@ export function useBonLivraisonColumns({
                   <Eye className="h-4 w-4 text-sky-600" />
 
                   <span className="transition-colors duration-200 group-hover:text-blue-600 group-hover:bg-blue-100">
-                    Visualiser
+                    Aperçu
                   </span>
                 </DropdownMenuItem>
                 <DropdownMenuItem

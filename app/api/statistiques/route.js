@@ -5,6 +5,9 @@ export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const from = searchParams.get("from");
   const to = searchParams.get("to");
+
+  console.log("from", from, "to", to);
+
   const fromDate = new Date(from);
   const toDate = new Date(to);
   // Subtract one day from 'fromDate'
@@ -13,7 +16,6 @@ export async function GET(req) {
   // Add one day to 'toDate'
   toDate.setDate(toDate.getDate() + 1);
 
-  
   //   const currentDate = new Date(); // Get the current date
 
   // fromDate.setMonth(currentDate.getMonth() - 3);
@@ -25,9 +27,9 @@ export async function GET(req) {
 
   // }
   if (from && to) {
-    filters.createdAt = {
-      gte: fromDate, // Greater than or equal to "from"
-      lte: toDate, // Less than or equal to "to"
+    filters.date = {
+      gte: from, // Greater than or equal to "from"
+      lte: to, // Less than or equal to "to"
     };
   }
   const [
@@ -35,6 +37,7 @@ export async function GET(req) {
     nbrFournisseurs,
     nbrProduits,
     nbrCommandes,
+    nbrBonLivraison,
     transactionsRecettes,
     transactionsDepense,
     caisse,
@@ -44,40 +47,43 @@ export async function GET(req) {
     prisma.clients.count(),
     prisma.fournisseurs.count(),
     prisma.produits.count(),
-    prisma.commandes.count(),
+    prisma.commandeFourniture.count({
+      where: {
+        date: filters.date,
+      },
+    }),
+    prisma.bonLivraison.count({
+      where: {
+        date: filters.date,
+      },
+    }),
     prisma.transactions.findMany({
       where: {
         type: "recette",
-        createdAt: filters.createdAt,
+        date: filters.date,
       },
     }),
     prisma.transactions.findMany({
       where: {
         type: "depense",
-        createdAt: filters.createdAt,
+        date: filters.date,
       },
     }),
-    prisma.comptesBancaires.findFirst(
-      {
-        where: {
-          compte: "caisse",
-        },
-      }
-    ),
-    prisma.comptesBancaires.findFirst(
-      {
-        where: {
-          compte: "compte personnel",
-        },
-      }
-    ),
-    prisma.comptesBancaires.findFirst(
-      {
-        where: {
-          compte: "compte professionnel",
-        },
-      }
-    ),
+    prisma.comptesBancaires.findFirst({
+      where: {
+        compte: "caisse",
+      },
+    }),
+    prisma.comptesBancaires.findFirst({
+      where: {
+        compte: "compte personnel",
+      },
+    }),
+    prisma.comptesBancaires.findFirst({
+      where: {
+        compte: "compte professionnel",
+      },
+    }),
   ]);
 
   const recettes = transactionsRecettes.reduce(
@@ -93,10 +99,11 @@ export async function GET(req) {
     nbrFournisseurs,
     nbrProduits,
     nbrCommandes,
+    nbrBonLivraison,
     recettes,
     depenses,
-    caisse : caisse?.solde,
-    comptePersonnel : comptePersonnel?.solde,
+    caisse: caisse?.solde,
+    comptePersonnel: comptePersonnel?.solde,
     compteProfessionnel: compteProfessionnel?.solde,
   });
 }

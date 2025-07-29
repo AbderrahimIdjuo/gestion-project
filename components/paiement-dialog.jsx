@@ -169,7 +169,7 @@ export function PaiementDialog({ isOpen, onClose, devis }) {
               </div>
             )}
             {watch("methodePaiement") === "cheque" && (
-              <div className="space-y-4 items-end grid grid-cols-3 gap-4">
+              <div className="space-y-4 items-end grid grid-cols-3 grid-rows-2 gap-4">
                 <div className="w-full space-y-3 mt-3">
                   <Label htmlFor="client">Date : </Label>
                   <CustomDatePicker date={date} onDateChange={setDate} />
@@ -209,6 +209,14 @@ export function PaiementDialog({ isOpen, onClose, devis }) {
                       {errors.compte.message}
                     </p>
                   )}
+                </div>
+                <div className="grid w-full items-center gap-2 col-span-3">
+                  <Label htmlFor="numeroCheque">Numéro de chèque</Label>
+                  <Input
+                    {...register("numeroCheque")}
+                    className="w-full focus-visible:ring-purple-500"
+                    id="numeroCheque"
+                  />
                 </div>
               </div>
             )}

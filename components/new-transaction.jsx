@@ -51,6 +51,7 @@ export default function TransactionDialog() {
       compte: z.string().optional(),
       description: z.string().optional(),
       methodePaiement: z.string().optional(),
+      numeroCheque: z.string().optional(),
     })
     .superRefine((data, ctx) => {
       if (["recette", "depense"].includes(data.type)) {
@@ -155,11 +156,11 @@ export default function TransactionDialog() {
     console.log("Data", Data);
     if (isChecked && !isCharge) {
       console.log("enrgistrer la charge");
-      addCharges.mutate(watch("lable"));
+      //   addCharges.mutate(watch("lable"));
     }
-    createTransaction.mutate(Data);
-    setOpen(false);
-    reset();
+    // createTransaction.mutate(Data);
+    //  setOpen(false);
+    // reset();
   };
   const comptes = useQuery({
     queryKey: ["comptes"],
@@ -330,6 +331,16 @@ export default function TransactionDialog() {
                     </SelectContent>
                   </Select>
                 </div>
+                {watch("methodePaiement") === "cheque" && (
+                  <div className="grid w-full items-center gap-2 col-span-3">
+                    <Label htmlFor="numeroCheque">Numéro de chèque</Label>
+                    <Input
+                      {...register("numeroCheque")}
+                      className="w-full focus-visible:ring-purple-500"
+                      id="numeroCheque"
+                    />
+                  </div>
+                )}
                 <div className="grid w-full items-center gap-1.5">
                   <Label htmlFor="description">Description</Label>
                   <Textarea
@@ -397,24 +408,7 @@ export default function TransactionDialog() {
                   <Label htmlFor="client">Date : </Label>
                   <CustomDatePicker date={date} onDateChange={setDate} />
                 </div>
-                <div className="grid w-full items-center gap-1.5">
-                  <Label htmlFor="compte">Méthode de paiement</Label>
-                  <Select
-                    value={watch("methodePaiement")}
-                    name="methodePaiement"
-                    onValueChange={(value) =>
-                      setValue("methodePaiement", value)
-                    }
-                  >
-                    <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500 ">
-                      <SelectValue placeholder="Séléctionner..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="espece">Éspece</SelectItem>
-                      <SelectItem value="cheque">Chèque</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+
                 <div className="grid w-full items-center gap-1.5">
                   <Label htmlFor="montant">Montant</Label>
                   <Input
@@ -457,6 +451,34 @@ export default function TransactionDialog() {
                   )}
                 </div>
                 <div className="grid w-full items-center gap-1.5">
+                  <Label htmlFor="compte">Méthode de paiement</Label>
+                  <Select
+                    value={watch("methodePaiement")}
+                    name="methodePaiement"
+                    onValueChange={(value) =>
+                      setValue("methodePaiement", value)
+                    }
+                  >
+                    <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500 ">
+                      <SelectValue placeholder="Séléctionner..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="espece">Éspece</SelectItem>
+                      <SelectItem value="cheque">Chèque</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {watch("methodePaiement") === "cheque" && (
+                  <div className="grid w-full items-center gap-2 col-span-3">
+                    <Label htmlFor="numeroCheque">Numéro de chèque</Label>
+                    <Input
+                      {...register("numeroCheque")}
+                      className="w-full focus-visible:ring-purple-500"
+                      id="numeroCheque"
+                    />
+                  </div>
+                )}
+                <div className="grid w-full items-center gap-1.5">
                   <Label htmlFor="description">Description</Label>
                   <Textarea
                     {...register("description")}
@@ -482,6 +504,10 @@ export default function TransactionDialog() {
             )}
             {watch("type") === "vider" && (
               <>
+                <div className="w-full">
+                  <Label htmlFor="client">Date : </Label>
+                  <CustomDatePicker date={date} onDateChange={setDate} />
+                </div>
                 <div className="grid w-full items-center gap-1.5">
                   <Label htmlFor="montant-vider">Montant</Label>
                   <Input

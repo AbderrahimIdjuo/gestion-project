@@ -229,7 +229,7 @@ export default function CommandesAchats() {
                           <CustomTooltip message="Modifier">
                             <UpdateCommandeFournisseur commande={commande} />
                           </CustomTooltip>
-                          <CustomTooltip message="Visualiser">
+                          <CustomTooltip message="Aperçu">
                             <PreviewCommandeFournitureDialog
                               commande={commande}
                             />

@@ -124,8 +124,24 @@ export async function addtransaction(data) {
     description,
     date,
     methodePaiement,
+    numeroCheque,
   } = data;
   const result = await prisma.$transaction(async (prisma) => {
+    //Creation du chèque
+    let cheque = null;
+
+    if (methodePaiement === "cheque") {
+      cheque = await prisma.cheques.create({
+        data: {
+          type:
+            type === "depense" ? "EMIS" : type === "recette" ? "RECU" : null,
+          montant,
+          compte,
+          numero: numeroCheque,
+          dateReglement: date || null,
+        },
+      });
+    }
     await prisma.transactions.create({
       data: {
         reference: numero,
@@ -136,6 +152,11 @@ export async function addtransaction(data) {
         description,
         methodePaiement,
         date: date || new Date(),
+        cheque: cheque
+          ? {
+              connect: { id: cheque.id }, // ✅ association one-to-one
+            }
+          : undefined,
       },
     });
 

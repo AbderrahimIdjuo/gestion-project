@@ -35,7 +35,7 @@ export default function PreviewCommandeFournitureDialog({ commande }) {
 
   return (
     <>
-      <CustomTooltip message="Visualiser">
+      <CustomTooltip message="Aperçu">
         <Button
           variant="ghost"
           size="icon"

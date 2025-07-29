@@ -3,7 +3,7 @@ import prisma from "../../../lib/prisma";
 
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
-  const page = parseInt(searchParams.get("page") || "1");
+  let page = parseInt(searchParams.get("page") || "1");
   const searchQuery = searchParams.get("query") || "";
   const compte = searchParams.get("compte") || "all";
   const type = searchParams.get("type") || "all";
@@ -11,10 +11,7 @@ export async function GET(req) {
   const to = searchParams.get("to"); // End date
   const fournisseurId = searchParams.get("fournisseurId");
   const methodePaiement = searchParams.get("methodePaiement");
-  const imprimer = searchParams.get("imprimer");
   const limit = parseInt(searchParams.get("limit") || "10");
-  const skip = (page - 1) * limit;
-  const transactionsPerPage = limit;
   const filters = {};
 
   // Search filter
@@ -39,31 +36,29 @@ export async function GET(req) {
 
   // Date range filter
   if (from && to) {
-    filters.createdAt = {
+    filters.date = {
       gte: new Date(from), // Greater than or equal to "from"
       lte: new Date(to), // Less than or equal to "to"
     };
   }
 
   // Fournisseur filter
-  console.log("fournisseurId", fournisseurId);
   if (fournisseurId) {
     filters.reference = fournisseurId;
   }
+
+  const skip = (page - 1) * limit;
+  const transactionsPerPage = limit;
   // Fetch filtered transactions with pagination
   const transactions = await prisma.transactions.findMany({
     where: filters,
-    skip: imprimer ? undefined : skip,
-    take: imprimer ? undefined : limit,
-    orderBy: { updatedAt: "desc" },
+    skip: skip,
+    take: limit,
+    orderBy: { date: "desc" },
   });
 
   const totalTransactions = await prisma.transactions.count({ where: filters });
-  const totalPages = imprimer
-    ? 1
-    : Math.ceil(totalTransactions / transactionsPerPage);
-  console.log("totalPages", totalPages);
-
+  const totalPages = Math.ceil(totalTransactions / transactionsPerPage);
   return NextResponse.json({ transactions, totalPages });
 }
 
