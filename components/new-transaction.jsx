@@ -156,11 +156,11 @@ export default function TransactionDialog() {
     console.log("Data", Data);
     if (isChecked && !isCharge) {
       console.log("enrgistrer la charge");
-      //   addCharges.mutate(watch("lable"));
+      addCharges.mutate(watch("lable"));
     }
-    // createTransaction.mutate(Data);
-    //  setOpen(false);
-    // reset();
+    createTransaction.mutate(Data);
+    setOpen(false);
+    reset();
   };
   const comptes = useQuery({
     queryKey: ["comptes"],

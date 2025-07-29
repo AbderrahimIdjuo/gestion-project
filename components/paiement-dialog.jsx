@@ -54,7 +54,7 @@ export function PaiementDialog({ isOpen, onClose, devis }) {
         numero: devis.numero,
         type: "recette",
         lable: "paiement devis",
-        description: devis.numero,
+        description: devis.numero + ", client :  " + devis.client,
         date: date || new Date(),
       };
 

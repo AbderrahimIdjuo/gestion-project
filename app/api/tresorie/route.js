@@ -55,6 +55,9 @@ export async function GET(req) {
     skip: skip,
     take: limit,
     orderBy: { date: "desc" },
+    include: {
+      cheque: true,
+    },
   });
 
   const totalTransactions = await prisma.transactions.count({ where: filters });

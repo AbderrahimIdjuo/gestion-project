@@ -89,9 +89,11 @@ export default function AddBonLivraison({ lastBonLivraison }) {
   };
 
   const sousTotal = (group) => {
-    return group.items.reduce((acc, produit) => {
-      return acc + produit.quantite * produit.prixUnite;
-    }, 0).toFixed(2);
+    return group.items
+      .reduce((acc, produit) => {
+        return acc + produit.quantite * produit.prixUnite;
+      }, 0)
+      .toFixed(2);
   };
 
   const handleCreateBL = useMutation({
@@ -106,8 +108,6 @@ export default function AddBonLivraison({ lastBonLivraison }) {
         totalPaye: 0,
         bLGroups,
       };
-      console.log("### data ###", data);
-
       const loadingToast = toast.loading("Ajout du bon de livraison...");
       try {
         await axios.post("/api/bonLivraison", data);
@@ -117,6 +117,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
         throw error;
       } finally {
         toast.dismiss(loadingToast);
+        await axios.post("/api/bonLivraison/updatePrixUnite", { bLGroups }); // Mettre à jour les prix des produits séparément pour diminuer le temps de la requête
       }
     },
     onSuccess: () => {
@@ -506,11 +507,13 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                                         )
                                       }
                                       className="focus:!ring-purple-500 w-20"
-                                      
                                     />
                                   </TableCell>
                                   <TableCell>
-                                    {(item.prixUnite * item.quantite).toFixed(2)} DH
+                                    {(item.prixUnite * item.quantite).toFixed(
+                                      2
+                                    )}{" "}
+                                    DH
                                   </TableCell>
                                   <TableCell className="text-right">
                                     <div className="flex justify-end gap-1">

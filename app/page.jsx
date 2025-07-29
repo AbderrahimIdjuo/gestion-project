@@ -44,6 +44,14 @@ export default function DashboardPage() {
   const [endDate, setEndDate] = useState();
   const [periode, setPeriode] = useState("");
 
+  function formatMontant(montant) {
+    if (typeof montant !== "number") return montant;
+
+    return Math.floor(montant)
+      .toString()
+      .replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  }
+
   function getDateRangeFromPeriode(periode) {
     const now = new Date();
 
@@ -168,33 +176,6 @@ export default function DashboardPage() {
               </div>
             </div>
           )}
-
-          {/* <div className="flex gap-2 justify-between">
-            <Select>
-              <SelectTrigger className="w-full bg-white focus:ring-purple-500">
-                <SelectValue placeholder="Date" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="light">le mois dernier</SelectItem>
-                <SelectItem value="dark">les 3 derniers mois</SelectItem>
-                <SelectItem value="system">les 6 derniers mois</SelectItem>
-              </SelectContent>
-            </Select>
-          </div> */}
-          {/* <div className="flex gap-2 justify-between">
-            <CustomDateRangePicker
-              startDate={startDate}
-              setStartDate={setStartDate}
-              endDate={endDate}
-              setEndDate={setEndDate}
-            />
-            <Button
-              onClick={() => setSearche(!search)}
-              className="bg-gradient-to-tr from-fuchsia-500 via-purple-500 to-violet-500 rounded-full hover:bg-gradient-to-bl from-fuchsia-500 via-purple-500 to-violet-500  text-white  font-semibold"
-            >
-              Chercher
-            </Button>
-          </div> */}
         </div>
         <div
           className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
@@ -212,7 +193,10 @@ export default function DashboardPage() {
                 <Skeleton className="h-8 w-[200px] bg-purple-200" />
               ) : (
                 <div className="text-3xl font-bold text-white mb-3">
-                  {statistiques.data?.recettes - statistiques.data?.depenses} DH
+                  {formatMontant(
+                    statistiques.data?.recettes - statistiques.data?.depenses
+                  )}{" "}
+                  DH
                 </div>
               )}
             </CardContent>
@@ -230,7 +214,7 @@ export default function DashboardPage() {
                 <Skeleton className="h-8 w-[200px] bg-green-200" />
               ) : (
                 <div className="text-3xl font-bold text-white mb-3">
-                  {statistiques.data?.recettes} DH
+                  {formatMontant(statistiques.data?.recettes)} DH
                 </div>
               )}
             </CardContent>
@@ -248,7 +232,7 @@ export default function DashboardPage() {
                 <Skeleton className="h-8 w-[200px] bg-red-200" />
               ) : (
                 <div className="text-3xl font-bold text-white mb-3">
-                  {statistiques.data?.depenses} DH
+                  {formatMontant(statistiques.data?.depenses)} DH
                 </div>
               )}
             </CardContent>
@@ -291,19 +275,23 @@ export default function DashboardPage() {
 
           <BasicCard
             title="Caisse"
-            statistiques={statistiques.data?.caisse + " DH"}
+            statistiques={formatMontant(statistiques.data?.caisse) + " DH"}
             Icon={Wallet}
             isLoading={statistiques.isLoading || statistiques.isFetching}
           />
           <BasicCard
             title="Compte personnel"
-            statistiques={statistiques.data?.comptePersonnel + " DH"}
+            statistiques={
+              formatMontant(statistiques.data?.comptePersonnel) + " DH"
+            }
             Icon={Wallet}
             isLoading={statistiques.isLoading || statistiques.isFetching}
           />
           <BasicCard
             title="Compte professionnel"
-            statistiques={statistiques.data?.compteProfessionnel + " DH"}
+            statistiques={
+              formatMontant(statistiques.data?.compteProfessionnel) + " DH"
+            }
             Icon={Wallet}
             isLoading={statistiques.isLoading || statistiques.isFetching}
           />

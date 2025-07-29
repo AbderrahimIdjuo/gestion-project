@@ -15,91 +15,72 @@ export async function POST(req) {
       reference,
     } = response;
 
-    const result = await prisma.$transaction(async (prisma) => {
-      await prisma.bonLivraison.create({
-        data: {
-          date: date || new Date(),
-          numero,
-          total: parseFloat(total),
-          reference,
-          type,
-          statutPaiement: "impaye",
-          totalPaye: parseFloat(totalPaye) || 0,
-          fournisseur: {
-            connect: { id: fournisseurId },
-          },
-          groups: {
-            create: bLGroups.map((group) => ({
-              id: group.id,
-              devisNumero: group.devisNumber,
-              clientName: group.clientName,
-              produits: {
-                create: group.items.map((produit) => ({
-                  produit: {
-                    connect: { id: produit.id },
-                  },
-                  quantite: parseFloat(produit.quantite),
-                  prixUnite: parseFloat(produit.prixUnite),
-                })),
-              },
-            })),
-          },
-        },
-      });
-
-      // Mettre à jour la dette du fournisseur
-      await prisma.fournisseurs.update({
-        where: { id: fournisseurId },
-        data: {
-          dette:
-            type === "achats"
-              ? { increment: parseFloat(total) }
-              : type === "retour" && { decrement: parseFloat(total) },
-        },
-      });
-
-      const DevisNumbers = bLGroups
-        .map((g) => g.devisNumber)
-        .filter((num) => num !== null && num !== undefined);
-
-      if (DevisNumbers.length > 0) {
-        await prisma.devis.updateMany({
-          where: {
-            numero: { in: DevisNumbers },
-          },
+    const result = await prisma.$transaction(
+      async (prisma) => {
+        await prisma.bonLivraison.create({
           data: {
-            statut: "Accepté",
+            date: date || new Date(),
+            numero,
+            total: parseFloat(total),
+            reference,
+            type,
+            statutPaiement: "impaye",
+            totalPaye: parseFloat(totalPaye) || 0,
+            fournisseur: {
+              connect: { id: fournisseurId },
+            },
+            groups: {
+              create: bLGroups.map((group) => ({
+                id: group.id,
+                devisNumero: group.devisNumber,
+                clientName: group.clientName,
+                produits: {
+                  create: group.items.map((produit) => ({
+                    produit: {
+                      connect: { id: produit.id },
+                    },
+                    quantite: parseFloat(produit.quantite),
+                    prixUnite: parseFloat(produit.prixUnite),
+                  })),
+                },
+              })),
+            },
           },
         });
-      }
+        // Mettre à jour la dette du fournisseur
+        await prisma.fournisseurs.update({
+          where: { id: fournisseurId },
+          data: {
+            dette:
+              type === "achats"
+                ? { increment: parseFloat(total) }
+                : type === "retour" && { decrement: parseFloat(total) },
+          },
+        });
+        // Mettre à jour les devis liés aux groupes de BL
+        const DevisNumbers = bLGroups
+          .map((g) => g.devisNumber)
+          .filter((num) => num !== null && num !== undefined);
 
-      // Mettre a jour les prixUnite des produits dans la CMDF
-
-      // Étape 1 : Créer une map pour un accès rapide au nouveau prix
-      const produits = bLGroups.flatMap((group) => group.items);
-      const prixMap = new Map(produits.map((p) => [p.id, p.prixUnite]));
-
-      // Étape 2 : Mettre à jour chaque blGroupsProduits concerné
-      const updates = [];
-
-      // mettre a jours le prix achats des produits
-
-      for (const produit of produits) {
-        const nouveauPrix = prixMap.get(produit.id);
-        if (nouveauPrix !== undefined) {
-          updates.push(
-            prisma.produits.update({
-              where: { id: produit.id },
-              data: { prixAchat: nouveauPrix },
-            })
-          );
+        if (DevisNumbers.length > 0) {
+          await prisma.devis.updateMany({
+            where: {
+              numero: { in: DevisNumbers },
+            },
+            data: {
+              statut: "Accepté",
+            },
+          });
         }
+      },
+      {
+        // Temps max d’exécution de la transaction
+        timeout: 15_000, // 15 s (par défaut 5_000 ms)
+        // Temps max d’attente avant de démarrer (connexion/locks)
+        maxWait: 5_000, // optionnel
+        // isolationLevel: "ReadCommitted", // optionnel
       }
-
-      // Étape 3 : Exécuter toutes les mises à jour
-      await Promise.all(updates);
-    });
-
+    );
     return NextResponse.json({ result });
   } catch (error) {
     console.error("Error creating BL:", error);

@@ -38,6 +38,7 @@ import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
+import CustomTooltip from "@/components/customUi/customTooltip";
 import {
   Popover,
   PopoverContent,
@@ -61,6 +62,10 @@ type Transaction = {
   description: string;
   methodePaiement: string;
   date: string;
+  cheque: {
+    numero: string;
+    dateReglement : string,
+  };
 };
 
 type Fournisseur = {
@@ -135,6 +140,7 @@ export default function Banques() {
           methodePaiement: filters.methodePaiement,
         },
       });
+      console.log("transactions:  ", response.data.transactions);
       setTotalPages(response.data.totalPages);
       return response.data.transactions;
     },
@@ -198,6 +204,63 @@ export default function Banques() {
       };
     }
   };
+ const handleChequeClick = (transaction: Transaction) => {
+  if (transaction.methodePaiement === "cheque") {
+    let beneficiaire ="Inconnu"
+if (transaction.description.includes("bénéficiaire")){
+ beneficiaire = transaction.description
+      ?.replace(/bénéficiaire\s*:/i, "") // plus flexible
+      .trim() 
+} else if (transaction.description.includes("DEV")) {
+  beneficiaire = "ste.OUDAOUDOX " 
+}
+
+   ;
+
+    const numeroCheque = transaction.cheque?.numero || "Inconnu";
+ const montant = transaction.montant || "Inconnu";
+ const dateRegelemen = transaction.cheque.dateReglement || "Inconnu";
+  const compte = transaction.compte || "Inconnu";
+
+    toast(
+      (t) => (
+        <div className="flex flex-col gap-4 justify-start items-center ">
+          <div className="flex flex-col  text-sm w-full">
+            <span>
+              Bénéficiaire: <b>{beneficiaire}</b>
+            </span>
+            <span>
+              Montant: <b>{montant}</b>
+            </span>
+              <span>
+              Date de réglement: <b>{formatDate(dateRegelemen)}</b>
+            </span>
+              <span>
+              Compte: <b>{compte}</b>
+            </span>
+            <span>
+              Numéro de chèque: <b>{numeroCheque}</b>
+            </span>
+          </div>
+
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="ml-auto text-white bg-purple-500 px-3 py-1 rounded hover:bg-purple-600 text-sm"
+          >
+            Fermer
+          </button>
+        </div>
+      ),
+      {
+        style: {
+          padding: "12px",
+          backgroundColor: "#f9f9f9",
+        },
+        duration: 50000,
+      }
+    );
+  }
+};
 
   return (
     <>
@@ -496,12 +559,20 @@ export default function Banques() {
                             {handleTypeLableColor(transaction.type).lable}
                           </span>
                         </TableCell>
-                        <TableCell className="font-medium py-0">
+
+                        <TableCell
+                          onClick={() => handleChequeClick(transaction)}
+                          className={`font-medium py-0 ${
+                            transaction.methodePaiement === "cheque" &&
+                            "cursor-pointer"
+                          }`}
+                        >
                           {transaction.methodePaiement === "espece"
                             ? "Espèce"
                             : transaction.methodePaiement === "cheque" &&
                               "Chèque"}
                         </TableCell>
+
                         <TableCell className="font-medium py-0">
                           {transaction.compte}
                         </TableCell>
