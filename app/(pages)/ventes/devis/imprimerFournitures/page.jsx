@@ -31,6 +31,7 @@ export default function DevisPDFPage() {
     const storedBLGroups = localStorage.getItem("bLGroups");
     if (storedDevis) {
       setDevis(JSON.parse(storedDevis));
+      console.log("Devis:", JSON.parse(storedDevis));
     }
     if (storedBLGroups) {
       setBLGroups(JSON.parse(storedBLGroups));
@@ -62,8 +63,8 @@ export default function DevisPDFPage() {
               <EnteteDevis />
               {/* Company and Client Info */}
               {infosVisibilite ? (
-                <div className="flex justify-between px-4">
-                  <div>
+                <div className="grid grid-flow-col auto-cols-max justify-between">
+                  <div id="1st-col">
                     <h3 className="font-semibold text-gray-900 mb-2">
                       STE OUDAOUDOX SARL
                     </h3>
@@ -74,9 +75,10 @@ export default function DevisPDFPage() {
                       <p>E-mail : inoxoudaoud@gmail.com</p>
                     </div>
                   </div>
-                  <div className="grid grid-rows-2 gap-4">
+
+                  <div id="2nd-col" className="flex flex-col justify-between">
                     <div>
-                      <h3 className="font-semibold text-gray-900 mb-2">
+                      <h3 className="font-semibold text-gray-900 mb-1">
                         Client:
                       </h3>
                       <div className="text-sm text-gray-600">
@@ -86,44 +88,46 @@ export default function DevisPDFPage() {
                         </p>
                       </div>
                     </div>
-                    <div className="col-span-1">
-                      <h3 className="font-semibold text-gray-900 mb-2">
+                    <div className="col-span-1 ">
+                      <h3 className="font-semibold text-gray-900 mb-1">
                         Devis N° : {devis?.numero}
                       </h3>
                       <div className="text-sm text-gray-600">
                         <p>Date : {formatDate(devis?.createdAt)} </p>
                       </div>
                     </div>
+                  </div>
+                  <div id="3rd-col" className="flex flex-col justify-between">
+                    <div>
+                      <h3 className="font-semibold text-gray-900 mb-2">
+                        Total de Devis :{" "}
+                        <span className="font-normal text-gray-600 mb-2">
+                          {devis?.total} DH
+                        </span>
+                      </h3>
+                    </div>
                     <div>
                       <h3 className="font-semibold text-gray-900 mb-2">
                         Total de fournitures :
+                        <span className="font-normal text-gray-600 mb-2">
+                          {totalFourniture(bLGroups)} DH
+                        </span>
                       </h3>
-                      <div className="text-sm text-gray-600">
-                        <p>{totalFourniture(bLGroups)} DH</p>
-                      </div>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900 mb-2">
+                        Marge :
+                        <span className="font-normal text-gray-600 mb-2">
+                          {devis?.total - totalFourniture(bLGroups)} DH
+                        </span>
+                      </h3>
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="flex justify-between  gap-4">
-                  <div className="col-span-1">
-                    <h3 className="font-semibold text-gray-900 mb-2">
-                      Devis N° : {devis?.numero}
-                    </h3>
-                    <div className="text-sm text-gray-600">
-                      <p>Date : {formatDate(devis?.createdAt)} </p>
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">
-                      Total de fournitures :
-                    </h3>
-                    <div className="text-sm text-gray-600">
-                      <p>{totalFourniture(bLGroups)} DH</p>
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">
+                <div className="grid grid-flow-col auto-cols-max justify-between">
+                  <div id="1st-col">
+                    <h3 className="font-semibold text-gray-900 mb-1">
                       Client:
                     </h3>
                     <div className="text-sm text-gray-600">
@@ -132,6 +136,40 @@ export default function DevisPDFPage() {
                         {devis?.client.nom.toUpperCase()}
                       </p>
                     </div>
+                  </div>
+                  <div id="2nd-col" >
+                    <h3 className="font-semibold text-gray-900 mb-1">
+                      Devis N° : {devis?.numero}
+                    </h3>
+                    <div className="text-sm text-gray-600">
+                      <p>Date : {formatDate(devis?.createdAt)} </p>
+                    </div>
+                  </div>
+                  <div id="3rd-col" className="flex flex-col justify-between">
+                    <div>
+                      <h3 className="font-semibold text-gray-900 mb-2">
+                        Total de Devis :{" "}
+                        <span className="font-normal text-gray-600 mb-2">
+                          {devis?.total} DH
+                        </span>
+                      </h3>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900 mb-2">
+                        Total de fournitures :
+                        <span className="font-normal text-gray-600 mb-2">
+                          {totalFourniture(bLGroups)} DH
+                        </span>
+                      </h3>
+                    </div>
+                  </div>
+                  <div id="4th-col">
+                    <h3 className="font-semibold text-gray-900 mb-2">
+                      Marge :
+                      <span className="font-normal text-gray-600 mb-2">
+                        {devis?.total - totalFourniture(bLGroups)} DH
+                      </span>
+                    </h3>
                   </div>
                 </div>
               )}

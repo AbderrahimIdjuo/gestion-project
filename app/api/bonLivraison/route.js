@@ -75,7 +75,7 @@ export async function POST(req) {
       },
       {
         // Temps max d’exécution de la transaction
-        timeout: 15_000, // 15 s (par défaut 5_000 ms)
+        timeout: 60_000, // 15 s (par défaut 5_000 ms)
         // Temps max d’attente avant de démarrer (connexion/locks)
         maxWait: 5_000, // optionnel
         // isolationLevel: "ReadCommitted", // optionnel
@@ -281,7 +281,7 @@ export async function GET(req) {
         where: filters,
         skip: (page - 1) * bonLivraisonPerPage,
         take: bonLivraisonPerPage,
-        orderBy: { createdAt: "desc" },
+        orderBy: { date: "desc" },
         include: {
           fournisseur: {
             select: {

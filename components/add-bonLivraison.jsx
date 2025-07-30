@@ -117,13 +117,13 @@ export default function AddBonLivraison({ lastBonLivraison }) {
         throw error;
       } finally {
         toast.dismiss(loadingToast);
-        await axios.post("/api/bonLivraison/updatePrixUnite", { bLGroups }); // Mettre à jour les prix des produits séparément pour diminuer le temps de la requête
       }
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       setIsDialogOpen(false);
       resetDialog();
       queryClient.invalidateQueries({ queryKey: ["bonLivraison"] });
+      await axios.post("/api/bonLivraison/updatePrixUnite", { bLGroups }); // Mettre à jour les prix des produits séparément pour diminuer le temps de la requête
     },
   });
   //////////////Fonction pour gérer la sélection des Groupes de BL//////////////

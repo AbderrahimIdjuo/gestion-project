@@ -5,7 +5,6 @@ export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const statutPaiement = searchParams.get("statutPaiement");
   const type = searchParams.get("type");
- // const periode = searchParams.get("periode");
   const fournisseurId = searchParams.get("fournisseurId");
   const from = searchParams.get("from");
   const to = searchParams.get("to");
@@ -32,6 +31,7 @@ export async function GET(req) {
   if (fournisseurId) {
     filters.fournisseurId = fournisseurId;
   }
+  
 
   // ✅ Filtrer par période (createdAt entre from et to)
   if (from && to) {
@@ -40,11 +40,11 @@ export async function GET(req) {
       lte: new Date(to),
     };
   }
-
+console.log("Filters applied:", filters);
   // Fetch filtered BL
   const bonLivraison = await prisma.bonLivraison.findMany({
     where: filters,
-    orderBy: { createdAt: "desc" },
+    orderBy: { date: "desc" },
     include: {
       fournisseur: {
         select: {

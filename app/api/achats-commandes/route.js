@@ -6,39 +6,51 @@ export async function POST(req) {
     const response = await req.json();
     const { date, numero, fournisseurId, orderGroups } = response;
     const DevisNumbers = orderGroups.map((g) => g.devisNumber);
-    await prisma.devis.updateMany({
-      where: {
-        numero: { in: DevisNumbers },
-      },
-      data: {
-        statut: "Accepté",
-      },
-    });
-    const result = await prisma.commandeFourniture.create({
-      data: {
-        date,
-        numero,
-        fournisseur: {
-          connect: { id: fournisseurId },
-        },
-        groups: {
-          create: orderGroups.map((group) => ({
-            id: group.id,
-            devisNumero: group.devisNumber, // commandeNumero = devisNumber
-            clientName: group.clientName,
-            produits: {
-              create: group.items.map((produit) => ({
-                produit: {
-                  connect: { id: produit.id },
+
+    const result = await prisma.$transaction(
+      async (prisma) => {
+        await prisma.devis.updateMany({
+          where: {
+            numero: { in: DevisNumbers },
+          },
+          data: {
+            statut: "Accepté",
+          },
+        });
+        await prisma.commandeFourniture.create({
+          data: {
+            date,
+            numero,
+            fournisseur: {
+              connect: { id: fournisseurId },
+            },
+            groups: {
+              create: orderGroups.map((group) => ({
+                id: group.id,
+                devisNumero: group.devisNumber, // commandeNumero = devisNumber
+                clientName: group.clientName,
+                produits: {
+                  create: group.items.map((produit) => ({
+                    produit: {
+                      connect: { id: produit.id },
+                    },
+                    quantite: parseFloat(produit.quantite),
+                    prixUnite: parseFloat(produit.prixUnite),
+                  })),
                 },
-                quantite: parseFloat(produit.quantite),
-                prixUnite: parseFloat(produit.prixUnite),
               })),
             },
-          })),
-        },
+          },
+        });
       },
-    });
+      {
+        // Temps max d’exécution de la transaction
+        timeout: 60_000, // 15 s (par défaut 5_000 ms)
+        // Temps max d’attente avant de démarrer (connexion/locks)
+        maxWait: 5_000, // optionnel
+        // isolationLevel: "ReadCommitted", // optionnel
+      }
+    );
 
     return NextResponse.json({ result });
   } catch (error) {

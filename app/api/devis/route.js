@@ -18,35 +18,44 @@ export async function POST(req) {
       echeance,
     } = resopns;
 
-    const result = await prisma.$transaction(async (prisma) => {
-      await prisma.devis.create({
-        data: {
-          numero,
-          clientId,
-          statut,
-          sousTotal,
-          tva: parseFloat(tva),
-          reduction,
-          total,
-          typeReduction,
-          note,
-          echeance,
-          articls: {
-            create: articls.map((articl) => ({
-              key: articl.key, //permet de supprimer un articl doublon
-              height: articl.height || 0,
-              length: articl.length || 0,
-              unite: articl.unite || "U",
-              width: articl.width || 0,
-              designation: articl.designation,
-              quantite: articl.quantite,
-              prixUnite: articl.prixUnite || 0,
-              montant: articl.quantite * articl.prixUnite,
-            })),
+    const result = await prisma.$transaction(
+      async (prisma) => {
+        await prisma.devis.create({
+          data: {
+            numero,
+            clientId,
+            statut,
+            sousTotal,
+            tva: parseFloat(tva),
+            reduction,
+            total,
+            typeReduction,
+            note,
+            echeance,
+            articls: {
+              create: articls.map((articl) => ({
+                key: articl.key, //permet de supprimer un articl doublon
+                height: articl.height || 0,
+                length: articl.length || 0,
+                unite: articl.unite || "U",
+                width: articl.width || 0,
+                designation: articl.designation,
+                quantite: articl.quantite,
+                prixUnite: articl.prixUnite || 0,
+                montant: articl.quantite * articl.prixUnite,
+              })),
+            },
           },
-        },
-      });
-    });
+        });
+      },
+      {
+        // Temps max d’exécution de la transaction
+        timeout: 60_000, // 15 s (par défaut 5_000 ms)
+        // Temps max d’attente avant de démarrer (connexion/locks)
+        maxWait: 5_000, // optionnel
+        // isolationLevel: "ReadCommitted", // optionnel
+      }
+    );
     return NextResponse.json({ result });
   } catch (error) {
     console.error("Error:", error);
