@@ -204,16 +204,36 @@ export default function DevisPage() {
     { value: "Expiré", lable: "Expiré", color: "gray-500" },
   ];
 
-  const totalCommandeFourniture = (produits) => {
-    return produits?.reduce((acc, produit) => {
-      return acc + produit.quantite * produit.prixUnite;
-    }, 0);
-  };
-  const totalFourniture = (group) => {
-    return group?.reduce((acc, order) => {
-      return acc + totalCommandeFourniture(order.produits);
-    }, 0);
-  };
+  // const totalBlFourniture = (produits) => {
+  //   return produits?.reduce((acc, produit) => {
+  //     return acc + produit.quantite * produit.prixUnite;
+  //   }, 0);
+  // };
+  // const totalFourniture = (group) => {
+  //   return group?.reduce((acc, order) => {
+  //     return acc + totalBlFourniture(order.produits);
+  //   }, 0);
+  // };
+
+  const totalBlFourniture = (produits) => {
+  return produits?.reduce((acc, produit) => {
+    return acc + produit.quantite * produit.prixUnite;
+  }, 0);
+};
+
+const totalFourniture = (group) => {
+  return group?.reduce((acc, item) => {
+    const type = item?.bonLivraison?.type;
+
+    if (type === "achats") {
+      return acc + totalBlFourniture(item.produits);
+    } else if (type === "retour") {
+      return acc - totalBlFourniture(item.produits);
+    }
+
+    return acc; // si type inconnu
+  }, 0);
+};
 
   const filteredOrders = (numero) => {
     const list = ordersGroups?.filter((order) => {

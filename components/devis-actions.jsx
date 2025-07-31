@@ -128,12 +128,12 @@ export function DevisActions({
         isOpen={isBankDialogOpen}
         onClose={() => setIsBankDialogOpen(false)}
       />
-      <FournitureDialog
+      {/* <FournitureDialog
         devis={devis}
         isOpen={isFournitureOpen}
         onClose={() => setIsFournitureOpen(false)}
         bLGroups={bLGroups}
-      />
+      /> */}
       <FactureDialog
         devis={devis}
         isOpen={isFactureOpen}

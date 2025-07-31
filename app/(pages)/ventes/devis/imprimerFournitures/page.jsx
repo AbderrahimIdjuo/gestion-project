@@ -35,6 +35,7 @@ export default function DevisPDFPage() {
     }
     if (storedBLGroups) {
       setBLGroups(JSON.parse(storedBLGroups));
+      console.log("BLGroups:", JSON.parse(storedBLGroups));
     }
   }, []);
 
@@ -42,14 +43,23 @@ export default function DevisPDFPage() {
     window.print();
   };
 
-  const totalCommandeFourniture = (produits) => {
+  const totalBlFourniture = (produits) => {
     return produits?.reduce((acc, produit) => {
       return acc + produit.quantite * produit.prixUnite;
     }, 0);
   };
+
   const totalFourniture = (group) => {
-    return group?.reduce((acc, order) => {
-      return acc + totalCommandeFourniture(order.produits);
+    return group?.reduce((acc, item) => {
+      const type = item?.bonLivraison?.type;
+
+      if (type === "achats") {
+        return acc + totalBlFourniture(item.produits);
+      } else if (type === "retour") {
+        return acc - totalBlFourniture(item.produits);
+      }
+
+      return acc; // si type inconnu
     }, 0);
   };
   return (
@@ -90,11 +100,19 @@ export default function DevisPDFPage() {
                     </div>
                     <div className="col-span-1 ">
                       <h3 className="font-semibold text-gray-900 mb-1">
-                        Devis N° : {devis?.numero}
+                        Devis N° :{" "}
+                        <span className="font-normal text-gray-600 mb-2">
+                          {devis?.numero}{" "}
+                        </span>
                       </h3>
-                      <div className="text-sm text-gray-600">
-                        <p>Date : {formatDate(devis?.createdAt)} </p>
-                      </div>
+
+                      <h3 className="font-semibold text-gray-900 mb-1">
+                        Date :
+                        <span className="font-normal text-gray-600 mb-2">
+                          {" "}
+                          {formatDate(devis?.createdAt)}{" "}
+                        </span>
+                      </h3>
                     </div>
                   </div>
                   <div id="3rd-col" className="flex flex-col justify-between">
@@ -137,13 +155,21 @@ export default function DevisPDFPage() {
                       </p>
                     </div>
                   </div>
-                  <div id="2nd-col" >
+                  <div id="2nd-col">
                     <h3 className="font-semibold text-gray-900 mb-1">
-                      Devis N° : {devis?.numero}
+                      Devis N° :{" "}
+                      <span className="font-normal text-gray-600 mb-2">
+                        {devis?.numero}{" "}
+                      </span>
                     </h3>
-                    <div className="text-sm text-gray-600">
-                      <p>Date : {formatDate(devis?.createdAt)} </p>
-                    </div>
+
+                    <h3 className="font-semibold text-gray-900 mb-1">
+                      Date :
+                      <span className="font-normal text-gray-600 mb-2">
+                        {" "}
+                        {formatDate(devis?.createdAt)}{" "}
+                      </span>
+                    </h3>
                   </div>
                   <div id="3rd-col" className="flex flex-col justify-between">
                     <div>
@@ -185,10 +211,17 @@ export default function DevisPDFPage() {
                             {groupe?.bonLivraison?.fournisseur.nom}
                           </p>
                         </div>
-                        <div>
-                          <p className="font-semibold">
-                            {groupe?.bonLivraison?.numero}
-                          </p>
+                        <div className="flex items-center gap-6">
+                          <div>
+                            <p className="font-semibold">
+                              {groupe?.bonLivraison?.numero}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="font-semibold">
+                              {groupe?.bonLivraison?.type.toUpperCase()}
+                            </p>
+                          </div>
                         </div>
                       </div>
                       {groupe.produits.length > 0 && (
@@ -246,7 +279,7 @@ export default function DevisPDFPage() {
                                   Total :
                                 </TableCell>
                                 <TableCell className=" border-zinc-500 text-lg  p-1 text-left font-bold">
-                                  {totalCommandeFourniture(groupe.produits)} DH
+                                  {totalBlFourniture(groupe.produits)} DH
                                 </TableCell>
                               </TableRow>
                             </TableFooter>
@@ -261,69 +294,6 @@ export default function DevisPDFPage() {
                   aucune commande trouvé
                 </div>
               )}
-
-              {/* {listProduits.length > 0 && (
-                <div className="overflow-hidden rounded-md border border-zinc-500 mt-0">
-                  <Table className="w-full border-collapse">
-                    <TableHeader className="text-[1rem] border-none">
-                      <TableRow className="!py-0">
-                        <TableHead className="text-sm  border-b border-zinc-500 text-black font-medium text-left !py-0">
-                          #
-                        </TableHead>
-                        <TableHead className="text-sm  border-b border-zinc-500 text-black font-medium text-left !py-0">
-                          Produit
-                        </TableHead>
-                        <TableHead className="text-sm  border-b border-zinc-500 text-black font-medium  text-center !py-0">
-                          Qté
-                        </TableHead>
-                        <TableHead className="text-sm  border-b border-zinc-500 text-black font-medium  text-center !py-0">
-                          Prix unitaire
-                        </TableHead>
-                        <TableHead className="text-sm  border-b border-zinc-500 text-black font-medium  text-center !py-0">
-                          Montant
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {listProduits.map((produit, index) => (
-                        <TableRow
-                          key={produit.id || index}
-                          className="border-none"
-                        >
-                          <TableCell className="p-1 text-left  border-t border-zinc-500 text-md font-semibold pl-4">
-                            {index + 1}
-                          </TableCell>
-                          <TableCell className="p-1 text-left  border-t border-zinc-500 text-md font-semibold p-0">
-                            {produit.produit.designation}
-                          </TableCell>
-                          <TableCell className=" p-1  border-t border-zinc-500 text-center p-0">
-                            {produit.quantite}
-                          </TableCell>
-                          <TableCell className="  border-t border-zinc-500  p-1 text-center p-0">
-                            {produit.prixUnite} DH{" "}
-                          </TableCell>
-                          <TableCell className="  border-t border-zinc-500  p-1 text-center p-0">
-                            {produit.quantite * produit.prixUnite} DH{" "}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                    <TableFooter className="font-medium border-zinc-500  ">
-                      <TableRow>
-                        <TableCell
-                          colSpan={4}
-                          className=" p-1 text-right text-lg font-bold"
-                        >
-                          Total :
-                        </TableCell>
-                        <TableCell className=" border-zinc-500 text-lg  p-1 text-left font-bold">
-                          {totalCommandeFourniture(listProduits)} DH
-                        </TableCell>
-                      </TableRow>
-                    </TableFooter>
-                  </Table>
-                </div>
-              )} */}
             </div>
             <div>
               <h3 className=" w-full border rounded-xl font-semibold text-end text-xl text-gray-900 mb-2 p-4 my-2">

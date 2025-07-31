@@ -10,22 +10,25 @@ export async function POST(req) {
       fournisseurId,
       bLGroups,
       total,
-      totalPaye,
       type,
       reference,
+      statutPaiement,
+      montantPaye,
+      compte,
+      fournisseurNom,
     } = response;
 
     const result = await prisma.$transaction(
       async (prisma) => {
-        await prisma.bonLivraison.create({
+        const bonLivraison = await prisma.bonLivraison.create({
           data: {
             date: date || new Date(),
             numero,
             total: parseFloat(total),
             reference,
             type,
-            statutPaiement: "impaye",
-            totalPaye: parseFloat(totalPaye) || 0,
+            statutPaiement: statutPaiement || "impaye",
+            totalPaye: parseFloat(montantPaye) || 0,
             fournisseur: {
               connect: { id: fournisseurId },
             },
@@ -47,16 +50,44 @@ export async function POST(req) {
             },
           },
         });
+
+        // creation de la transaction
+        if (statutPaiement !== "impaye") {
+          await prisma.transactions.create({
+            data: {
+              reference: bonLivraison.id,
+              type: "depense",
+              montant:
+                statutPaiement === "enPartie"
+                  ? parseFloat(montantPaye)
+                  : parseFloat(total),
+              compte,
+              lable: "paiement du :" + numero,
+              description: "bénéficiaire :" + fournisseurNom,
+              methodePaiement: "espece",
+              date: date || new Date(),
+            },
+          });
+
+          // Mise à jour d'un compte bancaire
+          await prisma.comptesBancaires.updateMany({
+            where: { compte: compte },
+            data: {
+              solde: { decrement: montantPaye },
+            },
+          });
+        }
         // Mettre à jour la dette du fournisseur
         await prisma.fournisseurs.update({
           where: { id: fournisseurId },
           data: {
             dette:
               type === "achats"
-                ? { increment: parseFloat(total) }
+                ? { increment: parseFloat(total) - parseFloat(montantPaye) }
                 : type === "retour" && { decrement: parseFloat(total) },
           },
         });
+
         // Mettre à jour les devis liés aux groupes de BL
         const DevisNumbers = bLGroups
           .map((g) => g.devisNumber)
@@ -211,6 +242,33 @@ export async function PUT(req) {
         },
       },
     });
+
+    const difference = parseFloat(total) - parseFloat(existing.total) ;
+
+    let detteUpdate = {};
+
+    if (type === "achats") {
+      if (difference > 0) {
+        detteUpdate = { increment: difference };
+      } else if (difference < 0) {
+        detteUpdate = { decrement: -difference };
+      }
+    } else if (type === "retour") {
+      if (difference > 0) {
+        detteUpdate = { decrement: difference };
+      } else if (difference < 0) {
+        detteUpdate = { increment: -difference };
+      }
+    }
+
+    if (Object.keys(detteUpdate).length > 0) {
+      await prisma.fournisseurs.update({
+        where: { id: fournisseurId },
+        data: {
+          dette: detteUpdate,
+        },
+      });
+    }
 
     return NextResponse.json({ result });
   } catch (error) {

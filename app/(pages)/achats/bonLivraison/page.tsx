@@ -60,7 +60,7 @@ export default function BonLivraison() {
     statutPaiement: "",
     montant: [0, typeof maxMontant === "number" ? maxMontant : 0],
   });
-  const deleteDevi = useDeleteBonLivraison();
+  const deleteBonLivraison = useDeleteBonLivraison();
   useEffect(() => {
     setFilters((prev) => ({
       ...prev,
@@ -317,7 +317,7 @@ export default function BonLivraison() {
         onClose={() => setDeleteDialogOpen(false)}
         onConfirm={() => {
           setDeleteDialogOpen(false);
-          deleteDevi.mutate(currentBL);
+          deleteBonLivraison.mutate(currentBL);
         }}
       />
       <PreviewBonLivraisonDialog

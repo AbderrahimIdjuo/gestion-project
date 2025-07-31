@@ -272,6 +272,7 @@ export async function GET(req) {
               nom: true,
             },
           },
+          type: true,
         },
       },
       produits: {

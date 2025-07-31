@@ -421,7 +421,7 @@ export default function UpdateDevisPage({ params }) {
                               <TableCell>
                                 <Input
                                   defaultValue={item.quantite}
-                                  type="number"
+                                 // type="number"
                                   min={1}
                                   onChange={(e) =>
                                     handleItemChange(

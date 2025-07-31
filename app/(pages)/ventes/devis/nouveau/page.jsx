@@ -427,18 +427,21 @@ export default function NouveauDevisPage() {
                               <TableCell>
                                 <Input
                                   defaultValue={item.quantite}
-                                  type="number"
-                                  min={1}
                                   onChange={(e) =>
                                     handleItemChange(
                                       item.key,
                                       "quantite",
-                                      Number(e.target.value)
+                                      validateFloat(e.target.value)
                                     )
                                   }
                                   className="focus:!ring-purple-500 w-20"
                                 />
                               </TableCell>
+                              {errors.articls?.[index]?.quantite && (
+                                <p className="text-xs text-red-500 mt-1">
+                                  {errors.articls[index].quantite.message}
+                                </p>
+                              )}
                               <TableCell>
                                 <Input
                                   defaultValue={item.prixUnite}

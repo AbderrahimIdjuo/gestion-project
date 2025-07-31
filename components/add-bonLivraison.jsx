@@ -39,7 +39,7 @@ import {
 import axios from "axios";
 import { AddButton } from "@/components/customUi/styledButton";
 import { CustomDatePicker } from "@/components/customUi/customDatePicker";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 
 export default function AddBonLivraison({ lastBonLivraison }) {
@@ -48,6 +48,9 @@ export default function AddBonLivraison({ lastBonLivraison }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [reference, setReference] = useState("");
   const [type, setType] = useState();
+  const [statutPaiement, setStatutPaiement] = useState("impaye");
+  const [montantPaye, setMontantPaye] = useState("");
+  const [compte, setCompte] = useState("");
   const [isArticleDialogOpen, setIsArticleDialogOpen] = useState(false);
   const [selectedFournisseur, setSelectedFournisseur] = useState(null);
   const [bLGroups, setBLGroups] = useState([]);
@@ -103,11 +106,17 @@ export default function AddBonLivraison({ lastBonLivraison }) {
         date,
         reference,
         fournisseurId: selectedFournisseur.id,
+        fournisseurNom: selectedFournisseur.nom,
         total: total().toFixed(2),
         type,
         totalPaye: 0,
         bLGroups,
+        statutPaiement,
+        compte,
+        montantPaye,
       };
+      console.log("data : ", data);
+
       const loadingToast = toast.loading("Ajout du bon de livraison...");
       try {
         await axios.post("/api/bonLivraison", data);
@@ -173,11 +182,6 @@ export default function AddBonLivraison({ lastBonLivraison }) {
     setBLGroups((prev) =>
       prev.map((group) => {
         if (group.id === groupId) {
-          // const existingIds = new Set(group.items.map((item) => item.id));
-          // const filteredArticles = newArticles.filter(
-          //   (article) => !existingIds.has(article.id)
-          // );
-
           return {
             ...group,
             items: [
@@ -274,6 +278,15 @@ export default function AddBonLivraison({ lastBonLivraison }) {
     }
     return parsed;
   };
+
+  const comptes = useQuery({
+    queryKey: ["comptes"],
+    queryFn: async () => {
+      const response = await axios.get("/api/comptesBancaires");
+      const comptes = response.data.comptes;
+      return comptes;
+    },
+  });
   return (
     <div className="">
       <div className="flex items-center justify-between">
@@ -304,7 +317,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
 
             {currentStep === 1 && (
               <div className="space-y-6">
-                <div className="grid grid-cols-2 grid-rows-2 gap-3">
+                <div className="grid grid-cols-3 grid-rows-2 gap-3">
                   <div className="w-full space-y-2">
                     <Label htmlFor="client">Date : </Label>
                     <CustomDatePicker date={date} onDateChange={setDate} />
@@ -348,6 +361,67 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                       setFournisseur={setSelectedFournisseur}
                     />
                   </div>
+                  <div className="w-full space-y-2">
+                    <Label className="text-sm font-medium block pt-1">
+                      Statut de paiement
+                    </Label>
+                    <Select
+                      value={statutPaiement}
+                      onValueChange={(value) => setStatutPaiement(value)}
+                    >
+                      <SelectTrigger className="w-full col-span-3 bg-white focus:ring-purple-500">
+                        <SelectValue placeholder="Séléctionnez ..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectItem value="impaye">Impayé</SelectItem>
+                          <SelectItem value="paye">Payé</SelectItem>
+                          <SelectItem value="enPartie">En partie</SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {statutPaiement !== "impaye" && (
+                    <div className="grid w-full items-center gap-1.5">
+                      <Label htmlFor="compte">Compte bancaire</Label>
+                      <Select
+                        value={compte}
+                        name="compte"
+                        onValueChange={(value) => setCompte(value)}
+                      >
+                        <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500 mt-2">
+                          <SelectValue placeholder="Séléctionner..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {comptes.data?.map((element) => (
+                            <SelectItem key={element.id} value={element.compte}>
+                              <div className="flex items-center gap-2">
+                                {element.compte}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  {statutPaiement === "enPartie" && (
+                    <>
+                      <div className="w-full space-y-2">
+                        <Label className="text-sm font-medium block pt-1">
+                          Montant payé
+                        </Label>
+                        <Input
+                          id="montantPaye"
+                          value={montantPaye}
+                          onChange={(e) => {
+                            setMontantPaye(Number(e.target.value));
+                          }}
+                          className="col-span-3 focus:!ring-purple-500 "
+                          spellCheck={false}
+                        />
+                      </div>{" "}
+                    </>
+                  )}
                 </div>
               </div>
             )}

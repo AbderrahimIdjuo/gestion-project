@@ -119,6 +119,27 @@ export async function DELETE(req) {
         data: { dette: { increment: deletedTransaction.montant } },
       });
     }
+    if (deletedTransaction.lable.includes("paiement du :BL")) {
+      const bonLivraison = await prisma.bonLivraison.update({
+        where: { id: deletedTransaction.reference },
+        data: { totalPaye: { decrement: deletedTransaction.montant } },
+      });
+
+      if (bonLivraison.totalPaye === 0) {
+        await prisma.bonLivraison.update({
+          where: { id: bonLivraison.id },
+          data: { statutPaiement: "impaye" },
+        });
+      } else if (
+        bonLivraison.totalPaye < bonLivraison.total &&
+        bonLivraison.totalPaye > 0
+      ) {
+        await prisma.bonLivraison.update({
+          where: { id: bonLivraison.id },
+          data: { statutPaiement: "enPartie" },
+        });
+      }
+    }
   });
 
   return NextResponse.json({ result });
