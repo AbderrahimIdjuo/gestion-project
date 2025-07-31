@@ -18,18 +18,24 @@ import { EnteteDevis } from "@/components/Entete-devis";
 function formatDate(dateString) {
   return dateString?.split("T")[0].split("-").reverse().join("-");
 }
+
+
 export default function DevisPDFPage() {
   const [bonLivraison, setBonLivraison] = useState();
   useEffect(() => {
     const storedData = localStorage.getItem("bonLivraison-rapport");
     if (storedData) {
       setBonLivraison(JSON.parse(storedData));
+      console.log(
+        "Bon de livraison data loaded from localStorage:",
+        JSON.parse(storedData)
+      );
     }
   }, []);
   const handlePrint = () => {
     window.print();
   };
-
+  const fromDay = new Date(bonLivraison?.from);
   return (
     <>
       <div className="container mx-auto p-8 max-w-4xl bg-white min-h-screen print:p-0 print:max-w-none mb-10">
@@ -40,6 +46,24 @@ export default function DevisPDFPage() {
 
           <div className="flex justify-between gap-8"></div>
           <div className="space-y-6">
+            <div className="flex justify-between items-center mb-4">
+              {bonLivraison?.fournisseurNom && (
+                <h1 className="text-xl font-semibold text-center">
+                  Fournisseur : {bonLivraison?.fournisseurNom}
+                </h1>
+              )}
+
+              {bonLivraison?.periode && (
+                <h1 className="text-xl font-semibold text-center">
+                  Période :du{" "}
+                  {`${fromDay.getDate()}-${
+                    fromDay.getMonth() + 1
+                  }-${fromDay.getFullYear()}`}{" "}
+                  au {formatDate(bonLivraison?.to)}
+                </h1>
+              )}
+            </div>
+
             <div className="rounded-xl border shadow-sm overflow-x-auto">
               <Table>
                 <TableHeader>

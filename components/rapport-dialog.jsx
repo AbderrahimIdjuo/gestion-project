@@ -566,10 +566,13 @@ export default function RapportDialog() {
                   variant="outline"
                   onClick={() => {
                     const data = {
+                      from: from?.toISOString(),
+                      to: to?.toISOString(),
                       bons: bonLivraisons.data,
-                      total: total(),
-                      totalPaye: totalPaye(),
-                      rest: rest(),
+                      total: total().toFixed(2),
+                      totalPaye: totalPaye().toFixed(2),
+                      rest: rest().toFixed(2),
+                      fournisseurNom: selectedFournisseur?.nom,
                     };
                     window.open(
                       `/achats/bonLivraison/imprimer-rapport`,
