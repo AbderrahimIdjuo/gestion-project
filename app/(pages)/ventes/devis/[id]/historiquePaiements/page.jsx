@@ -47,7 +47,21 @@ export default function HistoriquePaiement() {
   const totalPaye = transactions?.reduce((acc, transaction) => {
     return acc + transaction.montant;
   }, 0);
-
+  function methodePaiementLabel(transaction) {
+    if (
+      transaction.methodePaiement === "espece" &&
+      transaction.compte !== "caisse"
+    ) {
+      return "Vérement";
+    } else if (
+      transaction.methodePaiement === "espece" &&
+      transaction.compte === "caisse"
+    ) {
+      return "Espèce";
+    } else if (transaction.methodePaiement === "cheque") {
+      return "Chèque";
+    }
+  }
   return (
     <>
       {devis ? (
@@ -99,6 +113,9 @@ export default function HistoriquePaiement() {
                       <TableHead className="text-black  font-bold text-left border-l border-b border-black">
                         Méthode de paiement
                       </TableHead>
+                      <TableHead className="text-black  font-bold text-left border-l border-b border-black">
+                        Compte
+                      </TableHead>
                       <TableHead className="text-black font-bold border-l border-b border-black text-left">
                         Montant
                       </TableHead>
@@ -112,12 +129,11 @@ export default function HistoriquePaiement() {
                             formatDate(transaction.createdAt)}{" "}
                         </TableCell>
                         <TableCell className=" p-2 text-left border-l border-b border-black font-semibold">
-                          {transaction.methodePaiement === "espece"
-                            ? "Espèce"
-                            : transaction.methodePaiement === "cheque" &&
-                              "Chèque"}
+                          {methodePaiementLabel(transaction)}
                         </TableCell>
-
+                        <TableCell className=" p-2 text-left border-l border-b border-black font-semibold">
+                          {transaction.compte}
+                        </TableCell>
                         <TableCell className="border-l border-b border-black p-2 text-left font-semibold">
                           {transaction.montant} DH
                         </TableCell>
@@ -127,7 +143,7 @@ export default function HistoriquePaiement() {
                   <TableFooter className="font-medium">
                     <TableRow>
                       <TableCell
-                        colSpan={2}
+                        colSpan={3}
                         className="text-lg border-b border-black text-gray-900 p-2 text-right font-extrabold"
                       >
                         Total payé :
@@ -139,7 +155,7 @@ export default function HistoriquePaiement() {
 
                     <TableRow>
                       <TableCell
-                        colSpan={2}
+                        colSpan={3}
                         className="text-lg text-gray-900 p-2 text-right font-extrabold"
                       >
                         Reste à payer :
