@@ -20,7 +20,7 @@ import {
 import { EnteteDevis } from "@/components/Entete-devis";
 
 function formatDate(dateString) {
-  return dateString?.split("T")[0].split("-").reverse().join("-");
+  return dateString?.split("T")[0].split("-").join("-");
 }
 export default function PreviewBonLivraisonDialog({
   bonLivraison,

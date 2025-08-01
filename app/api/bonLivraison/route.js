@@ -78,12 +78,15 @@ export async function POST(req) {
           });
         }
         // Mettre à jour la dette du fournisseur
+        const difference = montantPaye
+          ? parseFloat(total) - parseFloat(montantPaye)
+          : parseFloat(total);
         await prisma.fournisseurs.update({
           where: { id: fournisseurId },
           data: {
             dette:
               type === "achats"
-                ? { increment: parseFloat(total) - parseFloat(montantPaye) }
+                ? { increment: difference }
                 : type === "retour" && { decrement: parseFloat(total) },
           },
         });
@@ -243,7 +246,7 @@ export async function PUT(req) {
       },
     });
 
-    const difference = parseFloat(total) - parseFloat(existing.total) ;
+    const difference = parseFloat(total) - parseFloat(existing.total);
 
     let detteUpdate = {};
 
