@@ -68,15 +68,17 @@ export async function POST(req) {
               date: date || new Date(),
             },
           });
-
-          // Mise à jour d'un compte bancaire
-          await prisma.comptesBancaires.updateMany({
-            where: { compte: compte },
-            data: {
-              solde: { decrement: montantPaye },
-            },
-          });
+          if (montantPaye && compte) {
+            // Mise à jour d'un compte bancaire
+            await prisma.comptesBancaires.updateMany({
+              where: { compte: compte },
+              data: {
+                solde: { decrement: montantPaye },
+              },
+            });
+          }
         }
+
         // Mettre à jour la dette du fournisseur
         const difference = montantPaye
           ? parseFloat(total) - parseFloat(montantPaye)
