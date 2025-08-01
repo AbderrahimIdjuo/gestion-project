@@ -82,6 +82,9 @@ export default function AddBonLivraison({ lastBonLivraison }) {
     setDate(null);
     setBLGroups([]);
     setSelectedFournisseur(null);
+    setMontantPaye("");
+    setStatutPaiement("impaye");
+    setCompte("");
   };
 
   const total = () => {

@@ -28,7 +28,7 @@ export async function POST(req) {
             reference,
             type,
             statutPaiement: statutPaiement || "impaye",
-            totalPaye: parseFloat(montantPaye) || 0,
+            totalPaye:statutPaiement === "paye" ? parseFloat(total) : parseFloat(montantPaye) || 0,
             fournisseur: {
               connect: { id: fournisseurId },
             },
