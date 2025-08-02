@@ -50,7 +50,7 @@ export async function PUT(req) {
         adresse,
         ice,
         telephoneSecondaire,
-        dette: parseFloat(dette),
+        dette: parseFloat(dette) || 0 ,
       },
     });
 

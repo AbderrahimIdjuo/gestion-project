@@ -1,7 +1,7 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal, Pen, Trash2, Eye, Printer } from "lucide-react";
+import { MoreHorizontal, Pen, Trash2, Eye, Printer , CircleDollarSign } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -26,11 +26,13 @@ export function useBonLivraisonColumns({
   setPreviewDialogOpen,
   setDeleteDialogOpen,
   setUpdateDialogOpen,
+  setPaiementDialogOpen,
 }: {
   setCurrentBL: (bl: BonLivraisonT) => void;
   setPreviewDialogOpen: (val: boolean) => void;
   setDeleteDialogOpen: (val: boolean) => void;
   setUpdateDialogOpen: (val: boolean) => void;
+  setPaiementDialogOpen: (val: boolean) => void;
 }) {
   const columns: ColumnDef<BonLivraisonT>[] = [
     {
@@ -184,17 +186,31 @@ export function useBonLivraisonColumns({
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => {
+                    console.log("bonLivraison", bonLivraison);
+                    setCurrentBL(bonLivraison);
+                    setPaiementDialogOpen(true);
+                  }}
+                  className="flex items-center gap-2 cursor-pointer group hover:!bg-green-100"
+                >
+                  <CircleDollarSign className="h-4 w-4 text-green-600" />
+
+                  <span className="transition-colors duration-200 group-hover:text-green-600 group-hover:bg-green-100">
+                    paiement
+                  </span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
                     window.open(`/achats/bonLivraison/imprimer`, "_blank");
                     localStorage.setItem(
                       "bonLivraison",
                       JSON.stringify(bonLivraison)
                     );
                   }}
-                  className="flex items-center gap-2 cursor-pointer group hover:!bg-green-100"
+                  className="flex items-center gap-2 cursor-pointer group hover:!bg-fuchsia-100"
                 >
-                  <Printer className="h-4 w-4 text-green-600" />
+                  <Printer className="h-4 w-4 text-fuchsia-600" />
 
-                  <span className="transition-colors duration-200 group-hover:text-green-600 group-hover:bg-green-100">
+                  <span className="transition-colors duration-200 group-hover:text-fuchsia-600 group-hover:bg-fuchsia-100">
                     Imprimer
                   </span>
                 </DropdownMenuItem>

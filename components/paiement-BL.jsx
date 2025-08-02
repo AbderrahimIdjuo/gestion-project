@@ -1,5 +1,5 @@
 "use client";
-
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -9,7 +9,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { addtransaction } from "@/app/api/actions";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -20,12 +19,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
+import { CustomDatePicker } from "@/components/customUi/customDatePicker";
 
 export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
+  const [date, setDate] = useState(null);
+
   const {
     register,
     reset,
@@ -36,40 +38,61 @@ export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
   } = useForm();
   const queryClient = useQueryClient();
 
-  const createTransaction = useMutation({
-    mutationFn: async (data) => {
-      const { compte, description, montant } = data;
-      const transData = {
-        compte,
-        description,
-        lable: "paiement BL",
-        montant,
-        numero: bonLivraison?.numero,
-        type: "depense",
-      };
-      console.log("transData", transData);
-      const loadingToast = toast.loading("Paiement en cours...");
-      try {
-        await addtransaction(transData);
-        toast.success("Paiement éffectué avec succès");
-      } catch (error) {
-        toast.error("Échec de l'opération!");
-        throw error;
-      } finally {
-        toast.dismiss(loadingToast);
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(["transactions"]);
-      queryClient.invalidateQueries({ queryKey: ["bonLivraison"] });
-      queryClient.invalidateQueries({ queryKey: ["statistiques"] });
-    },
-  });
+  const statutPaiement = () => {
+    const montantPaye = bonLivraison.totalPaye + montant;
+    if (
+      bonLivraison.total === montantPaye ||
+      bonLivraison.total < montantPaye
+    ) {
+      return "paye";
+    } else if (bonLivraison.total > montantPaye) {
+      return "enPartie";
+    }
+  };
+
   const onSubmit = async (data) => {
-    createTransaction.mutate(data);
-    console.log("data:", data);
-    onClose();
-    reset();
+    const { compte, montant, typePaiement, numero } = data;
+    const transData = {
+      bonLivraisonId: bonLivraison.id,
+      fournisseurId: bonLivraison.fournisseurId,
+      compte,
+      description: "bénéficiaire :" + bonLivraison.fournisseur,
+      lable: "paiement de :" + bonLivraison.numero,
+      montant,
+      type: "depense",
+      methodePaiement: typePaiement,
+      numeroCheque: numero,
+      date,
+      statutPaiement: statutPaiement(),
+    };
+    console.log("Data", transData);
+
+    toast.promise(
+      (async () => {
+        const response = await axios.post(
+          "/api/bonLivraison/paiementBlUnique",
+          transData
+        );
+        if (response.status === 409) {
+          console.log("response.status === 409");
+        }
+        if (!response) {
+          throw new Error("Failed to add paiement");
+        }
+        console.log("Opération effectuée avec succès");
+        reset();
+        onClose();
+        queryClient.invalidateQueries(["transactions"]);
+        queryClient.invalidateQueries({ queryKey: ["bonLivraison"] });
+        queryClient.invalidateQueries({ queryKey: ["fournisseurs"] });
+        queryClient.invalidateQueries({ queryKey: ["statistiques"] });
+      })(),
+      {
+        loading: "Opération en cours...",
+        success: "Opération effectuée avec succès",
+        error: "Échec de l'opération!",
+      }
+    );
   };
   const comptes = useQuery({
     queryKey: ["comptes"],
@@ -82,7 +105,7 @@ export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[1000px] max-h-[90vh] overflow-y-auto">
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogHeader>
             <DialogTitle>Paiement du {bonLivraison?.numero}</DialogTitle>
@@ -129,7 +152,11 @@ export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
             </RadioGroup>
 
             {watch("typePaiement") === "espece" && (
-              <div className="space-y-4">
+              <div className="space-y-4 items-end grid grid-cols-3 gap-4">
+                <div className="w-full space-y-1.5">
+                  <Label htmlFor="client">Date : </Label>
+                  <CustomDatePicker date={date} onDateChange={setDate} />
+                </div>
                 <div className="grid w-full items-center gap-1.5">
                   <Label htmlFor="montant">Montant</Label>
                   <Input
@@ -167,8 +194,12 @@ export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
               </div>
             )}
             {watch("typePaiement") === "cheque" && (
-              <div className="space-y-4">
-                <div className="grid w-full items-center gap-1.5">
+              <div className="space-y-4 items-end grid grid-cols-3 grid-rows-2 gap-4">
+                <div className="w-full space-y-1.5">
+                  <Label htmlFor="client">Date : </Label>
+                  <CustomDatePicker date={date} onDateChange={setDate} />
+                </div>
+                <div className="grid w-full items-center gap-2">
                   <Label htmlFor="montant">Montant</Label>
                   <Input
                     {...register("montant", { valueAsNumber: true })}
@@ -176,14 +207,14 @@ export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
                     id="montant"
                   />
                 </div>
-                <div className="grid w-full items-center gap-1.5">
+                <div className="grid w-full items-center gap-2">
                   <Label htmlFor="compte">Compte bancaire</Label>
                   <Select
                     value={watch("compte")}
                     name="compte"
                     onValueChange={(value) => setValue("compte", value)}
                   >
-                    <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500 mt-2">
+                    <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
                       <SelectValue placeholder="Séléctionner..." />
                     </SelectTrigger>
                     <SelectContent>
@@ -198,11 +229,14 @@ export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
                         ))}
                     </SelectContent>
                   </Select>
-                  {errors.compte && (
-                    <p className="text-red-500 text-sm">
-                      {errors.compte.message}
-                    </p>
-                  )}
+                </div>
+                <div className="grid w-full items-center gap-2 col-span-3">
+                  <Label htmlFor="numero">Numéro de chèque</Label>
+                  <Input
+                    {...register("numero")}
+                    className="w-full focus-visible:ring-purple-500"
+                    id="numero"
+                  />
                 </div>
               </div>
             )}

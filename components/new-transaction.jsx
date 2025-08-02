@@ -278,7 +278,6 @@ export default function TransactionDialog() {
                     {...register("montant", { valueAsNumber: true })}
                     className="w-full focus-visible:ring-purple-500"
                     id="montant"
-                    type="number"
                     placeholder="Entrez le montant"
                   />
                   {errors.montant && (
@@ -415,7 +414,6 @@ export default function TransactionDialog() {
                     {...register("montant", { valueAsNumber: true })}
                     className="w-full focus-visible:ring-purple-500"
                     id="montant"
-                    type="number"
                     placeholder="Entrez le montant"
                   />
                   {errors.montant && (

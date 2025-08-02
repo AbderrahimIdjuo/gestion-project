@@ -16,7 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import CustomPagination from "@/components/customUi/customPagination";
-import { Search, Trash2, Upload , CircleDollarSign} from "lucide-react";
+import { Search, Trash2, Upload, CircleDollarSign, Pen } from "lucide-react";
 import { FournisseurFormDialog } from "@/components/fournisseur-form-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -28,6 +28,8 @@ export default function FournisseursPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currFournisseur, setCurrFournisseur] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
+
   const [page, setPage] = useState(1);
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [totalPages, setTotalPages] = useState();
@@ -212,15 +214,28 @@ export default function FournisseursPage() {
                       </TableCell>
                       <TableCell className="text-right !py-2">
                         <div className="flex justify-end gap-2">
-                          <ModifyFournisseur currFournisseur={fournisseur} />
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
+                            onClick={(e) => {
+                             setIsUpdateDialogOpen(true)
+                              setCurrFournisseur(fournisseur);
+                             
+                            }}
+                          >
+                            <Pen className="h-4 w-4" />
+                            <span className="sr-only">Modifier</span>
+                          </Button>
+
                           <Button
                             name="delete btn"
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
                             onClick={() => {
-                              setIsDialogOpen(true);
                               setCurrFournisseur(fournisseur);
+                              setIsDialogOpen(true);
                             }}
                           >
                             <Trash2 className="h-4 w-4" />
@@ -293,6 +308,11 @@ export default function FournisseursPage() {
         fournisseur={currFournisseur}
         isOpen={paiementDialogOpen}
         onClose={() => setPaiementDialogOpen(false)}
+      />
+      <ModifyFournisseur
+        currFournisseur={currFournisseur}
+        isOpen={isUpdateDialogOpen}
+        onClose={() => setIsUpdateDialogOpen(false)}
       />
     </>
   );

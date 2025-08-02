@@ -65,7 +65,7 @@ export default function RapportDialog() {
   const [formData, setFormData] = useState({
     type: "tous",
     periode: "ce-mois",
-    statutPaiement: ["impaye"],
+    statutPaiement: ["impaye", "enPartie"],
   });
   function getDateRangeFromPeriode(periode) {
     const now = new Date();
@@ -139,7 +139,7 @@ export default function RapportDialog() {
     setFormData({
       type: "tous",
       periode: "ce-mois",
-      statutPaiement: ["impaye"],
+      statutPaiement: ["impaye", "enPartie"],
     });
     setSelectedFournisseur(null);
     setStartDate(null);
@@ -189,18 +189,22 @@ export default function RapportDialog() {
     },
   });
   function total() {
-    return bonLivraisons?.data.reduce((acc, bon) => {
-      if (bon.type === "achats") {
-        return acc + bon.total;
-      } else if (bon.type === "retour") {
-        return acc - bon.total;
-      }
-      return acc; // autres types ignorés
-    }, 0);
+    return bonLivraisons?.data
+      .reduce((acc, bon) => {
+        if (bon.type === "achats") {
+          return acc + bon.total;
+        } else if (bon.type === "retour") {
+          return acc - bon.total;
+        }
+        return acc; // autres types ignorés
+      }, 0)
+      .toFixed(2);
   }
 
   function totalPaye() {
-    return bonLivraisons?.data.reduce((acc, bon) => acc + bon.totalPaye, 0);
+    return bonLivraisons?.data
+      .reduce((acc, bon) => acc + bon.totalPaye, 0)
+      .toFixed(2);
   }
 
   function rest() {
@@ -211,6 +215,55 @@ export default function RapportDialog() {
       reset();
     }
   }, [open]);
+
+  function regrouperBLParFournisseur(bonLivraisons) {
+    if (!Array.isArray(bonLivraisons)) {
+      throw new TypeError("bonLivraisons doit être un tableau.");
+    }
+    const map = new Map();
+
+    for (const bl of bonLivraisons) {
+      const nom = bl.fournisseur?.nom ?? "Inconnu";
+      const total = bl.total || 0;
+      const isAchat = bl.type === "achats";
+      const isRetour = bl.type === "retour";
+
+      if (!map.has(nom)) {
+        map.set(nom, {
+          fournisseur: nom,
+          NbrBL: 1,
+          NbrBLAchats: isAchat ? 1 : 0,
+          NbrBLRetour: isRetour ? 1 : 0,
+          total: isAchat ? total : -total,
+          montantAchats: isAchat ? total : 0,
+          montantRetour: isRetour ? total : 0,
+        });
+      } else {
+        const existing = map.get(nom);
+        existing.NbrBL += 1;
+        existing.total += isAchat ? total : -total;
+        if (isAchat) {
+          existing.montantAchats += total;
+          existing.NbrBLAchats += 1;
+        }
+        if (isRetour) {
+          existing.montantRetour += total;
+          existing.NbrBLRetour += 1;
+        }
+      }
+    }
+
+    return Array.from(map.values());
+  }
+  useEffect(() => {
+    if (Array.isArray(bonLivraisons?.data)) {
+      const resultat = regrouperBLParFournisseur(bonLivraisons.data);
+      console.log("regrouperBLParFournisseur :", resultat);
+    } else {
+      console.log("Données non disponibles ou invalides");
+    }
+  }, [bonLivraisons?.data]);
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -460,136 +513,275 @@ export default function RapportDialog() {
           </form>
         )}
 
-        {currentStep === 2 && (
-          <>
-            <div className="rounded-xl border shadow-sm overflow-x-auto">
-              {bonLivraisons.data?.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Référence</TableHead>
-                      <TableHead>Fournisseur</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Montant</TableHead>
-                      <TableHead>Montant Payé</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {bonLivraisons.data?.map((bon) => (
-                      <TableRow key={bon.id}>
-                        <TableCell>{formatDate(bon.date)}</TableCell>
-                        <TableCell>{bon.reference}</TableCell>
-                        <TableCell>{bon.fournisseur?.nom ?? "-"}</TableCell>
-                        <TableCell>{bon.type}</TableCell>
-                        <TableCell>{bon.total?.toFixed(2)} DH</TableCell>
-                        <TableCell>{bon.totalPaye?.toFixed(2)} DH</TableCell>
+        {currentStep === 2 &&
+          (selectedFournisseur !== null ? (
+            // Rapport pour un fournisseur spécifique
+            <div>
+              <div className="rounded-xl border shadow-sm overflow-x-auto">
+                {bonLivraisons.data?.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Référence</TableHead>
+                        <TableHead>Fournisseur</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Montant</TableHead>
+                        <TableHead>Montant Payé</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                  <TableFooter className="bg-white">
-                    <TableRow>
-                      <TableCell
-                        colSpan={4}
-                        className="text-right text-lg font-semibold p-2"
-                      >
-                        Total :
-                      </TableCell>
-                      <TableCell
-                        colSpan={2}
-                        className="text-left text-lg font-semibold p-2"
-                      >
-                        {total()} DH
-                      </TableCell>
-                    </TableRow>
-                    <TableRow className="border-t border-gray-200">
-                      <TableCell
-                        colSpan={4}
-                        className="text-right text-lg font-semibold p-2"
-                      >
-                        Total Payé :
-                      </TableCell>
-                      <TableCell
-                        colSpan={2}
-                        className="text-left text-lg font-semibold p-2"
-                      >
-                        {totalPaye()} DH
-                      </TableCell>
-                    </TableRow>
-                    <TableRow className="border-t border-gray-200">
-                      <TableCell
-                        colSpan={4}
-                        className="text-right text-lg font-semibold p-2"
-                      >
-                        Dette :
-                      </TableCell>
-                      <TableCell
-                        colSpan={2}
-                        className="text-left text-lg font-semibold p-2"
-                      >
-                        {rest()} DH
-                      </TableCell>
-                    </TableRow>
-                  </TableFooter>
-                </Table>
-              ) : (
-                <div className="text-center py-10 text-muted-foreground">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1.5}
-                    stroke="currentColor"
-                    className="size-14 mx-auto mb-4 opacity-50"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m5.231 13.481L15 17.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v16.5c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Zm3.75 11.625a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"
-                    />
-                  </svg>
-                  <p>Aucun bon trouvé</p>
-                </div>
-              )}
-            </div>
-            <div className="flex justify-end gap-3 mt-6 print:hidden">
-              <Button
-                className="rounded-full"
-                variant="outline"
-                onClick={() => setCurrentStep(1)}
-              >
-                Retour
-              </Button>
-              {bonLivraisons.data?.length > 0 && (
+                    </TableHeader>
+                    <TableBody>
+                      {bonLivraisons.data?.map((bon) => (
+                        <TableRow key={bon.id}>
+                          <TableCell>{formatDate(bon.date)}</TableCell>
+                          <TableCell>{bon.reference}</TableCell>
+                          <TableCell>{bon.fournisseur?.nom ?? "-"}</TableCell>
+                          <TableCell>{bon.type}</TableCell>
+                          <TableCell>{bon.total?.toFixed(2)} DH</TableCell>
+                          <TableCell>{bon.totalPaye?.toFixed(2)} DH</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                    <TableFooter className="bg-white">
+                      <TableRow>
+                        <TableCell
+                          colSpan={4}
+                          className="text-right text-lg font-semibold p-2"
+                        >
+                          Total :
+                        </TableCell>
+                        <TableCell
+                          colSpan={2}
+                          className="text-left text-lg font-semibold p-2"
+                        >
+                          {total()} DH
+                        </TableCell>
+                      </TableRow>
+                      <TableRow className="border-t border-gray-200">
+                        <TableCell
+                          colSpan={4}
+                          className="text-right text-lg font-semibold p-2"
+                        >
+                          Total Payé :
+                        </TableCell>
+                        <TableCell
+                          colSpan={2}
+                          className="text-left text-lg font-semibold p-2"
+                        >
+                          {totalPaye()} DH
+                        </TableCell>
+                      </TableRow>
+                      <TableRow className="border-t border-gray-200">
+                        <TableCell
+                          colSpan={4}
+                          className="text-right text-lg font-semibold p-2"
+                        >
+                          Dette :
+                        </TableCell>
+                        <TableCell
+                          colSpan={2}
+                          className="text-left text-lg font-semibold p-2"
+                        >
+                          {rest()} DH
+                        </TableCell>
+                      </TableRow>
+                    </TableFooter>
+                  </Table>
+                ) : (
+                  <div className="text-center py-10 text-muted-foreground">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                      className="size-14 mx-auto mb-4 opacity-50"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m5.231 13.481L15 17.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v16.5c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Zm3.75 11.625a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"
+                      />
+                    </svg>
+                    <p>Aucun bon trouvé</p>
+                  </div>
+                )}
+              </div>
+              <div className="flex justify-end gap-3 mt-6 print:hidden">
                 <Button
-                  className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full"
+                  className="rounded-full"
                   variant="outline"
-                  onClick={() => {
-                    const data = {
-                      from: from?.toISOString(),
-                      to: to?.toISOString(),
-                      bons: bonLivraisons.data,
-                      total: total().toFixed(2),
-                      totalPaye: totalPaye().toFixed(2),
-                      rest: rest().toFixed(2),
-                      fournisseurNom: selectedFournisseur?.nom,
-                    };
-                    window.open(
-                      `/achats/bonLivraison/imprimer-rapport`,
-                      "_blank"
-                    );
-                    localStorage.setItem(
-                      "bonLivraison-rapport",
-                      JSON.stringify(data)
-                    );
-                  }}
+                  onClick={() => setCurrentStep(1)}
                 >
-                  <Printer className="mr-2 h-4 w-4" /> Imprimer
+                  Retour
                 </Button>
-              )}
+                {bonLivraisons.data?.length > 0 && (
+                  <Button
+                    className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full"
+                    variant="outline"
+                    onClick={() => {
+                      const data = {
+                        from: from?.toISOString(),
+                        to: to?.toISOString(),
+                        bons: bonLivraisons.data,
+                        total: total(),
+                        totalPaye: totalPaye(),
+                        rest: rest(),
+                        fournisseurNom: selectedFournisseur?.nom,
+                      };
+                      window.open(
+                        `/achats/bonLivraison/imprimer-rapport`,
+                        "_blank"
+                      );
+                      localStorage.setItem(
+                        "bonLivraison-rapport",
+                        JSON.stringify(data)
+                      );
+                    }}
+                  >
+                    <Printer className="mr-2 h-4 w-4" /> Imprimer
+                  </Button>
+                )}
+              </div>
             </div>
-          </>
-        )}
+          ) : (
+            // Tous les fournisseurs
+            <div>
+              <div className="rounded-xl border shadow-sm overflow-x-auto">
+                {regrouperBLParFournisseur(bonLivraisons?.data).length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>#</TableHead>
+                        <TableHead>fourniseur</TableHead>
+                        <TableHead>Nbr BL</TableHead>
+                        <TableHead>Nbr Achats</TableHead>
+                        <TableHead>Nbr Retour</TableHead>
+                        <TableHead>Achats</TableHead>
+                        <TableHead>Retour</TableHead>
+                        <TableHead>Montant</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {regrouperBLParFournisseur(bonLivraisons?.data).map(
+                        (element, index) => (
+                          <TableRow key={index}>
+                            <TableCell>{index + 1}</TableCell>
+                            <TableCell>{element.fournisseur}</TableCell>
+                            <TableCell>{element.NbrBL}</TableCell>
+                            <TableCell>{element.NbrBLAchats} </TableCell>
+                            <TableCell>{element.NbrBLRetour}</TableCell>
+                            <TableCell>{element.montantAchats} DH</TableCell>
+                            <TableCell>{element.montantRetour} DH</TableCell>
+                            <TableCell>{element.total} DH</TableCell>
+                          </TableRow>
+                        )
+                      )}
+                    </TableBody>
+                    <TableFooter className="bg-white">
+                      <TableRow>
+                        <TableCell
+                          colSpan={6}
+                          className="text-right text-lg font-semibold p-2"
+                        >
+                          Total :
+                        </TableCell>
+                        <TableCell
+                          colSpan={2}
+                          className="text-left text-lg font-semibold p-2"
+                        >
+                          {total()} DH
+                        </TableCell>
+                      </TableRow>
+                      <TableRow className="border-t border-gray-200">
+                        <TableCell
+                          colSpan={6}
+                          className="text-right text-lg font-semibold p-2"
+                        >
+                          Total Payé :
+                        </TableCell>
+                        <TableCell
+                          colSpan={2}
+                          className="text-left text-lg font-semibold p-2"
+                        >
+                          {totalPaye()} DH
+                        </TableCell>
+                      </TableRow>
+                      <TableRow className="border-t border-gray-200">
+                        <TableCell
+                          colSpan={6}
+                          className="text-right text-lg font-semibold p-2"
+                        >
+                          Dette :
+                        </TableCell>
+
+                        <TableCell
+                          colSpan={2}
+                          className="text-left text-lg font-semibold p-2"
+                        >
+                          {rest()} DH
+                        </TableCell>
+                      </TableRow>
+                    </TableFooter>
+                  </Table>
+                ) : (
+                  <div className="text-center py-10 text-muted-foreground">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                      className="size-14 mx-auto mb-4 opacity-50"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m5.231 13.481L15 17.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v16.5c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Zm3.75 11.625a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"
+                      />
+                    </svg>
+                    <p>Aucun bon trouvé</p>
+                  </div>
+                )}
+              </div>
+              <div className="flex justify-end gap-3 mt-6 print:hidden">
+                <Button
+                  className="rounded-full"
+                  variant="outline"
+                  onClick={() => setCurrentStep(1)}
+                >
+                  Retour
+                </Button>
+                {bonLivraisons.data?.length > 0 && (
+                  <Button
+                    className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full"
+                    variant="outline"
+                    onClick={() => {
+                      const data = {
+                        from: from?.toISOString(),
+                        to: to?.toISOString(),
+                        bons: regrouperBLParFournisseur(bonLivraisons?.data),
+                        total: total(),
+                        totalPaye: totalPaye(),
+                        rest: rest(),
+                        fournisseurNom: selectedFournisseur?.nom,
+                      };
+                      window.open(
+                        `/achats/bonLivraison/imprimer-rapport`,
+                        "_blank"
+                      );
+                      localStorage.setItem(
+                        "bonLivraison-rapport",
+                        JSON.stringify(data)
+                      );
+                    }}
+                  >
+                    <Printer className="mr-2 h-4 w-4" /> Imprimer
+                  </Button>
+                )}
+              </div>
+            </div>
+          ))}
       </DialogContent>
     </Dialog>
   );

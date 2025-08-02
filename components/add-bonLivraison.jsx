@@ -50,6 +50,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
   const [type, setType] = useState();
   const [statutPaiement, setStatutPaiement] = useState("impaye");
   const [montantPaye, setMontantPaye] = useState("");
+  const [montantTotal, setMontantTotal] = useState("");
   const [compte, setCompte] = useState("");
   const [isArticleDialogOpen, setIsArticleDialogOpen] = useState(false);
   const [selectedFournisseur, setSelectedFournisseur] = useState(null);
@@ -110,7 +111,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
         reference,
         fournisseurId: selectedFournisseur.id,
         fournisseurNom: selectedFournisseur.nom,
-        total: total().toFixed(2),
+        total: montantTotal || total().toFixed(2),
         type,
         totalPaye: 0,
         bLGroups,
@@ -119,7 +120,6 @@ export default function AddBonLivraison({ lastBonLivraison }) {
         montantPaye,
       };
       console.log("data : ", data);
-
       const loadingToast = toast.loading("Ajout du bon de livraison...");
       try {
         await axios.post("/api/bonLivraison", data);
@@ -468,9 +468,19 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                   )}
                   <div className="space-y-1 col-span-1">
                     <h3 className="font-medium text-sm text-muted-foreground">
-                      Total du BL:
+                      Total calculer:
                     </h3>
                     <p className="font-semibold">{total().toFixed()} DH</p>
+                  </div>
+                  <div className="space-y-1  grid grid-cols-3 items-center">
+                    <h3 className="font-medium text-sm text-muted-foreground">
+                      Total du BL :
+                    </h3>
+                    <Input
+                      defaultValue={total().toFixed()}
+                      onChange={(e) => setMontantTotal(e.target.value)}
+                      className="focus:!ring-purple-500 w-full col-span-2"
+                    />
                   </div>
                 </div>
                 {bLGroups.map((group) => (

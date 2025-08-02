@@ -10,7 +10,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { CircleX, Pen } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -18,17 +18,17 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  //  DialogTrigger,
 } from "@/components/ui/dialog";
-export function ModifyFournisseur({ currFournisseur }) {
-  const [open, setOpen] = useState(false);
+export function ModifyFournisseur({ currFournisseur, isOpen, onClose }) {
+  //const [open, setOpen] = useState(false);
   const fournisseurSchema = z.object({
     nom: z.string().min(1, "Veuillez insérer le nom du fournisseur"),
     email: z.string().optional(),
     telephone: z.string().optional(),
     telephoneSecondaire: z.string().optional(),
     ice: z.string().optional(),
-    dette: z.string().optional(),
+    dette: z.coerce.number().optional(),
     adresse: z.string().optional(),
   });
 
@@ -41,15 +41,31 @@ export function ModifyFournisseur({ currFournisseur }) {
   } = useForm({
     resolver: zodResolver(fournisseurSchema),
     defaultValues: {
-      nom: currFournisseur?.nom.toUpperCase(),
-      email: currFournisseur?.email,
-      telephone: currFournisseur?.telephone,
-      telephoneSecondaire: currFournisseur?.telephoneSecondaire,
-      adresse: currFournisseur?.adresse,
-      ice: currFournisseur?.ice,
-      dette: currFournisseur?.dette,
+      nom: currFournisseur?.nom?.toUpperCase() || "",
+      email: currFournisseur?.email || "",
+      telephone: currFournisseur?.telephone || "",
+      telephoneSecondaire: currFournisseur?.telephoneSecondaire || "",
+      adresse: currFournisseur?.adresse || "",
+      ice: currFournisseur?.ice || "",
+      dette: currFournisseur?.dette || "",
     },
   });
+
+  // Mettre à jour les valeurs du formulaire quand currFournisseur change
+  useEffect(() => {
+    console.log("currFournisseur", currFournisseur);
+    if (currFournisseur && isOpen) {
+      reset({
+        nom: currFournisseur.nom?.toUpperCase() || "",
+        email: currFournisseur.email || "",
+        telephone: currFournisseur.telephone || "",
+        telephoneSecondaire: currFournisseur.telephoneSecondaire || "",
+        adresse: currFournisseur.adresse || "",
+        ice: currFournisseur.ice || "",
+        dette: currFournisseur.dette || "",
+      });
+    }
+  }, [currFournisseur, reset, isOpen]);
 
   const onSubmit = async (data) => {
     const Data = { ...data, id: currFournisseur.id };
@@ -65,8 +81,7 @@ export function ModifyFournisseur({ currFournisseur }) {
         console.log("Client ajouté avec succès");
         reset();
         queryClient.invalidateQueries(["fournisseurs"]);
-
-        setOpen(false);
+        onClose();
       })(),
       {
         loading: "Modification en cours...",
@@ -77,17 +92,7 @@ export function ModifyFournisseur({ currFournisseur }) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
-        >
-          <Pen className="h-4 w-4" />
-          <span className="sr-only">Modifier</span>
-        </Button>
-      </DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogHeader className="mb-5">
@@ -195,15 +200,16 @@ export function ModifyFournisseur({ currFournisseur }) {
                 Adresse
               </Label>
               <Input
+                spellCheck={false}
                 id="adresse"
                 name="adresse"
                 {...register("adresse")}
                 className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
               />
             </div>
-            <div className="w- full grid grid-cols-1">
-              <Label htmlFor="dette" className="text-left mb-2 mb-2">
-                Dettte
+            <div className="w-full grid grid-cols-1">
+              <Label htmlFor="dette" className="text-left mb-2">
+                Dette
               </Label>
               <Input
                 id="dette"
@@ -219,7 +225,7 @@ export function ModifyFournisseur({ currFournisseur }) {
               type="submit"
               disabled={isSubmitting}
             >
-              {isSubmitting ? "En cours..." : "Enregistrer"}
+              Enregistrer
             </Button>
           </DialogFooter>
         </form>

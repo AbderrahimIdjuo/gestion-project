@@ -14,10 +14,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { EnteteDevis } from "@/components/Entete-devis";
-
-function formatDate(dateString) {
-  return dateString?.split("T")[0].split("-").reverse().join("-");
-}
+import { formatMontant } from "@/lib/functions";
+import { formatDate } from "@/lib/functions";
 
 
 export default function DevisPDFPage() {
@@ -65,74 +63,155 @@ export default function DevisPDFPage() {
             </div>
 
             <div className="rounded-xl border shadow-sm overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Référence</TableHead>
-                    <TableHead>Fournisseur</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Montant</TableHead>
-                    <TableHead>Montant Payé</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {bonLivraison?.bons.map((bon) => (
-                    <TableRow key={bon.id}>
-                      <TableCell>{formatDate(bon.date)}</TableCell>
-                      <TableCell>{bon.reference}</TableCell>
-                      <TableCell>{bon.fournisseur?.nom ?? "-"}</TableCell>
-                      <TableCell>{bon.type}</TableCell>
-                      <TableCell>{bon.total?.toFixed(2)} DH</TableCell>
-                      <TableCell>{bon.totalPaye?.toFixed(2)} DH</TableCell>
+              {bonLivraison?.fournisseurNom ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>#</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Référence</TableHead>
+                      <TableHead>Fournisseur</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Montant</TableHead>
+                      <TableHead>Montant Payé</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-                <TableFooter className="bg-none">
-                  <TableRow>
-                    <TableCell
-                      colSpan={4}
-                      className="text-right text-lg font-semibold p-2"
-                    >
-                      Total :
-                    </TableCell>
-                    <TableCell
-                      colSpan={2}
-                      className="text-left text-lg font-semibold p-2"
-                    >
-                      {bonLivraison?.total} DH
-                    </TableCell>
-                  </TableRow>
-                  <TableRow className="border-t border-gray-200">
-                    <TableCell
-                      colSpan={4}
-                      className="text-right text-lg font-semibold p-2"
-                    >
-                      Total Payé :
-                    </TableCell>
-                    <TableCell
-                      colSpan={2}
-                      className="text-left text-lg font-semibold p-2"
-                    >
-                      {bonLivraison?.totalPaye} DH
-                    </TableCell>
-                  </TableRow>
-                  <TableRow className="border-t border-gray-200">
-                    <TableCell
-                      colSpan={4}
-                      className="text-right text-lg font-semibold p-2"
-                    >
-                      Dette :
-                    </TableCell>
-                    <TableCell
-                      colSpan={2}
-                      className="text-left text-lg font-semibold p-2"
-                    >
-                      {bonLivraison?.rest} DH
-                    </TableCell>
-                  </TableRow>
-                </TableFooter>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {bonLivraison?.bons.map((bon, index) => (
+                      <TableRow key={bon.id}>
+                        <TableCell>{index + 1}</TableCell>
+                        <TableCell>{formatDate(bon.date)}</TableCell>
+                        <TableCell>{bon.reference}</TableCell>
+                        <TableCell>{bon.fournisseur?.nom ?? "-"}</TableCell>
+                        <TableCell>{bon.type}</TableCell>
+                        <TableCell>{formatMontant(bon.total)} DH</TableCell>
+                        <TableCell>{formatMontant(bon.totalPaye)} DH</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                  <TableFooter className="bg-none">
+                    <TableRow>
+                      <TableCell
+                        colSpan={5}
+                        className="text-right text-lg font-semibold p-2"
+                      >
+                        Total :
+                      </TableCell>
+                      <TableCell
+                        colSpan={2}
+                        className="text-left text-lg font-semibold p-2"
+                      >
+                        {formatMontant(bonLivraison?.total)} DH
+                      </TableCell>
+                    </TableRow>
+                    <TableRow className="border-t border-gray-200">
+                      <TableCell
+                        colSpan={5}
+                        className="text-right text-lg font-semibold p-2"
+                      >
+                        Total Payé :
+                      </TableCell>
+                      <TableCell
+                        colSpan={2}
+                        className="text-left text-lg font-semibold p-2"
+                      >
+                        {formatMontant(bonLivraison?.totalPaye)} DH
+                      </TableCell>
+                    </TableRow>
+                    <TableRow className="border-t border-gray-200">
+                      <TableCell
+                        colSpan={5}
+                        className="text-right text-lg font-semibold p-2"
+                      >
+                        Dette :
+                      </TableCell>
+                      <TableCell
+                        colSpan={2}
+                        className="text-left text-lg font-semibold p-2"
+                      >
+                        {formatMontant(bonLivraison?.rest)} DH
+                      </TableCell>
+                    </TableRow>
+                  </TableFooter>
+                </Table>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>#</TableHead>
+                      <TableHead>fourniseur</TableHead>
+                      <TableHead className="px-1">Nbr BL</TableHead>
+                      <TableHead className="px-1">Nbr Achats</TableHead>
+                      <TableHead className="px-1">Nbr Retour</TableHead>
+                      <TableHead>Achats</TableHead>
+                      <TableHead>Retour</TableHead>
+                      <TableHead>Montant</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {bonLivraison?.bons.map((element, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{index + 1}</TableCell>
+                        <TableCell>{element.fournisseur}</TableCell>
+                        <TableCell>{element.NbrBL}</TableCell>
+                        <TableCell>{element.NbrBLAchats} </TableCell>
+                        <TableCell>{element.NbrBLRetour}</TableCell>
+                        <TableCell>
+                          {formatMontant(element.montantAchats)} DH
+                        </TableCell>
+                        <TableCell>
+                          {formatMontant(element.montantRetour)} DH
+                        </TableCell>
+                        <TableCell>{formatMontant(element.total)} DH</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                  <TableFooter className="bg-none">
+                    <TableRow>
+                      <TableCell
+                        colSpan={6}
+                        className="text-right text-lg font-semibold p-2"
+                      >
+                        Total :
+                      </TableCell>
+                      <TableCell
+                        colSpan={2}
+                        className="text-left text-lg font-semibold p-2"
+                      >
+                        {formatMontant(bonLivraison?.total)} DH
+                      </TableCell>
+                    </TableRow>
+                    <TableRow className="border-t border-gray-200">
+                      <TableCell
+                        colSpan={6}
+                        className="text-right text-lg font-semibold p-2"
+                      >
+                        Total Payé :
+                      </TableCell>
+                      <TableCell
+                        colSpan={2}
+                        className="text-left text-lg font-semibold p-2"
+                      >
+                        {formatMontant(bonLivraison?.totalPaye)} DH
+                      </TableCell>
+                    </TableRow>
+                    <TableRow className="border-t border-gray-200">
+                      <TableCell
+                        colSpan={6}
+                        className="text-right text-lg font-semibold p-2"
+                      >
+                        Dette :
+                      </TableCell>
+                      <TableCell
+                        colSpan={2}
+                        className="text-left text-lg font-semibold p-2"
+                      >
+                        {formatMontant(bonLivraison?.rest)} DH
+                      </TableCell>
+                    </TableRow>
+                  </TableFooter>
+                </Table>
+              )}
             </div>
           </div>
         </div>

@@ -16,6 +16,7 @@ import { useDeleteBonLivraison } from "@/hooks/useDeleteBonLivraison";
 import AddBonLivraison from "@/components/add-bonLivraison";
 import UpdateBonLivraison from "@/components/update-bonLivraison";
 import RapportDialog from "@/components/rapport-dialog";
+import PaiementBLDialog from "@/components/paiement-BL";
 import {
   Sheet,
   SheetContent,
@@ -55,6 +56,7 @@ export default function BonLivraison() {
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
+  const [paiementDialogOpen, setPaiementDialogOpen] = useState(false);
   const [filters, setFilters] = useState({
     type: "",
     statutPaiement: "",
@@ -292,6 +294,7 @@ export default function BonLivraison() {
             setPreviewDialogOpen,
             setDeleteDialogOpen,
             setUpdateDialogOpen,
+            setPaiementDialogOpen,
           })}
           data={listBonLivraison}
           isLoading={isLoading}
@@ -324,6 +327,11 @@ export default function BonLivraison() {
         bonLivraison={currentBL}
         isOpen={previewDialogOpen}
         onClose={() => setPreviewDialogOpen(false)}
+      />
+      <PaiementBLDialog
+        bonLivraison={currentBL}
+        isOpen={paiementDialogOpen}
+        onClose={() => setPaiementDialogOpen(false)}
       />
     </>
   );
