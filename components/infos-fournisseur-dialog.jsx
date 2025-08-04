@@ -350,7 +350,7 @@ export default function InfosFournisseurDialog({
                     variant="outline"
                     className="text-lg text-white bg-green-600 px-3 py-1"
                   >
-                    {formatCurrency(fournisseur?.dette)}
+                    {chiffreAffaires}
                   </Badge>
                 </div>
               </div>
