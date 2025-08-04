@@ -16,6 +16,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TableFooter,
 } from "@/components/ui/table";
 import CustomTooltip from "@/components/customUi/customTooltip";
 import { EnteteDevis } from "@/components/Entete-devis";
@@ -32,6 +33,12 @@ export default function PreviewCommandeFournitureDialog({ commande }) {
   const handlePrint = () => {
     window.print();
   };
+
+  function calculerTotalProduits(produits) {
+    return produits.reduce((total, produit) => {
+      return total + produit.quantite * produit.prixUnite;
+    }, 0);
+  }
 
   return (
     <>
@@ -140,6 +147,19 @@ export default function PreviewCommandeFournitureDialog({ commande }) {
                               </TableRow>
                             ))}
                           </TableBody>
+                          <TableFooter className="bg-none">
+                            <TableRow>
+                              <TableCell
+                                className="font-bold text-right text-lg"
+                                colSpan={2}
+                              >
+                                Total :
+                              </TableCell>
+                              <TableCell className="text-left font-bold text-lg">
+                                {calculerTotalProduits(group.produits)} DH
+                              </TableCell>
+                            </TableRow>
+                          </TableFooter>
                         </Table>
                       ) : (
                         <p className="text-center text-muted-foreground py-4">
