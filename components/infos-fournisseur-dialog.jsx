@@ -343,7 +343,7 @@ export default function InfosFournisseurDialog({
                   <div className="flex items-center gap-2">
                     <TrendingUp className="h-5 w-5 text-green-600" />
                     <span className="font-medium text-green-800">
-                      Chiffre d'Affaires :
+                      Chiffre d&apos;Affaires :
                     </span>
                   </div>
                   <Badge
