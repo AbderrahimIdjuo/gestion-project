@@ -119,9 +119,13 @@ export async function DELETE(req) {
         data: { dette: { increment: deletedTransaction.montant } },
       });
     }
-    if (deletedTransaction.lable.includes("paiement du :BL")) {
+    if (deletedTransaction.lable.includes("paiement de :BL")) {
+      console.log("deletedTransaction Label", deletedTransaction.lable);
+      const numeroBL = deletedTransaction.lable.match(/BL-(\d+)/);
+      console.log("numeroBL", numeroBL[0]);
+
       const bonLivraison = await prisma.bonLivraison.update({
-        where: { id: deletedTransaction.reference },
+        where: { numero: numeroBL[0] },
         data: { totalPaye: { decrement: deletedTransaction.montant } },
       });
 
@@ -139,6 +143,14 @@ export async function DELETE(req) {
           data: { statutPaiement: "enPartie" },
         });
       }
+
+      // mise à jour de la dette du fournisseur
+      await prisma.fournisseurs.update({
+        where: { id: deletedTransaction.reference },
+        data: {
+          dette: { increment: deletedTransaction.montant },
+        },
+      });
     }
   });
 

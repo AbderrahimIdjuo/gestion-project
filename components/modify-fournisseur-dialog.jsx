@@ -18,10 +18,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  //  DialogTrigger,
 } from "@/components/ui/dialog";
 export function ModifyFournisseur({ currFournisseur, isOpen, onClose }) {
-  //const [open, setOpen] = useState(false);
   const fournisseurSchema = z.object({
     nom: z.string().min(1, "Veuillez insérer le nom du fournisseur"),
     email: z.string().optional(),

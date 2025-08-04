@@ -94,6 +94,10 @@ const menuItems = [
         label: "Catégories des produits",
         href: "/parametres/categories",
       },
+        {
+        label: "Charges récurrentes",
+        href: "/parametres/charges",
+      },
       { label: "Comptes bancaires", href: "/parametres/banques" },
       { label: "Modes de paiement", href: "/parametres/modesPaiement" },
       { label: "Type de tâches", href: "/parametres/typeTaches" },

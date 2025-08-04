@@ -24,11 +24,13 @@ import { LoadingDots } from "@/components/loading-dots";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import ImportFournisseurs from "@/components/importer-fournisseur";
 import PaiementFournisseurDialog from "@/components/paiement-fournisseur";
+import InfosFournisseurDialog from "@/components/infos-fournisseur-dialog";
 export default function FournisseursPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currFournisseur, setCurrFournisseur] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
+  const [isInfosDialogOpen, setIsInfosDialogOpen] = useState(false);
 
   const [page, setPage] = useState(1);
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -181,8 +183,14 @@ export default function FournisseursPage() {
                   ))
                 ) : fournisseurs.data?.length > 0 ? (
                   fournisseurs.data.map((fournisseur) => (
-                    <TableRow className="font-medium" key={fournisseur.id}>
-                      <TableCell className="font-medium hover:text-purple-500 cursor-pointer !py-2">
+                    <TableRow className="font-medium " key={fournisseur.id}>
+                      <TableCell
+                        onClick={() => {
+                          setIsInfosDialogOpen(true);
+                          setCurrFournisseur(fournisseur);
+                        }}
+                        className="font-medium hover:text-purple-500 cursor-pointer !py-2"
+                      >
                         <div className="flex flex-row gap-2 justify-start items-center">
                           <Avatar className="w-10 h-10">
                             <AvatarImage
@@ -218,10 +226,9 @@ export default function FournisseursPage() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
-                            onClick={(e) => {
-                             setIsUpdateDialogOpen(true)
+                            onClick={() => {
+                              setIsUpdateDialogOpen(true);
                               setCurrFournisseur(fournisseur);
-                             
                             }}
                           >
                             <Pen className="h-4 w-4" />
@@ -313,6 +320,12 @@ export default function FournisseursPage() {
         currFournisseur={currFournisseur}
         isOpen={isUpdateDialogOpen}
         onClose={() => setIsUpdateDialogOpen(false)}
+      />
+
+      <InfosFournisseurDialog
+        fournisseur={currFournisseur}
+        isOpen={isInfosDialogOpen}
+        onClose={() => setIsInfosDialogOpen(false)}
       />
     </>
   );

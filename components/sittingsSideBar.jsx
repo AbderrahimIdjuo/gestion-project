@@ -2,7 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import NavItem from "@/components/customUi/customNavItem";
-import { Info, Landmark, Tags, List, CircleDollarSign } from "lucide-react";
+import { Info, Landmark, Tags, List, CircleDollarSign , TrendingDown} from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 
@@ -65,6 +65,13 @@ function SittingsSideBar({ page }) {
               icon={<List className="h-4 w-4" />}
               label="Type de tâches"
               isActive={page === "typeTaches"}
+            />
+          </Link>
+             <Link href="/parametres/charges">
+            <NavItem
+              icon={<TrendingDown className="h-4 w-4" />}
+              label="Charges récurrentes"
+              isActive={page === "charges"}
             />
           </Link>
         </nav>
