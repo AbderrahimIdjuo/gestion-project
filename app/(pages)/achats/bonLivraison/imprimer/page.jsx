@@ -94,21 +94,28 @@ export default function DevisPDFPage() {
                     <div className="flex justify-between items-center">
                       {group.devisNumero ? (
                         <>
-                          <div className="space-y-1">
+                          <div className="flex items-center space-x-2">
                             <h3 className="font-medium text-sm text-muted-foreground">
                               Devis numéro :
                             </h3>
                             <p className="font-semibold">{group.devisNumero}</p>
                           </div>
-                          <div className="space-y-1 text-left">
+                          <div className="flex items-center space-x-2">
                             <h3 className="font-medium text-sm text-muted-foreground">
-                              Client
+                              Client :
                             </h3>
                             <p className="font-semibold">{group.clientName}</p>
                           </div>
                         </>
                       ) : (
-                        <p className="font-semibold">Atelier</p>
+                        <div className="flex items-center space-x-2">
+                          <h3 className="font-medium text-sm text-muted-foreground">
+                            Charge :
+                          </h3>
+                          <p className="font-semibold">
+                            {group.charge || "Non spécifié"}
+                          </p>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -118,10 +125,10 @@ export default function DevisPDFPage() {
                         <TableHeader>
                           <TableRow>
                             <TableHead>Produit</TableHead>
-                            <TableHead className="text-center !py-2">
+                            <TableHead className="text-center">
                               Qté
                             </TableHead>
-                            <TableHead className="text-center !py-2">
+                            <TableHead className="text-center">
                               Prix
                             </TableHead>
                           </TableRow>
@@ -145,11 +152,11 @@ export default function DevisPDFPage() {
                           <TableRow>
                             <TableCell
                               colSpan={2}
-                              className=" p-2 text-right font-bold"
+                              className=" p-2 text-right font-bold text-lg"
                             >
                               Total :
                             </TableCell>
-                            <TableCell className="p-2 text-left font-bold">
+                            <TableCell className="p-2 text-left font-bold text-lg">
                               {totalFournitureDevis(group.produits)} DH
                             </TableCell>
                           </TableRow>

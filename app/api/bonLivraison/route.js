@@ -28,7 +28,10 @@ export async function POST(req) {
             reference,
             type,
             statutPaiement: statutPaiement || "impaye",
-            totalPaye:statutPaiement === "paye" ? parseFloat(total) : parseFloat(montantPaye) || 0,
+            totalPaye:
+              statutPaiement === "paye"
+                ? parseFloat(total)
+                : parseFloat(montantPaye) || 0,
             fournisseur: {
               connect: { id: fournisseurId },
             },
@@ -37,6 +40,7 @@ export async function POST(req) {
                 id: group.id,
                 devisNumero: group.devisNumber,
                 clientName: group.clientName,
+                charge: group.charge,
                 produits: {
                   create: group.items.map((produit) => ({
                     produit: {
@@ -207,6 +211,7 @@ export async function PUT(req) {
             update: {
               devisNumero: group.devisNumber,
               clientName: group.clientName,
+              charge: group.charge,
               produits: {
                 upsert: group.items.map((produit) => ({
                   where: {
@@ -233,6 +238,7 @@ export async function PUT(req) {
               id: group.id,
               devisNumero: group.devisNumber,
               clientName: group.clientName,
+              charge: group.charge,
               produits: {
                 create: group.items.map((produit) => ({
                   quantite: parseFloat(produit.quantite),

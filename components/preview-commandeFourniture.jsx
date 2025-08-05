@@ -96,7 +96,7 @@ export default function PreviewCommandeFournitureDialog({ commande }) {
                       <div className="flex justify-between items-center">
                         {group.devisNumero ? (
                           <>
-                            <div className="space-y-1">
+                              <div className="flex items-center space-x-2">
                               <h3 className="font-medium text-sm text-muted-foreground">
                                 Devis numéro :
                               </h3>
@@ -104,9 +104,9 @@ export default function PreviewCommandeFournitureDialog({ commande }) {
                                 {group.devisNumero}
                               </p>
                             </div>
-                            <div className="space-y-1 text-left">
+                              <div className="flex items-center space-x-2">
                               <h3 className="font-medium text-sm text-muted-foreground">
-                                Client
+                                Client :
                               </h3>
                               <p className="font-semibold">
                                 {group.clientName}

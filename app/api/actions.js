@@ -127,6 +127,15 @@ export async function addtransaction(data) {
     numeroCheque,
   } = data;
   const result = await prisma.$transaction(async (prisma) => {
+    // Modifier le statut de devis en cas de paiement d'un client
+    if (lable === "paiement devis") {
+      await prisma.devis.update({
+        where: { numero: numero },
+        data: {
+          statut: "Accepté",
+        },
+      });
+    }
     //Creation du chèque
     let cheque = null;
 

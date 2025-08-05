@@ -41,6 +41,7 @@ import { AddButton } from "@/components/customUi/styledButton";
 import { CustomDatePicker } from "@/components/customUi/customDatePicker";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
+import { Switch } from "@/components/ui/switch";
 
 export default function AddBonLivraison({ lastBonLivraison }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -56,6 +57,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
   const [selectedFournisseur, setSelectedFournisseur] = useState(null);
   const [bLGroups, setBLGroups] = useState([]);
   const [selectedDevis, setSelectedDevis] = useState({});
+  const [groupModes, setGroupModes] = useState({}); // Track mode for each group (devis/charge)
   const queryClient = useQueryClient();
 
   function formatDate(date) {
@@ -86,6 +88,8 @@ export default function AddBonLivraison({ lastBonLivraison }) {
     setMontantPaye("");
     setStatutPaiement("impaye");
     setCompte("");
+    setSelectedDevis({});
+    setGroupModes({});
   };
 
   const total = () => {
@@ -138,18 +142,24 @@ export default function AddBonLivraison({ lastBonLivraison }) {
       await axios.post("/api/bonLivraison/updatePrixUnite", { bLGroups }); // Mettre à jour les prix des produits séparément pour diminuer le temps de la requête
     },
   });
+
   //////////////Fonction pour gérer la sélection des Groupes de BL//////////////
-  // Ajout d'un groupe de commande
-  const addOrderGroup = useCallback(() => {
+  // Ajout d'un groupe de BL
+  const addBlGroup = useCallback(() => {
+    const newGroupId = crypto.randomUUID();
     const newGroup = {
-      id: crypto.randomUUID(), // Génération d'un ID unique
+      id: newGroupId, // Génération d'un ID unique
       items: [],
       devisNumber: null,
       clientName: null,
       clientId: null,
+      charge: null,
     };
     setBLGroups((prev) => [...prev, newGroup]);
+    // Initialize group mode as devis by default
+    setGroupModes((prev) => ({ ...prev, [newGroupId]: true }));
   }, []);
+
   // modifier le numero de commande d'un groupe
   const updateDevisNumberOfGroup = useCallback(
     (groupId, devisNumber, clientName, clientId, numero, totalDevi) => {
@@ -163,17 +173,88 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                 clientId,
                 numero,
                 totalDevi,
-              } // Met à jour la commande
+                charge: null, // Clear charge when devis is selected
+              }
             : group
         )
       );
     },
     []
   );
+
+  const updateChargeOfGroup = useCallback((groupId, charge) => {
+    setBLGroups((prevGroups) =>
+      prevGroups.map((group) =>
+        group.id === groupId
+          ? {
+              ...group,
+              charge,
+              // Clear devis-related fields when charge is selected
+              devisNumber: null,
+              clientName: null,
+              clientId: null,
+              numero: null,
+              totalDevi: null,
+            }
+          : group
+      )
+    );
+
+    // Clear the selected devis for this group
+    setSelectedDevis((prev) => {
+      const newState = { ...prev };
+      delete newState[groupId];
+      return newState;
+    });
+  }, []);
+
+  // Toggle group mode between devis and charge
+  const toggleGroupMode = useCallback((groupId, isDevis) => {
+    setGroupModes((prev) => ({ ...prev, [groupId]: isDevis }));
+
+    if (isDevis) {
+      // Switching to devis mode - clear charge
+      setBLGroups((prevGroups) =>
+        prevGroups.map((group) =>
+          group.id === groupId ? { ...group, charge: null } : group
+        )
+      );
+    } else {
+      // Switching to charge mode - clear all devis-related data
+      setBLGroups((prevGroups) =>
+        prevGroups.map((group) =>
+          group.id === groupId
+            ? {
+                ...group,
+                charge: null, // Also clear charge to reset
+                devisNumber: null,
+                clientName: null,
+                clientId: null,
+                numero: null,
+                totalDevi: null,
+              }
+            : group
+        )
+      );
+
+      // Clear the selected devis for this group
+      setSelectedDevis((prev) => {
+        const newState = { ...prev };
+        delete newState[groupId];
+        return newState;
+      });
+    }
+  }, []);
+
   // Suppression d'un groupe
-  const removeOrderGroup = useCallback((groupId) => {
+  const removeBlGroup = useCallback((groupId) => {
     setBLGroups((prev) => prev.filter((group) => group.id !== groupId));
     setSelectedDevis((prev) => {
+      const newState = { ...prev };
+      delete newState[groupId];
+      return newState;
+    });
+    setGroupModes((prev) => {
       const newState = { ...prev };
       delete newState[groupId];
       return newState;
@@ -290,6 +371,15 @@ export default function AddBonLivraison({ lastBonLivraison }) {
       return comptes;
     },
   });
+
+  const charges = useQuery({
+    queryKey: ["charges"],
+    queryFn: async () => {
+      const response = await axios.get("/api/charges");
+      return response.data.charges;
+    },
+  });
+
   return (
     <div className="">
       <div className="flex items-center justify-between">
@@ -494,46 +584,87 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => removeOrderGroup(group.id)}
+                          onClick={() => removeBlGroup(group.id)}
                           className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
                         >
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
-                      <div className="flex justify-between items-center mt-2">
-                        <div className="w-1/2 pr-2">
-                          <ComboBoxDevis
-                            onSelect={(devis) => {
-                              handleDevisSelect(group.id, devis);
-                              updateDevisNumberOfGroup(
-                                group.id,
-                                devis.numero,
-                                devis.client.nom,
-                                devis.clientId,
-                                `CMD-${devis?.numero?.slice(4, 13)}`,
-                                devis.total
-                              );
-                            }}
-                            setSelectedDevis={(devis) =>
-                              setSelectedDevis((prev) => ({
-                                ...prev,
-                                [group.id]: devis,
-                              }))
-                            }
-                          />
-                        </div>
-                        <div className="w-1/2 pr-2">
-                          <div className="col-span-2 grid gap-3">
-                            <Label className="text-left text-black">
-                              Client :
-                            </Label>
-                            <span className="text-md text-left text-gray-900 rounded-lg p-2 pl-4 bg-purple-50 h-[2.5rem]">
-                              {selectedDevis[group.id]?.client?.nom ||
-                                "Non sélectionné"}
-                            </span>
+                      <div className="flex items-center space-x-2 ">
+                        <Switch
+                          id={`switch-${group.id}`}
+                          checked={groupModes[group.id] || false}
+                          onCheckedChange={(checked) =>
+                            toggleGroupMode(group.id, checked)
+                          }
+                        />
+                        <Label htmlFor={`switch-${group.id}`}>
+                          {groupModes[group.id] ? "Devis" : "Charge"}
+                        </Label>
+                      </div>
+                      {groupModes[group.id] ? (
+                        <div className="flex justify-between items-center mt-2">
+                          <div className="w-1/2 pr-2">
+                            <ComboBoxDevis
+                              onSelect={(devis) => {
+                                handleDevisSelect(group.id, devis);
+                                updateDevisNumberOfGroup(
+                                  group.id,
+                                  devis.numero,
+                                  devis.client.nom,
+                                  devis.clientId,
+                                  `CMD-${devis?.numero?.slice(4, 13)}`,
+                                  devis.total
+                                );
+                              }}
+                              setSelectedDevis={(devis) =>
+                                setSelectedDevis((prev) => ({
+                                  ...prev,
+                                  [group.id]: devis,
+                                }))
+                              }
+                            />
+                          </div>
+                          <div className="w-1/2 pr-2">
+                            <div className="col-span-2 grid gap-3">
+                              <Label className="text-left text-black">
+                                Client :
+                              </Label>
+                              <span className="text-md text-left text-gray-900 rounded-lg p-2 pl-4 bg-purple-50 h-[2.5rem]">
+                                {selectedDevis[group.id]?.client?.nom ||
+                                  "Non sélectionné"}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </div>
+                      ) : (
+                        <div className="grid w-[50%] items-center gap-2 mt-2">
+                          <Label htmlFor="label">Label</Label>
+                          <Select
+                            value={group.charge || ""}
+                            name="charge"
+                            onValueChange={(value) => {
+                              updateChargeOfGroup(group.id, value);
+                            }}
+                          >
+                            <SelectTrigger className="col-span-3  bg-white focus:ring-purple-500">
+                              <SelectValue placeholder="Séléctionner..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {charges.data?.map((element) => (
+                                <SelectItem
+                                  key={element.id}
+                                  value={element.charge}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    {element.charge}
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
                     </CardHeader>
                     <CardContent className="p-4 pt-2">
                       <div className="flex justify-end items-center gap-3 mb-4">
@@ -656,7 +787,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                 <div className="w-fit">
                   <AddButton
                     type="button"
-                    onClick={addOrderGroup}
+                    onClick={addBlGroup}
                     title="Ajouter un groupe"
                   />
                 </div>

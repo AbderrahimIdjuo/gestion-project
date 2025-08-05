@@ -58,7 +58,7 @@ export function PaiementDialog({ isOpen, onClose, devis }) {
         date: date || new Date(),
       };
 
-      console.log("transData : ", data);
+      //console.log("transData : ", data);
       const loadingToast = toast.loading("Paiement en cours...");
       try {
         await addtransaction(data);

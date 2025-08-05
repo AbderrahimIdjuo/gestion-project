@@ -154,6 +154,7 @@ model OrdersGroups {
 model BLGroups {
   id             String             @id @default(uuid())
   devisNumero    String?
+  charge         String?
   clientName     String?
   bonLivraisonId String?
   bonLivraison   BonLivraison?      @relation(fields: [bonLivraisonId], references: [id], onDelete: Cascade)
