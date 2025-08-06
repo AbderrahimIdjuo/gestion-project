@@ -1,7 +1,14 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal, Pen, Trash2, Eye, Printer , CircleDollarSign } from "lucide-react";
+import {
+  MoreHorizontal,
+  Pen,
+  Trash2,
+  Eye,
+  Printer,
+  CircleDollarSign,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -42,29 +49,29 @@ export function useBonLivraisonColumns({
     {
       accessorKey: "numero",
       header: "Numéro",
+    },
+    {
+      accessorKey: "statutPaiement",
+      header: "Statut Paiement",
       cell: ({ row }) => {
-        const numero = row.getValue("numero") as string | null;
-        const total = parseFloat(row.getValue("total"));
-        const totalPaye = parseFloat(row.getValue("totalPaye"));
-        const rest = total - totalPaye;
+        const statutPaiement = row.getValue("statutPaiement") as string | null;
         let colorClass = "bg-gray-200 text-gray-700";
         let label = "Indéterminé";
-        if (rest > 0 && totalPaye > 0) {
+        if (statutPaiement === "enPartie") {
           colorClass = "bg-amber-100 text-amber-700";
           label = "En partie";
-        } else if (rest === 0 && totalPaye > 0) {
+        } else if (statutPaiement === "paye") {
           colorClass = "bg-green-100 text-green-700";
           label = "Payé";
-        } else if (rest > 0 && totalPaye === 0) {
+        } else if (statutPaiement === "impaye") {
           colorClass = "bg-red-100 text-red-700";
           label = "Impayé";
         }
 
         return (
-          <div>
-            {numero}
+          <div >
             <span
-              className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold uppercase ${colorClass}`}
+              className={`w-32 ml-2 px-2 py-1 rounded-full text-xs font-semibold uppercase ${colorClass}`}
             >
               {label}
             </span>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Plus, Package, Trash2, X, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ComboBoxDevis from "@/components/comboBox-devis";
@@ -94,9 +94,11 @@ export default function AddBonLivraison({ lastBonLivraison }) {
 
   const total = () => {
     const produits = bLGroups.flatMap((group) => group.items);
-    return produits.reduce((acc, produit) => {
-      return acc + produit.quantite * produit.prixUnite;
-    }, 0);
+    return produits
+      .reduce((acc, produit) => {
+        return acc + produit.quantite * produit.prixUnite;
+      }, 0)
+      .toFixed(0);
   };
 
   const sousTotal = (group) => {
@@ -142,6 +144,10 @@ export default function AddBonLivraison({ lastBonLivraison }) {
       await axios.post("/api/bonLivraison/updatePrixUnite", { bLGroups }); // Mettre à jour les prix des produits séparément pour diminuer le temps de la requête
     },
   });
+
+  useEffect(() => {
+    setMontantTotal(total());
+  }, [total()]);
 
   //////////////Fonction pour gérer la sélection des Groupes de BL//////////////
   // Ajout d'un groupe de BL
@@ -560,14 +566,14 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                     <h3 className="font-medium text-sm text-muted-foreground">
                       Total calculer:
                     </h3>
-                    <p className="font-semibold">{total().toFixed()} DH</p>
+                    <p className="font-semibold">{total()} DH</p>
                   </div>
                   <div className="space-y-1  grid grid-cols-3 items-center">
                     <h3 className="font-medium text-sm text-muted-foreground">
                       Total du BL :
                     </h3>
                     <Input
-                      defaultValue={total().toFixed()}
+                      value={montantTotal}
                       onChange={(e) => setMontantTotal(e.target.value)}
                       className="focus:!ring-purple-500 w-full col-span-2"
                     />

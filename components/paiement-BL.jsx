@@ -38,7 +38,7 @@ export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
   } = useForm();
   const queryClient = useQueryClient();
 
-  const statutPaiement = () => {
+  const statutPaiement = (montant) => {
     const montantPaye = bonLivraison.totalPaye + montant;
     if (
       bonLivraison.total === montantPaye ||
@@ -63,7 +63,7 @@ export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
       methodePaiement: typePaiement,
       numeroCheque: numero,
       date,
-      statutPaiement: statutPaiement(),
+      statutPaiement: statutPaiement(montant),
     };
     console.log("Data", transData);
 

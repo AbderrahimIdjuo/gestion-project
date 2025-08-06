@@ -393,7 +393,7 @@ export default function InfosFournisseurDialog({
                                 </div>
                               </TableCell>
                               <TableCell className="text-left font-medium text-sm">
-                                {reglement.compte.replace("compte ", "")}
+                                {reglement.compte?.replace("compte ", "")}
                               </TableCell>
                               <TableCell className="text-center">
                                 <Badge
