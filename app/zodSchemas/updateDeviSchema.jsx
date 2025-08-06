@@ -23,14 +23,23 @@ const validateFloat = (value) => {
 const articlSchema = z.object({
   key: z.string(),
   designation: z.string().nonempty({ message: "La désignation est requise" }),
-  quantite: z.preprocess(
-    (value) =>
-      value === "" || value === undefined ? undefined : validateInt(value),
-    z
-      .number()
-      .int({ message: "La quantité doit être un entier" })
-      .min(1, { message: "La quantité doit être au moins 1" })
-  ),
+  quantite: z.preprocess((value) => {
+    // Convert "" or undefined to undefined
+    if (value === "" || value === undefined) return undefined;
+
+    // Convert string with comma to dot notation
+    if (typeof value === "string") {
+      value = value.replace(",", ".");
+      // Remove any whitespace that might interfere
+      value = value.trim();
+    }
+
+    const number = parseFloat(value);
+    // If the conversion fails, return undefined to trigger the validation error
+    if (isNaN(number)) return undefined;
+
+    return number;
+  }, z.number({ invalid_type_error: "Ce champ doit contenir un nombre valide" }).optional()),
   prixUnite: z.preprocess(
     (value) =>
       value === "" || value === undefined ? undefined : validateFloat(value),

@@ -60,7 +60,7 @@ export default function DevisPage() {
   const [startDate, setStartDate] = useState();
   const [endDate, setEndDate] = useState();
   const [transactions, setTransactions] = useState();
-  const [ordersGroups, setOrdersGroups] = useState();
+  const [BlGroups, setBlGroups] = useState();
   const [lastDevi, setLastDevi] = useState();
   const [expandedDevis, setExpandedDevis] = useState(null);
   const [info, setInfo] = useState(false);
@@ -133,7 +133,7 @@ export default function DevisPage() {
         },
       });
       setLastDevi(response.data.lastDevi);
-      setOrdersGroups(response.data.bLGroupdsList);
+      setBlGroups(response.data.bLGroupdsList);
       setTransactions(response.data.transactionsList);
       setMaxMontant(response.data.maxMontant);
       setTotalPages(response.data.totalPages);
@@ -204,44 +204,32 @@ export default function DevisPage() {
     { value: "Expiré", lable: "Expiré", color: "gray-500" },
   ];
 
-  // const totalBlFourniture = (produits) => {
-  //   return produits?.reduce((acc, produit) => {
-  //     return acc + produit.quantite * produit.prixUnite;
-  //   }, 0);
-  // };
-  // const totalFourniture = (group) => {
-  //   return group?.reduce((acc, order) => {
-  //     return acc + totalBlFourniture(order.produits);
-  //   }, 0);
-  // };
-
   const totalBlFourniture = (produits) => {
-  return produits?.reduce((acc, produit) => {
-    return acc + produit.quantite * produit.prixUnite;
-  }, 0);
-};
+    return produits?.reduce((acc, produit) => {
+      return acc + produit.quantite * produit.prixUnite;
+    }, 0);
+  };
 
-const totalFourniture = (group) => {
-  return group?.reduce((acc, item) => {
-    const type = item?.bonLivraison?.type;
+  const totalFourniture = (group) => {
+    return group?.reduce((acc, item) => {
+      const type = item?.bonLivraison?.type;
 
-    if (type === "achats") {
-      return acc + totalBlFourniture(item.produits);
-    } else if (type === "retour") {
-      return acc - totalBlFourniture(item.produits);
-    }
+      if (type === "achats") {
+        return acc + totalBlFourniture(item.produits);
+      } else if (type === "retour") {
+        return acc - totalBlFourniture(item.produits);
+      }
 
-    return acc; // si type inconnu
-  }, 0);
-};
+      return acc; // si type inconnu
+    }, 0);
+  };
 
   const filteredOrders = (numero) => {
-    const list = ordersGroups?.filter((order) => {
+    const list = BlGroups?.filter((order) => {
       return order.devisNumero === numero;
     });
     return list;
   };
-
 
   const totalPaye = (numero) => {
     const trans = transactions?.filter((c) => c.reference === numero);

@@ -18,6 +18,7 @@ model Clients {
   adresse   String?
   ice       String?
   note      String?
+  dette     Float?      @default(0)
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
   commandes Commandes[]
@@ -118,7 +119,7 @@ model AchatsCommandes {
   id             String     @id @default(uuid())
   produitId      String
   commandeId     String?
-  quantite       Int
+  quantite       Float
   prixUnite      Float?
   payer          Boolean
   statut         String
@@ -188,7 +189,7 @@ model Articls {
   deviId      String
   designation String
   montant     Float
-  quantite    Int
+  quantite    Float
   prixUnite   Float
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -236,7 +237,7 @@ model FacturesArticls {
   id          String   @id @default(uuid())
   factureId   String
   designation String
-  quantite    Int
+  quantite    Float
   prixUnite   Float
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -283,6 +284,8 @@ model Transactions {
   reference       String?
   description     String?
   methodePaiement String?
+  fournisseurId   String?
+  clientId        String?
   date            DateTime?
   chequeId        String?   @unique
   cheque          Cheques?  @relation(fields: [chequeId], references: [id], onDelete: Cascade)

@@ -100,7 +100,7 @@ export default function UpdateDevisPage({ params }) {
     const nanoidCustom = customAlphabet(digits, 6);
     return nanoidCustom();
   };
-  const onSubmit = async (data) => {
+  const onSubmit = async (data) => {  
     toast.promise(
       (async () => {
         try {
@@ -421,8 +421,6 @@ export default function UpdateDevisPage({ params }) {
                               <TableCell>
                                 <Input
                                   defaultValue={item.quantite}
-                                 // type="number"
-                                  min={1}
                                   onChange={(e) =>
                                     handleItemChange(
                                       item.key,

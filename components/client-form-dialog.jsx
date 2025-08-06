@@ -40,6 +40,7 @@ export function ClientFormDialog() {
     telephone: z.string().optional(),
     mobile: z.string().optional(),
     note: z.string().optional(),
+    dette: z.number().optional(),
     adresse: z.string().optional(),
   });
 
@@ -60,7 +61,6 @@ export function ClientFormDialog() {
   const queryClient = useQueryClient();
   const onSubmit = async (data) => {
     console.log("data :", data);
-
     toast.promise(
       (async () => {
         try {
@@ -188,8 +188,8 @@ export function ClientFormDialog() {
                 </div>
               )}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="w- full grid grid-cols-1">
+            <div className="grid grid-cols-1 md:grid-cols-8 gap-4">
+              <div className="w- full grid grid-cols-1 md:col-span-3">
                 <Label htmlFor="telephone" className="text-left mb-2">
                   Téléphone
                 </Label>
@@ -210,7 +210,7 @@ export function ClientFormDialog() {
                   )}
                 </div>
               </div>
-              <div className="w- full grid grid-cols-1">
+              <div className="w- full grid grid-cols-1 md:col-span-3">
                 <Label htmlFor="mobile" className="text-left mb-2">
                   Mobile
                 </Label>
@@ -227,6 +227,27 @@ export function ClientFormDialog() {
                     <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
                       <CircleX className="h-4 w-4" />
                       {errors.mobile.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="w- full grid grid-cols-1 md:col-span-2">
+                <Label htmlFor="dette" className="text-left mb-2">
+                  Dette
+                </Label>
+                <div>
+                  <Input
+                    id="dette"
+                    type="number"
+                    {...register("dette", { valueAsNumber: true })}
+                    className={`w-full  focus:!ring-purple-500 ${
+                      errors.dette && "border-red-500 border-2"
+                    }`}
+                  />
+                  {errors.dette && (
+                    <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
+                      <CircleX className="h-4 w-4" />
+                      {errors.dette.message}
                     </p>
                   )}
                 </div>
@@ -269,7 +290,7 @@ export function ClientFormDialog() {
             </div>
             <div className="grid gap-2 w-full">
               <Label htmlFor="noteClient" className="text-left text-black">
-              Infos supplémentaires
+                Infos supplémentaires
               </Label>
               <Textarea
                 name="note"

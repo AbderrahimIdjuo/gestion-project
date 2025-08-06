@@ -56,6 +56,7 @@ export function PaiementDialog({ isOpen, onClose, devis }) {
         lable: "paiement devis",
         description: devis.numero + ", client :  " + devis.client.nom,
         date: date || new Date(),
+        clientId: devis.client.id,
       };
 
       //console.log("transData : ", data);

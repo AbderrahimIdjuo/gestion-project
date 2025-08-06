@@ -47,6 +47,15 @@ export async function POST(req) {
             },
           },
         });
+        // Modifier la dette du client
+        await prisma.clients.update({
+          where: { id: clientId },
+          data: {
+            dette: {
+              increment: total, // Incrémenter la dette du client
+            },
+          },
+        });
       },
       {
         // Temps max d’exécution de la transaction
@@ -108,10 +117,10 @@ export async function PUT(req) {
       (articl) => !incomingIds.has(articl.id)
     );
 
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (prisma) => {
       // Delete old articls only if necessary
       if (deletedArticls.length > 0) {
-        await tx.articls.deleteMany({
+        await prisma.articls.deleteMany({
           where: {
             id: { in: deletedArticls.map((p) => p.id) },
           },
@@ -119,7 +128,7 @@ export async function PUT(req) {
       }
 
       // Update devis and its articles
-      await tx.devis.update({
+      await prisma.devis.update({
         where: { id },
         data: {
           numero,
@@ -160,6 +169,26 @@ export async function PUT(req) {
           },
         },
       });
+
+      const difference = parseFloat(total) - parseFloat(devi.total);
+
+      let detteUpdate = {};
+
+      if (difference > 0) {
+        detteUpdate = { increment: difference };
+      } else if (difference < 0) {
+        detteUpdate = { decrement: -difference };
+      }
+
+      // Modifier la dette du client
+      if (Object.keys(detteUpdate).length > 0) {
+        await prisma.clients.update({
+          where: { id: clientId },
+          data: {
+            dette: detteUpdate,
+          },
+        });
+      }
     });
 
     return NextResponse.json({ result });

@@ -32,6 +32,7 @@ export default function ClientsPage() {
   const [page, setPage] = useState(1);
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [totalPages, setTotalPages] = useState();
+  const [isInfosDialogOpen, setIsInfosDialogOpen] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -135,6 +136,7 @@ export default function ClientsPage() {
               <TableRow>
                 <TableHead>Nom</TableHead>
                 <TableHead>Téléphone</TableHead>
+                <TableHead>Dette</TableHead>
                 <TableHead>Adresse</TableHead>
                 <TableHead>ICE</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -167,6 +169,9 @@ export default function ClientsPage() {
                     <TableCell className="!py-2" align="left">
                       <Skeleton className="h-4 w-full" />
                     </TableCell>
+                    <TableCell className="!py-2" align="left">
+                      <Skeleton className="h-4 w-full" />
+                    </TableCell>
                     <TableCell className="!py-2">
                       <div className="flex gap-2 justify-end">
                         <Skeleton className="h-7 w-7 rounded-full" />
@@ -177,28 +182,37 @@ export default function ClientsPage() {
                 ))
               ) : clients.data?.length > 0 ? (
                 clients.data?.map((client) => (
-                  <TableRow className="font-medium" key={client.id}>
-                    <ClientInfoDialog client={client}>
-                      <TableCell className="font-medium hover:text-purple-500 cursor-pointer !py-2">
-                        <div className="flex flex-row gap-2 justify-start items-center">
-                          <Avatar className="w-8 h-8">
-                            <AvatarImage
-                              src={`https://api.dicebear.com/7.x/initials/svg?seed=${client.nom}`}
-                            />
-                            <AvatarFallback>
-                              {getInitials(client.nom)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <h2 className="text-sm font-bold">
-                            {client.titre
-                              ? client.titre + ". " + client.nom.toUpperCase()
-                              : client.nom.toUpperCase()}
-                          </h2>
-                        </div>
-                      </TableCell>
-                    </ClientInfoDialog>
+                  <TableRow
+                    onClick={() => {
+                      setIsInfosDialogOpen(true);
+                      setcurrClient(client);
+                    }}
+                    className="font-medium"
+                    key={client.id}
+                  >
+                    <TableCell className="font-medium hover:text-purple-500 cursor-pointer !py-2">
+                      <div className="flex flex-row gap-2 justify-start items-center">
+                        <Avatar className="w-8 h-8">
+                          <AvatarImage
+                            src={`https://api.dicebear.com/7.x/initials/svg?seed=${client.nom}`}
+                          />
+                          <AvatarFallback>
+                            {getInitials(client.nom)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <h2 className="text-sm font-bold">
+                          {client.titre
+                            ? client.titre + ". " + client.nom.toUpperCase()
+                            : client.nom.toUpperCase()}
+                        </h2>
+                      </div>
+                    </TableCell>
+
                     <TableCell className="text-md !py-2">
                       {client.telephone}
+                    </TableCell>
+                    <TableCell className="text-md !py-2">
+                      {client.dette}
                     </TableCell>
                     <TableCell className="text-md !py-2">
                       {client.adresse}
@@ -271,6 +285,11 @@ export default function ClientsPage() {
         }}
         itemType="client"
       ></DeleteConfirmationDialog>
+      <ClientInfoDialog
+        client={currClient}
+        isOpen={isInfosDialogOpen}
+        onClose={() => setIsInfosDialogOpen(false)}
+      />
     </>
   );
 }

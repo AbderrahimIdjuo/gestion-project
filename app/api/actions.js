@@ -125,14 +125,25 @@ export async function addtransaction(data) {
     date,
     methodePaiement,
     numeroCheque,
+    clientId,
   } = data;
   const result = await prisma.$transaction(async (prisma) => {
-    // Modifier le statut de devis en cas de paiement d'un client
     if (lable === "paiement devis") {
+      // Modifier le statut de devis en cas de paiement d'un client
       await prisma.devis.update({
         where: { numero: numero },
         data: {
           statut: "Accepté",
+        },
+      });
+
+      // La dette du client sera décrémentée
+      await prisma.clients.update({
+        where: { id: clientId },
+        data: {
+          dette: {
+            decrement: montant, // Decrement la dette du client
+          },
         },
       });
     }
@@ -160,6 +171,7 @@ export async function addtransaction(data) {
         lable,
         description,
         methodePaiement,
+        clientId,
         date: date || new Date(),
         cheque: cheque
           ? {

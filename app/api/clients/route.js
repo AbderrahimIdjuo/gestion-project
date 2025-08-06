@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 export async function POST(req) {
   try {
     const resopns = await req.json();
-    const { nom, email, telephone, adresse, titre, ice, mobile, note } =
+    const { nom, email, telephone, adresse, titre, ice, mobile, note, dette } =
       resopns;
     const result = await prisma.clients.create({
       data: {
@@ -17,6 +17,7 @@ export async function POST(req) {
         ice,
         mobile,
         note,
+        dette,
       },
     });
 
@@ -41,8 +42,18 @@ export async function POST(req) {
 export async function PUT(req) {
   try {
     const resopns = await req.json();
-    const { id, nom, email, telephone, adresse, titre, ice, mobile, note } =
-      resopns;
+    const {
+      id,
+      nom,
+      email,
+      telephone,
+      adresse,
+      titre,
+      ice,
+      mobile,
+      note,
+      dette,
+    } = resopns;
     const result = await prisma.clients.update({
       where: { id },
       data: {
@@ -54,6 +65,7 @@ export async function PUT(req) {
         ice,
         mobile,
         note,
+        dette,
       },
     });
 

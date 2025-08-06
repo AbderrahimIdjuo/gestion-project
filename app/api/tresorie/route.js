@@ -152,6 +152,22 @@ export async function DELETE(req) {
         },
       });
     }
+
+    if (deletedTransaction.lable.includes("paiement devis")) {
+      // mise à jour de la dette du client
+      await prisma.clients.update({
+        where: { id: deletedTransaction.clientId },
+        data: {
+          dette: { increment: deletedTransaction.montant },
+        },
+      });
+
+      console.log(
+        "update of clietn debt for payment of devis",
+        deletedTransaction.clientId,
+        deletedTransaction.montant
+      );
+    }
   });
 
   return NextResponse.json({ result });

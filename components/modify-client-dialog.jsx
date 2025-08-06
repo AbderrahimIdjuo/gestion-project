@@ -41,6 +41,7 @@ export function ModifyClientDialog({ currClient }) {
     telephone: z.string().optional(),
     mobile: z.string().optional(),
     note: z.string().optional(),
+    dette: z.number().optional(),
     adresse: z.string().optional(),
   });
   const {
@@ -60,6 +61,7 @@ export function ModifyClientDialog({ currClient }) {
       mobile: currClient?.mobile,
       ice: currClient?.ice ?? "",
       note: currClient?.note ?? "",
+      dette: currClient?.dette,
     },
   });
   const queryClient = useQueryClient();
@@ -108,8 +110,8 @@ export function ModifyClientDialog({ currClient }) {
           <DialogHeader>
             <DialogTitle>Modifier un client</DialogTitle>
             <DialogDescription>
-              Modifier les informations du client ici. Cliquez sur
-              enregistrer lorsque vous avez terminé.
+              Modifier les informations du client ici. Cliquez sur enregistrer
+              lorsque vous avez terminé.
             </DialogDescription>
           </DialogHeader>
           <div className="w-full grid gap-6 my-4">
@@ -185,8 +187,8 @@ export function ModifyClientDialog({ currClient }) {
                 </div>
               )}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="w- full grid grid-cols-1">
+            <div className="grid grid-cols-1 md:grid-cols-8 gap-4">
+              <div className="w- full grid grid-cols-1 md:col-span-3">
                 <Label htmlFor="telephone" className="text-left mb-2">
                   Téléphone
                 </Label>
@@ -207,7 +209,7 @@ export function ModifyClientDialog({ currClient }) {
                   )}
                 </div>
               </div>
-              <div className="w- full grid grid-cols-1">
+              <div className="w- full grid grid-cols-1 md:col-span-3">
                 <Label htmlFor="mobile" className="text-left mb-2">
                   Mobile
                 </Label>
@@ -224,6 +226,27 @@ export function ModifyClientDialog({ currClient }) {
                     <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
                       <CircleX className="h-4 w-4" />
                       {errors.mobile.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="w- full grid grid-cols-1 md:col-span-2">
+                <Label htmlFor="dette" className="text-left mb-2">
+                  Dette
+                </Label>
+                <div>
+                  <Input
+                    id="dette"
+                    type="number"
+                    {...register("dette", { valueAsNumber: true })}
+                    className={`w-full  focus:!ring-purple-500 ${
+                      errors.dette && "border-red-500 border-2"
+                    }`}
+                  />
+                  {errors.dette && (
+                    <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
+                      <CircleX className="h-4 w-4" />
+                      {errors.dette.message}
                     </p>
                   )}
                 </div>

@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import Spinner from "@/components/customUi/Spinner";
 import {
   Card,
@@ -17,7 +16,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
 import {
   Table,
   TableBody,
@@ -36,7 +34,6 @@ import {
   Package,
   Receipt,
   Calendar,
-  DollarSign,
 } from "lucide-react";
 import {
   Select,
@@ -45,87 +42,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-// Données d'exemple pour le fournisseur
-const supplierData = {
-  nom: "SARL TechnoPlus",
-  ice: "002345678000023",
-  telephone: "+212 5 22 45 67 89",
-  mobile: "+212 6 61 23 45 67",
-  adresse: "123 Avenue Mohammed V, Casablanca 20000, Maroc",
-  dette: 45750.0,
-  chiffreAffaires: 285600.0,
-  topProduits: [
-    { nom: "Ordinateurs portables HP", quantite: 45, montant: 67500.0 },
-    { nom: "Imprimantes Canon", quantite: 28, montant: 42000.0 },
-    { nom: 'Écrans Dell 24"', quantite: 35, montant: 35000.0 },
-    { nom: "Claviers sans fil", quantite: 120, montant: 18000.0 },
-    { nom: "Souris optiques", quantite: 150, montant: 15000.0 },
-  ],
-  dernierReglements: [
-    {
-      date: "2024-01-15",
-      reference: "REG-2024-001",
-      montant: 12500.0,
-      statut: "Validé",
-    },
-    {
-      date: "2024-01-08",
-      reference: "REG-2024-002",
-      montant: 8750.0,
-      statut: "Validé",
-    },
-    {
-      date: "2023-12-28",
-      reference: "REG-2023-156",
-      montant: 15200.0,
-      statut: "Validé",
-    },
-    {
-      date: "2023-12-20",
-      reference: "REG-2023-155",
-      montant: 9800.0,
-      statut: "Validé",
-    },
-    {
-      date: "2023-12-15",
-      reference: "REG-2023-154",
-      montant: 22100.0,
-      statut: "Validé",
-    },
-    {
-      date: "2023-12-08",
-      reference: "REG-2023-153",
-      montant: 6750.0,
-      statut: "Validé",
-    },
-    {
-      date: "2023-11-30",
-      reference: "REG-2023-152",
-      montant: 18900.0,
-      statut: "Validé",
-    },
-    {
-      date: "2023-11-22",
-      reference: "REG-2023-151",
-      montant: 11400.0,
-      statut: "Validé",
-    },
-    {
-      date: "2023-11-15",
-      reference: "REG-2023-150",
-      montant: 7650.0,
-      statut: "Validé",
-    },
-    {
-      date: "2023-11-08",
-      reference: "REG-2023-149",
-      montant: 13200.0,
-      statut: "Validé",
-    },
-  ],
-};
 
 export default function InfosFournisseurDialog({
   fournisseur,
@@ -135,6 +53,7 @@ export default function InfosFournisseurDialog({
   const [bonLivraisons, setBonLivraisons] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [sortKey, setSortKey] = useState("montant");
+
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("fr-MA", {
       style: "currency",
@@ -163,7 +82,6 @@ export default function InfosFournisseurDialog({
     },
     enabled: !!fournisseur?.id,
   });
-  //console.log("supplierData", fournisseur);
   const chiffreAffaires =
     bonLivraisons?.reduce((acc, bon) => {
       if (bon.type === "achats") {
