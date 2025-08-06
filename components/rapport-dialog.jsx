@@ -50,6 +50,8 @@ import {
   startOfQuarter,
   endOfQuarter,
   subQuarters,
+  startOfDay,
+  endOfDay,
 } from "date-fns";
 
 function formatDate(dateString) {
@@ -67,35 +69,25 @@ export default function RapportDialog() {
     periode: "ce-mois",
     statutPaiement: ["impaye", "enPartie"],
   });
-  function getDateRangeFromPeriode(periode) {
+  function getDateRangeFromPeriode(periode, startDate = null, endDate = null) {
     const now = new Date();
 
     switch (periode) {
+      case "aujourd'hui":
+        return {
+          from: startOfDay(now),
+          to: endOfDay(now),
+        };
       case "ce-mois":
         return {
           from: startOfMonth(now),
           to: endOfMonth(now),
         };
-      case "3-derniers-mois":
+      case "mois-dernier":
+        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
         return {
-          from: subMonths(startOfMonth(now), 2),
-          to: endOfMonth(now),
-        };
-      case "6-derniers-mois":
-        return {
-          from: subMonths(startOfMonth(now), 5),
-          to: endOfMonth(now),
-        };
-      case "cette-annee":
-        return {
-          from: startOfYear(now),
-          to: endOfYear(now),
-        };
-      case "annee-derniere":
-        const lastYear = subYears(now, 1);
-        return {
-          from: startOfYear(lastYear),
-          to: endOfYear(lastYear),
+          from: startOfMonth(lastMonth),
+          to: endOfMonth(lastMonth),
         };
       case "trimestre-actuel":
         return {
@@ -108,10 +100,26 @@ export default function RapportDialog() {
           from: startOfQuarter(prevQuarter),
           to: endOfQuarter(prevQuarter),
         };
+      case "cette-annee":
+        return {
+          from: startOfYear(now),
+          to: endOfYear(now),
+        };
+      case "annee-derniere":
+        const lastYear = subYears(now, 1);
+        return {
+          from: startOfYear(lastYear),
+          to: endOfYear(lastYear),
+        };
+      case "personnalisee":
+        return {
+          from: startDate ? new Date(startDate) : null,
+          to: endDate ? new Date(endDate) : null,
+        };
       default:
         return {
-          from: new Date(startDate) ?? null,
-          to: new Date(endDate) ?? null,
+          from: null,
+          to: null,
         };
     }
   }
@@ -208,7 +216,7 @@ export default function RapportDialog() {
   }
 
   function rest() {
-    return total() - totalPaye();
+    return (total() - totalPaye()).toFixed(2);
   }
   useEffect(() => {
     if (!open) {
@@ -220,11 +228,13 @@ export default function RapportDialog() {
     if (!Array.isArray(bonLivraisons)) {
       throw new TypeError("bonLivraisons doit être un tableau.");
     }
+
     const map = new Map();
 
     for (const bl of bonLivraisons) {
       const nom = bl.fournisseur?.nom ?? "Inconnu";
       const total = bl.total || 0;
+      const totalPaye = bl.totalPaye || 0;
       const isAchat = bl.type === "achats";
       const isRetour = bl.type === "retour";
 
@@ -237,11 +247,14 @@ export default function RapportDialog() {
           total: isAchat ? total : -total,
           montantAchats: isAchat ? total : 0,
           montantRetour: isRetour ? total : 0,
+          montantPaye: totalPaye,
         });
       } else {
         const existing = map.get(nom);
         existing.NbrBL += 1;
         existing.total += isAchat ? total : -total;
+        existing.montantPaye += totalPaye;
+
         if (isAchat) {
           existing.montantAchats += total;
           existing.NbrBLAchats += 1;
@@ -440,22 +453,22 @@ export default function RapportDialog() {
                     <SelectValue placeholder="Sélectionnez la période" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="aujourd'hui">
+                      Aujourd&apos;hui
+                    </SelectItem>
                     <SelectItem value="ce-mois">Ce mois</SelectItem>
-                    <SelectItem value="3-derniers-mois">
-                      Les 3 derniers mois
-                    </SelectItem>
-                    <SelectItem value="6-derniers-mois">
-                      Les 6 derniers mois
-                    </SelectItem>
-                    <SelectItem value="cette-annee">Cette année</SelectItem>
-                    <SelectItem value="annee-derniere">
-                      L&apos;année dernière
+                    <SelectItem value="mois-dernier">
+                      Le mois dernier
                     </SelectItem>
                     <SelectItem value="trimestre-actuel">
                       Trimestre actuel
                     </SelectItem>
                     <SelectItem value="trimestre-precedent">
                       Trimestre précédent
+                    </SelectItem>
+                    <SelectItem value="cette-annee">Cette année</SelectItem>
+                    <SelectItem value="annee-derniere">
+                      L&apos;année dernière
                     </SelectItem>
                     <SelectItem value="personnalisee">
                       Période personnalisée
@@ -659,7 +672,9 @@ export default function RapportDialog() {
                         <TableHead>Nbr Retour</TableHead>
                         <TableHead>Achats</TableHead>
                         <TableHead>Retour</TableHead>
+                        <TableHead>M.Payé</TableHead>
                         <TableHead>Montant</TableHead>
+                        <TableHead>Reste</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -673,7 +688,11 @@ export default function RapportDialog() {
                             <TableCell>{element.NbrBLRetour}</TableCell>
                             <TableCell>{element.montantAchats} DH</TableCell>
                             <TableCell>{element.montantRetour} DH</TableCell>
+                            <TableCell>{element.montantPaye} DH</TableCell>
                             <TableCell>{element.total} DH</TableCell>
+                            <TableCell>
+                              {element.total - element.montantPaye} DH
+                            </TableCell>
                           </TableRow>
                         )
                       )}

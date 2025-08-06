@@ -18,7 +18,7 @@ import { formatMontant } from "@/lib/functions";
 import { formatDate } from "@/lib/functions";
 
 
-export default function DevisPDFPage() {
+export default function ImprimerRapport() {
   const [bonLivraison, setBonLivraison] = useState();
   useEffect(() => {
     const storedData = localStorage.getItem("bonLivraison-rapport");

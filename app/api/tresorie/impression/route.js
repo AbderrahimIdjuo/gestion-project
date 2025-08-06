@@ -32,9 +32,10 @@ export async function GET(req) {
     filters.methodePaiement = methodePaiement;
   }
 
+
   // Date range filter
   if (from && to) {
-    filters.createdAt = {
+    filters.date = {
       gte: new Date(from), // Greater than or equal to "from"
       lte: new Date(to), // Less than or equal to "to"
     };
@@ -49,7 +50,6 @@ export async function GET(req) {
     where: filters,
     orderBy: { updatedAt: "desc" },
   });
-
 
   return NextResponse.json({ transactions });
 }

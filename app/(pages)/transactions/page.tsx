@@ -64,7 +64,7 @@ type Transaction = {
   date: string;
   cheque: {
     numero: string;
-    dateReglement : string,
+    dateReglement: string;
   };
 };
 
@@ -204,63 +204,61 @@ export default function Banques() {
       };
     }
   };
- const handleChequeClick = (transaction: Transaction) => {
-  if (transaction.methodePaiement === "cheque") {
-    let beneficiaire ="Inconnu"
-if (transaction.description.includes("bénéficiaire")){
- beneficiaire = transaction.description
-      ?.replace(/bénéficiaire\s*:/i, "") // plus flexible
-      .trim() 
-} else if (transaction.description.includes("DEV")) {
-  beneficiaire = "ste.OUDAOUDOX " 
-}
-
-   ;
-
-    const numeroCheque = transaction.cheque?.numero || "Inconnu";
- const montant = transaction.montant || "Inconnu";
- const dateRegelemen = transaction.cheque.dateReglement || "Inconnu";
-  const compte = transaction.compte || "Inconnu";
-
-    toast(
-      (t) => (
-        <div className="flex flex-col gap-4 justify-start items-center ">
-          <div className="flex flex-col  text-sm w-full">
-            <span>
-              Bénéficiaire: <b>{beneficiaire}</b>
-            </span>
-            <span>
-              Montant: <b>{montant}</b>
-            </span>
-              <span>
-              Date de réglement: <b>{formatDate(dateRegelemen)}</b>
-            </span>
-              <span>
-              Compte: <b>{compte}</b>
-            </span>
-            <span>
-              Numéro de chèque: <b>{numeroCheque}</b>
-            </span>
-          </div>
-
-          <button
-            onClick={() => toast.dismiss(t.id)}
-            className="ml-auto text-white bg-purple-500 px-3 py-1 rounded hover:bg-purple-600 text-sm"
-          >
-            Fermer
-          </button>
-        </div>
-      ),
-      {
-        style: {
-          padding: "12px",
-          backgroundColor: "#f9f9f9",
-        },
-        duration: 50000,
+  const handleChequeClick = (transaction: Transaction) => {
+    if (transaction.methodePaiement === "cheque") {
+      let beneficiaire = "Inconnu";
+      if (transaction.description.includes("bénéficiaire")) {
+        beneficiaire = transaction.description
+          ?.replace(/bénéficiaire\s*:/i, "") // plus flexible
+          .trim();
+      } else if (transaction.description.includes("DEV")) {
+        beneficiaire = "ste.OUDAOUDOX ";
       }
-    );
-  }
-};
+
+      const numeroCheque = transaction.cheque?.numero || "Inconnu";
+      const montant = transaction.montant || "Inconnu";
+      const dateRegelemen = transaction.cheque.dateReglement || "Inconnu";
+      const compte = transaction.compte || "Inconnu";
+
+      toast(
+        (t) => (
+          <div className="flex flex-col gap-4 justify-start items-center ">
+            <div className="flex flex-col  text-sm w-full">
+              <span>
+                Bénéficiaire: <b>{beneficiaire}</b>
+              </span>
+              <span>
+                Montant: <b>{montant}</b>
+              </span>
+              <span>
+                Date de réglement: <b>{formatDate(dateRegelemen)}</b>
+              </span>
+              <span>
+                Compte: <b>{compte}</b>
+              </span>
+              <span>
+                Numéro de chèque: <b>{numeroCheque}</b>
+              </span>
+            </div>
+
+            <button
+              onClick={() => toast.dismiss(t.id)}
+              className="ml-auto text-white bg-purple-500 px-3 py-1 rounded hover:bg-purple-600 text-sm"
+            >
+              Fermer
+            </button>
+          </div>
+        ),
+        {
+          style: {
+            padding: "12px",
+            backgroundColor: "#f9f9f9",
+          },
+          duration: 50000,
+        }
+      );
+    }
+  };
 
   return (
     <>

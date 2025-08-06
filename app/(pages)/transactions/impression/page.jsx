@@ -13,7 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { EnteteDevis } from "@/components/Entete-devis";
-import { useState  , useEffect} from "react";
+import { useState, useEffect } from "react";
 function formatDate(dateString) {
   return dateString?.split("T")[0]?.split("-")?.reverse()?.join("-");
 }
@@ -48,65 +48,25 @@ export default function ImpressionTransactions() {
         return acc + t.montant;
       } else if (t.type === "depense") {
         return acc - t.montant;
+      } else if (t.type === "vider") {
+        return acc - t.montant;
       }
     }, 0);
   };
 
+  const typeLabel = (type) => {
+    if (type === "recette") {
+      return "Recette";
+    } else if (type === "depense") {
+      return "Dépense";
+    } else if (type === "vider") {
+      return "Vider la caisse";
+    }
+    return type;
+  };
+
   return (
     <>
-      {/* <div className="p-8 print:p-0">
-        <h1 className="text-2xl font-bold mb-4">Transactions à Imprimer</h1>
-        <table className="w-full border-collapse border border-gray-300 text-sm">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="border border-gray-300 p-2">Date</th>
-              <th className="border border-gray-300 p-2">Label</th>
-              <th className="border border-gray-300 p-2">Montant</th>
-              <th className="border border-gray-300 p-2">Type</th>
-              <th className="border border-gray-300 p-2">Méthode</th>
-              <th className="border border-gray-300 p-2">Compte</th>
-              <th className="border border-gray-300 p-2">Description</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
-              <tr>
-                <td colSpan={7} className="text-center p-4">
-                  Chargement...
-                </td>
-              </tr>
-            ) : transactions?.length > 0 ? (
-              transactions.map((t) => (
-                <tr key={t.id}>
-                  <td className="border border-gray-300 p-2">
-                    {formatDate(t.date) || formatDate(t.createdAt)}
-                  </td>
-                  <td className="border border-gray-300 p-2">{t.lable}</td>
-                  <td className="border border-gray-300 p-2">{t.montant} DH</td>
-                  <td className="border border-gray-300 p-2">{t.type}</td>
-                  <td className="border border-gray-300 p-2">
-                    {t.methodePaiement === "espece"
-                      ? "Espèce"
-                      : t.methodePaiement === "cheque"
-                      ? "Chèque"
-                      : t.methodePaiement}
-                  </td>
-                  <td className="border border-gray-300 p-2">{t.compte}</td>
-                  <td className="border border-gray-300 p-2">
-                    {t.description}
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={7} className="text-center p-4">
-                  Aucune transaction trouvée
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div> */}
       <div className="container mx-auto p-8 w-[90vw] bg-white min-h-screen print:p-0 print:max-w-none mb-10">
         {/* Document Content */}
         <div id="print-area" className="space-y-3">
@@ -143,7 +103,7 @@ export default function ImpressionTransactions() {
                         {t.montant} DH
                       </TableCell>
                       <TableCell className="px-1 py-2">
-                        {t.type === "depense" ? "Dépense" : "Recette"}
+                        {typeLabel(t.type)}
                       </TableCell>
                       <TableCell className="px-1 py-2">
                         {" "}
