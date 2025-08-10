@@ -191,6 +191,9 @@ export default function UpdateFactureDialog({ facture, isOpen, onClose }) {
                       <TableRow>
                         <TableHead className="w-[30%]">Articls</TableHead>
                         <TableHead className="w-[10%] text-center">
+                          Hauteur
+                        </TableHead>
+                        <TableHead className="w-[10%] text-center">
                           Longueur
                         </TableHead>
                         <TableHead className="w-[10%] text-center">
@@ -208,8 +211,8 @@ export default function UpdateFactureDialog({ facture, isOpen, onClose }) {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {items.map((item) => (
-                        <TableRow key={item.id}>
+                      {items.map((item, index) => (
+                        <TableRow key={index}>
                           <TableCell>
                             <Input
                               spellCheck="false"
@@ -222,6 +225,19 @@ export default function UpdateFactureDialog({ facture, isOpen, onClose }) {
                                 );
                               }}
                               className="focus:!ring-purple-500 w-full"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              defaultValue={item.height}
+                              onChange={(e) => {
+                                handleItemChange(
+                                  item.key,
+                                  "height",
+                                  validateFloat(e.target.value)
+                                );
+                              }}
+                              className="focus:!ring-purple-500 w-24"
                             />
                           </TableCell>
                           <TableCell>

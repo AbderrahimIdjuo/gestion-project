@@ -84,6 +84,7 @@ export default function CreateFactureDialog() {
     onSuccess: () => {
       queryClient.invalidateQueries(["factures"]);
       setIsDialogOpen(false);
+      resetDialog();
     },
   });
   const removeItem = (deletedItem) => {
@@ -183,6 +184,9 @@ export default function CreateFactureDialog() {
                       <TableRow>
                         <TableHead className="w-[30%]">Articls</TableHead>
                         <TableHead className="w-[10%] text-center">
+                          Hauteur
+                        </TableHead>
+                        <TableHead className="w-[10%] text-center">
                           Longueur
                         </TableHead>
                         <TableHead className="w-[10%] text-center">
@@ -214,6 +218,19 @@ export default function CreateFactureDialog() {
                                 );
                               }}
                               className="focus:!ring-purple-500 w-full"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              defaultValue={item.height}
+                              onChange={(e) => {
+                                handleItemChange(
+                                  item.key,
+                                  "height",
+                                  validateFloat(e.target.value)
+                                );
+                              }}
+                              className="focus:!ring-purple-500 w-24 "
                             />
                           </TableCell>
                           <TableCell>

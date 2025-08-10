@@ -13,7 +13,7 @@ import {
 import CustomPagination from "@/components/customUi/customPagination";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Trash2, Filter, Search, ChevronRight, Printer } from "lucide-react";
+import { Trash2, Filter, Search, Printer } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
@@ -34,23 +34,13 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Calendar } from "@/components/ui/calendar";
-import CustomTooltip from "@/components/customUi/customTooltip";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import TransactionDialog from "@/components/new-transaction";
 import { LoadingDots } from "@/components/loading-dots";
 import ComboBoxFournisseur from "@/components/comboBox-fournisseurs";
+import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
+import CaisseRapportDialog from "@/components/caisse-rapport-dialog";
+import { formatDate } from "@/lib/functions";
 
-function formatDate(dateString: string) {
-  return dateString?.split("T")[0].split("-").reverse().join("-");
-}
 type Transaction = {
   id: string;
   createdAt: string;
@@ -394,63 +384,12 @@ export default function Banques() {
                     <Label htmlFor="date" className="text-left text-black">
                       Date :
                     </Label>
-                    <div className="flex gap-2 justify-center items-center">
-                      {/* date début */}
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "col-span-3 w-full justify-start text-left font-normal hover:text-purple-600 hover:bg-white hover:border-2 hover:border-purple-500",
-                              !startDate && "text-muted-foreground"
-                            )}
-                          >
-                            <CalendarIcon />
-                            {startDate ? (
-                              format(startDate, "dd-MM-yyyy")
-                            ) : (
-                              <span>début</span>
-                            )}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                          <Calendar
-                            mode="single"
-                            selected={startDate}
-                            onSelect={setStartDate}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <ChevronRight className="h-10 w-10" />
-                      {/* date fin */}
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "col-span-3 w-full justify-start text-left font-normal hover:text-purple-600 hover:bg-white hover:border-2 hover:border-purple-500",
-                              !endDate && "text-muted-foreground"
-                            )}
-                          >
-                            <CalendarIcon />
-                            {endDate ? (
-                              format(endDate, "dd-MM-yyyy")
-                            ) : (
-                              <span>fin</span>
-                            )}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                          <Calendar
-                            mode="single"
-                            selected={endDate}
-                            onSelect={setEndDate}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
+                    <CustomDateRangePicker
+                      startDate={startDate}
+                      setStartDate={setStartDate}
+                      endDate={endDate}
+                      setEndDate={setEndDate}
+                    />
                   </div>
                   <div className="w-full space-y-2">
                     <ComboBoxFournisseur
@@ -481,6 +420,7 @@ export default function Banques() {
               Imprimer
             </Button>
             <TransactionDialog />
+            <CaisseRapportDialog />
           </div>
         </div>
         <div className="flex justify between gap-6 items-start">

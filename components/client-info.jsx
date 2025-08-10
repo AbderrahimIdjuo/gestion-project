@@ -6,11 +6,9 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Mail,
   Phone,
@@ -43,15 +41,6 @@ export function ClientInfoDialog({ client, isOpen, onClose }) {
   const [devis, setDevis] = useState([]);
   const [transactions, setTransactions] = useState([]);
 
-  const getInitials = (name) => {
-    if (name) {
-      return name
-        .split(" ")
-        .map((word) => word[0])
-        .join("")
-        .toUpperCase();
-    }
-  };
   const data = useQuery({
     queryKey: ["clientStatistiques", client],
     queryFn: async () => {
@@ -80,7 +69,10 @@ export function ClientInfoDialog({ client, isOpen, onClose }) {
     }
   };
 
-  const chiffreAffaires = devis.reduce((sum, devis) => sum + devis.total, 0);
+  const chiffreAffaires = devis.reduce(
+    (sum, devis) => sum + devis.totalPaye,
+    0
+  );
   return (
     <div className="p-8">
       <Dialog open={isOpen} onOpenChange={onClose}>
@@ -94,33 +86,11 @@ export function ClientInfoDialog({ client, isOpen, onClose }) {
               <Card className="w-full col">
                 <CardHeader className=" pb-0">
                   <CardTitle className="text-lg pb-0 flex gap-2 items-center">
-                    <Avatar className="w-12 h-12 m-2">
-                      <AvatarImage
-                        src={`https://api.dicebear.com/7.x/initials/svg?seed=${client?.nom}`}
-                      />
-                      <AvatarFallback>
-                        {getInitials(client?.nom)}
-                      </AvatarFallback>
-                    </Avatar>{" "}
                     {client?.titre && client?.titre + ". "}
                     {client?.nom?.toUpperCase()}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-6">
-                  {/* <div className="flex flex-col items-center mb-6">
-                    <Avatar className="w-24 h-24 mb-4">
-                      <AvatarImage
-                        src={`https://api.dicebear.com/7.x/initials/svg?seed=${client?.nom}`}
-                      />
-                      <AvatarFallback>
-                        {getInitials(client?.nom)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <h2 className="text-2xl font-bold">
-                      {client?.titre && client?.titre + ". "}
-                      {client?.nom?.toUpperCase()}
-                    </h2>
-                  </div> */}
                   <div className="space-y-4">
                     {client?.ice && (
                       <div className="flex items-center group hover:text-purple-600">
@@ -162,41 +132,37 @@ export function ClientInfoDialog({ client, isOpen, onClose }) {
                   </div>
                 </CardContent>
               </Card>
-
-              <div className="grid items-center">
-                <div className="space-y-4 my-auto">
-                  <div className="flex items-center justify-between p-4 bg-red-50 rounded-lg border border-red-200">
-                    <div className="flex items-center gap-2">
-                      <CreditCard className="h-5 w-5 text-red-600" />
-                      <span className="font-medium text-red-800">
-                        Dette en cours :
-                      </span>
-                    </div>
-                    <Badge variant="destructive" className="text-lg px-3 py-1">
-                      {formatCurrency(client?.dette)}
-                    </Badge>
+              <div className="grid items-center gap-2">
+                <div className="flex items-center justify-between p-4 bg-red-50 rounded-lg border border-red-200">
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="h-5 w-5 text-red-600" />
+                    <span className="font-medium text-red-800">
+                      Dette en cours :
+                    </span>
                   </div>
-
-                  <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200">
-                    <div className="flex items-center gap-2">
-                      <TrendingUp className="h-5 w-5 text-green-600" />
-                      <span className="font-medium text-green-800">
-                        Chiffre d&apos;Affaires :
-                      </span>
-                    </div>
-                    <Badge
-                      variant="outline"
-                      className="text-lg text-white bg-green-600 px-3 py-1"
-                    >
-                      {formatCurrency(chiffreAffaires)}
-                    </Badge>
+                  <Badge variant="destructive" className="text-lg px-3 py-1">
+                    {formatCurrency(client?.dette)}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-green-600" />
+                    <span className="font-medium text-green-800">
+                      Chiffre d&apos;Affaires :
+                    </span>
                   </div>
+                  <Badge
+                    variant="outline"
+                    className="text-lg text-white bg-green-600 px-3 py-1"
+                  >
+                    {formatCurrency(chiffreAffaires)}
+                  </Badge>
                 </div>
               </div>
             </div>
 
-            {/* liste de devis */}
             <div className="space-y-4 grid grid-cols-1 grid-rows-2 grid-rows-1 justify-items-stretch">
+              {/* liste de devis */}
               <Card className="flex-1">
                 <CardHeader className="grid grid-cols-5 items-center">
                   <CardTitle className="flex items-center gap-2 col-span-3">
@@ -209,7 +175,7 @@ export function ClientInfoDialog({ client, isOpen, onClose }) {
                     <div className="flex justify-center w-full">
                       <Spinner />
                     </div>
-                  ) : (
+                  ) : devis.length > 0 ? (
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -255,6 +221,24 @@ export function ClientInfoDialog({ client, isOpen, onClose }) {
                         ))}
                       </TableBody>
                     </Table>
+                  ) : (
+                    <div className="text-center text-muted-foreground">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.5}
+                        stroke="currentColor"
+                        className="size-14 mx-auto mb-4 opacity-50"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m5.231 13.481L15 17.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v16.5c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Zm3.75 11.625a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"
+                        />
+                      </svg>
+                      <p>Aucun devis trouvé</p>
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -272,7 +256,7 @@ export function ClientInfoDialog({ client, isOpen, onClose }) {
                       <div className="flex justify-center w-full">
                         <Spinner />
                       </div>
-                    ) : (
+                    ) : transactions.lenght > 0 ? (
                       <Table>
                         <TableHeader>
                           <TableRow>
@@ -313,6 +297,24 @@ export function ClientInfoDialog({ client, isOpen, onClose }) {
                           ))}
                         </TableBody>
                       </Table>
+                    ) : (
+                      <div className="text-center text-muted-foreground">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth={1.5}
+                          stroke="currentColor"
+                          className="size-14 mx-auto mb-4 opacity-50"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m5.231 13.481L15 17.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v16.5c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Zm3.75 11.625a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"
+                          />
+                        </svg>
+                        <p>Aucune transaction trouvé</p>
+                      </div>
                     )}
                   </div>
                 </CardContent>

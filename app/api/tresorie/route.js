@@ -14,10 +14,13 @@ export async function GET(req) {
   const limit = parseInt(searchParams.get("limit") || "10");
   const filters = {};
 
+  console.log("transaction rout , from", from, "to", to);
+
   // Search filter
   filters.OR = [
     { reference: { contains: searchQuery, mode: "insensitive" } },
     { description: { contains: searchQuery, mode: "insensitive" } },
+    { lable: { contains: searchQuery, mode: "insensitive" } },
   ];
   // Type filter
   if (type !== "all") {
@@ -36,12 +39,17 @@ export async function GET(req) {
 
   // Date range filter
   if (from && to) {
+    const startDate = new Date(from);
+    startDate.setHours(0, 0, 0, 0); // Set to beginning of the day
+
+    const endDate = new Date(to);
+    endDate.setHours(23, 59, 59, 999); // Set to end of the day
+
     filters.date = {
-      gte: new Date(from), // Greater than or equal to "from"
-      lte: new Date(to), // Less than or equal to "to"
+      gte: startDate, // Greater than or equal to start of "from" day
+      lte: endDate, // Less than or equal to end of "to" day
     };
   }
-
   // Fournisseur filter
   if (fournisseurId) {
     filters.reference = fournisseurId;
@@ -154,6 +162,28 @@ export async function DELETE(req) {
     }
 
     if (deletedTransaction.lable.includes("paiement devis")) {
+      const devis = await prisma.devis.findUnique({
+        where: { numero: deletedTransaction.reference },
+      });
+      const resteApresSuppression =
+        devis.totalPaye - deletedTransaction.montant;
+
+      let statutPaiement;
+      if (resteApresSuppression === 0) {
+        statutPaiement = "impaye";
+      } else {
+        const diff = devis.total - resteApresSuppression;
+        statutPaiement = diff === 0 ? "paye" : diff > 0 ? "enPartie" : "impaye";
+      }
+
+      //mise a jour du totlaPye te le statutPaiement du devis
+      await prisma.devis.update({
+        where: { numero: deletedTransaction.reference },
+        data: {
+          totalPaye: { decrement: deletedTransaction.montant },
+          statutPaiement,
+        },
+      });
       // mise à jour de la dette du client
       await prisma.clients.update({
         where: { id: deletedTransaction.clientId },

@@ -9,7 +9,6 @@ import {
   Printer,
   CircleDollarSign,
 } from "lucide-react";
-
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -17,6 +16,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 export type BonLivraisonT = {
   id: string;
@@ -26,8 +30,26 @@ export type BonLivraisonT = {
   total: number;
   totalPaye: number;
   reference: string;
+  transactions: {
+    date: string;
+    montant: number;
+    methodePaiement: string;
+    compte: string;
+  }[];
 };
 
+const getMethodePaiement = (methode: string, compte: string) => {
+if (
+  methode === "espece" &&
+  (compte === "compte personnel" || compte === "compte professionel")
+) {
+    return "Vérement";
+  } else if (methode === "espece") {
+    return "Espèce";
+  } else if (methode === "cheque") {
+    return "Chèque";
+  }
+};
 export function useBonLivraisonColumns({
   setCurrentBL,
   setPreviewDialogOpen,
@@ -69,7 +91,7 @@ export function useBonLivraisonColumns({
         }
 
         return (
-          <div >
+          <div>
             <span
               className={`w-32 ml-2 px-2 py-1 rounded-full text-xs font-semibold uppercase ${colorClass}`}
             >
@@ -106,7 +128,7 @@ export function useBonLivraisonColumns({
 
         return (
           <span
-            className={`px-2 py-1 rounded-lg  text-xs font-semibold uppercase ${colorClass}`}
+            className={`px-2 py-1 rounded-lg text-xs font-semibold uppercase ${colorClass}`}
           >
             {label}
           </span>
@@ -129,12 +151,85 @@ export function useBonLivraisonColumns({
       accessorKey: "totalPaye",
       header: "Montant payé",
       cell: ({ row }) => {
+        const bonLivraison = row.original;
         const amount = parseFloat(row.getValue("totalPaye"));
         const formatted = `${new Intl.NumberFormat("fr-MA").format(
           amount
         )} MAD`;
 
-        return <div className="text-left font-medium">{formatted}</div>;
+        // Si pas de transactions, afficher juste le montant
+        if (
+          !bonLivraison.transactions ||
+          bonLivraison.transactions.length === 0
+        ) {
+          return <div className="text-left font-medium">{formatted}</div>;
+        }
+
+        return (
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                className="text-left font-medium p-0 h-auto  hover:text-purple-500 "
+              >
+                {formatted}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-96 p-4">
+              <div className="space-y-3">
+                <div className="border-b pb-2">
+                  <h4 className="font-semibold text-sm text-gray-900">
+                    Détails des paiement
+                  </h4>
+                  <p className="text-sm text-gray-500">{bonLivraison.numero}</p>
+                </div>
+
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {bonLivraison.transactions.map((transaction, index) => (
+                    <div
+                      key={index}
+                      className="flex flex-col p-3 bg-gray-50 rounded-md border"
+                    >
+                      <div className="flex justify-between items-start mb-1">
+                        <span className="font-semibold text-sm text-gray-900">
+                          {new Intl.NumberFormat("fr-MA").format(
+                            transaction.montant
+                          )}{" "}
+                          MAD
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {new Date(transaction.date).toLocaleDateString(
+                            "fr-FR"
+                          )}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center text-xs text-gray-600">
+                        <span className="bg-purple-100 text-violet-700 px-2 py-1 rounded text-xs font-medium">
+                          {getMethodePaiement(
+                            transaction.methodePaiement,
+                            transaction.compte
+                          )}
+                        </span>
+                        <span className="text-md">{transaction.compte}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="border-t pt-2">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className=" font-semibold text-gray-700">
+                      Total payé:
+                    </span>
+                    <span className=" font-bold text-gray-700">
+                      {formatted}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+        );
       },
     },
     {

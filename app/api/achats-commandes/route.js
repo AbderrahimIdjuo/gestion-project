@@ -203,9 +203,15 @@ export async function GET(req) {
 
   // Date range filter
   if (from && to) {
+    const startDate = new Date(from);
+    startDate.setHours(0, 0, 0, 0); // Set to beginning of the day
+
+    const endDate = new Date(to);
+    endDate.setHours(23, 59, 59, 999); // Set to end of the day
+
     filters.date = {
-      gte: new Date(from), // Greater than or equal to "from"
-      lte: new Date(to), // Less than or equal to "to"
+      gte: startDate, // Greater than or equal to start of "from" day
+      lte: endDate, // Less than or equal to end of "to" day
     };
   }
 

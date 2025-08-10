@@ -30,6 +30,7 @@ import {
 import { X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
+import { formatMontant } from "@/lib/functions";
 import {
   Table,
   TableBody,
@@ -57,7 +58,7 @@ import {
 function formatDate(dateString) {
   return dateString?.split("T")[0].split("-").reverse().join("-");
 }
-export default function RapportDialog() {
+export default function BonLivraisonRapportDialog() {
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState();
   const [currentStep, setCurrentStep] = useState(1);
@@ -670,11 +671,11 @@ export default function RapportDialog() {
                         <TableHead>Nbr BL</TableHead>
                         <TableHead>Nbr Achats</TableHead>
                         <TableHead>Nbr Retour</TableHead>
-                        <TableHead>Achats</TableHead>
-                        <TableHead>Retour</TableHead>
-                        <TableHead>M.Payé</TableHead>
-                        <TableHead>Montant</TableHead>
-                        <TableHead>Reste</TableHead>
+                        <TableHead className="text-right">Achats</TableHead>
+                        <TableHead className="text-right">Retour</TableHead>
+                        <TableHead className="text-right">M.Payé</TableHead>
+                        <TableHead className="text-right">Montant</TableHead>
+                        <TableHead className="text-right">Reste</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -686,11 +687,11 @@ export default function RapportDialog() {
                             <TableCell>{element.NbrBL}</TableCell>
                             <TableCell>{element.NbrBLAchats} </TableCell>
                             <TableCell>{element.NbrBLRetour}</TableCell>
-                            <TableCell>{element.montantAchats} DH</TableCell>
-                            <TableCell>{element.montantRetour} DH</TableCell>
-                            <TableCell>{element.montantPaye} DH</TableCell>
-                            <TableCell>{element.total} DH</TableCell>
-                            <TableCell>
+                            <TableCell className="text-right">{formatMontant(element.montantAchats)} DH</TableCell>
+                            <TableCell className="text-right">{formatMontant(element.montantRetour)} DH</TableCell>
+                            <TableCell className="text-right">{formatMontant(element.montantPaye)} DH</TableCell>
+                            <TableCell className="text-right">{formatMontant(element.total)} DH</TableCell>
+                            <TableCell className="text-right">
                               {element.total - element.montantPaye} DH
                             </TableCell>
                           </TableRow>

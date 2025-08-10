@@ -15,7 +15,7 @@ import { Search } from "lucide-react";
 import { useDeleteBonLivraison } from "@/hooks/useDeleteBonLivraison";
 import AddBonLivraison from "@/components/add-bonLivraison";
 import UpdateBonLivraison from "@/components/update-bonLivraison";
-import RapportDialog from "@/components/rapport-dialog";
+import BonLivraisonRapportDialog from "@/components/bonLivraison-rapport-dialog";
 import PaiementBLDialog from "@/components/paiement-BL";
 import {
   Sheet,
@@ -57,6 +57,65 @@ export default function BonLivraison() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
   const [paiementDialogOpen, setPaiementDialogOpen] = useState(false);
+  const [transactions, setTransactions] = useState([]);
+  type Transaction = {
+    id: string;
+    type: string;
+    montant: number;
+    compte: string;
+    lable: string;
+    reference: string;
+    description: string;
+    methodePaiement: string;
+    fournisseurId: string | null;
+    clientId: string | null;
+    date: string;
+    chequeId: string | null;
+    createdAt: string;
+    updatedAt: string;
+  };
+
+  type TransactionInfo = {
+    date: string;
+    montant: number;
+    methodePaiement: string;
+    compte: string;
+  };
+
+  type GroupedTransaction = {
+    bl: string;
+    transactions: TransactionInfo[];
+  };
+
+  function regrouperTransactionsParBL(
+    transactionsList: Transaction[]
+  ): GroupedTransaction[] {
+    const blMap: Record<string, TransactionInfo[]> = {};
+
+    transactionsList.forEach((tx) => {
+      const match = tx.lable?.match(/BL-\d+/);
+      if (!match) return;
+
+      const blNumber = match[0];
+
+      if (!blMap[blNumber]) {
+        blMap[blNumber] = [];
+      }
+
+      blMap[blNumber].push({
+        date: tx.date,
+        montant: tx.montant,
+        methodePaiement: tx.methodePaiement,
+        compte: tx.compte,
+      });
+    });
+
+    return Object.entries(blMap).map(([bl, transactions]) => ({
+      bl,
+      transactions,
+    }));
+  }
+
   const [filters, setFilters] = useState({
     type: "",
     statutPaiement: "",
@@ -111,6 +170,7 @@ export default function BonLivraison() {
       setMaxMontant(response.data.maxMontant);
       setLastBonLivraison(response.data.lastBonLivraison);
       setTotalPages(response.data.totalPages);
+      setTransactions(response.data.transactionsList);
       return response.data.bonLivraison;
     },
     keepPreviousData: true,
@@ -129,6 +189,10 @@ export default function BonLivraison() {
       total: bon.total,
       groups: bon.groups,
       statutPaiement: bon.statutPaiement,
+      transactions:
+        regrouperTransactionsParBL(transactions).find(
+          (group) => group.bl === bon.numero
+        )?.transactions || [],
     })) ?? [];
 
   return (
@@ -285,7 +349,7 @@ export default function BonLivraison() {
               </SheetContent>
             </Sheet>
             <AddBonLivraison lastBonLivraison={lastBonLivraison} />
-            <RapportDialog />
+            <BonLivraisonRapportDialog />
           </div>
         </div>
         <DataTable

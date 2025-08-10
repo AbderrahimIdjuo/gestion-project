@@ -24,6 +24,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LoadingDots } from "@/components/loading-dots";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { formatCurrency } from "@/lib/functions";
+import ClientsRapportDialog from "@/components/clients-rapport-dialog";
 
 export default function ClientsPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -127,6 +129,7 @@ export default function ClientsPage() {
               </Button>
             </ImportClients>
             <ClientFormDialog />
+            <ClientsRapportDialog />
           </div>
         </div>
 
@@ -136,9 +139,9 @@ export default function ClientsPage() {
               <TableRow>
                 <TableHead>Nom</TableHead>
                 <TableHead>Téléphone</TableHead>
-                <TableHead>Dette</TableHead>
                 <TableHead>Adresse</TableHead>
                 <TableHead>ICE</TableHead>
+                <TableHead className="text-right">Dette</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -212,13 +215,13 @@ export default function ClientsPage() {
                       {client.telephone}
                     </TableCell>
                     <TableCell className="text-md !py-2">
-                      {client.dette}
-                    </TableCell>
-                    <TableCell className="text-md !py-2">
                       {client.adresse}
                     </TableCell>
                     <TableCell className="text-md !py-2">
                       {client.ice}
+                    </TableCell>
+                    <TableCell className="text-md text-right !py-2">
+                      {formatCurrency(client.dette)}
                     </TableCell>
                     <TableCell className="text-right !py-2">
                       <div className="flex justify-end gap-2">

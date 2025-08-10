@@ -129,11 +129,21 @@ export async function addtransaction(data) {
   } = data;
   const result = await prisma.$transaction(async (prisma) => {
     if (lable === "paiement devis") {
+      const devis = await prisma.devis.findUnique({
+        where: { numero: numero },
+      });
+      const diff = devis.total - (devis.totalPaye + montant);
+      const statutPaiement =
+        diff === 0 ? "paye" : diff > 0 ? "enPartie" : "impaye";
       // Modifier le statut de devis en cas de paiement d'un client
       await prisma.devis.update({
         where: { numero: numero },
         data: {
           statut: "Accepté",
+          totalPaye: {
+            increment: montant, //augmente le montant paye
+          },
+          statutPaiement,
         },
       });
 

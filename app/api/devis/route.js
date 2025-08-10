@@ -29,6 +29,7 @@ export async function POST(req) {
             tva: parseFloat(tva),
             reduction,
             total,
+            totalPaye: 0,
             typeReduction,
             note,
             echeance,
@@ -225,6 +226,7 @@ export async function GET(req) {
   const filters = {};
 
   const devisPerPage = 10;
+  console.log("Devis route : from", from, "to ", to);
 
   // Search filter by numero and client name
   filters.OR = [
@@ -237,11 +239,16 @@ export async function GET(req) {
     filters.statut = statut;
   }
 
-  // Date range filter
   if (from && to) {
+    const startDate = new Date(from);
+    startDate.setHours(0, 0, 0, 0); // Set to beginning of the day
+
+    const endDate = new Date(to);
+    endDate.setHours(23, 59, 59, 999); // Set to end of the day
+
     filters.createdAt = {
-      gte: new Date(from), // Greater than or equal to "from"
-      lte: new Date(to), // Less than or equal to "to"
+      gte: startDate, // Greater than or equal to start of "from" day
+      lte: endDate, // Less than or equal to end of "to" day
     };
   }
 
@@ -289,12 +296,44 @@ export async function GET(req) {
     where: { reference: { in: devisNumbers } },
   });
 
+  const totalPaye = (numero) => {
+    const trans = transactionsList?.filter((c) => c.reference === numero);
+    const totalPaye = trans?.reduce((acc, transaction) => {
+      return acc + transaction.montant;
+    }, 0);
+    return totalPaye;
+  };
+
+  // const devisWithPaiement = await Promise.all(
+  //   devis.map(async (d) => {
+  //     const paye = totalPaye(d.numero);
+  //     const statutPaiement =
+  //       paye >= d.total ? "paye" : paye > 0 ? "enPartie" : "impaye";
+
+  //     // Mise à jour en base
+  //     await prisma.devis.update({
+  //       where: { id: d.id },
+  //       data: {
+  //         totalPaye: paye,
+  //         statutPaiement,
+  //       },
+  //     });
+
+  //     return {
+  //       ...d,
+  //       totalPaye: paye,
+  //       statutPaiement,
+  //     };
+  //   })
+  // );
+
   // Fetch ordersGroups
   const bLGroupdsList = await prisma.bLGroups.findMany({
     where: { devisNumero: { in: devisNumbers } },
     include: {
       bonLivraison: {
         select: {
+          date: true,
           numero: true,
           fournisseur: {
             select: {

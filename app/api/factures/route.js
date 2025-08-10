@@ -16,6 +16,7 @@ export async function POST(req) {
         },
         articls: {
           create: articls.map((articl) => ({
+            height: articl.height || 0,
             length: articl.length || 0,
             unite: articl.unite || "U",
             width: articl.width || 0,
@@ -92,7 +93,8 @@ export async function PUT(req) {
             update: existingArticls.map((articl) => ({
               where: { id: articl.id },
               data: {
-                length: articl.length,
+                height: articl.height || 0,
+                length: articl.length || 0,
                 width: articl.width || 0,
                 unite: articl.unite,
                 designation: articl.designation,
@@ -101,7 +103,8 @@ export async function PUT(req) {
               },
             })),
             create: newArticls.map((articl) => ({
-              length: articl.length,
+              height: articl.height || 0,
+              length: articl.length || 0,
               width: articl.width || 0,
               unite: articl.unite,
               designation: articl.designation,
@@ -145,9 +148,15 @@ export async function GET(req) {
 
   // Date range filter
   if (from && to) {
+    const startDate = new Date(from);
+    startDate.setHours(0, 0, 0, 0); // Set to beginning of the day
+
+    const endDate = new Date(to);
+    endDate.setHours(23, 59, 59, 999); // Set to end of the day
+
     filters.date = {
-      gte: new Date(from), // Greater than or equal to "from"
-      lte: new Date(to), // Less than or equal to "to"
+      gte: startDate, // Greater than or equal to start of "from" day
+      lte: endDate, // Less than or equal to end of "to" day
     };
   }
 
@@ -177,12 +186,14 @@ export async function GET(req) {
         },
         articls: {
           select: {
+            id: true,
             length: true,
             unite: true,
             width: true,
             designation: true,
             quantite: true,
             prixUnite: true,
+            height: true,
           },
         },
       },

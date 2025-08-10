@@ -330,9 +330,15 @@ export async function GET(req) {
 
   // ✅ Filtrer par période (createdAt entre from et to)
   if (from && to) {
+    const startDate = new Date(from);
+    startDate.setHours(0, 0, 0, 0); // Set to beginning of the day
+
+    const endDate = new Date(to);
+    endDate.setHours(23, 59, 59, 999); // Set to end of the day
+
     filters.date = {
-      gte: new Date(from),
-      lte: new Date(to),
+      gte: startDate, // Greater than or equal to start of "from" day
+      lte: endDate, // Less than or equal to end of "to" day
     };
   }
 
@@ -382,7 +388,17 @@ export async function GET(req) {
         orderBy: { total: "desc" },
       }),
     ]);
+  // Extract BL numbers for transaction lookup
+  const BlNumbers = bonLivraison.map((c) => c.numero);
 
+  // Fetch transactions for the BLs
+  const transactionsList = await prisma.transactions.findMany({
+    where: {
+      OR: BlNumbers.map((bl) => ({
+        lable: { contains: bl },
+      })),
+    },
+  });
   // Calculate total pages for pagination
   const totalPages = Math.ceil(totalBonLivraison / bonLivraisonPerPage);
   const maxMontant = maxBonLivraison?.total;
@@ -392,5 +408,6 @@ export async function GET(req) {
     totalPages,
     lastBonLivraison,
     maxMontant,
+    transactionsList,
   });
 }

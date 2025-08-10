@@ -18,40 +18,20 @@ function formatDate(dateString) {
   return dateString?.split("T")[0]?.split("-")?.reverse()?.join("-");
 }
 
-export default function ImpressionTransactions() {
-  const [params, setParams] = useState();
+export default function ImpressionRapport() {
+  const [data, setData] = useState();
 
   useEffect(() => {
-    const storedData = localStorage.getItem("params");
+    const storedData = localStorage.getItem("transaction-rapport");
     if (storedData) {
-      setParams(JSON.parse(storedData));
-      console.log("params", JSON.parse(storedData));
+      setData(JSON.parse(storedData));
+      console.log("transaction-rapport", JSON.parse(storedData));
     }
   }, []);
-
-  const { data: transactions } = useQuery({
-    queryKey: ["transactions-impression", params],
-    queryFn: async () => {
-      const response = await axios.get("/api/tresorie/impression", {
-        params,
-      });
-      return response.data.transactions;
-    },
-  });
 
   const handlePrint = () => {
     window.print();
   };
-  const total = () => {
-    return transactions?.reduce((acc, t) => {
-      if (t.type === "recette") {
-        return acc + t.montant;
-      } else if (t.type === "depense") {
-        return acc - t.montant;
-      }
-    }, 0);
-  };
-
   const typeLabel = (type) => {
     if (type === "recette") {
       return "Recette";
@@ -62,7 +42,6 @@ export default function ImpressionTransactions() {
     }
     return type;
   };
-
   return (
     <>
       <div className="container mx-auto p-8 w-[90vw] bg-white min-h-screen print:p-0 print:max-w-none mb-10">
@@ -90,7 +69,7 @@ export default function ImpressionTransactions() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {transactions?.map((t) => (
+                  {data?.transactions?.map((t) => (
                     <TableRow key={t.id}>
                       <TableCell className="px-1 py-2">
                         {" "}
@@ -135,7 +114,7 @@ export default function ImpressionTransactions() {
                       colSpan={2}
                       className="text-left text-lg font-semibold p-2"
                     >
-                      {total()} DH
+                      {data?.solde} DH
                     </TableCell>
                   </TableRow>
                 </TableFooter>

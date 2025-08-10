@@ -202,22 +202,23 @@ model Articls {
 }
 
 model Devis {
-  id            String    @id @default(uuid())
-  numero        String    @unique
-  clientId      String
-  statut        String
-  sousTotal     Float
-  reduction     Int
-  total         Float
-  note          String?
-  typeReduction String    @default("%")
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  tva           Float
-  totalPaye     Float?
-  echeance      DateTime?
-  articls       Articls[]
-  client        Clients   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  id             String    @id @default(uuid())
+  numero         String    @unique
+  clientId       String
+  statut         String
+  statutPaiement String?   @default("impaye")
+  sousTotal      Float
+  reduction      Int
+  total          Float
+  note           String?
+  typeReduction  String    @default("%")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  tva            Float
+  totalPaye      Float?
+  echeance       DateTime?
+  articls        Articls[]
+  client         Clients   @relation(fields: [clientId], references: [id], onDelete: Cascade)
 }
 
 model Factures {
@@ -243,6 +244,7 @@ model FacturesArticls {
   updatedAt   DateTime @updatedAt
   width       Float?
   length      Float?
+  height      Float?   @default(0)
   unite       String   @default("U")
   // key         String   @unique
   facture     Factures @relation(fields: [factureId], references: [id], onDelete: Cascade)

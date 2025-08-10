@@ -28,17 +28,16 @@ interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   isLoading: Boolean;
-
 }
 
 export function DataTable<TData, TValue>({
-
   isLoading,
   columns,
   data,
 }: DataTableProps<TData, TValue>) {
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
+  console.log("####data", data);
 
   const table = useReactTable({
     data,
@@ -131,7 +130,6 @@ export function DataTable<TData, TValue>({
                   <TableCell className="!py-2">
                     <div className="flex gap-2 justify-end">
                       <Skeleton className="h-7 w-7 rounded-full" />
-                   
                     </div>
                   </TableCell>
                 </TableRow>

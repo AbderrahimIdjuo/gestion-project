@@ -200,23 +200,32 @@ export default function DevisPDFPage() {
                 </div>
               )}
               {bLGroups?.length > 0 ? (
-                <div className="space-y-2">
+                <div className="space-y-2 ">
                   {bLGroups?.map((groupe, index) => (
-                    <div key={groupe.id || index} className=" print:bg-non">
-                      <div className="flex justify-between gap-8 mb-1">
+                    <div key={groupe.id || index} className="print-block print:bg-non">
+                      <div className="flex items center justify-between gap-8 mb-1">
                         {/* commande Info */}
-
-                        <div>
-                          <p className="font-semibold">
-                            {groupe?.bonLivraison?.fournisseur.nom}
-                          </p>
+                        <div className="flex items-center gap-2">
+                          <div>
+                            <p className="font-semibold">
+                              {formatDate(groupe?.bonLivraison?.date)}
+                            </p>
+                          </div>
+                          <span> • </span>
+                          <div>
+                            <p className="font-semibold">
+                              {groupe?.bonLivraison?.fournisseur.nom}
+                            </p>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-6">
+
+                        <div className="flex items-center gap-2">
                           <div>
                             <p className="font-semibold">
                               {groupe?.bonLivraison?.numero}
                             </p>
                           </div>
+                           <span> • </span>
                           <div>
                             <p className="font-semibold">
                               {groupe?.bonLivraison?.type.toUpperCase()}

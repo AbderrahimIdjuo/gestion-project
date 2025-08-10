@@ -5,31 +5,14 @@ export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const searchQuery = searchParams.get("query") || "";
   const compte = searchParams.get("compte") || "all";
-  const type = searchParams.get("type") || "all";
   const from = searchParams.get("from"); // Start date
   const to = searchParams.get("to"); // End date
-  const fournisseurId = searchParams.get("fournisseurId");
-  const methodePaiement = searchParams.get("methodePaiement");
-  const filters = {};
 
-  // Search filter
-  filters.OR = [
-    { reference: { contains: searchQuery, mode: "insensitive" } },
-    { description: { contains: searchQuery, mode: "insensitive" } },
-  ];
-  // Type filter
-  if (type !== "all") {
-    filters.type = type;
-  }
+  const filters = {};
 
   // Compt filter
   if (compte !== "all") {
     filters.compte = compte;
-  }
-
-  // methode de paiement filter
-  if (methodePaiement !== "all") {
-    filters.methodePaiement = methodePaiement;
   }
 
   // Date range filter
@@ -46,10 +29,7 @@ export async function GET(req) {
     };
   }
 
-  // Fournisseur filter
-  if (fournisseurId) {
-    filters.reference = fournisseurId;
-  }
+  console.log("from rapport ####  filters", filters);
 
   // Fetch filtered transactions with pagination
   const transactions = await prisma.transactions.findMany({

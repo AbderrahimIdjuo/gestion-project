@@ -50,7 +50,8 @@ export default function HistoriquePaiement() {
   function methodePaiementLabel(transaction) {
     if (
       transaction.methodePaiement === "espece" &&
-      transaction.compte !== "caisse"
+      (transaction.compte === "compte personnel" ||
+        transaction.compte === "compte professionnel")
     ) {
       return "Vérement";
     } else if (

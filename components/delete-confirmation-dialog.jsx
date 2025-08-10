@@ -28,11 +28,11 @@ export function DeleteConfirmationDialog({
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="gap-2 sm:gap-0">
-          <Button   className="rounded-full" variant="outline" onClick={onClose}>
+          <Button className="rounded-full" variant="outline" onClick={onClose}>
             Annuler
           </Button>
           <Button
-          className="rounded-full"
+            className="rounded-full"
             variant="destructive"
             onClick={() => {
               onConfirm();

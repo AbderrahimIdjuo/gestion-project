@@ -48,7 +48,7 @@ import { LoadingDots } from "@/components/loading-dots";
 import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { DevisActions } from "@/components/devis-actions";
-
+import { formatCurrency } from "@/lib/functions";
 export default function DevisPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
@@ -132,6 +132,8 @@ export default function DevisPage() {
           maxTotal: filters.montant[1],
         },
       });
+      console.log("Devis :", response.data.devis);
+
       setLastDevi(response.data.lastDevi);
       setBlGroups(response.data.bLGroupdsList);
       setTransactions(response.data.transactionsList);
@@ -244,15 +246,15 @@ export default function DevisPage() {
     return trans;
   };
 
-  const statutPaiement = (numero, devisTotal) => {
+  const statutPaiement = (devisTotalPaye, devisTotal) => {
     if (
       devisTotal > 0 &&
-      (totalPaye(numero) === devisTotal || totalPaye(numero) > devisTotal)
+      (devisTotalPaye === devisTotal || devisTotalPaye > devisTotal)
     ) {
       return { lable: "Payé", color: "bg-green-100 text-green-600" };
-    } else if (totalPaye(numero) > 0 && totalPaye(numero) < devisTotal) {
+    } else if (devisTotalPaye > 0 && devisTotalPaye < devisTotal) {
       return { lable: "En partie", color: "bg-orange-100 text-orange-500" };
-    } else if (totalPaye(numero) === 0) {
+    } else if (devisTotalPaye === 0) {
       return { lable: "Impayé", color: "bg-slate-100 text-slate-600" };
     }
   };
@@ -386,11 +388,11 @@ export default function DevisPage() {
                 <TableHead>Date</TableHead>
                 <TableHead>Numéro</TableHead>
                 <TableHead>Client</TableHead>
-                <TableHead>Montant total</TableHead>
-                <TableHead>Fournitures</TableHead>
-                <TableHead>Marge</TableHead>
-                <TableHead>Payé</TableHead>
-                <TableHead>Reste</TableHead>
+                <TableHead className="text-right">Montant total</TableHead>
+                <TableHead className="text-right">Fournitures</TableHead>
+                <TableHead className="text-right">Marge</TableHead>
+                <TableHead className="text-right">Payé</TableHead>
+                <TableHead className="text-right">Reste</TableHead>
                 <TableHead>Statut</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -421,7 +423,7 @@ export default function DevisPage() {
                   </TableRow>
                 ))
               ) : devis.data?.length > 0 ? (
-                devis.data?.map((devis) => (
+                devis.data?.map((devis , index) => (
                   <>
                     <Fragment key={devis.id}>
                       <TableRow>
@@ -431,7 +433,7 @@ export default function DevisPage() {
                         <TableCell
                           onClick={() => {
                             toggleExpand(devis.id);
-                            if (totalPaye(devis.numero) !== 0) {
+                            if (devis.totalPaye !== 0) {
                               if (currentDevi?.id === devis.id) {
                                 setInfo(!info);
                               } else setInfo(true);
@@ -440,14 +442,14 @@ export default function DevisPage() {
                           }}
                           className={`font-medium !py-2  ${
                             devis.total > 0 &&
-                            (totalPaye(devis.numero) === devis.total ||
-                              totalPaye(devis.numero) > devis.total) &&
+                            (devis.totalPaye === devis.total ||
+                              devis.totalPaye > devis.total) &&
                             "cursor-pointer hover:text-green-400"
                           } 
                         
                         ${
-                          totalPaye(devis.numero) !== 0 &&
-                          totalPaye(devis.numero) < devis.total &&
+                          devis.totalPaye !== 0 &&
+                          devis.totalPaye < devis.total &&
                           "cursor-pointer hover:text-orange-400"
                         }`}
                         >
@@ -455,39 +457,40 @@ export default function DevisPage() {
                             <span className="mr-2">{devis.numero}</span>
                             <span
                               className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold uppercase ${
-                                statutPaiement(devis.numero, devis.total)?.color
+                                statutPaiement(devis.totalPaye, devis.total)
+                                  ?.color
                               }`}
                             >
-                              {statutPaiement(devis.numero, devis.total)?.lable}
+                              {
+                                statutPaiement(devis.totalPaye, devis.total)
+                                  ?.lable
+                              }
                             </span>
                           </div>
                         </TableCell>
                         <TableCell className="!py-2">
                           {devis.client.nom.toUpperCase()}
                         </TableCell>
-                        <TableCell className="!py-2">
-                          {devis.total} DH
+                        <TableCell className="!py-2  text-right">
+                          {formatCurrency(devis.total)}
                         </TableCell>
-                        <TableCell className="!py-2">
-                          {totalFourniture(
-                            filteredOrders(devis.numero)
-                          )?.toFixed(2)}{" "}
-                          DH
-                        </TableCell>
-                        <TableCell className="!py-2">
-                          {(
-                            devis.total -
+                        <TableCell className="!py-2 text-right">
+                          {formatCurrency(
                             totalFourniture(filteredOrders(devis.numero))
-                          )?.toFixed(2)}{" "}
-                          DH
+                          )}
                         </TableCell>
-                        <TableCell className="!py-2">
-                          {totalPaye(devis.numero)?.toFixed(2)} DH
+                        <TableCell className="!py-2 text-right">
+                          {formatCurrency(
+                            devis.total -
+                              totalFourniture(filteredOrders(devis.numero))
+                          )}
+                        </TableCell>
+                        <TableCell className="!py-2 text-right">
+                          {formatCurrency(devis.totalPaye)}
                         </TableCell>
 
-                        <TableCell className="!py-2">
-                          {(devis.total - totalPaye(devis.numero))?.toFixed(2)}{" "}
-                          DH
+                        <TableCell className="!py-2 text-right">
+                          {formatCurrency(devis.total - devis.totalPaye)}
                         </TableCell>
                         <TableCell className="!py-2">
                           <div className="flex items-center gap-2">

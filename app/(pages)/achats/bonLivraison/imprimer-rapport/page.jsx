@@ -17,7 +17,6 @@ import { EnteteDevis } from "@/components/Entete-devis";
 import { formatMontant } from "@/lib/functions";
 import { formatDate } from "@/lib/functions";
 
-
 export default function ImprimerRapport() {
   const [bonLivraison, setBonLivraison] = useState();
   useEffect(() => {
@@ -42,7 +41,6 @@ export default function ImprimerRapport() {
           {/* Header */}
           <EnteteDevis />
 
-          <div className="flex justify-between gap-8"></div>
           <div className="space-y-6">
             <div className="flex justify-between items-center mb-4">
               {bonLivraison?.fournisseurNom && (
@@ -72,8 +70,8 @@ export default function ImprimerRapport() {
                       <TableHead>Référence</TableHead>
                       <TableHead>Fournisseur</TableHead>
                       <TableHead>Type</TableHead>
-                      <TableHead>Montant</TableHead>
-                      <TableHead>Montant Payé</TableHead>
+                      <TableHead className="text-right">Montant</TableHead>
+                      <TableHead className="text-right">Montant Payé</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -84,8 +82,12 @@ export default function ImprimerRapport() {
                         <TableCell>{bon.reference}</TableCell>
                         <TableCell>{bon.fournisseur?.nom ?? "-"}</TableCell>
                         <TableCell>{bon.type}</TableCell>
-                        <TableCell>{formatMontant(bon.total)} DH</TableCell>
-                        <TableCell>{formatMontant(bon.totalPaye)} DH</TableCell>
+                        <TableCell className="text-right">
+                          {formatMontant(bon.montantPaye)} DH
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatMontant(bon.total)} DH
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -143,9 +145,10 @@ export default function ImprimerRapport() {
                       <TableHead className="px-1">Nbr BL</TableHead>
                       <TableHead className="px-1">Nbr Achats</TableHead>
                       <TableHead className="px-1">Nbr Retour</TableHead>
-                      <TableHead>Achats</TableHead>
-                      <TableHead>Retour</TableHead>
-                      <TableHead>Montant</TableHead>
+                      <TableHead className="text-right">Achats</TableHead>
+                      <TableHead className="text-right">Retour</TableHead>
+                      <TableHead className="text-right">M.Payé</TableHead>
+                      <TableHead className="text-right">Montant</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -156,13 +159,16 @@ export default function ImprimerRapport() {
                         <TableCell>{element.NbrBL}</TableCell>
                         <TableCell>{element.NbrBLAchats} </TableCell>
                         <TableCell>{element.NbrBLRetour}</TableCell>
-                        <TableCell>
-                          {formatMontant(element.montantAchats)} DH
+                        <TableCell className="text-right">
+                          {formatMontant(element.montantAchats)}
                         </TableCell>
-                        <TableCell>
-                          {formatMontant(element.montantRetour)} DH
+                        <TableCell className="text-right">
+                          {formatMontant(element.montantRetour)}
+                        </TableCell >
+                        <TableCell className="text-right">
+                          {formatMontant(element.montantPaye)}
                         </TableCell>
-                        <TableCell>{formatMontant(element.total)} DH</TableCell>
+                        <TableCell className="text-right">{formatMontant(element.total)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -175,7 +181,7 @@ export default function ImprimerRapport() {
                         Total :
                       </TableCell>
                       <TableCell
-                        colSpan={2}
+                        colSpan={3}
                         className="text-left text-lg font-semibold p-2"
                       >
                         {formatMontant(bonLivraison?.total)} DH
@@ -189,7 +195,7 @@ export default function ImprimerRapport() {
                         Total Payé :
                       </TableCell>
                       <TableCell
-                        colSpan={2}
+                        colSpan={3}
                         className="text-left text-lg font-semibold p-2"
                       >
                         {formatMontant(bonLivraison?.totalPaye)} DH
@@ -203,7 +209,7 @@ export default function ImprimerRapport() {
                         Dette :
                       </TableCell>
                       <TableCell
-                        colSpan={2}
+                        colSpan={3}
                         className="text-left text-lg font-semibold p-2"
                       >
                         {formatMontant(bonLivraison?.rest)} DH

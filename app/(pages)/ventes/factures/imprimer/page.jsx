@@ -203,7 +203,7 @@ export default function DevisPDFPage() {
                     Désignation
                   </TableHead>
                   <TableHead
-                    colSpan="2"
+                    colSpan="3"
                     className="text-black font-bold border-l border-b border-black text-center p-1"
                   >
                     Dimension
@@ -235,6 +235,9 @@ export default function DevisPDFPage() {
                 </TableRow>
                 <TableRow>
                   <TableHead className="text-black font-semibold text-center border-b border-l border-black p-1">
+                    Hauteur
+                  </TableHead>
+                  <TableHead className="text-black font-semibold text-center border-b border-l border-black p-1">
                     Longueur
                   </TableHead>
                   <TableHead className="text-black font-semibold border-l border-b border-black text-center p-1">
@@ -243,16 +246,19 @@ export default function DevisPDFPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {articls?.map((articl) => (
+                {articls?.map((articl ) => (
                   <TableRow key={articl.id}>
                     <TableCell className=" p-1 text-left border-b border-black text-md font-semibold">
                       {articl.designation}{" "}
                     </TableCell>
                     <TableCell className="border-l border-b border-black p-1 text-center">
-                      {articl.length === 0 ? "-" : articl.length}
+                      {articl.height ? articl.height : "-"}
                     </TableCell>
                     <TableCell className="border-l border-b border-black p-1 text-center">
-                      {articl.width === 0 ? "-" : articl.width}
+                      {articl.length  ? articl.length :"-" }
+                    </TableCell>
+                    <TableCell className="border-l border-b border-black p-1 text-center">
+                      {articl.width ?  articl.width : "-" }
                     </TableCell>
                     <TableCell className="border-l border-b border-black p-1 text-center">
                       {articl.unite}
