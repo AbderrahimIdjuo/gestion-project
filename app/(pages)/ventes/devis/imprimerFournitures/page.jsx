@@ -43,20 +43,20 @@ export default function DevisPDFPage() {
     window.print();
   };
 
-  const totalBlFourniture = (produits) => {
-    return produits?.reduce((acc, produit) => {
-      return acc + produit.quantite * produit.prixUnite;
-    }, 0);
-  };
+  // const totalBlFourniture = (produits) => {
+  //   return produits?.reduce((acc, produit) => {
+  //     return acc + produit.quantite * produit.prixUnite;
+  //   }, 0);
+  // };
 
   const totalFourniture = (group) => {
     return group?.reduce((acc, item) => {
       const type = item?.bonLivraison?.type;
 
       if (type === "achats") {
-        return acc + totalBlFourniture(item.produits);
+        return acc + item.bonLivraison.total;
       } else if (type === "retour") {
-        return acc - totalBlFourniture(item.produits);
+        return acc - item.bonLivraison.total;
       }
 
       return acc; // si type inconnu
@@ -202,7 +202,10 @@ export default function DevisPDFPage() {
               {bLGroups?.length > 0 ? (
                 <div className="space-y-2 ">
                   {bLGroups?.map((groupe, index) => (
-                    <div key={groupe.id || index} className="print-block print:bg-non">
+                    <div
+                      key={groupe.id || index}
+                      className="print-block print:bg-non"
+                    >
                       <div className="flex items center justify-between gap-8 mb-1">
                         {/* commande Info */}
                         <div className="flex items-center gap-2">
@@ -225,7 +228,7 @@ export default function DevisPDFPage() {
                               {groupe?.bonLivraison?.numero}
                             </p>
                           </div>
-                           <span> • </span>
+                          <span> • </span>
                           <div>
                             <p className="font-semibold">
                               {groupe?.bonLivraison?.type.toUpperCase()}
@@ -288,7 +291,7 @@ export default function DevisPDFPage() {
                                   Total :
                                 </TableCell>
                                 <TableCell className=" border-zinc-500 text-lg  p-1 text-left font-bold">
-                                  {totalBlFourniture(groupe.produits)} DH
+                                  {groupe.bonLivraison.total} DH
                                 </TableCell>
                               </TableRow>
                             </TableFooter>

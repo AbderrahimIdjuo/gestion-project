@@ -144,7 +144,7 @@ export function useBonLivraisonColumns({
           amount
         )} MAD`;
 
-        return <div className="text-left font-medium">{formatted}</div>;
+        return <div className="text-left font-medium">{amount}</div>;
       },
     },
     {

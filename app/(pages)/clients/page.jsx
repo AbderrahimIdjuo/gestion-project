@@ -185,15 +185,14 @@ export default function ClientsPage() {
                 ))
               ) : clients.data?.length > 0 ? (
                 clients.data?.map((client) => (
-                  <TableRow
-                    onClick={() => {
-                      setIsInfosDialogOpen(true);
-                      setcurrClient(client);
-                    }}
-                    className="font-medium"
-                    key={client.id}
-                  >
-                    <TableCell className="font-medium hover:text-purple-500 cursor-pointer !py-2">
+                  <TableRow className="font-medium" key={client.id}>
+                    <TableCell
+                      onClick={() => {
+                        setIsInfosDialogOpen(true);
+                        setcurrClient(client);
+                      }}
+                      className="font-medium hover:text-purple-500 cursor-pointer !py-2"
+                    >
                       <div className="flex flex-row gap-2 justify-start items-center">
                         <Avatar className="w-8 h-8">
                           <AvatarImage

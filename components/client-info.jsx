@@ -247,7 +247,7 @@ export function ClientInfoDialog({ client, isOpen, onClose }) {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Receipt className="h-5 w-5" />
-                    Derniers Règlements
+                    Paiements
                   </CardTitle>
                 </CardHeader>
                 <CardContent>

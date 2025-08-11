@@ -135,7 +135,7 @@ export default function DevisPage() {
       console.log("Devis :", response.data.devis);
 
       setLastDevi(response.data.lastDevi);
-      setBlGroups(response.data.bLGroupdsList);
+      setBlGroups(response.data.bLGroupsList);
       setTransactions(response.data.transactionsList);
       setMaxMontant(response.data.maxMontant);
       setTotalPages(response.data.totalPages);

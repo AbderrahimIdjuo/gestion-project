@@ -42,6 +42,19 @@ export default function ImpressionRapport() {
     }
     return type;
   };
+
+  function ajouterUneHeure(from) {
+    // Si "from" est déjà un objet Date, on l'utilise directement
+    const date =
+      from instanceof Date ? new Date(from) : new Date(String(from).trim());
+
+    if (isNaN(date.getTime())) {
+      throw new Error(`Date invalide : ${from}`);
+    }
+
+    date.setHours(date.getHours() + 1);
+    return date.toISOString();
+  }
   return (
     <>
       <div className="container mx-auto p-8 w-[90vw] bg-white min-h-screen print:p-0 print:max-w-none mb-10">
@@ -53,7 +66,12 @@ export default function ImpressionRapport() {
           <div className="flex justify-between gap-8"></div>
           <div className="space-y-6">
             <div className="flex justify-between items-center ">
-              <h1 className="text-3xl font-bold">Transactions</h1>
+              <h1 className="text-3xl font-bold">Compte : {data?.compte}</h1>
+              <h1 className="text-3xl font-bold">
+                Période :
+                {data?.from ? formatDate(ajouterUneHeure(data.from)) : "—"} ****{" "}
+                {data?.to ? formatDate(data.to) : "—"}
+              </h1>
             </div>
             <div className="rounded-xl border shadow-sm overflow-x-auto">
               <Table>

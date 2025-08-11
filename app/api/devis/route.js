@@ -328,13 +328,14 @@ export async function GET(req) {
   // );
 
   // Fetch ordersGroups
-  const bLGroupdsList = await prisma.bLGroups.findMany({
+  const bLGroupsList = await prisma.bLGroups.findMany({
     where: { devisNumero: { in: devisNumbers } },
     include: {
       bonLivraison: {
         select: {
           date: true,
           numero: true,
+          total: true,
           fournisseur: {
             select: {
               nom: true,
@@ -362,7 +363,7 @@ export async function GET(req) {
     maxMontant: deviMaxTotal?.total || 0,
     totalDevis,
     transactionsList,
-    bLGroupdsList,
+    bLGroupsList,
     lastDevi,
   });
 }

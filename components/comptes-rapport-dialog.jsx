@@ -104,7 +104,7 @@ function getDateRangeFromPeriode(periode, startDate = null, endDate = null) {
       };
   }
 }
-export default function CaisseRapportDialog() {
+export default function ComptesRapportDialog() {
   const [open, setOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [startDate, setStartDate] = useState();
@@ -371,20 +371,20 @@ export default function CaisseRapportDialog() {
                   ) : transactions.data?.length > 0 ? (
                     transactions.data?.map((transaction, index) => (
                       <TableRow key={transaction.id}>
-                        <TableCell className="font-medium py-0">
+                        <TableCell className="font-medium py-2">
                           {index + 1}
                         </TableCell>
                         <TableCell className="font-medium py-1">
                           {formatDate(transaction.date) ||
                             formatDate(transaction.createdAt)}
                         </TableCell>
-                        <TableCell className="font-medium py-0">
+                        <TableCell className="font-medium py-2">
                           {transaction.lable}
                         </TableCell>
-                        <TableCell className="font-medium py-0 text-right">
+                        <TableCell className="font-medium py-2 text-right">
                           {formatCurrency(transaction.montant)}
                         </TableCell>
-                        <TableCell className="font-medium py-0">
+                        <TableCell className="font-medium py-2">
                           <span
                             className={`text-sm p-[1px] px-3 rounded-full  ${
                               handleTypeLableColor(transaction.type).color
@@ -396,7 +396,7 @@ export default function CaisseRapportDialog() {
 
                         <TableCell
                           onClick={() => handleChequeClick(transaction)}
-                          className={`font-medium py-0 ${
+                          className={`font-medium py-2 ${
                             transaction.methodePaiement === "cheque" &&
                             "cursor-pointer"
                           }`}
@@ -407,10 +407,10 @@ export default function CaisseRapportDialog() {
                               "Chèque"}
                         </TableCell>
 
-                        <TableCell className="font-medium py-0">
+                        <TableCell className="font-medium py-2">
                           {transaction.compte}
                         </TableCell>
-                        <TableCell className="font-medium py-0">
+                        <TableCell className="font-medium py-2">
                           {transaction.description}
                         </TableCell>
                       </TableRow>
@@ -463,6 +463,9 @@ export default function CaisseRapportDialog() {
                   const data = {
                     transactions: transactions.data,
                     solde: solde(),
+                    compte,
+                    from,
+                    to,
                   };
                   localStorage.setItem(
                     "transaction-rapport",

@@ -38,7 +38,7 @@ import TransactionDialog from "@/components/new-transaction";
 import { LoadingDots } from "@/components/loading-dots";
 import ComboBoxFournisseur from "@/components/comboBox-fournisseurs";
 import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
-import CaisseRapportDialog from "@/components/caisse-rapport-dialog";
+import ComptesRapportDialog from "@/components/comptes-rapport-dialog";
 import { formatDate } from "@/lib/functions";
 
 type Transaction = {
@@ -420,7 +420,7 @@ export default function Banques() {
               Imprimer
             </Button>
             <TransactionDialog />
-            <CaisseRapportDialog />
+            <ComptesRapportDialog />
           </div>
         </div>
         <div className="flex justify between gap-6 items-start">
