@@ -135,7 +135,6 @@ export default function FournisseursPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nom</TableHead>
-                  <TableHead>Dette</TableHead>
                   <TableHead>ICE</TableHead>
                   <TableHead>Téléphone</TableHead>
                   <TableHead>Adresse</TableHead>
@@ -156,9 +155,6 @@ export default function FournisseursPage() {
                         className="!py-2 text-sm md:text-base"
                         align="left"
                       >
-                        <Skeleton className="h-4 w-[150px]" />
-                      </TableCell>
-                      <TableCell className="!py-2" align="left">
                         <Skeleton className="h-4 w-[150px]" />
                       </TableCell>
                       <TableCell className="!py-2" align="left">
@@ -204,9 +200,6 @@ export default function FournisseursPage() {
                             {fournisseur.nom.toUpperCase()}
                           </h2>
                         </div>
-                      </TableCell>
-                      <TableCell className="text-md !py-2">
-                        {fournisseur.dette} DH
                       </TableCell>
                       <TableCell className="text-md !py-2">
                         {fournisseur.ice}

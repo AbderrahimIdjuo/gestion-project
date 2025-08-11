@@ -153,12 +153,12 @@ export async function DELETE(req) {
       }
 
       // mise à jour de la dette du fournisseur
-      await prisma.fournisseurs.update({
-        where: { id: deletedTransaction.reference },
-        data: {
-          dette: { increment: deletedTransaction.montant },
-        },
-      });
+      // await prisma.fournisseurs.update({
+      //   where: { id: deletedTransaction.reference },
+      //   data: {
+      //     dette: { increment: deletedTransaction.montant },
+      //   },
+      // });
     }
 
     if (deletedTransaction.lable.includes("paiement devis")) {

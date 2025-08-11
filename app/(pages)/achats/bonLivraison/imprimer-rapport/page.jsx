@@ -16,6 +16,7 @@ import {
 import { EnteteDevis } from "@/components/Entete-devis";
 import { formatMontant } from "@/lib/functions";
 import { formatDate } from "@/lib/functions";
+import { formatCurrency } from "@/lib/functions";
 
 export default function ImprimerRapport() {
   const [bonLivraison, setBonLivraison] = useState();
@@ -41,23 +42,41 @@ export default function ImprimerRapport() {
           {/* Header */}
           <EnteteDevis />
 
-          <div className="space-y-6">
-            <div className="flex justify-between items-center mb-4">
-              {bonLivraison?.fournisseurNom && (
-                <h1 className="text-xl font-semibold text-center">
-                  Fournisseur : {bonLivraison?.fournisseurNom}
-                </h1>
-              )}
-
-              {bonLivraison?.periode && (
-                <h1 className="text-xl font-semibold text-center">
-                  Période :du{" "}
-                  {`${fromDay.getDate()}-${
-                    fromDay.getMonth() + 1
-                  }-${fromDay.getFullYear()}`}{" "}
-                  au {formatDate(bonLivraison?.to)}
-                </h1>
-              )}
+          <div className="space-y-2">
+            <div className="space-y-2">
+              <h3 className="font-semibold text-lg text-gray-900 mb-2">
+                Achats impayés
+              </h3>
+              <div className="grid grid-cols-2 items-center mb-4">
+                {bonLivraison?.fournisseurNom ? (
+                  <div className="flex gap-2 items-center">
+                    <h3 className="mb-1 font-semibold text-gray-900">
+                      Fournisseur :
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      {bonLivraison?.fournisseurNom}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex gap-2 items-center">
+                    <h3 className="mb-1 font-semibold text-gray-900">
+                      Fournisseur :
+                    </h3>
+                    <p className="text-sm text-gray-600">Tous</p>
+                  </div>
+                )}
+                <div className="flex gap-2 items-center">
+                  <h3 className="mb-1 font-semibold text-gray-900">
+                    Période :
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {`${fromDay.getDate()}-${
+                      fromDay.getMonth() + 1
+                    }-${fromDay.getFullYear()}`}{" "}
+                    • {formatDate(bonLivraison?.to)}
+                  </p>
+                </div>
+              </div>
             </div>
 
             <div className="rounded-xl border shadow-sm overflow-x-auto">
@@ -83,10 +102,10 @@ export default function ImprimerRapport() {
                         <TableCell>{bon.fournisseur?.nom ?? "-"}</TableCell>
                         <TableCell>{bon.type}</TableCell>
                         <TableCell className="text-right">
-                          {formatMontant(bon.montantPaye)} DH
+                          {formatCurrency(bon.total)} 
                         </TableCell>
                         <TableCell className="text-right">
-                          {formatMontant(bon.total)} DH
+                          {formatCurrency(bon.totalPaye)} 
                         </TableCell>
                       </TableRow>
                     ))}
@@ -103,7 +122,7 @@ export default function ImprimerRapport() {
                         colSpan={2}
                         className="text-left text-lg font-semibold p-2"
                       >
-                        {formatMontant(bonLivraison?.total)} DH
+                        {formatCurrency(bonLivraison?.total)}
                       </TableCell>
                     </TableRow>
                     <TableRow className="border-t border-gray-200">
@@ -117,7 +136,7 @@ export default function ImprimerRapport() {
                         colSpan={2}
                         className="text-left text-lg font-semibold p-2"
                       >
-                        {formatMontant(bonLivraison?.totalPaye)} DH
+                        {formatCurrency(bonLivraison?.totalPaye)}
                       </TableCell>
                     </TableRow>
                     <TableRow className="border-t border-gray-200">
@@ -131,7 +150,7 @@ export default function ImprimerRapport() {
                         colSpan={2}
                         className="text-left text-lg font-semibold p-2"
                       >
-                        {formatMontant(bonLivraison?.rest)} DH
+                        {formatCurrency(bonLivraison?.rest)}
                       </TableCell>
                     </TableRow>
                   </TableFooter>
@@ -164,11 +183,13 @@ export default function ImprimerRapport() {
                         </TableCell>
                         <TableCell className="text-right">
                           {formatMontant(element.montantRetour)}
-                        </TableCell >
+                        </TableCell>
                         <TableCell className="text-right">
                           {formatMontant(element.montantPaye)}
                         </TableCell>
-                        <TableCell className="text-right">{formatMontant(element.total)}</TableCell>
+                        <TableCell className="text-right">
+                          {formatMontant(element.total)}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -184,7 +205,7 @@ export default function ImprimerRapport() {
                         colSpan={3}
                         className="text-left text-lg font-semibold p-2"
                       >
-                        {formatMontant(bonLivraison?.total)} DH
+                        {formatCurrency(bonLivraison?.total)}
                       </TableCell>
                     </TableRow>
                     <TableRow className="border-t border-gray-200">
@@ -198,7 +219,7 @@ export default function ImprimerRapport() {
                         colSpan={3}
                         className="text-left text-lg font-semibold p-2"
                       >
-                        {formatMontant(bonLivraison?.totalPaye)} DH
+                        {formatCurrency(bonLivraison?.totalPaye)}
                       </TableCell>
                     </TableRow>
                     <TableRow className="border-t border-gray-200">
@@ -212,7 +233,7 @@ export default function ImprimerRapport() {
                         colSpan={3}
                         className="text-left text-lg font-semibold p-2"
                       >
-                        {formatMontant(bonLivraison?.rest)} DH
+                        {formatCurrency(bonLivraison?.rest)}
                       </TableCell>
                     </TableRow>
                   </TableFooter>

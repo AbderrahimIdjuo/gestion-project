@@ -54,11 +54,13 @@ import {
   startOfDay,
   endOfDay,
 } from "date-fns";
+import { formatCurrency } from "@/lib/functions";
 
 function formatDate(dateString) {
   return dateString?.split("T")[0].split("-").reverse().join("-");
 }
 export default function BonLivraisonRapportDialog() {
+  const [comboKey, setComboKey] = useState(0); // aide a remount de comboboxFournisseur
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState();
   const [currentStep, setCurrentStep] = useState(1);
@@ -151,6 +153,7 @@ export default function BonLivraisonRapportDialog() {
       statutPaiement: ["impaye", "enPartie"],
     });
     setSelectedFournisseur(null);
+    setComboKey((prev) => prev + 1);
     setStartDate(null);
     setEndDate(null);
     setCurrentStep(1);
@@ -290,9 +293,7 @@ export default function BonLivraisonRapportDialog() {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl font-bold bg-gradient-to-r from-fuchsia-600 to-violet-600 bg-clip-text text-transparent">
             <FileText className="h-5 w-5 text-purple-600" />
-            {currentStep === 1
-              ? "Créer un nouveau rapport"
-              : "Aperçu du rapport"}
+            Achats impayés
           </DialogTitle>
           <DialogDescription>
             {currentStep === 1
@@ -305,6 +306,7 @@ export default function BonLivraisonRapportDialog() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="w-full space-y-2">
                 <ComboBoxFournisseur
+                  key={comboKey}
                   fournisseur={selectedFournisseur}
                   setFournisseur={setSelectedFournisseur}
                 />
@@ -508,6 +510,16 @@ export default function BonLivraisonRapportDialog() {
                 Annuler
               </Button>
               <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  reset();
+                }}
+                className="rounded-full"
+              >
+                Reset
+              </Button>
+              <Button
                 className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full"
                 variant="outline"
                 onClick={() => {
@@ -551,8 +563,8 @@ export default function BonLivraisonRapportDialog() {
                           <TableCell>{bon.reference}</TableCell>
                           <TableCell>{bon.fournisseur?.nom ?? "-"}</TableCell>
                           <TableCell>{bon.type}</TableCell>
-                          <TableCell>{bon.total?.toFixed(2)} DH</TableCell>
-                          <TableCell>{bon.totalPaye?.toFixed(2)} DH</TableCell>
+                          <TableCell>{formatCurrency(bon.total)} </TableCell>
+                          <TableCell>{formatCurrency(bon.totalPaye)}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -568,7 +580,7 @@ export default function BonLivraisonRapportDialog() {
                           colSpan={2}
                           className="text-left text-lg font-semibold p-2"
                         >
-                          {total()} DH
+                          {formatCurrency(total())}
                         </TableCell>
                       </TableRow>
                       <TableRow className="border-t border-gray-200">
@@ -582,7 +594,7 @@ export default function BonLivraisonRapportDialog() {
                           colSpan={2}
                           className="text-left text-lg font-semibold p-2"
                         >
-                          {totalPaye()} DH
+                          {formatCurrency(totalPaye())}
                         </TableCell>
                       </TableRow>
                       <TableRow className="border-t border-gray-200">
@@ -596,7 +608,7 @@ export default function BonLivraisonRapportDialog() {
                           colSpan={2}
                           className="text-left text-lg font-semibold p-2"
                         >
-                          {rest()} DH
+                          {formatCurrency(rest())}
                         </TableCell>
                       </TableRow>
                     </TableFooter>
@@ -687,12 +699,22 @@ export default function BonLivraisonRapportDialog() {
                             <TableCell>{element.NbrBL}</TableCell>
                             <TableCell>{element.NbrBLAchats} </TableCell>
                             <TableCell>{element.NbrBLRetour}</TableCell>
-                            <TableCell className="text-right">{formatMontant(element.montantAchats)} DH</TableCell>
-                            <TableCell className="text-right">{formatMontant(element.montantRetour)} DH</TableCell>
-                            <TableCell className="text-right">{formatMontant(element.montantPaye)} DH</TableCell>
-                            <TableCell className="text-right">{formatMontant(element.total)} DH</TableCell>
                             <TableCell className="text-right">
-                              {element.total - element.montantPaye} DH
+                              {formatCurrency(element.montantAchats)}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {formatCurrency(element.montantRetour)}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {formatCurrency(element.montantPaye)}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {formatCurrency(element.total)}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {formatCurrency(
+                                element.total - element.montantPaye
+                              )}
                             </TableCell>
                           </TableRow>
                         )
@@ -701,7 +723,7 @@ export default function BonLivraisonRapportDialog() {
                     <TableFooter className="bg-white">
                       <TableRow>
                         <TableCell
-                          colSpan={6}
+                          colSpan={8}
                           className="text-right text-lg font-semibold p-2"
                         >
                           Total :
@@ -710,12 +732,12 @@ export default function BonLivraisonRapportDialog() {
                           colSpan={2}
                           className="text-left text-lg font-semibold p-2"
                         >
-                          {total()} DH
+                          {formatCurrency(total())}
                         </TableCell>
                       </TableRow>
                       <TableRow className="border-t border-gray-200">
                         <TableCell
-                          colSpan={6}
+                          colSpan={8}
                           className="text-right text-lg font-semibold p-2"
                         >
                           Total Payé :
@@ -724,12 +746,12 @@ export default function BonLivraisonRapportDialog() {
                           colSpan={2}
                           className="text-left text-lg font-semibold p-2"
                         >
-                          {totalPaye()} DH
+                          {formatCurrency(totalPaye())}
                         </TableCell>
                       </TableRow>
                       <TableRow className="border-t border-gray-200">
                         <TableCell
-                          colSpan={6}
+                          colSpan={8}
                           className="text-right text-lg font-semibold p-2"
                         >
                           Dette :
@@ -739,7 +761,7 @@ export default function BonLivraisonRapportDialog() {
                           colSpan={2}
                           className="text-left text-lg font-semibold p-2"
                         >
-                          {rest()} DH
+                          {formatCurrency(rest())}
                         </TableCell>
                       </TableRow>
                     </TableFooter>

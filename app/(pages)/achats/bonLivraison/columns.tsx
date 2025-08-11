@@ -21,6 +21,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { formatCurrency } from "@/lib/functions";
 
 export type BonLivraisonT = {
   id: string;
@@ -39,10 +40,10 @@ export type BonLivraisonT = {
 };
 
 const getMethodePaiement = (methode: string, compte: string) => {
-if (
-  methode === "espece" &&
-  (compte === "compte personnel" || compte === "compte professionel")
-) {
+  if (
+    methode === "espece" &&
+    (compte === "compte personnel" || compte === "compte professionel")
+  ) {
     return "Vérement";
   } else if (methode === "espece") {
     return "Espèce";
@@ -140,11 +141,9 @@ export function useBonLivraisonColumns({
       header: "Montant",
       cell: ({ row }) => {
         const amount = parseFloat(row.getValue("total"));
-        const formatted = `${new Intl.NumberFormat("fr-MA").format(
-          amount
-        )} MAD`;
-
-        return <div className="text-left font-medium">{amount}</div>;
+        return (
+          <div className="text-right font-medium">{formatCurrency(amount)}</div>
+        );
       },
     },
     {
@@ -153,16 +152,13 @@ export function useBonLivraisonColumns({
       cell: ({ row }) => {
         const bonLivraison = row.original;
         const amount = parseFloat(row.getValue("totalPaye"));
-        const formatted = `${new Intl.NumberFormat("fr-MA").format(
-          amount
-        )} MAD`;
+        const formatted = formatCurrency(amount);
 
         // Si pas de transactions, afficher juste le montant
-        if (
-          !bonLivraison.transactions ||
-          bonLivraison.transactions.length === 0
-        ) {
-          return <div className="text-left font-medium">{formatted}</div>;
+        if (!bonLivraison.transactions?.length) {
+          return (
+            <div className="w-full text-right font-medium">{formatted}</div>
+          );
         }
 
         return (
@@ -170,21 +166,23 @@ export function useBonLivraisonColumns({
             <PopoverTrigger asChild>
               <Button
                 variant="ghost"
-                className="text-left font-medium p-0 h-auto  hover:text-purple-500 "
+                className="w-full justify-end text-right font-medium p-0 h-auto hover:text-purple-500"
               >
                 {formatted}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-96 p-4">
+            <PopoverContent className="w-96 p-4" side="right">
               <div className="space-y-3">
+                {/* Header */}
                 <div className="border-b pb-2">
                   <h4 className="font-semibold text-sm text-gray-900">
-                    Détails des paiement
+                    Détails des paiements
                   </h4>
                   <p className="text-sm text-gray-500">{bonLivraison.numero}</p>
                 </div>
 
-                <div className="space-y-2 max-h-60 overflow-y-auto">
+                {/* Transactions */}
+                <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
                   {bonLivraison.transactions.map((transaction, index) => (
                     <div
                       key={index}
@@ -192,10 +190,7 @@ export function useBonLivraisonColumns({
                     >
                       <div className="flex justify-between items-start mb-1">
                         <span className="font-semibold text-sm text-gray-900">
-                          {new Intl.NumberFormat("fr-MA").format(
-                            transaction.montant
-                          )}{" "}
-                          MAD
+                          {formatCurrency(transaction.montant)}
                         </span>
                         <span className="text-xs text-gray-500">
                           {new Date(transaction.date).toLocaleDateString(
@@ -216,14 +211,13 @@ export function useBonLivraisonColumns({
                   ))}
                 </div>
 
+                {/* Footer total */}
                 <div className="border-t pt-2">
                   <div className="flex justify-between items-center text-sm">
-                    <span className=" font-semibold text-gray-700">
+                    <span className="font-semibold text-gray-700">
                       Total payé:
                     </span>
-                    <span className=" font-bold text-gray-700">
-                      {formatted}
-                    </span>
+                    <span className="font-bold text-gray-700">{formatted}</span>
                   </div>
                 </div>
               </div>
@@ -232,6 +226,7 @@ export function useBonLivraisonColumns({
         );
       },
     },
+
     {
       id: "actions",
       cell: ({ row }) => {

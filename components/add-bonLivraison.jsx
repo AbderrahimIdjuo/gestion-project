@@ -42,6 +42,7 @@ import { CustomDatePicker } from "@/components/customUi/customDatePicker";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { Switch } from "@/components/ui/switch";
+import CustomTooltip from "@/components/customUi/customTooltip";
 
 export default function AddBonLivraison({ lastBonLivraison }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -58,6 +59,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
   const [bLGroups, setBLGroups] = useState([]);
   const [selectedDevis, setSelectedDevis] = useState({});
   const [groupModes, setGroupModes] = useState({}); // Track mode for each group (devis/charge)
+
   const queryClient = useQueryClient();
 
   function formatDate(date) {
@@ -533,7 +535,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                       <h3 className="font-medium text-sm text-muted-foreground">
                         Date :
                       </h3>
-                      <p className="font-semibold">{formatDate(date)} </p>
+                      <p className="font-semibold">{formatDate(date)}</p>
                     </div>
                   )}
                   {reference && (
@@ -541,7 +543,11 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                       <h3 className="font-medium text-sm text-muted-foreground">
                         Référence :
                       </h3>
-                      <p className="font-semibold">{reference} </p>
+                      <CustomTooltip message={reference}>
+                        <p className="font-semibold truncate max-w-[150px] cursor-pointer">
+                          {reference}
+                        </p>
+                      </CustomTooltip>
                     </div>
                   )}
                   {type && (
@@ -549,7 +555,11 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                       <h3 className="font-medium text-sm text-muted-foreground">
                         Type :
                       </h3>
-                      <p className="font-semibold">{type} </p>
+                      <CustomTooltip message={type}>
+                        <p className="font-semibold truncate max-w-[150px] cursor-pointer">
+                          {type}
+                        </p>
+                      </CustomTooltip>
                     </div>
                   )}
                   {selectedFournisseur && (
@@ -557,9 +567,11 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                       <h3 className="font-medium text-sm text-muted-foreground">
                         Fournisseur :
                       </h3>
-                      <p className="font-semibold">
-                        {selectedFournisseur?.nom}{" "}
-                      </p>
+                      <CustomTooltip message={selectedFournisseur?.nom}>
+                        <p className="font-semibold truncate max-w-[150px] cursor-pointer">
+                          {selectedFournisseur?.nom}
+                        </p>
+                      </CustomTooltip>
                     </div>
                   )}
                   <div className="space-y-1 col-span-1">
@@ -568,7 +580,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                     </h3>
                     <p className="font-semibold">{total()} DH</p>
                   </div>
-                  <div className="space-y-1  grid grid-cols-3 items-center">
+                  <div className="space-y-1 grid grid-cols-3 items-center col-span-5 md:col-span-1">
                     <h3 className="font-medium text-sm text-muted-foreground">
                       Total du BL :
                     </h3>
@@ -579,6 +591,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                     />
                   </div>
                 </div>
+
                 {bLGroups.map((group) => (
                   <Card key={group.id}>
                     <CardHeader className="p-4 pb-2">

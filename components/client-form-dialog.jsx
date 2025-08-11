@@ -40,7 +40,7 @@ export function ClientFormDialog() {
     telephone: z.string().optional(),
     mobile: z.string().optional(),
     note: z.string().optional(),
-    dette: z.number().optional(),
+    // dette: z.number().optional(),
     adresse: z.string().optional(),
   });
 
@@ -188,8 +188,8 @@ export function ClientFormDialog() {
                 </div>
               )}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-8 gap-4">
-              <div className="w- full grid grid-cols-1 md:col-span-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="w- full grid grid-cols-1 ">
                 <Label htmlFor="telephone" className="text-left mb-2">
                   Téléphone
                 </Label>
@@ -210,7 +210,7 @@ export function ClientFormDialog() {
                   )}
                 </div>
               </div>
-              <div className="w- full grid grid-cols-1 md:col-span-3">
+              <div className="w- full grid grid-cols-1 ">
                 <Label htmlFor="mobile" className="text-left mb-2">
                   Mobile
                 </Label>
@@ -231,7 +231,7 @@ export function ClientFormDialog() {
                   )}
                 </div>
               </div>
-              <div className="w- full grid grid-cols-1 md:col-span-2">
+              {/* <div className="w- full grid grid-cols-1 md:col-span-2">
                 <Label htmlFor="dette" className="text-left mb-2">
                   Dette
                 </Label>
@@ -251,7 +251,7 @@ export function ClientFormDialog() {
                     </p>
                   )}
                 </div>
-              </div>
+              </div> */}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="w- full grid grid-cols-1">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState , useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -112,10 +112,10 @@ export default function ComptesRapportDialog() {
   const [compte, setCompte] = useState();
   const [periode, setPeriode] = useState();
   const reset = () => {
-    setCompte(null);
-    setPeriode(null);
-    setStartDate(null);
-    setEndDate(null);
+    setCompte("");
+    setPeriode("");
+    setStartDate("");
+    setEndDate("");
     setCurrentStep(1);
   };
 
@@ -135,15 +135,6 @@ export default function ComptesRapportDialog() {
     },
     keepPreviousData: true, // Keeps old data visible while fetching new page
   });
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log("Rapport soumis:", { ...formData, date });
-    // Ici vous pouvez ajouter la logique pour sauvegarder le rapport
-    setOpen(false);
-    // Reset form
-    setFormData({ titre: "", type: "", description: "", priorite: "" });
-    setDate(undefined);
-  };
 
   const handleTypeLableColor = (t) => {
     if (t === "recette") {
@@ -200,6 +191,11 @@ export default function ComptesRapportDialog() {
       return "text-rose-600";
     }
   };
+  useEffect(() => {
+    if (!open) {
+      reset();
+    }
+  }, [open]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -224,98 +220,96 @@ export default function ComptesRapportDialog() {
           </DialogDescription>
         </DialogHeader>
         {currentStep === 1 && (
-          <>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div
-                className={`grid grid-cols-2  gap-4 ${
-                  periode === "personnalisee" && "grid-cols-3"
-                }`}
-              >
-                <div>
-                  <CompteBancairesSelectMenu
-                    compte={compte}
-                    setCompte={setCompte}
+          <div className="space-y-6">
+            <div
+              className={`grid grid-cols-2  gap-4 ${
+                periode === "personnalisee" && "grid-cols-3"
+              }`}
+            >
+              <div>
+                <CompteBancairesSelectMenu
+                  compte={compte}
+                  setCompte={setCompte}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="periode" className="text-sm font-medium">
+                  Période
+                </Label>
+                <Select
+                  value={periode}
+                  onValueChange={(value) => setPeriode(value)}
+                >
+                  <SelectTrigger className="focus:ring-2 focus:ring-purple-500">
+                    <SelectValue placeholder="Sélectionnez la période" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="aujourd'hui">
+                      Aujourd&apos;hui
+                    </SelectItem>
+                    <SelectItem value="ce-mois">Ce mois</SelectItem>
+                    <SelectItem value="mois-dernier">
+                      Le mois dernier
+                    </SelectItem>
+                    <SelectItem value="trimestre-actuel">
+                      Trimestre actuel
+                    </SelectItem>
+                    <SelectItem value="trimestre-precedent">
+                      Trimestre précédent
+                    </SelectItem>
+                    <SelectItem value="cette-annee">Cette année</SelectItem>
+                    <SelectItem value="annee-derniere">
+                      L&apos;année dernière
+                    </SelectItem>
+                    <SelectItem value="personnalisee">
+                      Période personnalisée
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {periode === "personnalisee" && (
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="statut"
+                    className="col-span-1 text-left text-black"
+                  >
+                    Date :
+                  </Label>
+
+                  <CustomDateRangePicker
+                    startDate={startDate}
+                    setStartDate={setStartDate}
+                    endDate={endDate}
+                    setEndDate={setEndDate}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="periode" className="text-sm font-medium">
-                    Période
-                  </Label>
-                  <Select
-                    value={periode}
-                    onValueChange={(value) => setPeriode(value)}
-                  >
-                    <SelectTrigger className="focus:ring-2 focus:ring-purple-500">
-                      <SelectValue placeholder="Sélectionnez la période" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="aujourd'hui">
-                        Aujourd&apos;hui
-                      </SelectItem>
-                      <SelectItem value="ce-mois">Ce mois</SelectItem>
-                      <SelectItem value="mois-dernier">
-                        Le mois dernier
-                      </SelectItem>
-                      <SelectItem value="trimestre-actuel">
-                        Trimestre actuel
-                      </SelectItem>
-                      <SelectItem value="trimestre-precedent">
-                        Trimestre précédent
-                      </SelectItem>
-                      <SelectItem value="cette-annee">Cette année</SelectItem>
-                      <SelectItem value="annee-derniere">
-                        L&apos;année dernière
-                      </SelectItem>
-                      <SelectItem value="personnalisee">
-                        Période personnalisée
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                {periode === "personnalisee" && (
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="statut"
-                      className="col-span-1 text-left text-black"
-                    >
-                      Date :
-                    </Label>
+              )}
+            </div>
 
-                    <CustomDateRangePicker
-                      startDate={startDate}
-                      setStartDate={setStartDate}
-                      endDate={endDate}
-                      setEndDate={setEndDate}
-                    />
-                  </div>
-                )}
-              </div>
-
-              <div className="flex justify-end gap-3 mt-6 print:hidden">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setOpen(false);
-                    reset();
-                  }}
-                  className="rounded-full"
-                >
-                  Annuler
-                </Button>
-                <Button
-                  className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full"
-                  variant="outline"
-                  onClick={() => {
-                    setCurrentStep(2);
-                  }}
-                  type="submit"
-                >
-                  Créer
-                </Button>
-              </div>
-            </form>
-          </>
+            <div className="flex justify-end gap-3 mt-6 print:hidden">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setOpen(false);
+                  reset();
+                }}
+                className="rounded-full"
+              >
+                Annuler
+              </Button>
+              <Button
+                className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full"
+                variant="outline"
+                onClick={() => {
+                  setCurrentStep(2);
+                }}
+                type="submit"
+              >
+                Créer
+              </Button>
+            </div>
+          </div>
         )}
         {currentStep === 2 && (
           <div>

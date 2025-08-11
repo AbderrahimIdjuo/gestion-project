@@ -27,7 +27,7 @@ export function FournisseurFormDialog() {
     telephone: z.string().optional(),
     telephoneSecondaire: z.string().optional(),
     ice: z.string().optional(),
-    dette: z.string().optional(),
+//    dette: z.string().optional(),
     adresse: z.string().optional(),
   });
   const {
@@ -188,7 +188,7 @@ export function FournisseurFormDialog() {
                 className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
               />
             </div>
-            <div className="w- full grid grid-cols-1">
+            {/* <div className="w- full grid grid-cols-1">
               <Label htmlFor="dette" className="text-left mb-2 mb-2">
                 Dettte
               </Label>
@@ -198,7 +198,7 @@ export function FournisseurFormDialog() {
                 {...register("dette")}
                 className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
               />
-            </div>
+            </div> */}
           </div>
           <DialogFooter className="mt-5">
             <Button

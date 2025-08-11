@@ -206,20 +206,14 @@ export default function DevisPage() {
     { value: "Expiré", lable: "Expiré", color: "gray-500" },
   ];
 
-  const totalBlFourniture = (produits) => {
-    return produits?.reduce((acc, produit) => {
-      return acc + produit.quantite * produit.prixUnite;
-    }, 0);
-  };
-
   const totalFourniture = (group) => {
     return group?.reduce((acc, item) => {
       const type = item?.bonLivraison?.type;
 
       if (type === "achats") {
-        return acc + totalBlFourniture(item.produits);
+        return acc + item.bonLivraison.total;
       } else if (type === "retour") {
-        return acc - totalBlFourniture(item.produits);
+        return acc - item.bonLivraison.total;
       }
 
       return acc; // si type inconnu
@@ -423,7 +417,7 @@ export default function DevisPage() {
                   </TableRow>
                 ))
               ) : devis.data?.length > 0 ? (
-                devis.data?.map((devis , index) => (
+                devis.data?.map((devis, index) => (
                   <>
                     <Fragment key={devis.id}>
                       <TableRow>

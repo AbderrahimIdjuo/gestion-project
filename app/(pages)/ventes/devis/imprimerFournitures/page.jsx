@@ -43,12 +43,6 @@ export default function DevisPDFPage() {
     window.print();
   };
 
-  // const totalBlFourniture = (produits) => {
-  //   return produits?.reduce((acc, produit) => {
-  //     return acc + produit.quantite * produit.prixUnite;
-  //   }, 0);
-  // };
-
   const totalFourniture = (group) => {
     return group?.reduce((acc, item) => {
       const type = item?.bonLivraison?.type;

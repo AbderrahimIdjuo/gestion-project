@@ -41,10 +41,12 @@ import { AddButton } from "@/components/customUi/styledButton";
 import { CustomDatePicker } from "@/components/customUi/customDatePicker";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
+import { formatCurrency } from "@/lib/functions";
 
 export default function UpdateBonLivraison({ isOpen, onClose, bonLivraison }) {
   const [date, setDate] = useState(null);
   const [reference, setReference] = useState("");
+  const [totalBl, setTotalBl] = useState("");
   const [type, setType] = useState();
   const [isArticleDialogOpen, setIsArticleDialogOpen] = useState(false);
   const [selectedFournisseur, setSelectedFournisseur] = useState(null);
@@ -105,34 +107,33 @@ export default function UpdateBonLivraison({ isOpen, onClose, bonLivraison }) {
       });
     }
   }, []);
-useEffect(() => {
-  if (bonLivraison) {
-    if (typeof bonLivraison?.date === "string") {
-      const [day, month, year] = bonLivraison?.date?.split("-");
-      const isoDate = `${year}-${month}-${day}`;
-      const dateObj = new Date(isoDate);
-      setDate(dateObj);
+  useEffect(() => {
+    if (bonLivraison) {
+      if (typeof bonLivraison?.date === "string") {
+        const [day, month, year] = bonLivraison?.date?.split("-");
+        const isoDate = `${year}-${month}-${day}`;
+        const dateObj = new Date(isoDate);
+        setDate(dateObj);
+      }
+
+      setReference(bonLivraison?.reference);
+      setSelectedFournisseur({
+        id: bonLivraison?.fournisseurId,
+        nom: bonLivraison?.fournisseur,
+      });
+      setType(bonLivraison?.type);
+
+      const formattedGroups = formatCommandeGroups(bonLivraison?.groups);
+      setBLGroups(formattedGroups);
+
+      // 👉 Initialisation de groupModes
+      const initialModes = {};
+      formattedGroups.forEach((group) => {
+        initialModes[group.id] = group.charge === null;
+      });
+      setGroupModes(initialModes);
     }
-
-    setReference(bonLivraison?.reference);
-    setSelectedFournisseur({
-      id: bonLivraison?.fournisseurId,
-      nom: bonLivraison?.fournisseur,
-    });
-    setType(bonLivraison?.type);
-
-    const formattedGroups = formatCommandeGroups(bonLivraison?.groups);
-    setBLGroups(formattedGroups);
-
-    // 👉 Initialisation de groupModes
-    const initialModes = {};
-    formattedGroups.forEach((group) => {
-      initialModes[group.id] = group.charge === null;
-    });
-    setGroupModes(initialModes);
-  }
-}, [bonLivraison]);
-
+  }, [bonLivraison]);
 
   const total = () => {
     const produits = bLGroups.flatMap((group) => group.items);
@@ -163,7 +164,7 @@ useEffect(() => {
         date,
         reference,
         fournisseurId: selectedFournisseur.id,
-        total: total().toFixed(2),
+        total: totalBl || total().toFixed(2),
         type,
         bLGroups,
         statutPaiement: statutPaiement(),
@@ -183,7 +184,7 @@ useEffect(() => {
     },
     onSuccess: () => {
       onClose();
-     queryClient.invalidateQueries({ queryKey: ["bonLivraison"] });
+      queryClient.invalidateQueries({ queryKey: ["bonLivraison"] });
     },
   });
 
@@ -375,6 +376,10 @@ useEffect(() => {
       return response.data.charges;
     },
   });
+
+  useEffect(() => {
+    setTotalBl(total());
+  }, [total()]);
   return (
     <div className="">
       <div className="flex items-center justify-between">
@@ -390,7 +395,7 @@ useEffect(() => {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-6">
-              <div className="grid grid-cols-2 grid-rows-2 gap-3">
+              <div className="grid grid-cols-3 grid-rows-2 gap-3">
                 <div className="w-full space-y-2">
                   <Label htmlFor="client">Date : </Label>
                   <CustomDatePicker date={date} onDateChange={setDate} />
@@ -430,6 +435,31 @@ useEffect(() => {
                   <ComboBoxFournisseur
                     fournisseur={selectedFournisseur}
                     setFournisseur={setSelectedFournisseur}
+                  />
+                </div>
+                <div className="w-full space-y-2">
+                  <Label className="text-sm font-medium block pt-1">
+                    Total Calculer
+                  </Label>
+                  <div
+                    className="col-span-3 bg-purple-50 rounded-md px-3 py-2 text-gray-900 select-none"
+                    style={{ minHeight: "2.5rem" }} // تقريبياً نفس ارتفاع Input
+                  >
+                    {formatCurrency(total())}
+                  </div>
+                </div>
+                <div className="w-full space-y-2">
+                  <Label className="text-sm font-medium block pt-1">
+                    Total BL
+                  </Label>
+                  <Input
+                    id="totalBl"
+                    value={totalBl}
+                    onChange={(e) => {
+                      setTotalBl(e.target.value);
+                    }}
+                    className="col-span-3 focus:!ring-purple-500 "
+                    spellCheck={false}
                   />
                 </div>
               </div>

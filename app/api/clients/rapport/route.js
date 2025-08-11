@@ -5,6 +5,7 @@ export async function GET() {
   // Fetch the liste of devis withe dette > 0
   const devis = await prisma.devis.findMany({
     where: {
+      statut: "Accepté",
       statutPaiement: { in: ["impaye", "enPartie"] },
     },
     include: {

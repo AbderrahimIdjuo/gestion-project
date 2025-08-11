@@ -26,7 +26,7 @@ export function ModifyFournisseur({ currFournisseur, isOpen, onClose }) {
     telephone: z.string().optional(),
     telephoneSecondaire: z.string().optional(),
     ice: z.string().optional(),
-    dette: z.coerce.number().optional(),
+    // dette: z.coerce.number().optional(),
     adresse: z.string().optional(),
   });
 
@@ -45,7 +45,7 @@ export function ModifyFournisseur({ currFournisseur, isOpen, onClose }) {
       telephoneSecondaire: currFournisseur?.telephoneSecondaire || "",
       adresse: currFournisseur?.adresse || "",
       ice: currFournisseur?.ice || "",
-      dette: currFournisseur?.dette || "",
+      //  dette: currFournisseur?.dette || "",
     },
   });
 
@@ -205,7 +205,7 @@ export function ModifyFournisseur({ currFournisseur, isOpen, onClose }) {
                 className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
               />
             </div>
-            <div className="w-full grid grid-cols-1">
+            {/* <div className="w-full grid grid-cols-1">
               <Label htmlFor="dette" className="text-left mb-2">
                 Dette
               </Label>
@@ -215,7 +215,7 @@ export function ModifyFournisseur({ currFournisseur, isOpen, onClose }) {
                 {...register("dette")}
                 className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
               />
-            </div>
+            </div> */}
           </div>
           <DialogFooter className="mt-5">
             <Button

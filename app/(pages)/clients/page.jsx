@@ -97,7 +97,7 @@ export default function ClientsPage() {
   return (
     <>
       <Toaster position="top-center" />
-      <div className="space-y-6 ">
+      <div className="space-y-6 mb-3">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Clients</h1>
         </div>
@@ -141,7 +141,7 @@ export default function ClientsPage() {
                 <TableHead>Téléphone</TableHead>
                 <TableHead>Adresse</TableHead>
                 <TableHead>ICE</TableHead>
-                <TableHead className="text-right">Dette</TableHead>
+                {/* <TableHead className="text-right">Dette</TableHead> */}
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -162,9 +162,6 @@ export default function ClientsPage() {
                         <Skeleton className="h-10 w-10 rounded-full" />
                         <Skeleton className="h-4 w-[80%]" />
                       </div>
-                    </TableCell>
-                    <TableCell className="!py-2" align="left">
-                      <Skeleton className="h-4 w-full" />
                     </TableCell>
                     <TableCell className="!py-2" align="left">
                       <Skeleton className="h-4 w-full" />
@@ -219,9 +216,9 @@ export default function ClientsPage() {
                     <TableCell className="text-md !py-2">
                       {client.ice}
                     </TableCell>
-                    <TableCell className="text-md text-right !py-2">
+                    {/* <TableCell className="text-md text-right !py-2">
                       {formatCurrency(client.dette)}
-                    </TableCell>
+                    </TableCell> */}
                     <TableCell className="text-right !py-2">
                       <div className="flex justify-end gap-2">
                         <ModifyClientDialog currClient={client} />

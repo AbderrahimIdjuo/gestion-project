@@ -66,7 +66,7 @@ export async function POST(req) {
                   ? parseFloat(montantPaye)
                   : parseFloat(total),
               compte,
-              lable: "paiement du :" + numero,
+              lable: "paiement de :" + numero,
               description: "bénéficiaire :" + fournisseurNom,
               methodePaiement: "espece",
               date: date || new Date(),

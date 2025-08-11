@@ -160,7 +160,8 @@ export default function Banques() {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       queryClient.invalidateQueries({ queryKey: ["factures"] });
       queryClient.invalidateQueries({ queryKey: ["depensesVariantes"] });
-      queryClient.invalidateQueries({ queryKey: ["commandes"] });
+      queryClient.invalidateQueries({ queryKey: ["bonLivraison"] });
+      queryClient.invalidateQueries({ queryKey: ["devis"] });
     },
   });
 
