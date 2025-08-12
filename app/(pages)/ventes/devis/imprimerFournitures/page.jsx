@@ -16,10 +16,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { EnteteDevis } from "@/components/Entete-devis";
+import { formatCurrency } from "@/lib/functions";
+import { formatDate } from "@/lib/functions";
 
-function formatDate(dateString) {
-  return dateString.split("T")[0].split("-").reverse().join("-");
-}
+// function formatDate(dateString) {
+//   return dateString.split("T")[0].split("-").reverse().join("-");
+// }
 
 export default function DevisPDFPage() {
   const [devis, setDevis] = useState();
@@ -114,7 +116,7 @@ export default function DevisPDFPage() {
                       <h3 className="font-semibold text-gray-900 mb-2">
                         Total de Devis :{" "}
                         <span className="font-normal text-gray-600 mb-2">
-                          {devis?.total} DH
+                          {formatCurrency(devis?.total)}
                         </span>
                       </h3>
                     </div>
@@ -122,7 +124,7 @@ export default function DevisPDFPage() {
                       <h3 className="font-semibold text-gray-900 mb-2">
                         Total de fournitures :
                         <span className="font-normal text-gray-600 mb-2">
-                          {totalFourniture(bLGroups)} DH
+                          {formatCurrency(totalFourniture(bLGroups))}
                         </span>
                       </h3>
                     </div>
@@ -130,7 +132,9 @@ export default function DevisPDFPage() {
                       <h3 className="font-semibold text-gray-900 mb-2">
                         Marge :
                         <span className="font-normal text-gray-600 mb-2">
-                          {devis?.total - totalFourniture(bLGroups)} DH
+                          {formatCurrency(
+                            devis?.total - totalFourniture(bLGroups)
+                          )}
                         </span>
                       </h3>
                     </div>
@@ -170,7 +174,7 @@ export default function DevisPDFPage() {
                       <h3 className="font-semibold text-gray-900 mb-2">
                         Total de Devis :{" "}
                         <span className="font-normal text-gray-600 mb-2">
-                          {devis?.total} DH
+                          {formatCurrency(devis?.total)}
                         </span>
                       </h3>
                     </div>
@@ -178,7 +182,7 @@ export default function DevisPDFPage() {
                       <h3 className="font-semibold text-gray-900 mb-2">
                         Total de fournitures :
                         <span className="font-normal text-gray-600 mb-2">
-                          {totalFourniture(bLGroups)} DH
+                          {formatCurrency(totalFourniture(bLGroups))}
                         </span>
                       </h3>
                     </div>
@@ -187,7 +191,9 @@ export default function DevisPDFPage() {
                     <h3 className="font-semibold text-gray-900 mb-2">
                       Marge :
                       <span className="font-normal text-gray-600 mb-2">
-                        {devis?.total - totalFourniture(bLGroups)} DH
+                        {formatCurrency(
+                          devis?.total - totalFourniture(bLGroups)
+                        )}
                       </span>
                     </h3>
                   </div>
@@ -244,10 +250,10 @@ export default function DevisPDFPage() {
                                 <TableHead className="text-sm  border-b border-zinc-500 text-black font-medium  text-center !py-0">
                                   Qté
                                 </TableHead>
-                                <TableHead className="text-sm  border-b border-zinc-500 text-black font-medium  text-center !py-0">
+                                <TableHead className="text-sm  border-b border-zinc-500 text-black font-medium  text-right !py-0">
                                   Prix unitaire
                                 </TableHead>
-                                <TableHead className="text-sm  border-b border-zinc-500 text-black font-medium  text-center !py-0">
+                                <TableHead className="text-sm  border-b border-zinc-500 text-black font-medium  text-right !py-0">
                                   Montant
                                 </TableHead>
                               </TableRow>
@@ -267,11 +273,13 @@ export default function DevisPDFPage() {
                                   <TableCell className=" p-1  border-t border-zinc-500 text-center p-0">
                                     {produit.quantite}
                                   </TableCell>
-                                  <TableCell className="  border-t border-zinc-500  p-1 text-center p-0">
-                                    {produit.prixUnite} DH{" "}
+                                  <TableCell className="  border-t border-zinc-500  p-1 text-right p-0 pr-2">
+                                    {formatCurrency(produit.prixUnite)}
                                   </TableCell>
-                                  <TableCell className="  border-t border-zinc-500  p-1 text-center p-0">
-                                    {produit.quantite * produit.prixUnite} DH{" "}
+                                  <TableCell className="  border-t border-zinc-500  p-1 text-right p-0 pr-2">
+                                    {formatCurrency(
+                                      produit.quantite * produit.prixUnite
+                                    )}
                                   </TableCell>
                                 </TableRow>
                               ))}
@@ -285,7 +293,7 @@ export default function DevisPDFPage() {
                                   Total :
                                 </TableCell>
                                 <TableCell className=" border-zinc-500 text-lg  p-1 text-left font-bold">
-                                  {groupe.bonLivraison.total} DH
+                                  {formatCurrency(groupe.bonLivraison.total)}
                                 </TableCell>
                               </TableRow>
                             </TableFooter>
@@ -302,8 +310,9 @@ export default function DevisPDFPage() {
               )}
             </div>
             <div>
-              <h3 className=" w-full border rounded-xl font-semibold text-end text-xl text-gray-900 mb-2 p-4 my-2">
-                Total de fournitures : {totalFourniture(bLGroups)} DH
+              <h3 className=" w-full border rounded-xl font-semibold text-center text-xl text-gray-900 mb-2 p-4 my-2">
+                Total de fournitures :{" "}
+                {formatCurrency(totalFourniture(bLGroups))}
               </h3>
             </div>
             <div

@@ -22,6 +22,7 @@ import {
   CalendarDays,
   CircleDollarSign,
   Landmark,
+  CreditCard,
 } from "lucide-react";
 import {
   Select,
@@ -48,7 +49,7 @@ import { LoadingDots } from "@/components/loading-dots";
 import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { DevisActions } from "@/components/devis-actions";
-import { formatCurrency } from "@/lib/functions";
+import { formatCurrency , methodePaiementLabel} from "@/lib/functions";
 export default function DevisPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
@@ -98,6 +99,7 @@ export default function DevisPage() {
     dateEnd: "",
     montant: [0, maxMontant],
     statut: "all",
+    statutPaiement: "all",
   });
   const queryClient = useQueryClient();
   useEffect(() => {
@@ -119,6 +121,7 @@ export default function DevisPage() {
       startDate,
       endDate,
       filters.montant,
+      filters.statutPaiement,
     ],
     queryFn: async () => {
       const response = await axios.get("/api/devis", {
@@ -130,6 +133,7 @@ export default function DevisPage() {
           to: endDate,
           minTotal: filters.montant[0],
           maxTotal: filters.montant[1],
+          statutPaiement: filters.statutPaiement,
         },
       });
       console.log("Devis :", response.data.devis);
@@ -227,14 +231,6 @@ export default function DevisPage() {
     return list;
   };
 
-  const totalPaye = (numero) => {
-    const trans = transactions?.filter((c) => c.reference === numero);
-    const totalPaye = trans?.reduce((acc, transaction) => {
-      return acc + transaction.montant;
-    }, 0);
-    return totalPaye;
-  };
-
   const transactionsDevis = (numero) => {
     const trans = transactions?.filter((c) => c.reference === numero);
     return trans;
@@ -252,6 +248,13 @@ export default function DevisPage() {
       return { lable: "Impayé", color: "bg-slate-100 text-slate-600" };
     }
   };
+  const statutPaiements = [
+    { lable: "Tous", value: "all", color: "" },
+    { lable: "Payé", value: "paye", color: "green" },
+    { lable: "Impayé", value: "impaye", color: "gray" },
+    { lable: "En partie", value: "enPartie", color: "amber" },
+  ];
+
 
   return (
     <>
@@ -315,6 +318,34 @@ export default function DevisPage() {
                               <span
                                 className={`h-2 w-2 rounded-full bg-${statut.color}`}
                               />
+                              {statut.lable}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4 my-2">
+                    <Label htmlFor="statut" className="text-left text-black">
+                      Statut de Paiement :
+                    </Label>
+                    <Select
+                      value={filters.statutPaiement}
+                      name="statutPaiement"
+                      onValueChange={(value) =>
+                        setFilters({ ...filters, statutPaiement: value })
+                      }
+                    >
+                      <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
+                        <SelectValue placeholder="Sélectionner un statut" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {statutPaiements.map((statut, index) => (
+                          <SelectItem key={index} value={statut.value}>
+                            <div className={`flex items-center gap-2`}>
+                              <div
+                                className={`w-2 h-2 rounded-full bg-${statut.color}-500`}
+                              ></div>
                               {statut.lable}
                             </div>
                           </SelectItem>
@@ -571,6 +602,16 @@ export default function DevisPage() {
                                                 </div>
                                                 <span className="font-semibold text-emerald-700">
                                                   {trans.montant} DH
+                                                </span>
+                                              </div>
+                                            </TableCell>
+                                            <TableCell>
+                                              <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 bg-slate-100 text-slate-600 rounded-full flex items-center justify-center">
+                                                  <CreditCard className="h-4 w-4" />
+                                                </div>
+                                                <span className="font-semibold text-slate-700">
+                                                  {methodePaiementLabel(trans)}
                                                 </span>
                                               </div>
                                             </TableCell>

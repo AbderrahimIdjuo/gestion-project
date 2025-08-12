@@ -16,6 +16,7 @@ import {
 import { Phone } from "lucide-react";
 import LoadingHistoriquePaiements from "@/components/loading-historique-paiements";
 import { EnteteDevis } from "@/components/Entete-devis";
+import { formatCurrency, methodePaiementLabel } from "@/lib/functions";
 
 function formatDate(dateString) {
   return dateString?.split("T")[0].split("-").reverse().join("-");
@@ -47,22 +48,7 @@ export default function HistoriquePaiement() {
   const totalPaye = transactions?.reduce((acc, transaction) => {
     return acc + transaction.montant;
   }, 0);
-  function methodePaiementLabel(transaction) {
-    if (
-      transaction.methodePaiement === "espece" &&
-      (transaction.compte === "compte personnel" ||
-        transaction.compte === "compte professionnel")
-    ) {
-      return "Vérement";
-    } else if (
-      transaction.methodePaiement === "espece" &&
-      transaction.compte === "caisse"
-    ) {
-      return "Espèce";
-    } else if (transaction.methodePaiement === "cheque") {
-      return "Chèque";
-    }
-  }
+
   return (
     <>
       {devis ? (
@@ -71,39 +57,34 @@ export default function HistoriquePaiement() {
           <div id="print-area" className="space-y-6">
             {/* Header */}
             <EnteteDevis />
-
-            {/* Company and Client Info */}
-            <div className="grid grid-cols-2 gap-8">
-              {/* Company Info */}
-              <div className="col-span-1">
-                <h1 className="font-bold text-lg text-gray-900">
-                  Devis N° : {devis?.numero}
-                </h1>
-                <h1 className="font-bold text-lg text-gray-900">
-                  Total TTC : {devis?.total} DH
-                </h1>
-              </div>
-              {/* Client Info */}
-              <div className="col-span-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <h2 className="font-bold text-lg text-gray-900">Client : </h2>
-                  <p className="font-bold text-lg text-gray-900">
+            <div className="space-y-2">
+              <div className="grid grid-cols-3 items-center mb-4">
+                <div className="flex gap-2 items-center">
+                  <h3 className="mb-1 font-semibold text-gray-900">
+                    Devis N° :
+                  </h3>
+                  <p className="text-sm text-gray-600">{devis?.numero}</p>
+                </div>
+                <div className="flex gap-2 items-center">
+                  <h3 className="mb-1 font-semibold text-gray-900">Client :</h3>
+                  <p className="text-sm text-gray-600">
                     {devis?.client.titre && devis?.client.titre + ". "}
                     {devis?.client.nom.toUpperCase()}
                   </p>
                 </div>
-                <div className="flex items-center gap-2 ">
-                  <Phone className="h-3 w-3" />
-                  <p className="font-medium text-sm">
-                    {formatPhoneNumber(devis?.client.telephone)}
+                <div className="flex gap-2 items-center">
+                  <h3 className="mb-1 font-semibold text-gray-900">Total :</h3>
+                  <p className="text-sm text-gray-600">
+                    {formatCurrency(devis?.total)}
                   </p>
                 </div>
               </div>
             </div>
-
             {/* Items Table */}
             <div>
-              <h3 className="text-lg font-bold">Historique des paiements :</h3>
+              <h3 className="font-semibold text-lg text-gray-900 mb-2">
+                Historique des paiements :
+              </h3>
               <div className="overflow-hidden rounded-lg border border-black">
                 <Table className="w-full border-collapse">
                   <TableHeader className="text-[1rem] border-black">
@@ -117,7 +98,7 @@ export default function HistoriquePaiement() {
                       <TableHead className="text-black  font-bold text-left border-l border-b border-black">
                         Compte
                       </TableHead>
-                      <TableHead className="text-black font-bold border-l border-b border-black text-left">
+                      <TableHead className="text-black font-bold border-l border-b border-black text-right">
                         Montant
                       </TableHead>
                     </TableRow>
@@ -135,8 +116,8 @@ export default function HistoriquePaiement() {
                         <TableCell className=" p-2 text-left border-l border-b border-black font-semibold">
                           {transaction.compte}
                         </TableCell>
-                        <TableCell className="border-l border-b border-black p-2 text-left font-semibold">
-                          {transaction.montant} DH
+                        <TableCell className="border-l border-b border-black p-2 text-right font-semibold">
+                          {formatCurrency(transaction.montant)}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -149,8 +130,8 @@ export default function HistoriquePaiement() {
                       >
                         Total payé :
                       </TableCell>
-                      <TableCell className="border-l border-b border-black border-black p-2 text-lg text-gray-900 text-left font-extrabold">
-                        {totalPaye} DH
+                      <TableCell className="border-l border-b border-black border-black p-2 text-lg text-gray-900 text-right font-extrabold">
+                        {formatCurrency(totalPaye)}
                       </TableCell>
                     </TableRow>
 
@@ -161,8 +142,8 @@ export default function HistoriquePaiement() {
                       >
                         Reste à payer :
                       </TableCell>
-                      <TableCell className="border-l border-black p-2 text-lg text-gray-900 text-left font-extrabold">
-                        {(devis?.total - totalPaye).toFixed(2)} DH
+                      <TableCell className="border-l border-black p-2 text-lg text-gray-900 text-right font-extrabold">
+                        {formatCurrency(devis?.total - totalPaye)}
                       </TableCell>
                     </TableRow>
                   </TableFooter>

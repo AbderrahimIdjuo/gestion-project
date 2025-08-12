@@ -222,7 +222,7 @@ export async function GET(req) {
   const to = searchParams.get("to"); // End date
   const minTotal = searchParams.get("minTotal");
   const maxTotal = searchParams.get("maxTotal");
-
+  const statutPaiement = searchParams.get("statutPaiement");
   const filters = {};
 
   const devisPerPage = 10;
@@ -237,6 +237,11 @@ export async function GET(req) {
   // Statut filter
   if (statut !== "all") {
     filters.statut = statut;
+  }
+
+  // StatutPaiement filter
+  if (statutPaiement !== "all") {
+    filters.statutPaiement = statutPaiement;
   }
 
   if (from && to) {

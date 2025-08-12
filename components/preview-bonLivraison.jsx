@@ -18,7 +18,7 @@ import {
   TableFooter,
 } from "@/components/ui/table";
 import { EnteteDevis } from "@/components/Entete-devis";
-
+import { formatCurrency } from "@/lib/functions";
 function formatDate(dateString) {
   return dateString?.split("T")[0].split("-").join("-");
 }
@@ -84,7 +84,7 @@ export default function PreviewBonLivraisonDialog({
                     Total :
                   </h3>
                   <p className="font-semibold">
-                    {totalBL(bonLivraison?.groups)} DH
+                    {formatCurrency(bonLivraison?.total)}
                   </p>
                 </div>
               </div>
@@ -137,8 +137,11 @@ export default function PreviewBonLivraisonDialog({
                                 <TableHead className="text-center !py-2">
                                   Qté
                                 </TableHead>
-                                <TableHead className="text-center !py-2">
+                                <TableHead className="text-right !py-2">
                                   Prix
+                                </TableHead>
+                                <TableHead className="text-right !py-2">
+                                  Montant
                                 </TableHead>
                               </TableRow>
                             </TableHeader>
@@ -151,8 +154,13 @@ export default function PreviewBonLivraisonDialog({
                                   <TableCell className="text-center !py-2">
                                     {product.quantite}
                                   </TableCell>
-                                  <TableCell className="text-center !py-2">
-                                    {product.prixUnite} DH
+                                  <TableCell className="text-right !py-2">
+                                    {formatCurrency(product.prixUnite)}
+                                  </TableCell>
+                                  <TableCell className="text-right !py-2">
+                                    {formatCurrency(
+                                      product.prixUnite * product.quantite
+                                    )}
                                   </TableCell>
                                 </TableRow>
                               ))}
@@ -160,13 +168,15 @@ export default function PreviewBonLivraisonDialog({
                             <TableFooter className="font-medium bg-none">
                               <TableRow>
                                 <TableCell
-                                  colSpan={2}
+                                  colSpan={3}
                                   className=" p-2 text-right font-bold text-lg"
                                 >
                                   Total :
                                 </TableCell>
                                 <TableCell className="p-2 text-left font-bold text-lg">
-                                  {totalFournitureDevis(group.produits)} DH
+                                  {formatCurrency(
+                                    totalFournitureDevis(group.produits)
+                                  )}
                                 </TableCell>
                               </TableRow>
                             </TableFooter>
