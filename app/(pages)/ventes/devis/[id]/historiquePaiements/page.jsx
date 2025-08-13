@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Printer } from "lucide-react";
-import { useState } from "react";
+import { EnteteDevis } from "@/components/Entete-devis";
+import LoadingHistoriquePaiements from "@/components/loading-historique-paiements";
+import { DirectPrintButton } from "@/components/ui/print-button";
 import {
   Table,
   TableBody,
@@ -13,10 +12,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Phone } from "lucide-react";
-import LoadingHistoriquePaiements from "@/components/loading-historique-paiements";
-import { EnteteDevis } from "@/components/Entete-devis";
 import { formatCurrency, methodePaiementLabel } from "@/lib/functions";
+import { useEffect, useState } from "react";
 
 function formatDate(dateString) {
   return dateString?.split("T")[0].split("-").reverse().join("-");
@@ -104,7 +101,7 @@ export default function HistoriquePaiement() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {transactions?.map((transaction) => (
+                    {transactions?.map(transaction => (
                       <TableRow key={transaction.id}>
                         <TableCell className=" p-2 text-left border-b border-black font-semibold">
                           {formatDate(transaction.date) ||
@@ -165,13 +162,9 @@ export default function HistoriquePaiement() {
             </div>
           </div>
           <div className="print:hidden mt-8 flex justify-end">
-            <Button
-              onClick={handlePrint}
-              className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 rounded-full hover:bg-purple-600 hover:scale-105 text-white font-semibold transition-all duration-300 transform"
-            >
-              <Printer className="mr-2 h-4 w-4" />
+            <DirectPrintButton className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full">
               Imprimer
-            </Button>
+            </DirectPrintButton>
           </div>
         </div>
       ) : (

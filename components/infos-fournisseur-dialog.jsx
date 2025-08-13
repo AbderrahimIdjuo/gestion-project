@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { Badge } from "@/components/ui/badge";
 import Spinner from "@/components/customUi/Spinner";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -10,12 +9,21 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { ChequeDetailsDialog } from "@/components/ui/cheque-details-dialog";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { PrintReportButton } from "@/components/ui/print-button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -24,26 +32,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Building2,
-  Phone,
-  Smartphone,
-  MapPin,
-  CreditCard,
-  TrendingUp,
-  Package,
-  Receipt,
-  Calendar,
-} from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
+import {
+  Building2,
+  Calendar,
+  CreditCard,
+  MapPin,
+  Package,
+  Phone,
+  Receipt,
+  Smartphone,
+  TrendingUp,
+} from "lucide-react";
+import { useMemo, useState } from "react";
 
 export default function InfosFournisseurDialog({
   fournisseur,
@@ -54,14 +56,14 @@ export default function InfosFournisseurDialog({
   const [transactions, setTransactions] = useState([]);
   const [sortKey, setSortKey] = useState("montant");
 
-  const formatCurrency = (amount) => {
+  const formatCurrency = amount => {
     return new Intl.NumberFormat("fr-MA", {
       style: "currency",
       currency: "MAD",
     }).format(amount);
   };
 
-  const formatDate = (dateString) => {
+  const formatDate = dateString => {
     return new Date(dateString).toLocaleDateString("fr-FR", {
       day: "2-digit",
       month: "2-digit",
@@ -94,9 +96,9 @@ export default function InfosFournisseurDialog({
   function getTopProduits(bonLivraisons, sortKey = "montant") {
     const stats = {};
 
-    bonLivraisons.forEach((bl) => {
-      bl.groups?.forEach((group) => {
-        group.produits?.forEach((p) => {
+    bonLivraisons.forEach(bl => {
+      bl.groups?.forEach(group => {
+        group.produits?.forEach(p => {
           const produitId = p.produitId;
           if (!produitId) return;
 
@@ -268,7 +270,7 @@ export default function InfosFournisseurDialog({
                     variant="outline"
                     className="text-lg text-white bg-green-600 px-3 py-1"
                   >
-                    {chiffreAffaires}
+                    {formatCurrency(chiffreAffaires)}
                   </Badge>
                 </div>
               </div>
@@ -276,10 +278,28 @@ export default function InfosFournisseurDialog({
               {/* Recent Payments */}
               <Card className="flex-1">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Receipt className="h-5 w-5" />
-                    Derniers Règlements
-                  </CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2">
+                      <Receipt className="h-5 w-5" />
+                      Derniers Règlements
+                    </CardTitle>
+                    <div className="flex items-end gap-2">
+                      <PrintReportButton
+                        variant="outline"
+                        size="sm"
+                        data={{
+                          fournisseur,
+                          transactions,
+                          bonLivraisons,
+                        }}
+                        localStorageKey="fournisseur-reglements-rapport"
+                        targetRoute="/fournisseurs/imprimer-reglements"
+                        className="flex items-center gap-2"
+                      >
+                        Imprimer
+                      </PrintReportButton>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="max-h-[500px] overflow-y-auto">
@@ -288,7 +308,7 @@ export default function InfosFournisseurDialog({
                         <Spinner />
                       </div>
                     ) : (
-                      <Table>
+                      <Table id="reglements-table">
                         <TableHeader>
                           <TableRow>
                             <TableHead>Date</TableHead>
@@ -314,12 +334,15 @@ export default function InfosFournisseurDialog({
                                 {reglement.compte?.replace("compte ", "")}
                               </TableCell>
                               <TableCell className="text-center">
-                                <Badge
-                                  variant="secondary"
-                                  className="bg-green-100 text-green-800 text-xs hover:bg-green-100"
-                                >
-                                  {reglement.methodePaiement}
-                                </Badge>
+                                <ChequeDetailsDialog
+                                  methodePaiement={reglement.methodePaiement}
+                                  cheque={reglement.cheque}
+                                  montant={reglement.montant}
+                                  compte={reglement.compte}
+                                  date={reglement.date}
+                                  formatCurrency={formatCurrency}
+                                  formatDate={formatDate}
+                                />
                               </TableCell>
                               <TableCell className="text-right font-medium text-sm">
                                 {formatCurrency(reglement.montant)}

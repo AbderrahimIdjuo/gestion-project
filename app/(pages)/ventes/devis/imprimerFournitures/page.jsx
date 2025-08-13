@@ -1,11 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Printer } from "lucide-react";
-import { useState } from "react";
-import { Switch } from "@/components/ui/switch";
+import { EnteteDevis } from "@/components/Entete-devis";
 import { Label } from "@/components/ui/label";
+import { DirectPrintButton } from "@/components/ui/print-button";
+import { Switch } from "@/components/ui/switch";
 import {
   Table,
   TableBody,
@@ -15,13 +13,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { EnteteDevis } from "@/components/Entete-devis";
-import { formatCurrency } from "@/lib/functions";
-import { formatDate } from "@/lib/functions";
-
-// function formatDate(dateString) {
-//   return dateString.split("T")[0].split("-").reverse().join("-");
-// }
+import { formatCurrency, formatDate } from "@/lib/functions";
+import { useEffect, useState } from "react";
 
 export default function DevisPDFPage() {
   const [devis, setDevis] = useState();
@@ -45,7 +38,7 @@ export default function DevisPDFPage() {
     window.print();
   };
 
-  const totalFourniture = (group) => {
+  const totalFourniture = group => {
     return group?.reduce((acc, item) => {
       const type = item?.bonLivraison?.type;
 
@@ -56,6 +49,12 @@ export default function DevisPDFPage() {
       }
 
       return acc; // si type inconnu
+    }, 0);
+  };
+
+  const totalBlFourniture = produits => {
+    return produits?.reduce((acc, produit) => {
+      return acc + produit.quantite * produit.prixUnite;
     }, 0);
   };
   return (
@@ -293,7 +292,9 @@ export default function DevisPDFPage() {
                                   Total :
                                 </TableCell>
                                 <TableCell className=" border-zinc-500 text-lg  p-1 text-left font-bold">
-                                  {formatCurrency(groupe.bonLivraison.total)}
+                                  {formatCurrency(
+                                    totalBlFourniture(groupe.produits)
+                                  )}
                                 </TableCell>
                               </TableRow>
                             </TableFooter>
@@ -305,7 +306,7 @@ export default function DevisPDFPage() {
                 </div>
               ) : (
                 <div className="text-center text-gray-500 mt-6">
-                  aucune commande trouvé
+                  aucun BL trouvé
                 </div>
               )}
             </div>
@@ -316,7 +317,7 @@ export default function DevisPDFPage() {
               </h3>
             </div>
             <div
-              className="flex items-center justify-between print:hidden
+              className="flex items-center justify-between 
     print:hidden my-5"
             >
               <div className="flex items-center space-x-2 ">
@@ -331,13 +332,9 @@ export default function DevisPDFPage() {
                     : "Les informations de la société sont masquées"}
                 </Label>
               </div>
-              <Button
-                className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full"
-                variant="outline"
-                onClick={handlePrint}
-              >
-                <Printer className="mr-2 h-4 w-4" /> Imprimer
-              </Button>
+              <DirectPrintButton className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full">
+                Imprimer
+              </DirectPrintButton>
             </div>
           </div>
         </>

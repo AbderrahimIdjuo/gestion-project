@@ -1,8 +1,6 @@
 "use client";
-import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
-import { Button } from "@/components/ui/button";
-import { Printer } from "lucide-react";
+import { EnteteDevis } from "@/components/Entete-devis";
+import { DirectPrintButton } from "@/components/ui/print-button";
 import {
   Table,
   TableBody,
@@ -12,8 +10,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { EnteteDevis } from "@/components/Entete-devis";
-import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
+import { useEffect, useState } from "react";
 function formatDate(dateString) {
   return dateString?.split("T")[0]?.split("-")?.reverse()?.join("-");
 }
@@ -48,11 +47,11 @@ export default function ImpressionTransactions() {
         return acc + t.montant;
       } else if (t.type === "depense") {
         return acc - t.montant;
-      }
+      } else return acc;
     }, 0);
   };
 
-  const typeLabel = (type) => {
+  const typeLabel = type => {
     if (type === "recette") {
       return "Recette";
     } else if (type === "depense") {
@@ -90,7 +89,7 @@ export default function ImpressionTransactions() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {transactions?.map((t) => (
+                  {transactions?.map(t => (
                     <TableRow key={t.id}>
                       <TableCell className="px-1 py-2">
                         {" "}
@@ -147,13 +146,9 @@ export default function ImpressionTransactions() {
           className="flex items-center justify-end print:hidden
 print:hidden mt-5"
         >
-          <Button
-            className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full"
-            variant="outline"
-            onClick={handlePrint}
-          >
-            <Printer className="mr-2 h-4 w-4" /> Imprimer
-          </Button>
+          <DirectPrintButton className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full">
+            Imprimer
+          </DirectPrintButton>
         </div>
       </div>
     </>

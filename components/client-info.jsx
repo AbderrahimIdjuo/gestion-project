@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/functions";
 import { formatDate } from "@/lib/functions";
+import { ChequeDetailsDialog } from "@/components/ui/cheque-details-dialog";
 
 export function ClientInfoDialog({ client, isOpen, onClose }) {
   const [devis, setDevis] = useState([]);
@@ -283,12 +284,16 @@ export function ClientInfoDialog({ client, isOpen, onClose }) {
                                 {reglement.compte?.replace("compte ", "")}
                               </TableCell>
                               <TableCell className="text-center">
-                                <Badge
-                                  variant="secondary"
-                                  className="bg-green-100 text-green-800 text-xs hover:bg-green-100"
-                                >
-                                  {reglement.methodePaiement}
-                                </Badge>
+                                <ChequeDetailsDialog
+                                  methodePaiement={reglement.methodePaiement}
+                                  cheque={reglement.cheque}
+                                  montant={reglement.montant}
+                                  compte={reglement.compte}
+                                  date={reglement.date}
+                                  formatCurrency={formatCurrency}
+                                  formatDate={formatDate}
+                                  type="RECU"
+                                />
                               </TableCell>
                               <TableCell className="text-right font-medium text-sm">
                                 {formatCurrency(reglement.montant)}

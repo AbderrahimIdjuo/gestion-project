@@ -1,11 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Printer } from "lucide-react";
-import { useState } from "react";
-import { Switch } from "@/components/ui/switch";
+import { EnteteDevis } from "@/components/Entete-devis";
 import { Label } from "@/components/ui/label";
+import { DirectPrintButton } from "@/components/ui/print-button";
+import { Switch } from "@/components/ui/switch";
 import {
   Table,
   TableBody,
@@ -15,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { EnteteDevis } from "@/components/Entete-devis";
+import { useEffect, useState } from "react";
 
 export default function DevisPDFPage() {
   const [bonLivraison, setBonLivraison] = useState();
@@ -29,12 +27,12 @@ export default function DevisPDFPage() {
   const handlePrint = () => {
     window.print();
   };
-  const totalFournitureDevis = (produits) => {
+  const totalFournitureDevis = produits => {
     return produits?.reduce((acc, produit) => {
       return acc + produit.quantite * produit.prixUnite;
     }, 0);
   };
-  const totalBL = (group) => {
+  const totalBL = group => {
     return group?.reduce((acc, order) => {
       return acc + totalFournitureDevis(order.produits);
     }, 0);
@@ -125,12 +123,8 @@ export default function DevisPDFPage() {
                         <TableHeader>
                           <TableRow>
                             <TableHead>Produit</TableHead>
-                            <TableHead className="text-center">
-                              Qté
-                            </TableHead>
-                            <TableHead className="text-center">
-                              Prix
-                            </TableHead>
+                            <TableHead className="text-center">Qté</TableHead>
+                            <TableHead className="text-center">Prix</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -195,13 +189,9 @@ print:hidden mt-5"
                 : "Les informations de la société sont masquées"}
             </Label>
           </div>
-          <Button
-            className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full"
-            variant="outline"
-            onClick={handlePrint}
-          >
-            <Printer className="mr-2 h-4 w-4" /> Imprimer
-          </Button>
+          <DirectPrintButton className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full">
+            Imprimer
+          </DirectPrintButton>
         </div>
       </div>
     </>

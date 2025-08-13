@@ -1,11 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Printer } from "lucide-react";
-import { useState } from "react";
-import { Switch } from "@/components/ui/switch";
+import { EnteteDevis } from "@/components/Entete-devis";
 import { Label } from "@/components/ui/label";
+import { DirectPrintButton } from "@/components/ui/print-button";
+import { Switch } from "@/components/ui/switch";
 import {
   Table,
   TableBody,
@@ -15,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { EnteteDevis } from "@/components/Entete-devis";
+import { useEffect, useState } from "react";
 
 function nombreEnLettres(n) {
   const unites = [
@@ -111,8 +109,8 @@ export default function DevisPDFPage() {
     window.print();
   };
 
-  const tva = (total) => parseFloat(total * 0.2).toFixed(2);
-  const totalTTC = (total) =>
+  const tva = total => parseFloat(total * 0.2).toFixed(2);
+  const totalTTC = total =>
     (parseFloat(total) + parseFloat(tva(total))).toFixed(2);
   return (
     <>
@@ -246,7 +244,7 @@ export default function DevisPDFPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {articls?.map((articl ) => (
+                {articls?.map(articl => (
                   <TableRow key={articl.id}>
                     <TableCell className=" p-1 text-left border-b border-black text-md font-semibold">
                       {articl.designation}{" "}
@@ -255,10 +253,10 @@ export default function DevisPDFPage() {
                       {articl.height ? articl.height : "-"}
                     </TableCell>
                     <TableCell className="border-l border-b border-black p-1 text-center">
-                      {articl.length  ? articl.length :"-" }
+                      {articl.length ? articl.length : "-"}
                     </TableCell>
                     <TableCell className="border-l border-b border-black p-1 text-center">
-                      {articl.width ?  articl.width : "-" }
+                      {articl.width ? articl.width : "-"}
                     </TableCell>
                     <TableCell className="border-l border-b border-black p-1 text-center">
                       {articl.unite}
@@ -350,13 +348,9 @@ print:hidden"
                 : "Les informations de la société sont masquées"}
             </Label>
           </div>
-          <Button
-            className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full"
-            variant="outline"
-            onClick={handlePrint}
-          >
-            <Printer className="mr-2 h-4 w-4" /> Imprimer
-          </Button>
+          <DirectPrintButton className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full">
+            Imprimer
+          </DirectPrintButton>
         </div>
       </div>
     </>

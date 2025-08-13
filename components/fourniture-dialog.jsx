@@ -18,6 +18,8 @@ import {
   TableFooter,
 } from "@/components/ui/table";
 import { EnteteDevis } from "@/components/Entete-devis";
+import { formatCurrency} from "@/lib/functions";
+
 
 export default function FournitureDialog({
   devis,
@@ -28,14 +30,14 @@ export default function FournitureDialog({
   const handlePrint = () => {
     window.print();
   };
-  const totalCommandeFourniture = (produits) => {
+  const totalBlFourniture = (produits) => {
     return produits?.reduce((acc, produit) => {
       return acc + produit.quantite * produit.prixUnite;
     }, 0);
   };
   const totalFourniture = (group) => {
     return group?.reduce((acc, order) => {
-      return acc + totalCommandeFourniture(order.produits);
+      return acc + totalBlFourniture(order.produits);
     }, 0);
   };
   return (
@@ -158,7 +160,7 @@ export default function FournitureDialog({
                                   sousTotal :
                                 </TableCell>
                                 <TableCell className=" border-zinc-500  p-2 text-left font-bold">
-                                  {totalCommandeFourniture(groupe.produits)} DH
+                                  {formatCurrency(totalBlFourniture(groupe.produits))} DH
                                 </TableCell>
                               </TableRow>
                             </TableFooter>

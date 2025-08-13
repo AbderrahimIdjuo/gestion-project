@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Printer, PrinterIcon } from "lucide-react";
+import CustomTooltip from "@/components/customUi/customTooltip";
+import { EnteteDevis } from "@/components/Entete-devis";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { DirectPrintButton } from "@/components/ui/print-button";
 import {
   Table,
   TableBody,
@@ -17,8 +18,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import CustomTooltip from "@/components/customUi/customTooltip";
-import { EnteteDevis } from "@/components/Entete-devis";
+import { PrinterIcon } from "lucide-react";
+import { useState } from "react";
 
 function regrouperProduitsParQuantite(groups) {
   const produitMap = new Map();
@@ -141,15 +142,9 @@ export default function PrintCommandeFournitureDialog({ commande }) {
             >
               Fermer
             </Button>
-            <Button
-              className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full"
-              variant="outline"
-              onClick={() => {
-                handlePrint();
-              }}
-            >
-              <Printer className="mr-2 h-4 w-4" /> Imprimer
-            </Button>
+            <DirectPrintButton className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full">
+              Imprimer
+            </DirectPrintButton>
           </div>
         </DialogContent>
       </Dialog>

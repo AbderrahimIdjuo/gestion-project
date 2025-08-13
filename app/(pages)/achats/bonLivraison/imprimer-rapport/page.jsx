@@ -1,9 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Printer } from "lucide-react";
-import { useState } from "react";
+import { EnteteDevis } from "@/components/Entete-devis";
+import { DirectPrintButton } from "@/components/ui/print-button";
 import {
   Table,
   TableBody,
@@ -13,10 +11,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { EnteteDevis } from "@/components/Entete-devis";
-import { formatMontant } from "@/lib/functions";
-import { formatDate } from "@/lib/functions";
-import { formatCurrency } from "@/lib/functions";
+import { formatCurrency, formatDate, formatMontant } from "@/lib/functions";
+import { useEffect, useState } from "react";
 
 export default function ImprimerRapport() {
   const [bonLivraison, setBonLivraison] = useState();
@@ -102,10 +98,10 @@ export default function ImprimerRapport() {
                         <TableCell>{bon.fournisseur?.nom ?? "-"}</TableCell>
                         <TableCell>{bon.type}</TableCell>
                         <TableCell className="text-right">
-                          {formatCurrency(bon.total)} 
+                          {formatCurrency(bon.total)}
                         </TableCell>
                         <TableCell className="text-right">
-                          {formatCurrency(bon.totalPaye)} 
+                          {formatCurrency(bon.totalPaye)}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -246,13 +242,9 @@ export default function ImprimerRapport() {
           className="flex items-center justify-end print:hidden
 print:hidden mt-5"
         >
-          <Button
-            className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full"
-            variant="outline"
-            onClick={handlePrint}
-          >
-            <Printer className="mr-2 h-4 w-4" /> Imprimer
-          </Button>
+          <DirectPrintButton className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full">
+            Imprimer
+          </DirectPrintButton>
         </div>
       </div>
     </>

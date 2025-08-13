@@ -1,9 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Printer } from "lucide-react";
-import { useState } from "react";
+import { EnteteDevis } from "@/components/Entete-devis";
 import {
   Table,
   TableBody,
@@ -12,9 +9,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { EnteteDevis } from "@/components/Entete-devis";
 import { formatCurrency } from "@/lib/functions";
+import { useEffect, useState } from "react";
 
+import { DirectPrintButton } from "@/components/ui/print-button";
 import { formatDate } from "@/lib/functions";
 
 export default function ImprimerRapport() {
@@ -69,7 +67,7 @@ export default function ImprimerRapport() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data?.map((client) =>
+                {data?.map(client =>
                   client.devis.map((devis, index) => (
                     <TableRow key={`${client.nom}-${devis.numero}`}>
                       {index === 0 && (
@@ -80,7 +78,9 @@ export default function ImprimerRapport() {
                           {client.nom}
                         </TableCell>
                       )}
-                      <TableCell className="border-b px-1">{devis.numero}</TableCell>
+                      <TableCell className="border-b px-1">
+                        {devis.numero}
+                      </TableCell>
                       <TableCell className="text-right border-b border-l px-1 ">
                         {formatCurrency(devis.total)}
                       </TableCell>
@@ -109,13 +109,9 @@ export default function ImprimerRapport() {
           className="flex items-center justify-end print:hidden
 print:hidden mt-5"
         >
-          <Button
-            className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full"
-            variant="outline"
-            onClick={handlePrint}
-          >
-            <Printer className="mr-2 h-4 w-4" /> Imprimer
-          </Button>
+          <DirectPrintButton className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full">
+            Imprimer
+          </DirectPrintButton>
         </div>
       </div>
     </>
