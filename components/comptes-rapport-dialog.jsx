@@ -1,16 +1,17 @@
 "use client";
 
-import { useState , useEffect } from "react";
+import CompteBancairesSelectMenu from "@/components/compteBancairesSelectMenu";
+import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogDescription,
 } from "@/components/ui/dialog";
-import { FileText, Printer, Wallet, Trash2 } from "lucide-react";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -18,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useQuery } from "@tanstack/react-query";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -28,82 +29,24 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { formatCurrency, formatDate } from "@/lib/functions";
+import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { formatCurrency } from "@/lib/functions";
-import { formatDate } from "@/lib/functions";
-
-import CompteBancairesSelectMenu from "@/components/compteBancairesSelectMenu";
-import { Label } from "@/components/ui/label";
-import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
 import {
-  startOfMonth,
-  endOfMonth,
-  subMonths,
-  startOfYear,
-  endOfYear,
-  subYears,
-  startOfQuarter,
-  endOfQuarter,
-  subQuarters,
-  startOfDay,
   endOfDay,
+  endOfMonth,
+  endOfQuarter,
+  endOfYear,
+  startOfDay,
+  startOfMonth,
+  startOfQuarter,
+  startOfYear,
+  subQuarters,
+  subYears,
 } from "date-fns";
-import { Skeleton } from "@/components/ui/skeleton";
+import { FileText } from "lucide-react";
+import { useEffect, useState } from "react";
 
-function getDateRangeFromPeriode(periode, startDate = null, endDate = null) {
-  const now = new Date();
-
-  switch (periode) {
-    case "aujourd'hui":
-      return {
-        from: startOfDay(now),
-        to: endOfDay(now),
-      };
-    case "ce-mois":
-      return {
-        from: startOfMonth(now),
-        to: endOfMonth(now),
-      };
-    case "mois-dernier":
-      const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      return {
-        from: startOfMonth(lastMonth),
-        to: endOfMonth(lastMonth),
-      };
-    case "trimestre-actuel":
-      return {
-        from: startOfQuarter(now),
-        to: endOfQuarter(now),
-      };
-    case "trimestre-precedent":
-      const prevQuarter = subQuarters(now, 1);
-      return {
-        from: startOfQuarter(prevQuarter),
-        to: endOfQuarter(prevQuarter),
-      };
-    case "cette-annee":
-      return {
-        from: startOfYear(now),
-        to: endOfYear(now),
-      };
-    case "annee-derniere":
-      const lastYear = subYears(now, 1);
-      return {
-        from: startOfYear(lastYear),
-        to: endOfYear(lastYear),
-      };
-    case "personnalisee":
-      return {
-        from: startDate ? new Date(startDate) : null,
-        to: endDate ? new Date(endDate) : null,
-      };
-    default:
-      return {
-        from: null,
-        to: null,
-      };
-  }
-}
 export default function ComptesRapportDialog() {
   const [open, setOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
@@ -118,9 +61,62 @@ export default function ComptesRapportDialog() {
     setEndDate("");
     setCurrentStep(1);
   };
+  function getDateRangeFromPeriode(periode) {
+    const now = new Date();
 
+    switch (periode) {
+      case "aujourd'hui":
+        return {
+          from: startOfDay(now),
+          to: endOfDay(now),
+        };
+      case "ce-mois":
+        return {
+          from: startOfMonth(now),
+          to: endOfMonth(now),
+        };
+      case "mois-dernier":
+        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        return {
+          from: startOfMonth(lastMonth),
+          to: endOfMonth(lastMonth),
+        };
+      case "trimestre-actuel":
+        return {
+          from: startOfQuarter(now),
+          to: endOfQuarter(now),
+        };
+      case "trimestre-precedent":
+        const prevQuarter = subQuarters(now, 1);
+        return {
+          from: startOfQuarter(prevQuarter),
+          to: endOfQuarter(prevQuarter),
+        };
+      case "cette-annee":
+        return {
+          from: startOfYear(now),
+          to: endOfYear(now),
+        };
+      case "annee-derniere":
+        const lastYear = subYears(now, 1);
+        return {
+          from: startOfYear(lastYear),
+          to: endOfYear(lastYear),
+        };
+      case "personnalisee":
+        return {
+          from: startDate ? new Date(startDate) : null,
+          to: endDate ? new Date(endDate) : null,
+        };
+      default:
+        return {
+          from: null,
+          to: null,
+        };
+    }
+  }
   const { from, to } = getDateRangeFromPeriode(periode);
-  const transactions = useQuery({
+  const { data: Data, isLoading } = useQuery({
     queryKey: ["transactions-rapport", compte, periode, startDate, endDate],
     queryFn: async () => {
       const response = await axios.get("/api/tresorie/rapport", {
@@ -131,12 +127,15 @@ export default function ComptesRapportDialog() {
         },
       });
       console.log("caisse rapport transactions:  ", response.data.transactions);
-      return response.data.transactions;
+      console.log("comptes Bancaires:  ", response.data.comptes);
+
+      return response.data;
     },
     keepPreviousData: true, // Keeps old data visible while fetching new page
+    enabled: currentStep === 2,
   });
 
-  const handleTypeLableColor = (t) => {
+  const handleTypeLableColor = t => {
     if (t === "recette") {
       return {
         lable: "Recette",
@@ -159,7 +158,7 @@ export default function ComptesRapportDialog() {
 
   const solde = () => {
     if (compte === "caisse") {
-      return transactions?.data.reduce((acc, t) => {
+      return Data?.transactions.reduce((acc, t) => {
         if (t.type === "recette") {
           return acc + t.montant;
         } else if (t.type === "depense") {
@@ -172,7 +171,7 @@ export default function ComptesRapportDialog() {
       compte === "compte personnel" ||
       compte === "compte professionel"
     ) {
-      return transactions?.data.reduce((acc, t) => {
+      return Data?.transactions.reduce((acc, t) => {
         if (t.type === "recette") {
           return acc + t.montant;
         } else if (t.type === "depense") {
@@ -184,7 +183,7 @@ export default function ComptesRapportDialog() {
     }
   };
 
-  const soldeColor = (solde) => {
+  const soldeColor = solde => {
     if (solde > 0) {
       return "text-green-500";
     } else if (solde < 0) {
@@ -196,6 +195,14 @@ export default function ComptesRapportDialog() {
       reset();
     }
   }, [open]);
+
+  const soldeActuel = () => {
+    return Data?.comptes.find(c => c.compte === compte).solde;
+  };
+
+  // const soldeInitial = () => {
+  //   return soldeActuel() - solde();
+  // };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -238,7 +245,7 @@ export default function ComptesRapportDialog() {
                 </Label>
                 <Select
                   value={periode}
-                  onValueChange={(value) => setPeriode(value)}
+                  onValueChange={value => setPeriode(value)}
                 >
                   <SelectTrigger className="focus:ring-2 focus:ring-purple-500">
                     <SelectValue placeholder="Sélectionnez la période" />
@@ -328,7 +335,7 @@ export default function ComptesRapportDialog() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {transactions.isLoading ? (
+                  {isLoading ? (
                     [...Array(10)].map((_, index) => (
                       <TableRow
                         className="h-[2rem] MuiTableRow-root"
@@ -362,8 +369,8 @@ export default function ComptesRapportDialog() {
                         </TableCell>
                       </TableRow>
                     ))
-                  ) : transactions.data?.length > 0 ? (
-                    transactions.data?.map((transaction, index) => (
+                  ) : Data?.transactions.length > 0 ? (
+                    Data?.transactions.map((transaction, index) => (
                       <TableRow key={transaction.id}>
                         <TableCell className="font-medium py-2">
                           {index + 1}
@@ -425,7 +432,7 @@ export default function ComptesRapportDialog() {
                         solde()
                       )}`}
                     >
-                      Solde :
+                      Total des transactions :
                     </TableCell>
                     <TableCell
                       colSpan={2}
@@ -434,6 +441,24 @@ export default function ComptesRapportDialog() {
                       )}`}
                     >
                       {formatCurrency(solde())}
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell
+                      colSpan={6}
+                      className={`text-right text-lg font-semibold p-2 ${soldeColor(
+                        soldeActuel()
+                      )}`}
+                    >
+                      Solde actuel:
+                    </TableCell>
+                    <TableCell
+                      colSpan={2}
+                      className={`text-left text-lg font-semibold p-2 ${soldeColor(
+                        soldeActuel()
+                      )}`}
+                    >
+                      {formatCurrency(soldeActuel())}
                     </TableCell>
                   </TableRow>
                 </TableFooter>
@@ -455,11 +480,13 @@ export default function ComptesRapportDialog() {
                 variant="outline"
                 onClick={() => {
                   const data = {
-                    transactions: transactions.data,
+                    transactions: Data?.transactions,
                     solde: solde(),
                     compte,
                     from,
                     to,
+                    totalTransactions: solde(),
+                    soldeActuel: soldeActuel(),
                   };
                   localStorage.setItem(
                     "transaction-rapport",

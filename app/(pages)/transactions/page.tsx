@@ -17,6 +17,7 @@ import { Trash2, Filter, Search, Printer } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
+import { formatCurrency } from "@/lib/functions";
 import {
   Sheet,
   SheetContent,
@@ -264,7 +265,7 @@ export default function Banques() {
             <Input
               placeholder="Recherche..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={e => setSearchQuery(e.target.value)}
               className="pl-9 w-full rounded-full bg-gray-50 focus-visible:ring-purple-500 focus-visible:ring-offset-0"
             />
             <div className="absolute right-6 top-1/3 h-4 w-4 -translate-y-1/2 text-muted-foreground">
@@ -300,7 +301,7 @@ export default function Banques() {
                     <Select
                       value={filters.type}
                       name="type"
-                      onValueChange={(value) =>
+                      onValueChange={value =>
                         setFilters({ ...filters, type: value })
                       }
                     >
@@ -343,7 +344,7 @@ export default function Banques() {
                     <Select
                       value={filters.methodePaiement}
                       name="methodePaiement"
-                      onValueChange={(value) =>
+                      onValueChange={value =>
                         setFilters({ ...filters, methodePaiement: value })
                       }
                     >
@@ -364,7 +365,7 @@ export default function Banques() {
                     <Select
                       value={filters.compte}
                       name="compte"
-                      onValueChange={(value) =>
+                      onValueChange={value =>
                         setFilters({ ...filters, compte: value })
                       }
                     >
@@ -474,6 +475,11 @@ export default function Banques() {
                         <TableCell className="!py-2" align="left">
                           <Skeleton className="h-4 w-[100px]" />
                         </TableCell>
+                        <TableCell className="!py-2">
+                          <div className="flex gap-2 justify-end">
+                            <Skeleton className="h-7 w-7 rounded-full" />
+                          </div>
+                        </TableCell>
                       </TableRow>
                     ))
                   ) : transactions.data?.length > 0 ? (
@@ -487,7 +493,7 @@ export default function Banques() {
                           {transaction.lable}
                         </TableCell>
                         <TableCell className="font-medium py-0">
-                          {transaction.montant} DH
+                          {formatCurrency(transaction.montant)}
                         </TableCell>
                         <TableCell className="font-medium py-0">
                           <span

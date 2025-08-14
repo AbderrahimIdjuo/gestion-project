@@ -29,13 +29,15 @@ export async function GET(req) {
     };
   }
 
-  console.log("from rapport ####  filters", filters);
+  // console.log("from rapport ####  filters", filters);
 
   // Fetch filtered transactions with pagination
   const transactions = await prisma.transactions.findMany({
     where: filters,
-    orderBy: { updatedAt: "desc" },
+    orderBy: { date: "asc" },
   });
 
-  return NextResponse.json({ transactions });
+  const comptes = await prisma.comptesBancaires.findMany();
+
+  return NextResponse.json({ transactions, comptes });
 }

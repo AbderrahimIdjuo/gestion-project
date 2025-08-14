@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -9,18 +8,20 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { FileText, Printer } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
 import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import axios from "axios";
 import { formatCurrency } from "@/lib/functions";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
+import { FileText, Printer } from "lucide-react";
+import { useState } from "react";
 
 export default function ClientsRapportDialog() {
   const [open, setOpen] = useState(false);
@@ -41,7 +42,7 @@ export default function ClientsRapportDialog() {
 
     const clientsMap = {};
 
-    devisList.forEach((devis) => {
+    devisList.forEach(devis => {
       const nomClient = devis.client?.nom || "Client inconnu";
 
       if (!clientsMap[nomClient]) {
@@ -53,19 +54,24 @@ export default function ClientsRapportDialog() {
       }
 
       const restePaye = devis.total - devis.totalPaye;
-
-      clientsMap[nomClient].devis.push({
-        numero: devis.numero,
-        total: devis.total,
-        totalPaye: devis.totalPaye,
-        restePaye,
-      });
-
+      if (restePaye > 0) {
+        clientsMap[nomClient].devis.push({
+          numero: devis.numero,
+          total: devis.total,
+          totalPaye: devis.totalPaye,
+          restePaye,
+        });
+      }
       clientsMap[nomClient].totalRestePaye += restePaye;
     });
 
     return Object.values(clientsMap);
   }
+
+  const creditTotal = regrouperDevisParClientEnTableau(devis).reduce(
+    (acc, client) => acc + client.totalRestePaye,
+    0
+  );
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -92,11 +98,11 @@ export default function ClientsRapportDialog() {
                   <TableHead className="text-right">Total</TableHead>
                   <TableHead className="text-right">Montant payé</TableHead>
                   <TableHead className="text-right">Reste à payer</TableHead>
-                  <TableHead className="text-centre">Crédit</TableHead>
+                  <TableHead className="text-center">Crédit</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {regrouperDevisParClientEnTableau(devis).map((client) =>
+                {regrouperDevisParClientEnTableau(devis).map(client =>
                   client.devis.map((devis, index) => (
                     <TableRow key={`${client.nom}-${devis.numero}`}>
                       {index === 0 && (
@@ -129,6 +135,22 @@ export default function ClientsRapportDialog() {
                   ))
                 )}
               </TableBody>
+              <TableFooter>
+                <TableRow>
+                  <TableCell
+                    colSpan={5}
+                    className="text-right text-rose-600 text-xl font-bold"
+                  >
+                    Total des crédits :
+                  </TableCell>
+                  <TableCell
+                    colSpan={1}
+                    className="text-left text-xl text-rose-600 font-bold"
+                  >
+                    {formatCurrency(creditTotal)}
+                  </TableCell>
+                </TableRow>
+              </TableFooter>
             </Table>
           </div>
           <div className="flex justify-end gap-3 mt-6 print:hidden">

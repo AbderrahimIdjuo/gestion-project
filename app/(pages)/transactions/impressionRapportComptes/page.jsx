@@ -10,10 +10,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { formatCurrency, formatDate } from "@/lib/functions";
 import { useEffect, useState } from "react";
-function formatDate(dateString) {
-  return dateString?.split("T")[0]?.split("-")?.reverse()?.join("-");
-}
 
 export default function ImpressionRapport() {
   const [data, setData] = useState();
@@ -26,9 +24,6 @@ export default function ImpressionRapport() {
     }
   }, []);
 
-  const handlePrint = () => {
-    window.print();
-  };
   const typeLabel = type => {
     if (type === "recette") {
       return "Recette";
@@ -52,6 +47,14 @@ export default function ImpressionRapport() {
     date.setHours(date.getHours() + 1);
     return date.toISOString();
   }
+
+  const soldeColor = solde => {
+    if (solde > 0) {
+      return "text-green-500";
+    } else if (solde < 0) {
+      return "text-rose-600";
+    }
+  };
   return (
     <>
       <div className="container mx-auto p-8 w-[90vw] bg-white min-h-screen print:p-0 print:max-w-none mb-10">
@@ -62,13 +65,18 @@ export default function ImpressionRapport() {
 
           <div className="flex justify-between gap-8"></div>
           <div className="space-y-6">
-            <div className="flex justify-between items-center ">
-              <h1 className="text-3xl font-bold">Compte : {data?.compte}</h1>
-              <h1 className="text-3xl font-bold">
-                Période :
-                {data?.from ? formatDate(ajouterUneHeure(data.from)) : "—"} ****{" "}
-                {data?.to ? formatDate(data.to) : "—"}
-              </h1>
+            <div className="grid grid-cols-2 items-center mb-4">
+              <div className="flex gap-2 items-center">
+                <h3 className="mb-1 font-semibold text-gray-900">Compte :</h3>
+                <p className="text-sm text-gray-600">{data?.compte}</p>
+              </div>
+              <div className="flex gap-2 items-center">
+                <h3 className="mb-1 font-semibold text-gray-900">Période :</h3>
+                <p className="text-sm text-gray-600">
+                  {data?.from ? formatDate(ajouterUneHeure(data.from)) : "—"} •{" "}
+                  {data?.to ? formatDate(data.to) : "—"}
+                </p>
+              </div>
             </div>
             <div className="rounded-xl border shadow-sm overflow-x-auto">
               <Table>
@@ -121,15 +129,37 @@ export default function ImpressionRapport() {
                   <TableRow>
                     <TableCell
                       colSpan={6}
-                      className="text-right text-lg font-semibold p-2"
+                      className={`text-right text-lg font-semibold p-2 ${soldeColor(
+                        data?.totalTransactions
+                      )}`}
                     >
-                      Total :
+                      Total des transactions :
                     </TableCell>
                     <TableCell
                       colSpan={2}
-                      className="text-left text-lg font-semibold p-2"
+                      className={`text-left text-lg font-semibold p-2 ${soldeColor(
+                        data?.totalTransactions
+                      )}`}
                     >
-                      {data?.solde} DH
+                      {formatCurrency(data?.totalTransactions)}
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell
+                      colSpan={6}
+                      className={`text-right text-lg font-semibold p-2 ${soldeColor(
+                        data?.soldeActuel
+                      )}`}
+                    >
+                      Solde actuel:
+                    </TableCell>
+                    <TableCell
+                      colSpan={2}
+                      className={`text-left text-lg font-semibold p-2 ${soldeColor(
+                        data?.soldeActuel
+                      )}`}
+                    >
+                      {formatCurrency(data?.soldeActuel)}
                     </TableCell>
                   </TableRow>
                 </TableFooter>
@@ -138,7 +168,7 @@ export default function ImpressionRapport() {
           </div>
         </div>
         <div
-          className="flex items-center justify-end print:hidden
+          className="flex items-center justify-end 
 print:hidden mt-5"
         >
           <DirectPrintButton className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full">

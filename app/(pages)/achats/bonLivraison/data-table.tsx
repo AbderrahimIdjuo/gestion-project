@@ -1,13 +1,5 @@
 "use client";
-import * as React from "react";
 import { Button } from "@/components/ui/button";
-import {
-  ColumnDef,
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-  VisibilityState,
-} from "@tanstack/react-table";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -23,6 +15,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+  VisibilityState,
+} from "@tanstack/react-table";
+import * as React from "react";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -80,16 +80,14 @@ export function DataTable<TData, TValue>({
           <DropdownMenuContent align="end">
             {table
               .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => {
+              .filter(column => column.getCanHide())
+              .map(column => {
                 return (
                   <DropdownMenuCheckboxItem
                     key={column.id}
                     className="capitalize"
                     checked={column.getIsVisible()}
-                    onCheckedChange={(value) =>
-                      column.toggleVisibility(!!value)
-                    }
+                    onCheckedChange={value => column.toggleVisibility(!!value)}
                   >
                     {getHeaderLabel(column)}
                   </DropdownMenuCheckboxItem>
@@ -102,9 +100,9 @@ export function DataTable<TData, TValue>({
         {isLoading ? (
           <Table>
             <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
+              {table.getHeaderGroups().map(headerGroup => (
                 <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => {
+                  {headerGroup.headers.map(header => {
                     return (
                       <TableHead key={header.id}>
                         {header.isPlaceholder
@@ -122,11 +120,13 @@ export function DataTable<TData, TValue>({
             <TableBody>
               {Array.from({ length: rowCount }).map((_, rowIndex) => (
                 <TableRow key={rowIndex}>
-                  {Array.from({ length: columnCount }).map((_, colIndex) => (
-                    <TableCell key={colIndex}>
-                      <div className="h-4 w-full bg-muted rounded animate-pulse" />
-                    </TableCell>
-                  ))}
+                  {Array.from({ length: columnCount + 1 }).map(
+                    (_, colIndex) => (
+                      <TableCell key={colIndex}>
+                        <div className="h-4 w-full bg-muted rounded animate-pulse" />
+                      </TableCell>
+                    )
+                  )}
                   <TableCell className="!py-2">
                     <div className="flex gap-2 justify-end">
                       <Skeleton className="h-7 w-7 rounded-full" />
@@ -139,9 +139,9 @@ export function DataTable<TData, TValue>({
         ) : (
           <Table>
             <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
+              {table.getHeaderGroups().map(headerGroup => (
                 <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => {
+                  {headerGroup.headers.map(header => {
                     return (
                       <TableHead key={header.id}>
                         {header.isPlaceholder
@@ -158,12 +158,12 @@ export function DataTable<TData, TValue>({
             </TableHeader>
             <TableBody>
               {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
+                table.getRowModel().rows.map(row => (
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
                   >
-                    {row.getVisibleCells().map((cell) => (
+                    {row.getVisibleCells().map(cell => (
                       <TableCell key={cell.id}>
                         {flexRender(
                           cell.column.columnDef.cell,

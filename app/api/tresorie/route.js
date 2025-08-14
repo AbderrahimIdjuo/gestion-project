@@ -79,7 +79,7 @@ export async function DELETE(req) {
   const deletedTransaction = await prisma.transactions.findUnique({
     where: { id },
   });
-  const result = await prisma.$transaction(async (prisma) => {
+  const result = await prisma.$transaction(async prisma => {
     await prisma.transactions.delete({
       where: { id },
     });
@@ -122,10 +122,10 @@ export async function DELETE(req) {
       });
     }
     if (deletedTransaction.lable === "paiement fournisseur") {
-      await prisma.fournisseurs.update({
-        where: { id: deletedTransaction.reference },
-        data: { dette: { increment: deletedTransaction.montant } },
-      });
+      // await prisma.fournisseurs.update({
+      //   where: { id: deletedTransaction.reference },
+      //   data: { dette: { increment: deletedTransaction.montant } },
+      // });
     }
     if (deletedTransaction.lable.includes("paiement de :BL")) {
       console.log("deletedTransaction Label", deletedTransaction.lable);
@@ -165,38 +165,35 @@ export async function DELETE(req) {
       const devis = await prisma.devis.findUnique({
         where: { numero: deletedTransaction.reference },
       });
-      const resteApresSuppression =
-        devis.totalPaye - deletedTransaction.montant;
+      if (devis) {
+        const resteApresSuppression =
+          devis.totalPaye - deletedTransaction.montant;
 
-      let statutPaiement;
-      if (resteApresSuppression === 0) {
-        statutPaiement = "impaye";
-      } else {
-        const diff = devis.total - resteApresSuppression;
-        statutPaiement = diff === 0 ? "paye" : diff > 0 ? "enPartie" : "impaye";
+        let statutPaiement;
+        if (resteApresSuppression === 0) {
+          statutPaiement = "impaye";
+        } else {
+          const diff = devis.total - resteApresSuppression;
+          statutPaiement =
+            diff === 0 ? "paye" : diff > 0 ? "enPartie" : "impaye";
+        }
+        //mise a jour du totlaPye te le statutPaiement du devis
+        await prisma.devis.update({
+          where: { numero: deletedTransaction.reference },
+          data: {
+            totalPaye: { decrement: deletedTransaction.montant },
+            statutPaiement,
+          },
+        });
       }
 
-      //mise a jour du totlaPye te le statutPaiement du devis
-      await prisma.devis.update({
-        where: { numero: deletedTransaction.reference },
-        data: {
-          totalPaye: { decrement: deletedTransaction.montant },
-          statutPaiement,
-        },
-      });
       // mise à jour de la dette du client
-      await prisma.clients.update({
-        where: { id: deletedTransaction.clientId },
-        data: {
-          dette: { increment: deletedTransaction.montant },
-        },
-      });
-
-      console.log(
-        "update of clietn debt for payment of devis",
-        deletedTransaction.clientId,
-        deletedTransaction.montant
-      );
+      // await prisma.clients.update({
+      //   where: { id: deletedTransaction.clientId },
+      //   data: {
+      //     dette: { increment: deletedTransaction.montant },
+      //   },
+      // });
     }
   });
 

@@ -172,7 +172,10 @@ export default function DevisPDFPage() {
                       Devis N° : {devi?.numero}
                     </h3>
                     <div className="text-sm text-gray-600">
-                      <p>Date : {formatDate(devi?.createdAt)} </p>
+                      <p>
+                        Date :{" "}
+                        {formatDate(devi?.date) || formatDate(devi?.createdAt)}{" "}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -184,7 +187,10 @@ export default function DevisPDFPage() {
                     Devis N° : {devi?.numero}
                   </h3>
                   <div className="text-sm text-gray-600">
-                    <p>Date : {formatDate(devi?.createdAt)} </p>
+                    <p>
+                      Date :{" "}
+                      {formatDate(devi?.date) || formatDate(devi?.createdAt)}{" "}
+                    </p>
                   </div>
                 </div>
                 <div>

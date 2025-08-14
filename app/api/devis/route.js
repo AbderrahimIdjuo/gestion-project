@@ -16,13 +16,15 @@ export async function POST(req) {
       typeReduction,
       note,
       echeance,
+      date,
     } = resopns;
 
     const result = await prisma.$transaction(
-      async (prisma) => {
+      async prisma => {
         await prisma.devis.create({
           data: {
             numero,
+            date,
             clientId,
             statut,
             sousTotal,
@@ -34,7 +36,7 @@ export async function POST(req) {
             note,
             echeance,
             articls: {
-              create: articls.map((articl) => ({
+              create: articls.map(articl => ({
                 key: articl.key, //permet de supprimer un articl doublon
                 height: articl.height || 0,
                 length: articl.length || 0,
@@ -49,14 +51,14 @@ export async function POST(req) {
           },
         });
         // Modifier la dette du client
-        await prisma.clients.update({
-          where: { id: clientId },
-          data: {
-            dette: {
-              increment: total, // Incrémenter la dette du client
-            },
-          },
-        });
+        // await prisma.clients.update({
+        //   where: { id: clientId },
+        //   data: {
+        //     dette: {
+        //       increment: total, // Incrémenter la dette du client
+        //     },
+        //   },
+        // });
       },
       {
         // Temps max d’exécution de la transaction
@@ -92,6 +94,7 @@ export async function PUT(req) {
       typeReduction,
       note,
       echeance,
+      date,
     } = requestBody;
 
     // Fetch existing devis with articls
@@ -106,24 +109,24 @@ export async function PUT(req) {
     }
 
     // Extract existing article IDs
-    const existingIds = new Set(devi.articls.map((articl) => articl.id));
-    const incomingIds = new Set(articls.map((articl) => articl.id));
+    const existingIds = new Set(devi.articls.map(articl => articl.id));
+    const incomingIds = new Set(articls.map(articl => articl.id));
 
     // Categorize articles
-    const existingArticls = articls.filter((articl) =>
+    const existingArticls = articls.filter(articl =>
       existingIds.has(articl.id)
     );
-    const newArticls = articls.filter((articl) => !existingIds.has(articl.id));
+    const newArticls = articls.filter(articl => !existingIds.has(articl.id));
     const deletedArticls = devi.articls.filter(
-      (articl) => !incomingIds.has(articl.id)
+      articl => !incomingIds.has(articl.id)
     );
 
-    const result = await prisma.$transaction(async (prisma) => {
+    const result = await prisma.$transaction(async prisma => {
       // Delete old articls only if necessary
       if (deletedArticls.length > 0) {
         await prisma.articls.deleteMany({
           where: {
-            id: { in: deletedArticls.map((p) => p.id) },
+            id: { in: deletedArticls.map(p => p.id) },
           },
         });
       }
@@ -142,8 +145,9 @@ export async function PUT(req) {
           typeReduction,
           note,
           echeance,
+          date,
           articls: {
-            update: existingArticls.map((articl) => ({
+            update: existingArticls.map(articl => ({
               where: { id: articl.id },
               data: {
                 key: articl.key,
@@ -157,7 +161,7 @@ export async function PUT(req) {
                 montant: articl.quantite * articl.prixUnite,
               },
             })),
-            create: newArticls.map((articl) => ({
+            create: newArticls.map(articl => ({
               key: articl.key,
               length: articl.length,
               width: articl.width || 0,
@@ -171,25 +175,25 @@ export async function PUT(req) {
         },
       });
 
-      const difference = parseFloat(total) - parseFloat(devi.total);
+      // const difference = parseFloat(total) - parseFloat(devi.total);
 
-      let detteUpdate = {};
+      // let detteUpdate = {};
 
-      if (difference > 0) {
-        detteUpdate = { increment: difference };
-      } else if (difference < 0) {
-        detteUpdate = { decrement: -difference };
-      }
+      // if (difference > 0) {
+      //   detteUpdate = { increment: difference };
+      // } else if (difference < 0) {
+      //   detteUpdate = { decrement: -difference };
+      // }
 
-      // Modifier la dette du client
-      if (Object.keys(detteUpdate).length > 0) {
-        await prisma.clients.update({
-          where: { id: clientId },
-          data: {
-            dette: detteUpdate,
-          },
-        });
-      }
+      // // Modifier la dette du client
+      // if (Object.keys(detteUpdate).length > 0) {
+      //   await prisma.clients.update({
+      //     where: { id: clientId },
+      //     data: {
+      //       dette: detteUpdate,
+      //     },
+      //   });
+      // }
     });
 
     return NextResponse.json({ result });
@@ -286,23 +290,21 @@ export async function GET(req) {
         total: true, // Only fetch the total field
       },
     }),
-    prisma.devis.findFirst({
-      orderBy: { createdAt: "desc" },
-    }),
+    prisma.devis.findFirst(),
   ]);
 
   // Calculate total pages for pagination
   const totalPages = Math.ceil(totalDevis / devisPerPage);
   // Extract devis numbers for transaction lookup
-  const devisNumbers = devis.map((c) => c.numero);
+  const devisNumbers = devis.map(c => c.numero);
 
   // Fetch transactions for the commandes
   const transactionsList = await prisma.transactions.findMany({
     where: { reference: { in: devisNumbers } },
   });
 
-  const totalPaye = (numero) => {
-    const trans = transactionsList?.filter((c) => c.reference === numero);
+  const totalPaye = numero => {
+    const trans = transactionsList?.filter(c => c.reference === numero);
     const totalPaye = trans?.reduce((acc, transaction) => {
       return acc + transaction.montant;
     }, 0);

@@ -1,29 +1,15 @@
 "use client";
 
-import { useState, useEffect, Fragment } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import Link from "next/link";
+import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
+import CustomPagination from "@/components/customUi/customPagination";
+import { PriceRangeSlider } from "@/components/customUi/customSlider";
 import { AddButton } from "@/components/customUi/styledButton";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Search,
-  Trash2,
-  Filter,
-  Printer,
-  CalendarDays,
-  CircleDollarSign,
-  Landmark,
-  CreditCard,
-} from "lucide-react";
+import { DevisActions } from "@/components/devis-actions";
+import { LoadingDots } from "@/components/loading-dots";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -39,17 +25,31 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Label } from "@/components/ui/label";
-import axios from "axios";
-import toast, { Toaster } from "react-hot-toast";
-import CustomPagination from "@/components/customUi/customPagination";
 import { Skeleton } from "@/components/ui/skeleton";
-import { PriceRangeSlider } from "@/components/customUi/customSlider";
-import { LoadingDots } from "@/components/loading-dots";
-import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { DevisActions } from "@/components/devis-actions";
-import { formatCurrency , methodePaiementLabel} from "@/lib/functions";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { formatCurrency, methodePaiementLabel } from "@/lib/functions";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+import {
+  CalendarDays,
+  CircleDollarSign,
+  CreditCard,
+  Filter,
+  Landmark,
+  Printer,
+  Search,
+  Trash2,
+} from "lucide-react";
+import Link from "next/link";
+import { Fragment, useEffect, useState } from "react";
+import toast, { Toaster } from "react-hot-toast";
 export default function DevisPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
@@ -68,7 +68,7 @@ export default function DevisPage() {
   const [deleteTransDialog, setDeleteTransDialog] = useState(false);
   const [deletedTrans, setDeletedTrans] = useState();
   const deleteTrans = useMutation({
-    mutationFn: async (id) => {
+    mutationFn: async id => {
       const loadingToast = toast.loading("Suppression...");
       try {
         await axios.delete("/api/tresorie", {
@@ -91,7 +91,7 @@ export default function DevisPage() {
       queryClient.invalidateQueries({ queryKey: ["devis"] });
     },
   });
-  const toggleExpand = (devisId) => {
+  const toggleExpand = devisId => {
     setExpandedDevis(expandedDevis === devisId ? null : devisId);
   };
   const [filters, setFilters] = useState({
@@ -151,10 +151,10 @@ export default function DevisPage() {
 
   // intialiser les valeure du monatant total handler
   useEffect(() => {
-    setFilters((prev) => ({ ...prev, montant: [0, maxMontant] }));
+    setFilters(prev => ({ ...prev, montant: [0, maxMontant] }));
   }, [maxMontant]);
 
-  const getStatusColor = (status) => {
+  const getStatusColor = status => {
     switch (status) {
       case "En attente":
         return "bg-amber-500";
@@ -172,7 +172,7 @@ export default function DevisPage() {
     return dateString?.split("T")[0].split("-").reverse().join("-");
   }
   const deleteDevi = useMutation({
-    mutationFn: async (id) => {
+    mutationFn: async id => {
       const loadingToast = toast.loading("Suppression...");
       try {
         await axios.delete(`/api/devis/${id}`);
@@ -197,7 +197,7 @@ export default function DevisPage() {
     onSuccess: () => {
       queryClient.invalidateQueries(["devis"]);
     },
-    onError: (error) => {
+    onError: error => {
       console.error("Erreur lors de la suppression :", error);
     },
   });
@@ -210,7 +210,7 @@ export default function DevisPage() {
     { value: "Expiré", lable: "Expiré", color: "gray-500" },
   ];
 
-  const totalFourniture = (group) => {
+  const totalFourniture = group => {
     return group?.reduce((acc, item) => {
       const type = item?.bonLivraison?.type;
 
@@ -224,15 +224,15 @@ export default function DevisPage() {
     }, 0);
   };
 
-  const filteredOrders = (numero) => {
-    const list = BlGroups?.filter((order) => {
+  const filteredOrders = numero => {
+    const list = BlGroups?.filter(order => {
       return order.devisNumero === numero;
     });
     return list;
   };
 
-  const transactionsDevis = (numero) => {
-    const trans = transactions?.filter((c) => c.reference === numero);
+  const transactionsDevis = numero => {
+    const trans = transactions?.filter(c => c.reference === numero);
     return trans;
   };
 
@@ -255,7 +255,6 @@ export default function DevisPage() {
     { lable: "En partie", value: "enPartie", color: "amber" },
   ];
 
-
   return (
     <>
       <Toaster position="top-center"></Toaster>
@@ -270,7 +269,7 @@ export default function DevisPage() {
             <Input
               placeholder="Rechercher des devis..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={e => setSearchQuery(e.target.value)}
               className="pl-9 w-full rounded-full bg-gray-50 focus-visible:ring-purple-500 focus-visible:ring-offset-0"
               spellCheck={false}
             />
@@ -304,7 +303,7 @@ export default function DevisPage() {
                     <Select
                       value={filters.statut}
                       name="statut"
-                      onValueChange={(value) =>
+                      onValueChange={value =>
                         setFilters({ ...filters, statut: value })
                       }
                     >
@@ -332,7 +331,7 @@ export default function DevisPage() {
                     <Select
                       value={filters.statutPaiement}
                       name="statutPaiement"
-                      onValueChange={(value) =>
+                      onValueChange={value =>
                         setFilters({ ...filters, statutPaiement: value })
                       }
                     >
@@ -379,7 +378,7 @@ export default function DevisPage() {
                         max={maxMontant}
                         step={100}
                         value={filters.montant} // Ensure montant is an array, e.g., [min, max]
-                        onValueChange={(value) => {
+                        onValueChange={value => {
                           setFilters({ ...filters, montant: value }); // value will be [min, max]
                         }}
                       />
@@ -453,7 +452,7 @@ export default function DevisPage() {
                     <Fragment key={devis.id}>
                       <TableRow>
                         <TableCell className="!py-2">
-                          {formatDate(devis.createdAt)}
+                          {formatDate(devis.date)}
                         </TableCell>
                         <TableCell
                           onClick={() => {
@@ -579,7 +578,7 @@ export default function DevisPage() {
                                   <Table>
                                     <TableBody>
                                       {transactionsDevis(devis.numero)?.map(
-                                        (trans) => (
+                                        trans => (
                                           <TableRow
                                             key={trans.id}
                                             className="hover:bg-gray-50/50 transition-colors"

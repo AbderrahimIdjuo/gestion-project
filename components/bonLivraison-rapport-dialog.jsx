@@ -1,7 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import ComboBoxFournisseur from "@/components/comboBox-fournisseurs";
+import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -11,7 +14,11 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -19,42 +26,32 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FileText, ChevronDown, Printer } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
-import ComboBoxFournisseur from "@/components/comboBox-fournisseurs";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { X } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { useQuery } from "@tanstack/react-query";
-import { formatMontant } from "@/lib/functions";
 import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
-  TableFooter,
 } from "@/components/ui/table";
+import { formatCurrency } from "@/lib/functions";
+import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import {
-  startOfMonth,
-  endOfMonth,
-  subMonths,
-  startOfYear,
-  endOfYear,
-  subYears,
-  startOfQuarter,
-  endOfQuarter,
-  subQuarters,
-  startOfDay,
   endOfDay,
+  endOfMonth,
+  endOfQuarter,
+  endOfYear,
+  startOfDay,
+  startOfMonth,
+  startOfQuarter,
+  startOfYear,
+  subQuarters,
+  subYears,
 } from "date-fns";
-import { formatCurrency } from "@/lib/functions";
+import { ChevronDown, FileText, Printer, X } from "lucide-react";
+import { useEffect, useState } from "react";
 
 function formatDate(dateString) {
   return dateString?.split("T")[0].split("-").reverse().join("-");
@@ -72,7 +69,7 @@ export default function BonLivraisonRapportDialog() {
     periode: "ce-mois",
     statutPaiement: ["impaye", "enPartie"],
   });
-  function getDateRangeFromPeriode(periode, startDate = null, endDate = null) {
+  function getDateRangeFromPeriode(periode) {
     const now = new Date();
 
     switch (periode) {
@@ -126,7 +123,7 @@ export default function BonLivraisonRapportDialog() {
         };
     }
   }
-  const handleSubmit = (e) => {
+  const handleSubmit = e => {
     e.preventDefault();
     console.log("Rapport soumis:", { ...formData, date });
     // Ici vous pouvez ajouter la logique pour sauvegarder le rapport
@@ -137,7 +134,7 @@ export default function BonLivraisonRapportDialog() {
   };
 
   const handleInputChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const Types = [
@@ -153,24 +150,24 @@ export default function BonLivraisonRapportDialog() {
       statutPaiement: ["impaye", "enPartie"],
     });
     setSelectedFournisseur(null);
-    setComboKey((prev) => prev + 1);
+    setComboKey(prev => prev + 1);
     setStartDate(null);
     setEndDate(null);
     setCurrentStep(1);
   };
   const handleStatutPaiementChange = (statut, checked) => {
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       statutPaiement: checked
         ? [...prev.statutPaiement, statut]
-        : prev.statutPaiement.filter((s) => s !== statut),
+        : prev.statutPaiement.filter(s => s !== statut),
     }));
   };
 
-  const removeStatutPaiement = (statut) => {
-    setFormData((prev) => ({
+  const removeStatutPaiement = statut => {
+    setFormData(prev => ({
       ...prev,
-      statutPaiement: prev.statutPaiement.filter((s) => s !== statut),
+      statutPaiement: prev.statutPaiement.filter(s => s !== statut),
     }));
   };
 
@@ -199,6 +196,7 @@ export default function BonLivraisonRapportDialog() {
       console.log("bonLivraison rapport", response.data.bonLivraison);
       return response.data.bonLivraison;
     },
+    enabled: currentStep === 2,
   });
   function total() {
     return bonLivraisons?.data
@@ -229,10 +227,12 @@ export default function BonLivraisonRapportDialog() {
   }, [open]);
 
   function regrouperBLParFournisseur(bonLivraisons) {
-    if (!Array.isArray(bonLivraisons)) {
-      throw new TypeError("bonLivraisons doit être un tableau.");
-    }
-
+    // if (!Array.isArray(bonLivraisons)) {
+    //   throw new TypeError("bonLivraisons doit être un tableau.");
+    // }
+  if (!Array.isArray(bonLivraisons)) {
+    return []; // Pas de données -> tableau vide
+  }
     const map = new Map();
 
     for (const bl of bonLivraisons) {
@@ -272,14 +272,14 @@ export default function BonLivraisonRapportDialog() {
 
     return Array.from(map.values());
   }
-  useEffect(() => {
-    if (Array.isArray(bonLivraisons?.data)) {
-      const resultat = regrouperBLParFournisseur(bonLivraisons.data);
-      console.log("regrouperBLParFournisseur :", resultat);
-    } else {
-      console.log("Données non disponibles ou invalides");
-    }
-  }, [bonLivraisons?.data]);
+  // useEffect(() => {
+  //   if (Array.isArray(bonLivraisons?.data)) {
+  //     const resultat = regrouperBLParFournisseur(bonLivraisons?.data);
+  //     console.log("regrouperBLParFournisseur :", resultat);
+  //   } else {
+  //     console.log("Données non disponibles ou invalides");
+  //   }
+  // }, [bonLivraisons?.data]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -318,14 +318,14 @@ export default function BonLivraisonRapportDialog() {
                 </Label>
                 <Select
                   value={formData.type}
-                  onValueChange={(value) => handleInputChange("type", value)}
+                  onValueChange={value => handleInputChange("type", value)}
                   required
                 >
                   <SelectTrigger className="focus:ring-2 focus:ring-purple-500">
                     <SelectValue placeholder="Sélectionnez le type" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Types.map((type) => (
+                    {Types.map(type => (
                       <SelectItem key={type.Value} value={type.Value}>
                         <span className="flex items-center gap-2">
                           <div
@@ -354,7 +354,7 @@ export default function BonLivraisonRapportDialog() {
                             Sélectionner les statuts
                           </span>
                         ) : (
-                          formData.statutPaiement?.map((statut) => (
+                          formData.statutPaiement?.map(statut => (
                             <Badge
                               key={statut}
                               variant="secondary"
@@ -373,7 +373,7 @@ export default function BonLivraisonRapportDialog() {
                                 : "En partie"}
                               <X
                                 className="ml-1 h-3 w-3 cursor-pointer hover:text-purple-600"
-                                onClick={(e) => {
+                                onClick={e => {
                                   e.stopPropagation();
                                   removeStatutPaiement(statut);
                                 }}
@@ -391,7 +391,7 @@ export default function BonLivraisonRapportDialog() {
                         <Checkbox
                           id="paye"
                           checked={formData.statutPaiement?.includes("paye")}
-                          onCheckedChange={(checked) =>
+                          onCheckedChange={checked =>
                             handleStatutPaiementChange("paye", checked)
                           }
                         />
@@ -407,7 +407,7 @@ export default function BonLivraisonRapportDialog() {
                         <Checkbox
                           id="impaye"
                           checked={formData.statutPaiement?.includes("impaye")}
-                          onCheckedChange={(checked) =>
+                          onCheckedChange={checked =>
                             handleStatutPaiementChange("impaye", checked)
                           }
                         />
@@ -425,7 +425,7 @@ export default function BonLivraisonRapportDialog() {
                           checked={formData.statutPaiement?.includes(
                             "enPartie"
                           )}
-                          onCheckedChange={(checked) =>
+                          onCheckedChange={checked =>
                             handleStatutPaiementChange("enPartie", checked)
                           }
                         />
@@ -450,7 +450,7 @@ export default function BonLivraisonRapportDialog() {
                 </Label>
                 <Select
                   value={formData.periode}
-                  onValueChange={(value) => handleInputChange("periode", value)}
+                  onValueChange={value => handleInputChange("periode", value)}
                 >
                   <SelectTrigger className="focus:ring-2 focus:ring-purple-500">
                     <SelectValue placeholder="Sélectionnez la période" />
@@ -557,7 +557,7 @@ export default function BonLivraisonRapportDialog() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {bonLivraisons.data?.map((bon) => (
+                      {bonLivraisons.data?.map(bon => (
                         <TableRow key={bon.id}>
                           <TableCell>{formatDate(bon.date)}</TableCell>
                           <TableCell>{bon.reference}</TableCell>

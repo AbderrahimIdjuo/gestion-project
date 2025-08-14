@@ -203,6 +203,7 @@ model Articls {
 
 model Devis {
   id             String    @id @default(uuid())
+  date           DateTime?
   numero         String    @unique
   clientId       String
   statut         String

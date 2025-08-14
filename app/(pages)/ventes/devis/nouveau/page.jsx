@@ -1,11 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import newDeviSchema from "@/app/zodSchemas/newDeviSchema";
+import { ArticleSelectionDialog } from "@/components/articls-selection-dialog";
+import ComboBoxClients from "@/components/comboBox-clients";
+import { CustomDatePicker } from "@/components/customUi/customDatePicker";
+import { AddButton } from "@/components/customUi/styledButton";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { customAlphabet } from "nanoid";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -13,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import {
   Table,
   TableBody,
@@ -21,30 +25,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Card, CardContent } from "@/components/ui/card";
-import { Trash2, Copy } from "lucide-react";
-import axios from "axios";
-import toast, { Toaster } from "react-hot-toast";
-import { ArticleSelectionDialog } from "@/components/articls-selection-dialog";
-import ComboBoxClients from "@/components/comboBox-clients";
-import Link from "next/link";
+import { Textarea } from "@/components/ui/textarea";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CircleX } from "lucide-react";
-import newDeviSchema from "@/app/zodSchemas/newDeviSchema";
-import { Switch } from "@/components/ui/switch";
+import axios from "axios";
+import { CircleX, Copy, Trash2 } from "lucide-react";
+import { customAlphabet } from "nanoid";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AddButton } from "@/components/customUi/styledButton";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { useForm, Controller } from "react-hook-form";
-import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Calendar } from "@/components/ui/calendar";
-import { fr } from "date-fns/locale";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import toast, { Toaster } from "react-hot-toast";
 
 export default function NouveauDevisPage() {
   const [items, setItems] = useState([]);
@@ -53,6 +43,8 @@ export default function NouveauDevisPage() {
   const [activerTVA, setActiverTVA] = useState(false);
   const [client, setClient] = useState(null);
   const [lastDeviNumber, setLastDeviNumber] = useState();
+  const [date, setDate] = useState(null);
+  const [echeance, setEcheance] = useState(null);
 
   const {
     register,
@@ -73,7 +65,7 @@ export default function NouveauDevisPage() {
     },
     resolver: zodResolver(newDeviSchema),
   });
-  const selectedDate = watch("echeance");
+  // const selectedDate = watch("echeance");
   const router = useRouter();
   const status = [
     { lable: "En attente", color: "amber-500" },
@@ -99,11 +91,18 @@ export default function NouveauDevisPage() {
     return nanoidCustom();
   };
 
-  const onSubmit = async (data) => {
+  const onSubmit = async data => {
+    const Data = {
+      ...data,
+      date: new Date(date),
+      echeance: new Date(echeance),
+    };
+    console.log("Data :", Data);
+
     toast.promise(
       (async () => {
         try {
-          const response = await axios.post("/api/devis", data);
+          const response = await axios.post("/api/devis", Data);
           console.log("Devi ajouté avec succès");
           router.push("/ventes/devis");
           reset();
@@ -126,31 +125,31 @@ export default function NouveauDevisPage() {
       }
     );
   };
-  const onError = (errors) => {
+  const onError = errors => {
     console.log("Erreur de validation:", errors);
     setFormError(true); // Si le formulaire échoue
   };
   const handleItemChange = (key, field, value) => {
-    setItems((prevItems) =>
-      prevItems.map((item) =>
+    setItems(prevItems =>
+      prevItems.map(item =>
         item.key === key ? { ...item, [field]: value } : item
       )
     );
   };
-  const handleAddArticles = (newArticles) => {
-    setItems((prevItems) => [
+  const handleAddArticles = newArticles => {
+    setItems(prevItems => [
       ...prevItems,
-      ...newArticles.map((article) => ({
+      ...newArticles.map(article => ({
         ...article,
       })),
     ]);
     console.log("newArticles", newArticles);
     console.log("items ", items);
   };
-  const removeItem = (deletedItem) => {
+  const removeItem = deletedItem => {
     console.log("deletedItem", deletedItem);
     console.log("items", items);
-    setItems((prev) => prev.filter((item) => item.key !== deletedItem.key));
+    setItems(prev => prev.filter(item => item.key !== deletedItem.key));
   };
   const calculateSubTotal = () => {
     const subtotal = items.reduce((sum, item) => {
@@ -176,7 +175,7 @@ export default function NouveauDevisPage() {
 
   const unites = ["U", "m²", "m"];
 
-  const validateFloat = (value) => {
+  const validateFloat = value => {
     if (typeof value === "string") {
       value = value.replace(",", ".");
       // Remove any whitespace that might interfere
@@ -202,7 +201,7 @@ export default function NouveauDevisPage() {
           <Card className="w-full">
             <CardContent className="p-6 space-y-6">
               {/* Header Section */}
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-4 gap-4">
                 <div>
                   <ComboBoxClients setClient={setClient} client={client} />
                   {errors.clientId && (
@@ -212,7 +211,18 @@ export default function NouveauDevisPage() {
                     </p>
                   )}
                 </div>
-                <div className="space-y-2">
+                <div className="w-full space-y-2">
+                  <Label htmlFor="client">Date : </Label>
+                  <CustomDatePicker date={date} onDateChange={setDate} />
+                </div>
+                <div className="w-full space-y-2">
+                  <Label htmlFor="client">Échéance : </Label>
+                  <CustomDatePicker
+                    date={echeance}
+                    onDateChange={setEcheance}
+                  />
+                </div>
+                {/* <div className="space-y-2">
                   <Label htmlFor="client">Échéance de livraison : </Label>
                   <Popover>
                     <PopoverTrigger asChild>
@@ -239,7 +249,7 @@ export default function NouveauDevisPage() {
                           <Calendar
                             mode="single"
                             selected={field.value}
-                            onSelect={(date) => {
+                            onSelect={date => {
                               if (date) {
                                 // Set to midnight UTC
                                 const utcMidnight = new Date(
@@ -264,7 +274,7 @@ export default function NouveauDevisPage() {
                       {errors.echeance.message}
                     </p>
                   )}
-                </div>
+                </div> */}
                 <div className="space-y-2">
                   <Label htmlFor="statut" className="text-right text-black">
                     Statut
@@ -272,7 +282,7 @@ export default function NouveauDevisPage() {
                   <Select
                     value={watch("statut")}
                     name="statut"
-                    onValueChange={(value) => setValue("statut", value)}
+                    onValueChange={value => setValue("statut", value)}
                   >
                     <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
                       <SelectValue placeholder="Tous les statuts" />
@@ -328,7 +338,7 @@ export default function NouveauDevisPage() {
                                 <Input
                                   spellCheck="false"
                                   defaultValue={item.designation}
-                                  onChange={(e) => {
+                                  onChange={e => {
                                     handleItemChange(
                                       item.key,
                                       "designation",
@@ -344,7 +354,7 @@ export default function NouveauDevisPage() {
                               <TableCell>
                                 <Input
                                   defaultValue={item.height}
-                                  onChange={(e) => {
+                                  onChange={e => {
                                     handleItemChange(
                                       item.key,
                                       "height",
@@ -365,7 +375,7 @@ export default function NouveauDevisPage() {
                               <TableCell>
                                 <Input
                                   defaultValue={item.length}
-                                  onChange={(e) => {
+                                  onChange={e => {
                                     handleItemChange(
                                       item.key,
                                       "length",
@@ -386,7 +396,7 @@ export default function NouveauDevisPage() {
                               <TableCell>
                                 <Input
                                   defaultValue={item.width}
-                                  onChange={(e) =>
+                                  onChange={e =>
                                     handleItemChange(
                                       item.key,
                                       "width",
@@ -408,7 +418,7 @@ export default function NouveauDevisPage() {
                                 <Select
                                   defaultValue={item.unite || "U"}
                                   name="unites"
-                                  onValueChange={(value) =>
+                                  onValueChange={value =>
                                     handleItemChange(item.key, "unite", value)
                                   }
                                 >
@@ -416,7 +426,7 @@ export default function NouveauDevisPage() {
                                     <SelectValue placeholder="Séléctionner un statut" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    {unites.map((unite) => (
+                                    {unites.map(unite => (
                                       <SelectItem key={unite} value={unite}>
                                         {unite}
                                       </SelectItem>
@@ -427,7 +437,7 @@ export default function NouveauDevisPage() {
                               <TableCell>
                                 <Input
                                   defaultValue={item.quantite}
-                                  onChange={(e) =>
+                                  onChange={e =>
                                     handleItemChange(
                                       item.key,
                                       "quantite",
@@ -445,7 +455,7 @@ export default function NouveauDevisPage() {
                               <TableCell>
                                 <Input
                                   defaultValue={item.prixUnite}
-                                  onChange={(e) => {
+                                  onChange={e => {
                                     handleItemChange(
                                       item.key,
                                       "prixUnite",
@@ -484,11 +494,11 @@ export default function NouveauDevisPage() {
                                     size="icon"
                                     onClick={() => {
                                       const origineItem = items.find(
-                                        (i) => i.key === item.key
+                                        i => i.key === item.key
                                       );
                                       console.log("origineItem", origineItem);
 
-                                      setItems((prevItems) => [
+                                      setItems(prevItems => [
                                         ...prevItems,
                                         {
                                           ...item,
@@ -581,7 +591,7 @@ export default function NouveauDevisPage() {
                           />
                           <Select
                             value={watch("typeReduction")}
-                            onValueChange={(value) =>
+                            onValueChange={value =>
                               setValue("typeReduction", value)
                             }
                           >

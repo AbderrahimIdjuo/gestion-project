@@ -120,7 +120,7 @@ export default function DashboardPage() {
     <>
       <div className="h-full flex flex-col space-y-4">
         <h1 className="text-3xl font-bold">Tableau de bord</h1>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <div className="grid grid-cols-4 items-center gap-2">
             <Label htmlFor="periode" className="text-sm font-medium col-span-1">
               Période :

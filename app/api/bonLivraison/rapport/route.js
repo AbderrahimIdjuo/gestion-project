@@ -33,6 +33,8 @@ export async function GET(req) {
   }
 
   // ✅ Filtrer par période (createdAt entre from et to)
+  console.log("/api/bonLivraison/rapport ###   from", from, "to", to);
+
   if (from && to) {
     filters.date = {
       gte: new Date(from),
