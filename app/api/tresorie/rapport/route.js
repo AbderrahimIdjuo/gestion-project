@@ -17,19 +17,19 @@ export async function GET(req) {
 
   // Date range filter
   if (from && to) {
-    const startDate = new Date(from);
-    startDate.setHours(0, 0, 0, 0); // Set to beginning of the day
+    // const startDate = new Date(from);
+    // startDate.setHours(0, 0, 0, 0); // Set to beginning of the day
 
-    const endDate = new Date(to);
-    endDate.setHours(23, 59, 59, 999); // Set to end of the day
+    // const endDate = new Date(to);
+    // endDate.setHours(23, 59, 59, 999); // Set to end of the day
 
     filters.date = {
-      gte: startDate, // Greater than or equal to start of "from" day
-      lte: endDate, // Less than or equal to end of "to" day
+      gte: from, // Greater than or equal to start of "from" day
+      lte: to, // Less than or equal to end of "to" day
     };
   }
 
-  // console.log("from rapport ####  filters", filters);
+  console.log("from rapport ####  filters", filters);
 
   // Fetch filtered transactions with pagination
   const transactions = await prisma.transactions.findMany({
