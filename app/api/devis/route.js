@@ -144,8 +144,8 @@ export async function PUT(req) {
           total,
           typeReduction,
           note,
-          echeance,
-          date,
+          echeance: echeance || new Date(),
+          date: date || new Date(),
           articls: {
             update: existingArticls.map(articl => ({
               where: { id: articl.id },
@@ -315,29 +315,6 @@ export async function GET(req) {
     }, 0);
     return totalPaye;
   };
-
-  // const devisWithPaiement = await Promise.all(
-  //   devis.map(async (d) => {
-  //     const paye = totalPaye(d.numero);
-  //     const statutPaiement =
-  //       paye >= d.total ? "paye" : paye > 0 ? "enPartie" : "impaye";
-
-  //     // Mise à jour en base
-  //     await prisma.devis.update({
-  //       where: { id: d.id },
-  //       data: {
-  //         totalPaye: paye,
-  //         statutPaiement,
-  //       },
-  //     });
-
-  //     return {
-  //       ...d,
-  //       totalPaye: paye,
-  //       statutPaiement,
-  //     };
-  //   })
-  // );
 
   // Fetch ordersGroups
   const bLGroupsList = await prisma.bLGroups.findMany({

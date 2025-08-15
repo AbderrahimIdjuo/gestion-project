@@ -43,9 +43,9 @@ export default function DevisPDFPage() {
       const type = item?.bonLivraison?.type;
 
       if (type === "achats") {
-        return acc + item.bonLivraison.total;
+        return acc + totalBlFourniture(item.produits);
       } else if (type === "retour") {
-        return acc - item.bonLivraison.total;
+        return acc - totalBlFourniture(item.produits);
       }
 
       return acc; // si type inconnu
