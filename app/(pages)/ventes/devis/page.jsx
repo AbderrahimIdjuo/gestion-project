@@ -136,7 +136,7 @@ export default function DevisPage() {
           statutPaiement: filters.statutPaiement,
         },
       });
-      console.log("Devis :", response.data.devis);
+      console.log("last Devis :", response.data.lastDevi);
 
       setLastDevi(response.data.lastDevi);
       setBlGroups(response.data.bLGroupsList);

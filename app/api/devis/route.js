@@ -290,7 +290,11 @@ export async function GET(req) {
         total: true, // Only fetch the total field
       },
     }),
-    prisma.devis.findFirst(),
+    prisma.devis.findFirst({
+      orderBy: {
+        numero: "desc",
+      },
+    }),
   ]);
 
   // Calculate total pages for pagination
