@@ -24,7 +24,7 @@ export async function POST(req) {
         await prisma.devis.create({
           data: {
             numero,
-            date,
+            date: date || new Date(),
             clientId,
             statut,
             sousTotal,
@@ -34,7 +34,7 @@ export async function POST(req) {
             totalPaye: 0,
             typeReduction,
             note,
-            echeance,
+            echeance: echeance || new Date(),
             articls: {
               create: articls.map(articl => ({
                 key: articl.key, //permet de supprimer un articl doublon
@@ -290,11 +290,12 @@ export async function GET(req) {
         total: true, // Only fetch the total field
       },
     }),
-    prisma.devis.findFirst({
-      orderBy: {
-        numero: "desc",
-      },
-    }),
+    prisma.$queryRaw`
+  SELECT *
+  FROM "Devis"
+  ORDER BY CAST(REGEXP_REPLACE(numero, '[^0-9]', '', 'g') AS INTEGER) DESC
+  LIMIT 1
+`,
   ]);
 
   // Calculate total pages for pagination
@@ -375,7 +376,7 @@ export async function GET(req) {
     totalDevis,
     transactionsList,
     bLGroupsList,
-    lastDevi,
+    lastDevi: lastDevi[0],
   });
 }
 

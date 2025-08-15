@@ -94,8 +94,8 @@ export default function NouveauDevisPage() {
   const onSubmit = async data => {
     const Data = {
       ...data,
-      date: new Date(date),
-      echeance: new Date(echeance),
+      date,
+      echeance,
     };
     console.log("Data :", Data);
 
