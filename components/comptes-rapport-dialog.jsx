@@ -119,6 +119,8 @@ export default function ComptesRapportDialog() {
   const { data: Data, isLoading } = useQuery({
     queryKey: ["transactions-rapport", compte, periode, startDate, endDate],
     queryFn: async () => {
+      console.log("from", from?.toISOString(), "to", to?.toISOString());
+
       const response = await axios.get("/api/tresorie/rapport", {
         params: {
           compte,

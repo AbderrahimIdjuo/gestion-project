@@ -275,7 +275,7 @@ export async function GET(req) {
       where: filters,
       skip: (page - 1) * devisPerPage,
       take: devisPerPage,
-      orderBy: { createdAt: "desc" },
+      orderBy: { date: "desc" },
       include: {
         client: true,
         articls: true,
