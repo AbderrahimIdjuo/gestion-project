@@ -209,18 +209,23 @@ export default function DevisPage() {
     { value: "Annulé", lable: "Annulé", color: "red-500" },
     { value: "Expiré", lable: "Expiré", color: "gray-500" },
   ];
-
   const totalFourniture = group => {
     return group?.reduce((acc, item) => {
       const type = item?.bonLivraison?.type;
 
       if (type === "achats") {
-        return acc + item.bonLivraison.total;
+        return acc + totalBlFourniture(item.produits);
       } else if (type === "retour") {
-        return acc - item.bonLivraison.total;
+        return acc - totalBlFourniture(item.produits);
       }
 
       return acc; // si type inconnu
+    }, 0);
+  };
+
+  const totalBlFourniture = produits => {
+    return produits?.reduce((acc, produit) => {
+      return acc + produit.quantite * produit.prixUnite;
     }, 0);
   };
 
