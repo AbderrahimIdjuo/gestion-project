@@ -519,7 +519,9 @@ export default function DevisPage() {
                         </TableCell>
 
                         <TableCell className="!py-2 text-right">
-                          {formatCurrency(devis.total - devis.totalPaye)}
+                          {formatCurrency(
+                            devis.total.toFixed(2) - devis.totalPaye.toFixed(2)
+                          )}
                         </TableCell>
                         <TableCell className="!py-2">
                           <div className="flex items-center gap-2">

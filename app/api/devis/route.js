@@ -34,7 +34,7 @@ export async function POST(req) {
             totalPaye: 0,
             typeReduction,
             note,
-            echeance: echeance || new Date(),
+            echeance,
             articls: {
               create: articls.map(articl => ({
                 key: articl.key, //permet de supprimer un articl doublon
@@ -144,7 +144,7 @@ export async function PUT(req) {
           total,
           typeReduction,
           note,
-          echeance: echeance || new Date(),
+          echeance,
           date: date || new Date(),
           articls: {
             update: existingArticls.map(articl => ({

@@ -1,18 +1,8 @@
 "use client";
-import { useState } from "react";
+import { BasicCard } from "@/components/customUi/BasicCardDashBoard";
+import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Users,
-  Package,
-  Receipt,
-  TrendingUp,
-  ArrowUpRight,
-  Wallet,
-  CircleDollarSign,
-  HandCoins,
-  Truck,
-  ScrollText,
-} from "lucide-react";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -20,37 +10,45 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  startOfMonth,
-  endOfMonth,
-  subMonths,
-  startOfYear,
-  endOfYear,
-  subYears,
-  startOfQuarter,
-  endOfQuarter,
-  subQuarters,
-  isValid,
-} from "date-fns";
-import { Label } from "@/components/ui/label";
-import { PerformanceChart } from "@/components/performance-chart";
-import axios from "axios";
-import { useQuery } from "@tanstack/react-query";
-import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BasicCard } from "@/components/customUi/BasicCardDashBoard";
+import { formatCurrency } from "@/lib/functions";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
+import {
+  endOfMonth,
+  endOfQuarter,
+  endOfYear,
+  isValid,
+  startOfMonth,
+  startOfQuarter,
+  startOfYear,
+  subMonths,
+  subQuarters,
+  subYears,
+} from "date-fns";
+import {
+  CircleDollarSign,
+  HandCoins,
+  Package,
+  ScrollText,
+  TrendingUp,
+  Truck,
+  Users,
+  Wallet,
+} from "lucide-react";
+import { useState } from "react";
 export default function DashboardPage() {
   const [startDate, setStartDate] = useState();
   const [endDate, setEndDate] = useState();
   const [periode, setPeriode] = useState("");
 
-  function formatMontant(montant) {
-    if (typeof montant !== "number") return montant;
+  // function formatCurrency(montant) {
+  //   if (typeof montant !== "number") return montant;
 
-    return Math.floor(montant)
-      .toString()
-      .replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-  }
+  //   return Math.floor(montant)
+  //     .toString()
+  //     .replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  // }
 
   function getDateRangeFromPeriode(periode) {
     const now = new Date();
@@ -128,7 +126,7 @@ export default function DashboardPage() {
             <div className="col-span-3">
               <Select
                 value={periode}
-                onValueChange={(value) => setPeriode(value)}
+                onValueChange={value => setPeriode(value)}
               >
                 <SelectTrigger className="focus:ring-2 focus:ring-purple-500">
                   <SelectValue placeholder="Sélectionnez la période" />
@@ -193,10 +191,9 @@ export default function DashboardPage() {
                 <Skeleton className="h-8 w-[200px] bg-purple-200" />
               ) : (
                 <div className="text-3xl font-bold text-white mb-3">
-                  {formatMontant(
+                  {formatCurrency(
                     statistiques.data?.recettes - statistiques.data?.depenses
-                  )}{" "}
-                  DH
+                  )}
                 </div>
               )}
             </CardContent>
@@ -214,7 +211,7 @@ export default function DashboardPage() {
                 <Skeleton className="h-8 w-[200px] bg-green-200" />
               ) : (
                 <div className="text-3xl font-bold text-white mb-3">
-                  {formatMontant(statistiques.data?.recettes)} DH
+                  {formatCurrency(statistiques.data?.recettes)}
                 </div>
               )}
             </CardContent>
@@ -232,7 +229,7 @@ export default function DashboardPage() {
                 <Skeleton className="h-8 w-[200px] bg-red-200" />
               ) : (
                 <div className="text-3xl font-bold text-white mb-3">
-                  {formatMontant(statistiques.data?.depenses)} DH
+                  {formatCurrency(statistiques.data?.depenses)}
                 </div>
               )}
             </CardContent>
@@ -275,23 +272,21 @@ export default function DashboardPage() {
 
           <BasicCard
             title="Caisse"
-            statistiques={formatMontant(statistiques.data?.caisse) + " DH"}
+            statistiques={formatCurrency(statistiques.data?.caisse)}
             Icon={Wallet}
             isLoading={statistiques.isLoading || statistiques.isFetching}
           />
           <BasicCard
             title="Compte personnel"
-            statistiques={
-              formatMontant(statistiques.data?.comptePersonnel) + " DH"
-            }
+            statistiques={formatCurrency(statistiques.data?.comptePersonnel)}
             Icon={Wallet}
             isLoading={statistiques.isLoading || statistiques.isFetching}
           />
           <BasicCard
             title="Compte professionnel"
-            statistiques={
-              formatMontant(statistiques.data?.compteProfessionnel) + " DH"
-            }
+            statistiques={formatCurrency(
+              statistiques.data?.compteProfessionnel
+            )}
             Icon={Wallet}
             isLoading={statistiques.isLoading || statistiques.isFetching}
           />

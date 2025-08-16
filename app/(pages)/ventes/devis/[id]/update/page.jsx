@@ -99,10 +99,11 @@ export default function UpdateDevisPage({ params }) {
     return nanoidCustom();
   };
   const onSubmit = async data => {
+    const Data = {...data , date , echeance}
     toast.promise(
       (async () => {
         try {
-          const response = await axios.put("/api/devis", data);
+          const response = await axios.put("/api/devis", Data);
           router.push("/ventes/devis");
           if (response.status === 200) {
             console.log("Devi modifier avec succès");
