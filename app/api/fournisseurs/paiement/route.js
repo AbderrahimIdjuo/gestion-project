@@ -3,8 +3,6 @@ import prisma from "../../../../lib/prisma";
 export const dynamic = "force-dynamic";
 
 export async function POST(req) {
-  console.log("POST /api/fournisseurs/paiement");
-
   try {
     const resopns = await req.json();
     const {
@@ -19,7 +17,7 @@ export async function POST(req) {
       numeroCheque,
     } = resopns;
     const result = await prisma.$transaction(
-      async (prisma) => {
+      async prisma => {
         //Creation du chèque
         let cheque = null;
 
@@ -43,6 +41,7 @@ export async function POST(req) {
             type,
             montant,
             compte,
+            fournisseurId: fournisseurId,
             lable,
             description,
             methodePaiement,
@@ -60,14 +59,16 @@ export async function POST(req) {
             data: {
               solde: { decrement: montant },
             },
-          }),
-          // mise à jour de la dette du fournisseur
-          await prisma.fournisseurs.update({
-            where: { id: fournisseurId },
-            data: {
-              dette: { decrement: montant },
-            },
           });
+
+        // mise à jour de la dette du fournisseur
+        // await prisma.fournisseurs.update({
+        //   where: { id: fournisseurId },
+        //   data: {
+        //     dette: { decrement: montant },
+        //   },
+        // });
+
         // Paye les BL du fournisseur
         const montantDisponible = montant; // par exemple
         let montantRestant = montantDisponible;

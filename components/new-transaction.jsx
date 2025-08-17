@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { addCharge, addtransaction } from "@/app/api/actions";
+import { CustomDatePicker } from "@/components/customUi/customDatePicker";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
@@ -13,12 +13,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { CustomDatePicker } from "@/components/customUi/customDatePicker";
-import { addtransaction } from "@/app/api/actions";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -26,13 +23,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus } from "lucide-react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
-import { useForm } from "react-hook-form";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+import { Plus } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
-import { addCharge } from "@/app/api/actions";
 
 import z from "zod";
 export default function TransactionDialog() {
@@ -116,7 +115,7 @@ export default function TransactionDialog() {
     },
   });
   const addCharges = useMutation({
-    mutationFn: async (charge) => {
+    mutationFn: async charge => {
       const loadingToast = toast.loading("Opération en cours...");
       try {
         await addCharge(charge);
@@ -133,7 +132,7 @@ export default function TransactionDialog() {
     },
   });
   const createTransaction = useMutation({
-    mutationFn: async (data) => {
+    mutationFn: async data => {
       const loadingToast = toast.loading("Paiement en cours...");
       try {
         await addtransaction(data);
@@ -151,7 +150,7 @@ export default function TransactionDialog() {
       queryClient.invalidateQueries({ queryKey: ["statistiques"] });
     },
   });
-  const onSubmit = async (data) => {
+  const onSubmit = async data => {
     const Data = { ...data, date };
     console.log("Data", Data);
     if (isChecked && !isCharge) {
@@ -191,7 +190,7 @@ export default function TransactionDialog() {
           <div className="py-4 space-y-4">
             <RadioGroup
               value={watch("type")}
-              onValueChange={(value) => {
+              onValueChange={value => {
                 reset();
                 setValue("type", value);
               }}
@@ -291,13 +290,13 @@ export default function TransactionDialog() {
                   <Select
                     value={watch("compte")}
                     name="compte"
-                    onValueChange={(value) => setValue("compte", value)}
+                    onValueChange={value => setValue("compte", value)}
                   >
                     <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
                       <SelectValue placeholder="Séléctionner..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {comptes.data?.map((element) => (
+                      {comptes.data?.map(element => (
                         <SelectItem key={element.id} value={element.compte}>
                           <div className="flex items-center gap-2">
                             {element.compte}
@@ -317,9 +316,7 @@ export default function TransactionDialog() {
                   <Select
                     value={watch("methodePaiement")}
                     name="methodePaiement"
-                    onValueChange={(value) =>
-                      setValue("methodePaiement", value)
-                    }
+                    onValueChange={value => setValue("methodePaiement", value)}
                   >
                     <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
                       <SelectValue placeholder="Séléctionner..." />
@@ -327,6 +324,7 @@ export default function TransactionDialog() {
                     <SelectContent>
                       <SelectItem value="espece">Éspece</SelectItem>
                       <SelectItem value="cheque">Chèque</SelectItem>
+                      <SelectItem value="versement">Versement</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -369,13 +367,13 @@ export default function TransactionDialog() {
                     <Select
                       value={watch("label")}
                       name="label"
-                      onValueChange={(value) => setValue("lable", value)}
+                      onValueChange={value => setValue("lable", value)}
                     >
                       <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
                         <SelectValue placeholder="Séléctionner..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {charges.data?.map((element) => (
+                        {charges.data?.map(element => (
                           <SelectItem key={element.id} value={element.charge}>
                             <div className="flex items-center gap-2">
                               {element.charge}
@@ -427,13 +425,13 @@ export default function TransactionDialog() {
                   <Select
                     value={watch("compte")}
                     name="compte"
-                    onValueChange={(value) => setValue("compte", value)}
+                    onValueChange={value => setValue("compte", value)}
                   >
                     <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500 ">
                       <SelectValue placeholder="Séléctionner..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {comptes.data?.map((element) => (
+                      {comptes.data?.map(element => (
                         <SelectItem key={element.id} value={element.compte}>
                           <div className="flex items-center gap-2">
                             {element.compte}
@@ -453,9 +451,7 @@ export default function TransactionDialog() {
                   <Select
                     value={watch("methodePaiement")}
                     name="methodePaiement"
-                    onValueChange={(value) =>
-                      setValue("methodePaiement", value)
-                    }
+                    onValueChange={value => setValue("methodePaiement", value)}
                   >
                     <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500 ">
                       <SelectValue placeholder="Séléctionner..." />
@@ -463,6 +459,7 @@ export default function TransactionDialog() {
                     <SelectContent>
                       <SelectItem value="espece">Éspece</SelectItem>
                       <SelectItem value="cheque">Chèque</SelectItem>
+                      <SelectItem value="versement">Versement</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -489,7 +486,7 @@ export default function TransactionDialog() {
                     <Checkbox
                       id="terms"
                       checked={isChecked}
-                      onCheckedChange={(checked) => {
+                      onCheckedChange={checked => {
                         setIsChecked(checked === true); // force un boolean
                       }}
                     />
@@ -521,15 +518,15 @@ export default function TransactionDialog() {
                   <Select
                     value={watch("compte")}
                     name="compte"
-                    onValueChange={(value) => setValue("compte", value)}
+                    onValueChange={value => setValue("compte", value)}
                   >
                     <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500 mt-2">
                       <SelectValue placeholder="Séléctionner..." />
                     </SelectTrigger>
                     <SelectContent>
                       {comptes.data
-                        ?.filter((c) => c.compte !== "caisse")
-                        .map((element) => (
+                        ?.filter(c => c.compte !== "caisse")
+                        .map(element => (
                           <SelectItem key={element.id} value={element.compte}>
                             <div className="flex items-center gap-2">
                               {element.compte}

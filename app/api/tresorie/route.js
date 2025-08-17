@@ -70,132 +70,207 @@ export async function GET(req) {
 
   const totalTransactions = await prisma.transactions.count({ where: filters });
   const totalPages = Math.ceil(totalTransactions / transactionsPerPage);
-  return NextResponse.json({ transactions, totalPages });
+
+  // Always fetch BL payment records
+
+  return NextResponse.json({
+    transactions,
+    totalPages,
+  });
 }
 
 export async function DELETE(req) {
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
-  const deletedTransaction = await prisma.transactions.findUnique({
-    where: { id },
-  });
-  const result = await prisma.$transaction(async prisma => {
-    await prisma.transactions.delete({
+
+  if (!id) {
+    return NextResponse.json(
+      { error: "ID de transaction requis" },
+      { status: 400 }
+    );
+  }
+
+  try {
+    // Récupérer la transaction à supprimer
+    const deletedTransaction = await prisma.transactions.findUnique({
       where: { id },
+      include: {
+        cheque: true,
+      },
     });
-    if (
-      deletedTransaction.reference &&
-      deletedTransaction.reference?.slice(0, 2) === "BL"
-    ) {
-      await prisma.bonLivraison.update({
-        where: { numero: deletedTransaction.reference },
-        data: {
-          totalPaye: {
-            decrement: deletedTransaction.montant,
-          },
-        },
-      });
-    } else {
-      console.log("Transaction reference not found.");
+
+    if (!deletedTransaction) {
+      return NextResponse.json(
+        { error: "Transaction non trouvée" },
+        { status: 404 }
+      );
     }
 
-    if (deletedTransaction.type === "vider") {
-      await prisma.comptesBancaires.updateMany({
-        where: { compte: "caisse" },
-        data: {
-          solde: { increment: deletedTransaction.montant },
-        },
-      });
-    } else if (
-      deletedTransaction.type === "depense" ||
-      deletedTransaction.type === "recette"
-    ) {
-      // Mise à jour d'un compte bancaire
-      await prisma.comptesBancaires.updateMany({
-        where: { compte: deletedTransaction.compte },
-        data: {
-          solde:
-            deletedTransaction.type === "recette"
-              ? { decrement: deletedTransaction.montant }
-              : { increment: deletedTransaction.montant },
-        },
-      });
-    }
-    if (deletedTransaction.lable === "paiement fournisseur") {
-      // await prisma.fournisseurs.update({
-      //   where: { id: deletedTransaction.reference },
-      //   data: { dette: { increment: deletedTransaction.montant } },
-      // });
-    }
-    if (deletedTransaction.lable.includes("paiement de :BL")) {
-      console.log("deletedTransaction Label", deletedTransaction.lable);
-      const numeroBL = deletedTransaction.lable.match(/BL-(\d+)/);
-      console.log("numeroBL", numeroBL[0]);
-
-      const bonLivraison = await prisma.bonLivraison.update({
-        where: { numero: numeroBL[0] },
-        data: { totalPaye: { decrement: deletedTransaction.montant } },
+    // Utiliser une transaction Prisma pour garantir la cohérence des données
+    const result = await prisma.$transaction(async tx => {
+      // Supprimer la transaction
+      await tx.transactions.delete({
+        where: { id },
       });
 
-      if (bonLivraison.totalPaye === 0) {
-        await prisma.bonLivraison.update({
-          where: { id: bonLivraison.id },
-          data: { statutPaiement: "impaye" },
-        });
-      } else if (
-        bonLivraison.totalPaye < bonLivraison.total &&
-        bonLivraison.totalPaye > 0
-      ) {
-        await prisma.bonLivraison.update({
-          where: { id: bonLivraison.id },
-          data: { statutPaiement: "enPartie" },
-        });
+      // Gérer les différents types de transactions
+      switch (deletedTransaction.type) {
+        case "vider":
+          // Remettre l'argent dans la caisse
+          await tx.comptesBancaires.updateMany({
+            where: { compte: "caisse" },
+            data: {
+              solde: { increment: deletedTransaction.montant },
+            },
+          });
+          break;
+
+        case "recette":
+        case "depense":
+          // Mettre à jour le solde du compte bancaire
+          const increment = deletedTransaction.type === "recette" ? -1 : 1;
+          await tx.comptesBancaires.updateMany({
+            where: { compte: deletedTransaction.compte },
+            data: {
+              solde: { increment: increment * deletedTransaction.montant },
+            },
+          });
+          break;
       }
 
-      // mise à jour de la dette du fournisseur
-      // await prisma.fournisseurs.update({
-      //   where: { id: deletedTransaction.reference },
-      //   data: {
-      //     dette: { increment: deletedTransaction.montant },
-      //   },
-      // });
-    }
+      // Gérer les cas spéciaux selon le label
+      if (deletedTransaction.lable) {
+        await handleSpecialLabels(tx, deletedTransaction);
+      }
 
-    if (deletedTransaction.lable.includes("paiement devis")) {
-      const devis = await prisma.devis.findUnique({
-        where: { numero: deletedTransaction.reference },
+      return { success: true, message: "Transaction supprimée avec succès" };
+    });
+
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error("Erreur lors de la suppression de la transaction:", error);
+    return NextResponse.json(
+      { error: "Erreur lors de la suppression de la transaction" },
+      { status: 500 }
+    );
+  }
+}
+
+// Fonction helper pour gérer les labels spéciaux
+async function handleSpecialLabels(tx, transaction) {
+  const { lable, reference, montant } = transaction;
+
+  // Paiement de bon de livraison
+  if (lable.includes("paiement de :BL")) {
+    const numeroBL = lable.match(/BL-(\d+)/)?.[0];
+    if (numeroBL) {
+      const bonLivraison = await tx.bonLivraison.update({
+        where: { numero: numeroBL },
+        data: {
+          totalPaye: { decrement: montant },
+        },
       });
-      if (devis) {
-        const resteApresSuppression =
-          devis.totalPaye - deletedTransaction.montant;
 
-        let statutPaiement;
-        if (resteApresSuppression === 0) {
-          statutPaiement = "impaye";
-        } else {
-          const diff = devis.total - resteApresSuppression;
-          statutPaiement =
-            diff === 0 ? "paye" : diff > 0 ? "enPartie" : "impaye";
-        }
-        //mise a jour du totlaPye te le statutPaiement du devis
-        await prisma.devis.update({
-          where: { numero: deletedTransaction.reference },
+      // Mettre à jour le statut de paiement
+      const newTotalPaye = bonLivraison.totalPaye;
+      let newStatutPaiement = "enPartie";
+
+      if (newTotalPaye <= 0) {
+        newStatutPaiement = "impaye";
+      } else if (newTotalPaye >= bonLivraison.total) {
+        newStatutPaiement = "paye";
+      }
+
+      await tx.bonLivraison.update({
+        where: { numero: numeroBL },
+        data: { statutPaiement: newStatutPaiement },
+      });
+    }
+  }
+
+  // Paiement de devis
+  if (lable.includes("paiement devis")) {
+    const devis = await tx.devis.findUnique({
+      where: { numero: reference },
+    });
+
+    if (devis) {
+      const resteApresSuppression = devis.totalPaye - montant;
+      let statutPaiement;
+
+      if (resteApresSuppression <= 0) {
+        statutPaiement = "impaye";
+      } else if (resteApresSuppression >= devis.total) {
+        statutPaiement = "paye";
+      } else {
+        statutPaiement = "enPartie";
+      }
+
+      await tx.devis.update({
+        where: { numero: reference },
+        data: {
+          totalPaye: { decrement: montant },
+          statutPaiement,
+        },
+      });
+    }
+  }
+
+  // Paiement fournisseur - inverser la logique de création
+  if (lable === "paiement fournisseur") {
+    // Récupérer les BL payés par ce fournisseur, triés par date décroissante (plus récents d'abord)
+    const bonLivraisonList = await tx.bonLivraison.findMany({
+      where: {
+        fournisseurId: reference,
+        statutPaiement: {
+          in: ["paye", "enPartie"],
+        },
+        type: "achats",
+      },
+      orderBy: {
+        date: "desc", // Commencer par les plus récents
+      },
+    });
+
+    let montantRestant = montant; // Montant à "déduire" des BL
+
+    for (const bl of bonLivraisonList) {
+      if (montantRestant <= 0) break; // Plus rien à déduire
+
+      const montantPayeSurCeBL = bl.totalPaye;
+
+      if (montantRestant >= montantPayeSurCeBL) {
+        // Déduire entièrement ce BL
+        montantRestant -= montantPayeSurCeBL;
+
+        await tx.bonLivraison.update({
+          where: { id: bl.id },
           data: {
-            totalPaye: { decrement: deletedTransaction.montant },
-            statutPaiement,
+            totalPaye: 0,
+            statutPaiement: "impaye",
           },
         });
+      } else {
+        // Déduire partiellement ce BL
+        const nouveauTotalPaye = montantPayeSurCeBL - montantRestant;
+
+        await tx.bonLivraison.update({
+          where: { id: bl.id },
+          data: {
+            totalPaye: nouveauTotalPaye,
+            statutPaiement: nouveauTotalPaye > 0 ? "enPartie" : "impaye",
+          },
+        });
+
+        montantRestant = 0;
+        break;
       }
-
-      // mise à jour de la dette du client
-      // await prisma.clients.update({
-      //   where: { id: deletedTransaction.clientId },
-      //   data: {
-      //     dette: { increment: deletedTransaction.montant },
-      //   },
-      // });
     }
-  });
 
-  return NextResponse.json({ result });
+    // Mettre à jour la dette du fournisseur (commenté pour l'instant)
+    // await tx.fournisseurs.update({
+    //   where: { id: reference },
+    //   data: { dette: { increment: montant } },
+    // });
+  }
 }

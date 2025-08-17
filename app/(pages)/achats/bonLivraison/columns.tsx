@@ -1,14 +1,5 @@
 "use client";
 
-import { ColumnDef } from "@tanstack/react-table";
-import {
-  MoreVertical,
-  Pen,
-  Trash2,
-  Eye,
-  Printer,
-  CircleDollarSign,
-} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -22,6 +13,15 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { formatCurrency } from "@/lib/functions";
+import { ColumnDef } from "@tanstack/react-table";
+import {
+  CircleDollarSign,
+  Eye,
+  MoreVertical,
+  Pen,
+  Printer,
+  Trash2,
+} from "lucide-react";
 
 export type BonLivraisonT = {
   id: string;
@@ -44,7 +44,7 @@ const getMethodePaiement = (methode: string, compte: string) => {
     methode === "espece" &&
     (compte === "compte personnel" || compte === "compte professionel")
   ) {
-    return "Vérement";
+    return "Versement";
   } else if (methode === "espece") {
     return "Espèce";
   } else if (methode === "cheque") {

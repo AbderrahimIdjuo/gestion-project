@@ -16,6 +16,7 @@ export async function POST(req) {
       numeroCheque,
       date,
       statutPaiement,
+      reference
     } = response;
 
     const result = await prisma.$transaction(async (prisma) => {
@@ -47,7 +48,8 @@ export async function POST(req) {
       // creation de la transaction
       await prisma.transactions.create({
         data: {
-          reference: fournisseurId ? fournisseurId : null,
+          reference,
+          fournisseurId: fournisseurId || null,
           type,
           montant,
           compte,
@@ -68,14 +70,14 @@ export async function POST(req) {
           data: {
             solde: { decrement: montant },
           },
-        }),
-        // mise à jour de la dette du fournisseur
-        await prisma.fournisseurs.update({
-          where: { id: fournisseurId },
-          data: {
-            dette: { decrement: montant },
-          },
         });
+        // mise à jour de la dette du fournisseur
+        // await prisma.fournisseurs.update({
+        //   where: { id: fournisseurId },
+        //   data: {
+        //     dette: { decrement: montant },
+        //   },
+        // });
     });
 
     return NextResponse.json({ result });

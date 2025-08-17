@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { CustomDatePicker } from "@/components/customUi/customDatePicker";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -21,9 +21,8 @@ import {
 } from "@/components/ui/select";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
-import toast from "react-hot-toast";
-import { CustomDatePicker } from "@/components/customUi/customDatePicker";
 
 export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
   const [date, setDate] = useState(null);
@@ -38,7 +37,7 @@ export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
   } = useForm();
   const queryClient = useQueryClient();
 
-  const statutPaiement = (montant) => {
+  const statutPaiement = montant => {
     const montantPaye = bonLivraison.totalPaye + montant;
     if (
       bonLivraison.total === montantPaye ||
@@ -50,7 +49,7 @@ export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
     }
   };
 
-  const onSubmit = async (data) => {
+  const onSubmit = async data => {
     const { compte, montant, typePaiement, numero } = data;
     const transData = {
       bonLivraisonId: bonLivraison.id,
@@ -64,6 +63,7 @@ export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
       numeroCheque: numero,
       date,
       statutPaiement: statutPaiement(montant),
+      reference: bonLivraison.numero,
     };
     console.log("Data", transData);
 
@@ -101,8 +101,30 @@ export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
       const comptes = response.data.comptes;
       return comptes;
     },
+    onSuccess: data => {
+      // Initialiser le compte par défaut si aucun type de paiement n'est sélectionné
+      if (!watch("typePaiement") && data && data.length > 0) {
+        // Par défaut, initialiser avec "espece" et "caisse"
+        setValue("typePaiement", "espece");
+        setValue("compte", "caisse");
+      }
+    },
   });
+  // Initialiser automatiquement le compte selon le type de paiement
+  const handleTypePaiementChange = value => {
+    setValue("typePaiement", value);
 
+    // Initialiser le compte selon le type de paiement
+    if (value === "espece") {
+      setValue("compte", "caisse");
+    } else if (value === "versement" || value === "cheque") {
+      // Pour les versements, utiliser le premier compte bancaire disponible (pas caisse)
+      const compteBancaire = comptes.data?.find(c => c.compte !== "caisse");
+      if (compteBancaire) {
+        setValue("compte", compteBancaire.compte);
+      }
+    }
+  };
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[1000px] max-h-[90vh] overflow-y-auto">
@@ -117,9 +139,10 @@ export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
           <div className="py-4 space-y-4">
             <RadioGroup
               value={watch("typePaiement")}
-              onValueChange={(value) => {
+              onValueChange={value => {
                 reset();
-                setValue("typePaiement", value);
+                handleTypePaiementChange(value);
+                setDate(null);
               }}
               className="flex flex-row flex-wrap gap-4 justify-evenly"
             >
@@ -134,6 +157,19 @@ export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
                   className="text-green-600 font-medium cursor-pointer"
                 >
                   Espèce
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem
+                  value="versement"
+                  id="versement"
+                  className="text-sky-600"
+                />
+                <Label
+                  htmlFor="versement"
+                  className="text-sky-600 font-medium cursor-pointer"
+                >
+                  Versement
                 </Label>
               </div>
               <div className="flex items-center space-x-2 rounded-md p-2">
@@ -170,13 +206,13 @@ export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
                   <Select
                     value={watch("compte")}
                     name="compte"
-                    onValueChange={(value) => setValue("compte", value)}
+                    onValueChange={value => setValue("compte", value)}
                   >
                     <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500 mt-2">
                       <SelectValue placeholder="Séléctionner..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {comptes.data?.map((element) => (
+                      {comptes.data?.map(element => (
                         <SelectItem key={element.id} value={element.compte}>
                           <div className="flex items-center gap-2">
                             {element.compte}
@@ -193,6 +229,47 @@ export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
                 </div>
               </div>
             )}
+
+            {watch("typePaiement") === "versement" && (
+              <div className="space-y-4 items-end grid grid-cols-3 gap-4">
+                <div className="w-full space-y-1.5">
+                  <Label htmlFor="client">Date : </Label>
+                  <CustomDatePicker date={date} onDateChange={setDate} />
+                </div>
+                <div className="grid w-full items-center gap-1.5">
+                  <Label htmlFor="montant">Montant</Label>
+                  <Input
+                    {...register("montant", { valueAsNumber: true })}
+                    className="w-full focus-visible:ring-purple-500"
+                    id="montant"
+                  />
+                </div>
+                <div className="grid w-full items-center gap-2">
+                  <Label htmlFor="compte">Compte bancaire</Label>
+                  <Select
+                    value={watch("compte")}
+                    name="compte"
+                    onValueChange={value => setValue("compte", value)}
+                  >
+                    <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
+                      <SelectValue placeholder="Séléctionner..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {comptes.data
+                        ?.filter(c => c.compte !== "caisse")
+                        .map(element => (
+                          <SelectItem key={element.id} value={element.compte}>
+                            <div className="flex items-center gap-2">
+                              {element.compte}
+                            </div>
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+            
             {watch("typePaiement") === "cheque" && (
               <div className="space-y-4 items-end grid grid-cols-3 grid-rows-2 gap-4">
                 <div className="w-full space-y-1.5">
@@ -212,15 +289,15 @@ export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
                   <Select
                     value={watch("compte")}
                     name="compte"
-                    onValueChange={(value) => setValue("compte", value)}
+                    onValueChange={value => setValue("compte", value)}
                   >
                     <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
                       <SelectValue placeholder="Séléctionner..." />
                     </SelectTrigger>
                     <SelectContent>
                       {comptes.data
-                        ?.filter((c) => c.compte !== "caisse")
-                        .map((element) => (
+                        ?.filter(c => c.compte !== "caisse")
+                        .map(element => (
                           <SelectItem key={element.id} value={element.compte}>
                             <div className="flex items-center gap-2">
                               {element.compte}

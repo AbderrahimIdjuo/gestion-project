@@ -1,23 +1,21 @@
 "use client";
-import * as React from "react";
-import { useState, useEffect } from "react";
-import toast, { Toaster } from "react-hot-toast";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import ComboBoxFournisseur from "@/components/comboBox-fournisseurs";
+import ComptesRapportDialog from "@/components/comptes-rapport-dialog";
+import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
 import CustomPagination from "@/components/customUi/customPagination";
+import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
+import { LoadingDots } from "@/components/loading-dots";
+import TransactionDialog from "@/components/new-transaction";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Trash2, Filter, Search, Printer } from "lucide-react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
-import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
-import { formatCurrency } from "@/lib/functions";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Sheet,
   SheetContent,
@@ -26,21 +24,26 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import TransactionDialog from "@/components/new-transaction";
-import { LoadingDots } from "@/components/loading-dots";
-import ComboBoxFournisseur from "@/components/comboBox-fournisseurs";
-import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
-import ComptesRapportDialog from "@/components/comptes-rapport-dialog";
-import { formatDate } from "@/lib/functions";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import UpdateTransactionDialog from "@/components/update-transaction";
+import {
+  formatCurrency,
+  formatDate,
+  methodePaiementLabel,
+} from "@/lib/functions";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+import { Filter, Pen, Printer, Search, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import toast, { Toaster } from "react-hot-toast";
 
 type Transaction = {
   id: string;
@@ -86,7 +89,7 @@ export default function Banques() {
   const [endDate, setEndDate] = useState<Date>();
   const [selectedFournisseur, setSelectedFournisseur] =
     useState<Fournisseur | null>();
-
+  const [updateDialog, setUpdateDialog] = useState(false);
   const [filters, setFilters] = useState({
     compte: "all",
     type: "all",
@@ -196,6 +199,16 @@ export default function Banques() {
       };
     }
   };
+
+  const handlMethodePaiementLable = (methodePaiement: string) => {
+    if (methodePaiement === "espece") {
+      return "Espèce";
+    } else if (methodePaiement === "cheque") {
+      return "Chèque";
+    } else if (methodePaiement === "versement") {
+      return "Versement";
+    } else return "Inconnu";
+  };
   const handleChequeClick = (transaction: Transaction) => {
     if (transaction.methodePaiement === "cheque") {
       let beneficiaire = "Inconnu";
@@ -213,7 +226,7 @@ export default function Banques() {
       const compte = transaction.compte || "Inconnu";
 
       toast(
-        (t) => (
+        t => (
           <div className="flex flex-col gap-4 justify-start items-center ">
             <div className="flex flex-col  text-sm w-full">
               <span>
@@ -439,7 +452,7 @@ export default function Banques() {
                     <TableHead>Méthode</TableHead>
                     <TableHead>Compte</TableHead>
                     <TableHead>Description</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="text-center">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -512,10 +525,7 @@ export default function Banques() {
                             "cursor-pointer"
                           }`}
                         >
-                          {transaction.methodePaiement === "espece"
-                            ? "Espèce"
-                            : transaction.methodePaiement === "cheque" &&
-                              "Chèque"}
+                          {methodePaiementLabel(transaction)}
                         </TableCell>
 
                         <TableCell className="font-medium py-0">
@@ -529,6 +539,18 @@ export default function Banques() {
                           <div className="flex justify-end gap-2">
                             <Button
                               onClick={() => {
+                                setUpdateDialog(true);
+                                setTransaction(transaction);
+                              }}
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
+                            >
+                              <Pen className="h-4 w-4" />
+                              <span className="sr-only">modifier</span>
+                            </Button>
+                            <Button
+                              onClick={() => {
                                 setDeleteDialog(true);
                                 setTransaction(transaction);
                               }}
@@ -540,7 +562,7 @@ export default function Banques() {
                               <span className="sr-only">Supprimer</span>
                             </Button>
                           </div>
-                        </TableCell>
+                        </TableCell>                       
                       </TableRow>
                     ))
                   ) : (
@@ -575,6 +597,14 @@ export default function Banques() {
           deleteTrans.mutate();
           setDeleteDialog(false);
         }}
+      />
+
+      <UpdateTransactionDialog
+        isOpen={updateDialog}
+        onClose={() => {
+          setUpdateDialog(false);
+        }}
+        transaction={transaction}
       />
     </>
   );

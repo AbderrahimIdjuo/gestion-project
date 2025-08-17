@@ -1,7 +1,7 @@
 "use client";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { addtransaction } from "@/app/api/actions";
+import { CustomDatePicker } from "@/components/customUi/customDatePicker";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -9,6 +9,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
   SelectContent,
@@ -16,15 +19,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { CreditCard } from "lucide-react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import toast from "react-hot-toast";
+import { CreditCard } from "lucide-react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { CustomDatePicker } from "@/components/customUi/customDatePicker";
+import toast from "react-hot-toast";
 
 export function PaiementDialog({ isOpen, onClose, devis }) {
   const [date, setDate] = useState(null);
@@ -45,8 +45,30 @@ export function PaiementDialog({ isOpen, onClose, devis }) {
       const comptes = response.data.comptes;
       return comptes;
     },
+    onSuccess: data => {
+      // Initialiser le compte par défaut si aucun type de paiement n'est sélectionné
+      if (!watch("typePaiement") && data && data.length > 0) {
+        // Par défaut, initialiser avec "espece" et "caisse"
+        setValue("typePaiement", "espece");
+        setValue("compte", "caisse");
+      }
+    },
   });
+  // Initialiser automatiquement le compte selon le type de paiement
+  const handleTypePaiementChange = value => {
+    setValue("typePaiement", value);
 
+    // Initialiser le compte selon le type de paiement
+    if (value === "espece") {
+      setValue("compte", "caisse");
+    } else if (value === "versement" || value === "cheque") {
+      // Pour les versements, utiliser le premier compte bancaire disponible (pas caisse)
+      const compteBancaire = comptes.data?.find(c => c.compte !== "caisse");
+      if (compteBancaire) {
+        setValue("compte", compteBancaire.compte);
+      }
+    }
+  };
   const createTransaction = useMutation({
     mutationFn: async () => {
       const data = {
@@ -59,7 +81,7 @@ export function PaiementDialog({ isOpen, onClose, devis }) {
         clientId: devis.client.id,
       };
 
-      //console.log("transData : ", data);
+      console.log("transData : ", data);
       const loadingToast = toast.loading("Paiement en cours...");
       try {
         await addtransaction(data);
@@ -83,19 +105,17 @@ export function PaiementDialog({ isOpen, onClose, devis }) {
           <DialogHeader>
             <DialogTitle>Paiement du devis {devis.numero}</DialogTitle>
             <DialogDescription>
-              Déterminer le montant et sélectionnez le compte que vous souhaitez
-              utiliser pour ce paiement.
+              Sélectionnez le type de paiement et remplissez les détails
+              nécessaires.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-4">
             <RadioGroup
               value={watch("methodePaiement")}
-              onValueChange={(value) => {
+              onValueChange={value => {
                 reset();
-                setValue("methodePaiement", value);
-                if (value === "espece") {
-                  setValue("compte", "caisse");
-                }
+                handleTypePaiementChange(value);
+                setDate(null);
               }}
               className="flex flex-row flex-wrap gap-4 justify-evenly"
             >
@@ -110,6 +130,19 @@ export function PaiementDialog({ isOpen, onClose, devis }) {
                   className="text-green-600 font-medium cursor-pointer"
                 >
                   Espèce
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem
+                  value="versement"
+                  id="versement"
+                  className="text-sky-600"
+                />
+                <Label
+                  htmlFor="versement"
+                  className="text-sky-600 font-medium cursor-pointer"
+                >
+                  Versement
                 </Label>
               </div>
               <div className="flex items-center space-x-2 rounded-md p-2">
@@ -127,17 +160,17 @@ export function PaiementDialog({ isOpen, onClose, devis }) {
               </div>
             </RadioGroup>
 
-            {watch("methodePaiement") === "espece" && (
+            {watch("typePaiement") === "espece" && (
               <div className="space-y-4 items-end grid grid-cols-3 gap-4">
-                <div className="w-full space-y-3 mt-3">
+                <div className="w-full space-y-1.5">
                   <Label htmlFor="client">Date : </Label>
                   <CustomDatePicker date={date} onDateChange={setDate} />
                 </div>
-                <div className="grid w-full items-center gap-3">
+                <div className="grid w-full items-center gap-1.5">
                   <Label htmlFor="montant">Montant</Label>
                   <Input
                     {...register("montant", { valueAsNumber: true })}
-                    className="w-full mt-1 focus-visible:ring-purple-500"
+                    className="w-full focus-visible:ring-purple-500"
                     id="montant"
                   />
                 </div>
@@ -146,13 +179,13 @@ export function PaiementDialog({ isOpen, onClose, devis }) {
                   <Select
                     value={watch("compte")}
                     name="compte"
-                    onValueChange={(value) => setValue("compte", value)}
+                    onValueChange={value => setValue("compte", value)}
                   >
                     <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500 mt-2">
                       <SelectValue placeholder="Séléctionner..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {comptes.data?.map((element) => (
+                      {comptes.data?.map(element => (
                         <SelectItem key={element.id} value={element.compte}>
                           <div className="flex items-center gap-2">
                             {element.compte}
@@ -169,34 +202,35 @@ export function PaiementDialog({ isOpen, onClose, devis }) {
                 </div>
               </div>
             )}
-            {watch("methodePaiement") === "cheque" && (
-              <div className="space-y-4 items-end grid grid-cols-3 grid-rows-2 gap-4">
-                <div className="w-full space-y-3 mt-3">
+
+            {watch("typePaiement") === "versement" && (
+              <div className="space-y-4 items-end grid grid-cols-3 gap-4">
+                <div className="w-full space-y-1.5">
                   <Label htmlFor="client">Date : </Label>
                   <CustomDatePicker date={date} onDateChange={setDate} />
                 </div>
-                <div className="grid w-full items-center gap-3">
+                <div className="grid w-full items-center gap-1.5">
                   <Label htmlFor="montant">Montant</Label>
                   <Input
                     {...register("montant", { valueAsNumber: true })}
-                    className="w-full mt-1 focus-visible:ring-purple-500"
+                    className="w-full focus-visible:ring-purple-500"
                     id="montant"
                   />
                 </div>
-                <div className="grid w-full items-center gap-1.5">
+                <div className="grid w-full items-center gap-2">
                   <Label htmlFor="compte">Compte bancaire</Label>
                   <Select
                     value={watch("compte")}
                     name="compte"
-                    onValueChange={(value) => setValue("compte", value)}
+                    onValueChange={value => setValue("compte", value)}
                   >
-                    <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500 mt-2">
+                    <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
                       <SelectValue placeholder="Séléctionner..." />
                     </SelectTrigger>
                     <SelectContent>
                       {comptes.data
-                        ?.filter((c) => c.compte !== "caisse")
-                        .map((element) => (
+                        ?.filter(c => c.compte !== "caisse")
+                        .map(element => (
                           <SelectItem key={element.id} value={element.compte}>
                             <div className="flex items-center gap-2">
                               {element.compte}
@@ -205,18 +239,53 @@ export function PaiementDialog({ isOpen, onClose, devis }) {
                         ))}
                     </SelectContent>
                   </Select>
-                  {errors.compte && (
-                    <p className="text-red-500 text-sm">
-                      {errors.compte.message}
-                    </p>
-                  )}
+                </div>
+              </div>
+            )}
+
+            {watch("typePaiement") === "cheque" && (
+              <div className="space-y-4 items-end grid grid-cols-3 grid-rows-2 gap-4">
+                <div className="w-full space-y-1.5">
+                  <Label htmlFor="client">Date : </Label>
+                  <CustomDatePicker date={date} onDateChange={setDate} />
+                </div>
+                <div className="grid w-full items-center gap-2">
+                  <Label htmlFor="montant">Montant</Label>
+                  <Input
+                    {...register("montant", { valueAsNumber: true })}
+                    className="w-full focus-visible:ring-purple-500"
+                    id="montant"
+                  />
+                </div>
+                <div className="grid w-full items-center gap-2">
+                  <Label htmlFor="compte">Compte bancaire</Label>
+                  <Select
+                    value={watch("compte")}
+                    name="compte"
+                    onValueChange={value => setValue("compte", value)}
+                  >
+                    <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
+                      <SelectValue placeholder="Séléctionner..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {comptes.data
+                        ?.filter(c => c.compte !== "caisse")
+                        .map(element => (
+                          <SelectItem key={element.id} value={element.compte}>
+                            <div className="flex items-center gap-2">
+                              {element.compte}
+                            </div>
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="grid w-full items-center gap-2 col-span-3">
-                  <Label htmlFor="numeroCheque">Numéro de chèque</Label>
+                  <Label htmlFor="numero">Numéro de chèque</Label>
                   <Input
-                    {...register("numeroCheque")}
+                    {...register("numero")}
                     className="w-full focus-visible:ring-purple-500"
-                    id="numeroCheque"
+                    id="numero"
                   />
                 </div>
               </div>

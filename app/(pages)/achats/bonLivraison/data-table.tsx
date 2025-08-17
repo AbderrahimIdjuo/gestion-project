@@ -37,7 +37,7 @@ export function DataTable<TData, TValue>({
 }: DataTableProps<TData, TValue>) {
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
-  console.log("####data", data);
+  //console.log("####data", data);
 
   const table = useReactTable({
     data,
