@@ -42,7 +42,6 @@ export default function DashboardPage() {
   const [endDate, setEndDate] = useState();
   const [periode, setPeriode] = useState("");
 
-
   function getDateRangeFromPeriode(periode) {
     const now = new Date();
 

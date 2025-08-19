@@ -1,7 +1,8 @@
 "use client";
-import { SignIn, useUser } from "@clerk/nextjs";
 import { BasicCard } from "@/components/customUi/BasicCardDashBoard";
 import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
+import { Navbar } from "@/components/navbar";
+import { Sidebar } from "@/components/sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import {
@@ -13,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/functions";
+import { SignIn, useUser } from "@clerk/nextjs";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import {
@@ -41,73 +43,73 @@ import { useState } from "react";
 
 export default function Page() {
   const { user, isSignedIn, isLoaded } = useUser();
-    const [startDate, setStartDate] = useState();
-    const [endDate, setEndDate] = useState();
-    const [periode, setPeriode] = useState("");
+  const [startDate, setStartDate] = useState();
+  const [endDate, setEndDate] = useState();
+  const [periode, setPeriode] = useState("");
 
-    function getDateRangeFromPeriode(periode) {
-      const now = new Date();
+  function getDateRangeFromPeriode(periode) {
+    const now = new Date();
 
-      switch (periode) {
-        case "ce-mois":
-          return {
-            from: startOfMonth(now),
-            to: endOfMonth(now),
-          };
-        case "3-derniers-mois":
-          return {
-            from: subMonths(startOfMonth(now), 2),
-            to: endOfMonth(now),
-          };
-        case "6-derniers-mois":
-          return {
-            from: subMonths(startOfMonth(now), 5),
-            to: endOfMonth(now),
-          };
-        case "cette-annee":
-          return {
-            from: startOfYear(now),
-            to: endOfYear(now),
-          };
-        case "annee-derniere":
-          const lastYear = subYears(now, 1);
-          return {
-            from: startOfYear(lastYear),
-            to: endOfYear(lastYear),
-          };
-        case "trimestre-actuel":
-          return {
-            from: startOfQuarter(now),
-            to: endOfQuarter(now),
-          };
-        case "trimestre-precedent":
-          const prevQuarter = subQuarters(now, 1);
-          return {
-            from: startOfQuarter(prevQuarter),
-            to: endOfQuarter(prevQuarter),
-          };
-        default:
-          return {
-            from: new Date(startDate) ?? null,
-            to: new Date(endDate) ?? null,
-          };
-      }
+    switch (periode) {
+      case "ce-mois":
+        return {
+          from: startOfMonth(now),
+          to: endOfMonth(now),
+        };
+      case "3-derniers-mois":
+        return {
+          from: subMonths(startOfMonth(now), 2),
+          to: endOfMonth(now),
+        };
+      case "6-derniers-mois":
+        return {
+          from: subMonths(startOfMonth(now), 5),
+          to: endOfMonth(now),
+        };
+      case "cette-annee":
+        return {
+          from: startOfYear(now),
+          to: endOfYear(now),
+        };
+      case "annee-derniere":
+        const lastYear = subYears(now, 1);
+        return {
+          from: startOfYear(lastYear),
+          to: endOfYear(lastYear),
+        };
+      case "trimestre-actuel":
+        return {
+          from: startOfQuarter(now),
+          to: endOfQuarter(now),
+        };
+      case "trimestre-precedent":
+        const prevQuarter = subQuarters(now, 1);
+        return {
+          from: startOfQuarter(prevQuarter),
+          to: endOfQuarter(prevQuarter),
+        };
+      default:
+        return {
+          from: new Date(startDate) ?? null,
+          to: new Date(endDate) ?? null,
+        };
     }
-    const { from, to } = getDateRangeFromPeriode(periode);
-    const statistiques = useQuery({
-      queryKey: ["statistiques", startDate, endDate, periode],
-      queryFn: async () => {
-        const response = await axios.get("/api/statistiques", {
-          params: {
-            from: from && isValid(from) ? from.toISOString() : null,
-            to: to && isValid(to) ? to.toISOString() : null,
-          },
-        });
-        // console.log("statistiques", response.data);
-        return response.data;
-      },
-      refetchOnWindowFocus: false,
-    });
+  }
+  const { from, to } = getDateRangeFromPeriode(periode);
+  const statistiques = useQuery({
+    queryKey: ["statistiques", startDate, endDate, periode],
+    queryFn: async () => {
+      const response = await axios.get("/api/statistiques", {
+        params: {
+          from: from && isValid(from) ? from.toISOString() : null,
+          to: to && isValid(to) ? to.toISOString() : null,
+        },
+      });
+      // console.log("statistiques", response.data);
+      return response.data;
+    },
+    refetchOnWindowFocus: false,
+  });
 
   if (!isLoaded) {
     return (
@@ -310,191 +312,227 @@ export default function Page() {
   // Utilisateur connecté - afficher le tableau de bord
   return (
     <>
-      <div className="h-full flex flex-col space-y-4 p-6">
-        <h1 className="text-3xl font-bold">Tableau de bord</h1>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <div className="grid grid-cols-4 items-center gap-2">
-            <Label htmlFor="periode" className="text-sm font-medium col-span-1">
-              Période :
-            </Label>
-            <div className="col-span-3">
-              <Select
-                value={periode}
-                onValueChange={value => setPeriode(value)}
-              >
-                <SelectTrigger className="focus:ring-2 focus:ring-purple-500">
-                  <SelectValue placeholder="Sélectionnez la période" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ce-mois">Ce mois</SelectItem>
-                  <SelectItem value="3-derniers-mois">
-                    Les 3 derniers mois
-                  </SelectItem>
-                  <SelectItem value="6-derniers-mois">
-                    Les 6 derniers mois
-                  </SelectItem>
-                  <SelectItem value="cette-annee">Cette année</SelectItem>
-                  <SelectItem value="annee-derniere">
-                    L&apos;année dernière
-                  </SelectItem>
-                  <SelectItem value="trimestre-actuel">
-                    Trimestre actuel
-                  </SelectItem>
-                  <SelectItem value="trimestre-precedent">
-                    Trimestre précédent
-                  </SelectItem>
-                  <SelectItem value="personnalisee">
-                    Période personnalisée
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          {periode === "personnalisee" && (
-            <div className="grid grid-cols-4 items-center gap-2">
-              <Label
-                htmlFor="statut"
-                className="col-span-1 text-left text-black"
-              >
-                Date :
-              </Label>
-              <div className="col-span-3">
-                <CustomDateRangePicker
-                  startDate={startDate}
-                  setStartDate={setStartDate}
-                  endDate={endDate}
-                  setEndDate={setEndDate}
-                />
-              </div>
-            </div>
-          )}
-        </div>
-        <div
-          className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
-          id="header-cards"
-        >
-          <Card className="bg-gradient-to-tr from-fuchsia-400 via-purple-500 to-violet-600 overflow-hidden shadow-md border-0 col-span-full lg:col-span-1 order-first transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pt-4">
-              <CardTitle className="text-lg font-medium text-white">
-                Sold
-              </CardTitle>
-              <TrendingUp className="h-6 w-6 text-white" />
-            </CardHeader>
-            <CardContent className="pb-3">
-              {statistiques.isLoading || statistiques.isFetching ? (
-                <Skeleton className="h-8 w-[200px] bg-purple-200" />
-              ) : (
-                <div className="text-3xl font-bold text-white mb-3">
-                  {formatCurrency(
-                    statistiques.data?.recettes - statistiques.data?.depenses
+      <div className="flex flex-col h-screen">
+        {/* Navbar - prend toute la largeur */}
+        <Navbar />
+
+        {/* Container principal avec sidebar et contenu */}
+        <div className="flex flex-1">
+          {/* Sidebar */}
+          <Sidebar />
+
+          {/* Main content area */}
+          <div className="flex-1 flex flex-col">
+            {/* Page content */}
+            <div className="flex-1 overflow-auto">
+              <div className="h-full flex flex-col space-y-4 p-6">
+                <h1 className="text-3xl font-bold">Tableau de bord</h1>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  <div className="grid grid-cols-4 items-center gap-2">
+                    <Label
+                      htmlFor="periode"
+                      className="text-sm font-medium col-span-1"
+                    >
+                      Période :
+                    </Label>
+                    <div className="col-span-3">
+                      <Select
+                        value={periode}
+                        onValueChange={value => setPeriode(value)}
+                      >
+                        <SelectTrigger className="focus:ring-2 focus:ring-purple-500">
+                          <SelectValue placeholder="Sélectionnez la période" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="ce-mois">Ce mois</SelectItem>
+                          <SelectItem value="3-derniers-mois">
+                            Les 3 derniers mois
+                          </SelectItem>
+                          <SelectItem value="6-derniers-mois">
+                            Les 6 derniers mois
+                          </SelectItem>
+                          <SelectItem value="cette-annee">
+                            Cette année
+                          </SelectItem>
+                          <SelectItem value="annee-derniere">
+                            L&apos;année dernière
+                          </SelectItem>
+                          <SelectItem value="trimestre-actuel">
+                            Trimestre actuel
+                          </SelectItem>
+                          <SelectItem value="trimestre-precedent">
+                            Trimestre précédent
+                          </SelectItem>
+                          <SelectItem value="personnalisee">
+                            Période personnalisée
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  {periode === "personnalisee" && (
+                    <div className="grid grid-cols-4 items-center gap-2">
+                      <Label
+                        htmlFor="statut"
+                        className="col-span-1 text-left text-black"
+                      >
+                        Date :
+                      </Label>
+                      <div className="col-span-3">
+                        <CustomDateRangePicker
+                          startDate={startDate}
+                          setStartDate={setStartDate}
+                          endDate={endDate}
+                          setEndDate={setEndDate}
+                        />
+                      </div>
+                    </div>
                   )}
                 </div>
-              )}
-            </CardContent>
-          </Card>
+                <div
+                  className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+                  id="header-cards"
+                >
+                  <Card className="bg-gradient-to-tr from-fuchsia-400 via-purple-500 to-violet-600 overflow-hidden shadow-md border-0 col-span-full lg:col-span-1 order-first transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pt-4">
+                      <CardTitle className="text-lg font-medium text-white">
+                        Sold
+                      </CardTitle>
+                      <TrendingUp className="h-6 w-6 text-white" />
+                    </CardHeader>
+                    <CardContent className="pb-3">
+                      {statistiques.isLoading || statistiques.isFetching ? (
+                        <Skeleton className="h-8 w-[200px] bg-purple-200" />
+                      ) : (
+                        <div className="text-3xl font-bold text-white mb-3">
+                          {formatCurrency(
+                            statistiques.data?.recettes -
+                              statistiques.data?.depenses
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
 
-          <Card className="bg-gradient-to-tr from-emerald-300 via-emerald-400 to-emerald-500 overflow-hidden shadow-md border-0 col-span-full lg:col-span-1 order-first transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pt-4">
-              <CardTitle className="text-lg font-medium text-white ">
-                Total des recettes
-              </CardTitle>
-              <CircleDollarSign className="h-6 w-6 text-white" />
-            </CardHeader>
-            <CardContent className="pb-3">
-              {statistiques.isLoading || statistiques.isFetching ? (
-                <Skeleton className="h-8 w-[200px] bg-green-200" />
-              ) : (
-                <div className="text-3xl font-bold text-white mb-3">
-                  {formatCurrency(statistiques.data?.recettes)}
+                  <Card className="bg-gradient-to-tr from-emerald-300 via-emerald-400 to-emerald-500 overflow-hidden shadow-md border-0 col-span-full lg:col-span-1 order-first transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pt-4">
+                      <CardTitle className="text-lg font-medium text-white ">
+                        Total des recettes
+                      </CardTitle>
+                      <CircleDollarSign className="h-6 w-6 text-white" />
+                    </CardHeader>
+                    <CardContent className="pb-3">
+                      {statistiques.isLoading || statistiques.isFetching ? (
+                        <Skeleton className="h-8 w-[200px] bg-green-200" />
+                      ) : (
+                        <div className="text-3xl font-bold text-white mb-3">
+                          {formatCurrency(statistiques.data?.recettes)}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-gradient-to-tr from-red-300 via-red-400 to-red-500 overflow-hidden shadow-md border-0 col-span-full lg:col-span-1 order-first transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pt-4">
+                      <CardTitle className="text-lg font-medium text-white ">
+                        Total des dépenses
+                      </CardTitle>
+                      <HandCoins className="h-6 w-6 text-white" />
+                    </CardHeader>
+                    <CardContent className="pb-3">
+                      {statistiques.isLoading || statistiques.isFetching ? (
+                        <Skeleton className="h-8 w-[200px] bg-red-200" />
+                      ) : (
+                        <div className="text-3xl font-bold text-white mb-3">
+                          {formatCurrency(statistiques.data?.depenses)}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+                <div
+                  className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
+                  id="Basic-cards"
+                >
+                  <BasicCard
+                    title="Clients"
+                    statistiques={statistiques.data?.nbrClients}
+                    Icon={Users}
+                    isLoading={
+                      statistiques.isLoading || statistiques.isFetching
+                    }
+                  />
+                  <BasicCard
+                    title="Fournisseurs"
+                    statistiques={statistiques.data?.nbrFournisseurs}
+                    Icon={Users}
+                    isLoading={
+                      statistiques.isLoading || statistiques.isFetching
+                    }
+                  />
+                  <BasicCard
+                    title="Produits"
+                    statistiques={statistiques.data?.nbrProduits}
+                    Icon={Package}
+                    isLoading={
+                      statistiques.isLoading || statistiques.isFetching
+                    }
+                  />
+                  <BasicCard
+                    title="Commandes de fournitures"
+                    statistiques={statistiques.data?.nbrCommandes}
+                    Icon={Truck}
+                    isLoading={
+                      statistiques.isLoading || statistiques.isFetching
+                    }
+                  />
+                  <BasicCard
+                    title="Bon de livraison"
+                    statistiques={statistiques.data?.nbrBonLivraison}
+                    Icon={ScrollText}
+                    isLoading={
+                      statistiques.isLoading || statistiques.isFetching
+                    }
+                  />
 
-          <Card className="bg-gradient-to-tr from-red-300 via-red-400 to-red-500 overflow-hidden shadow-md border-0 col-span-full lg:col-span-1 order-first transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pt-4">
-              <CardTitle className="text-lg font-medium text-white ">
-                Total des dépenses
-              </CardTitle>
-              <HandCoins className="h-6 w-6 text-white" />
-            </CardHeader>
-            <CardContent className="pb-3">
-              {statistiques.isLoading || statistiques.isFetching ? (
-                <Skeleton className="h-8 w-[200px] bg-red-200" />
-              ) : (
-                <div className="text-3xl font-bold text-white mb-3">
-                  {formatCurrency(statistiques.data?.depenses)}
+                  <BasicCard
+                    title="Caisse"
+                    statistiques={formatCurrency(statistiques.data?.caisse)}
+                    Icon={Wallet}
+                    isLoading={
+                      statistiques.isLoading || statistiques.isFetching
+                    }
+                  />
+                  <BasicCard
+                    title="Compte personnel"
+                    statistiques={formatCurrency(
+                      statistiques.data?.comptePersonnel
+                    )}
+                    Icon={Wallet}
+                    isLoading={
+                      statistiques.isLoading || statistiques.isFetching
+                    }
+                  />
+                  <BasicCard
+                    title="Compte professionnel"
+                    statistiques={formatCurrency(
+                      statistiques.data?.compteProfessionnel
+                    )}
+                    Icon={Wallet}
+                    isLoading={
+                      statistiques.isLoading || statistiques.isFetching
+                    }
+                  />
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-        <div
-          className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
-          id="Basic-cards"
-        >
-          <BasicCard
-            title="Clients"
-            statistiques={statistiques.data?.nbrClients}
-            Icon={Users}
-            isLoading={statistiques.isLoading || statistiques.isFetching}
-          />
-          <BasicCard
-            title="Fournisseurs"
-            statistiques={statistiques.data?.nbrFournisseurs}
-            Icon={Users}
-            isLoading={statistiques.isLoading || statistiques.isFetching}
-          />
-          <BasicCard
-            title="Produits"
-            statistiques={statistiques.data?.nbrProduits}
-            Icon={Package}
-            isLoading={statistiques.isLoading || statistiques.isFetching}
-          />
-          <BasicCard
-            title="Commandes de fournitures"
-            statistiques={statistiques.data?.nbrCommandes}
-            Icon={Truck}
-            isLoading={statistiques.isLoading || statistiques.isFetching}
-          />
-          <BasicCard
-            title="Bon de livraison"
-            statistiques={statistiques.data?.nbrBonLivraison}
-            Icon={ScrollText}
-            isLoading={statistiques.isLoading || statistiques.isFetching}
-          />
 
-          <BasicCard
-            title="Caisse"
-            statistiques={formatCurrency(statistiques.data?.caisse)}
-            Icon={Wallet}
-            isLoading={statistiques.isLoading || statistiques.isFetching}
-          />
-          <BasicCard
-            title="Compte personnel"
-            statistiques={formatCurrency(statistiques.data?.comptePersonnel)}
-            Icon={Wallet}
-            isLoading={statistiques.isLoading || statistiques.isFetching}
-          />
-          <BasicCard
-            title="Compte professionnel"
-            statistiques={formatCurrency(
-              statistiques.data?.compteProfessionnel
-            )}
-            Icon={Wallet}
-            isLoading={statistiques.isLoading || statistiques.isFetching}
-          />
+                {/* <div className="grid gap-4 grid-cols-1 shadow-md">
+                  <PerformanceChart />
+                </div> */}
+              </div>
+            </div>
+          </div>
         </div>
-
-        {/* <div className="grid gap-4 grid-cols-1 shadow-md">
-          <PerformanceChart />
-        </div> */}
       </div>
     </>
   );
 }
-
-
-
-
-
