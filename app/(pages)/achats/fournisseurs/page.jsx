@@ -93,7 +93,7 @@ export default function FournisseursPage() {
   return (
     <>
       <Toaster position="top-center" />
-      <div className="space-y-6 mb-[5rem]">
+      <div className="space-y-6 mb-[5rem] p-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Fournisseurs</h1>
         </div>

@@ -194,9 +194,9 @@ export default function TransactionDialog() {
                 reset();
                 setValue("type", value);
               }}
-              className="flex flex-row flex-wrap gap-4 justify-between"
+              className="flex flex-row flex-wrap gap-4 justify-evenly"
             >
-              <div className="flex items-center space-x-2 rounded-md p-2">
+              {/* <div className="flex items-center space-x-2 rounded-md p-2">
                 <RadioGroupItem
                   value="recette"
                   id="recette"
@@ -208,7 +208,7 @@ export default function TransactionDialog() {
                 >
                   Recette
                 </Label>
-              </div>
+              </div> */}
               <div className="flex items-center space-x-2 rounded-md p-2">
                 <RadioGroupItem
                   value="depense"

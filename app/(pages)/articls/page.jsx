@@ -83,7 +83,7 @@ export default function ProduitsPage() {
   return (
     <>
       <Toaster position="top-center" />
-      <div className="space-y-6">
+      <div className="space-y-6 p-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Articls</h1>
         </div>

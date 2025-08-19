@@ -198,7 +198,7 @@ export default function BonLivraison() {
   return (
     <>
       <Toaster position="top-center" />
-      <div className="container mx-auto space-y-2 mb-[5rem]">
+      <div className="container mx-auto space-y-2 mb-[5rem] p-6">
         <div className="flex justify-between items-center mb-2">
           <h1 className="text-3xl font-bold">Bons de livraisons</h1>
         </div>

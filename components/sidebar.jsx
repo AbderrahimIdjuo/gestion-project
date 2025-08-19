@@ -1,24 +1,24 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 import {
-  LayoutDashboard,
-  Users,
-  Package,
-  FileText,
-  Truck,
   ChevronDown,
   ChevronRight,
   ContactRound,
-  Settings,
-  Landmark,
-  Grid2X2,
-  ScrollText,
+  FileText,
   Files,
+  Grid2X2,
+  Landmark,
+  LayoutDashboard,
+  Package,
+  ScrollText,
+  Settings,
+  Truck,
+  Users,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
 
 const menuItems = [
   //  { icon: TestTubeDiagonal, label: "Test", href: "/test" },
@@ -94,7 +94,7 @@ const menuItems = [
         label: "Catégories des produits",
         href: "/parametres/categories",
       },
-        {
+      {
         label: "Charges récurrentes",
         href: "/parametres/charges",
       },
@@ -111,22 +111,22 @@ export function Sidebar() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [openMenus, setOpenMenus] = useState(["produits", "achats", "ventes"]);
 
-  const toggleMenu = (href) => {
-    setOpenMenus((current) =>
+  const toggleMenu = href => {
+    setOpenMenus(current =>
       current.includes(href)
-        ? current.filter((item) => item !== href)
+        ? current.filter(item => item !== href)
         : [...current, href]
     );
   };
 
-  const isActive = (href) => {
+  const isActive = href => {
     if (href === "/") {
       return pathname === href;
     }
     return pathname.startsWith(href);
   };
 
-  const isSubActive = (href) => {
+  const isSubActive = href => {
     return pathname === href;
   };
 
@@ -213,7 +213,7 @@ export function Sidebar() {
 
                 {isExpanded && item.subItems && isOpen && (
                   <ul className="ml-1 w-full mt-1 space-y-1">
-                    {item.subItems.map((subItem) => {
+                    {item.subItems.map(subItem => {
                       const isSubItemActive = isSubActive(subItem.href);
 
                       return (

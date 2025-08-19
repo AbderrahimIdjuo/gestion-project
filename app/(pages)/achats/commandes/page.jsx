@@ -109,7 +109,7 @@ export default function CommandesAchats() {
   return (
     <>
       <Toaster position="top-center" />
-      <div className="space-y-6">
+      <div className="space-y-6 p-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Commandes Fournitures</h1>
         </div>

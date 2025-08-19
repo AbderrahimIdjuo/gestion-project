@@ -97,7 +97,7 @@ export default function ClientsPage() {
   return (
     <>
       <Toaster position="top-center" />
-      <div className="space-y-6 mb-3">
+      <div className="space-y-6 mb-3 p-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Clients</h1>
         </div>
