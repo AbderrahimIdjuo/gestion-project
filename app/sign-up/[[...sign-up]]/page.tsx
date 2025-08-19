@@ -9,7 +9,7 @@ export default function SignUpPage() {
             Créer un nouveau compte
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Commencez à gérer votre entreprise dès aujourd'hui
+            Commencez à gérer votre entreprise dès aujourd&apos;hui
           </p>
         </div>
         <SignUp
@@ -26,5 +26,3 @@ export default function SignUpPage() {
     </div>
   );
 }
-
-

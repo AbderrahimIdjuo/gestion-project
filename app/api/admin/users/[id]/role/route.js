@@ -1,20 +1,17 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin } from '@/lib/auth-utils';
-import { clerkClient } from '@clerk/nextjs';
+import { requireAdmin } from "@/lib/auth-utils";
+import { clerkClient } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(request, { params }) {
   try {
     // Verify the current user is an admin
     await requireAdmin();
-    
+
     const { role } = await request.json();
     const userId = params.id;
 
     // Validate role
-    if (role !== 'admin' && role !== 'commercant') {
+    if (role !== "admin" && role !== "commercant") {
       return NextResponse.json(
         { error: 'Invalid role. Must be "admin" or "commercant"' },
         { status: 400 }
@@ -24,8 +21,8 @@ export async function PATCH(
     // Update the user's role
     await clerkClient.users.updateUser(userId, {
       publicMetadata: {
-        role: role
-      }
+        role: role,
+      },
     });
 
     return NextResponse.json(
@@ -33,24 +30,24 @@ export async function PATCH(
       { status: 200 }
     );
   } catch (error) {
-    console.error('Error updating user role:', error);
-    
-    if (error.message.includes('Access denied')) {
+    console.error("Error updating user role:", error);
+
+    if (error.message.includes("Access denied")) {
       return NextResponse.json(
-        { error: 'Access denied. Admin role required.' },
+        { error: "Access denied. Admin role required." },
         { status: 403 }
       );
     }
-    
-    if (error.message.includes('Authentication required')) {
+
+    if (error.message.includes("Authentication required")) {
       return NextResponse.json(
-        { error: 'Authentication required' },
+        { error: "Authentication required" },
         { status: 401 }
       );
     }
 
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

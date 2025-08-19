@@ -1,12 +1,18 @@
-import { auth, currentUser } from "@clerk/nextjs";
-import { redirect } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 export default async function AdminPage() {
   const { userId } = await auth();
-  
+
   if (!userId) {
     redirect("/sign-in");
   }
@@ -39,7 +45,9 @@ export default async function AdminPage() {
               <Link href="/admin/users">Gérer les utilisateurs</Link>
             </Button>
             <Button asChild variant="outline" className="w-full">
-              <Link href="/admin/users?action=invite">Inviter un utilisateur</Link>
+              <Link href="/admin/users?action=invite">
+                Inviter un utilisateur
+              </Link>
             </Button>
           </CardContent>
         </Card>
@@ -48,7 +56,9 @@ export default async function AdminPage() {
         <Card>
           <CardHeader>
             <CardTitle>Paramètres système</CardTitle>
-            <CardDescription>Configuration globale de l'application</CardDescription>
+            <CardDescription>
+              Configuration globale de l&apos;application
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
             <Button asChild variant="outline" className="w-full">
@@ -64,7 +74,9 @@ export default async function AdminPage() {
         <Card>
           <CardHeader>
             <CardTitle>Base de données</CardTitle>
-            <CardDescription>Gestion et maintenance des données</CardDescription>
+            <CardDescription>
+              Gestion et maintenance des données
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
             <Button asChild variant="outline" className="w-full">
@@ -79,8 +91,10 @@ export default async function AdminPage() {
         {/* Audit Logs */}
         <Card>
           <CardHeader>
-            <CardTitle>Journaux d'audit</CardTitle>
-            <CardDescription>Suivi des activités et modifications</CardDescription>
+            <CardTitle>Journaux d&apos;audit</CardTitle>
+            <CardDescription>
+              Suivi des activités et modifications
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
             <Button asChild variant="outline" className="w-full">
@@ -111,7 +125,7 @@ export default async function AdminPage() {
         {/* Access Control */}
         <Card>
           <CardHeader>
-            <CardTitle>Contrôle d'accès</CardTitle>
+            <CardTitle>Contrôle d&apos;accès</CardTitle>
             <CardDescription>Gestion des permissions et rôles</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -129,13 +143,17 @@ export default async function AdminPage() {
       <Card>
         <CardHeader>
           <CardTitle>Statistiques système</CardTitle>
-          <CardDescription>Aperçu de l'utilisation et des performances</CardDescription>
+          <CardDescription>
+            Aperçu de l&apos;utilisation et des performances
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-600">24</div>
-              <div className="text-sm text-muted-foreground">Utilisateurs actifs</div>
+              <div className="text-sm text-muted-foreground">
+                Utilisateurs actifs
+              </div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600">98.5%</div>
@@ -143,7 +161,9 @@ export default async function AdminPage() {
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-orange-600">2.3s</div>
-              <div className="text-sm text-muted-foreground">Temps de réponse</div>
+              <div className="text-sm text-muted-foreground">
+                Temps de réponse
+              </div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-purple-600">1.2GB</div>

@@ -1,7 +1,6 @@
-import { Webhook } from 'svix';
-import { headers } from 'next/headers';
-import { WebhookEvent } from '@clerk/nextjs/server';
-import { clerkClient } from '@clerk/nextjs';
+import { clerkClient } from "@clerk/nextjs/server";
+import { headers } from "next/headers";
+import { Webhook } from "svix";
 
 export async function POST(req) {
   // Get the headers
@@ -12,8 +11,8 @@ export async function POST(req) {
 
   // If there are no headers, error out
   if (!svix_id || !svix_timestamp || !svix_signature) {
-    return new Response('Error occured -- no svix headers', {
-      status: 400
+    return new Response("Error occured -- no svix headers", {
+      status: 400,
     });
   }
 
@@ -22,7 +21,7 @@ export async function POST(req) {
   const body = JSON.stringify(payload);
 
   // Create a new Svix instance with your secret.
-  const wh = new Webhook(process.env.CLERK_WEBHOOK_SECRET || '');
+  const wh = new Webhook(process.env.CLERK_WEBHOOK_SECRET || "");
 
   let evt;
 
@@ -34,9 +33,9 @@ export async function POST(req) {
       "svix-signature": svix_signature,
     });
   } catch (err) {
-    console.error('Error verifying webhook:', err);
-    return new Response('Error occured', {
-      status: 400
+    console.error("Error verifying webhook:", err);
+    return new Response("Error occured", {
+      status: 400,
     });
   }
 
@@ -45,25 +44,25 @@ export async function POST(req) {
   const eventType = evt.type;
 
   console.log(`Webhook with and ID of ${id} and type of ${eventType}`);
-  console.log('Webhook body:', body);
+  console.log("Webhook body:", body);
 
   // Handle the webhook
-  if (eventType === 'user.created') {
+  if (eventType === "user.created") {
     const { id: userId } = evt.data;
-    
+
     try {
       // Set default role to "commercant" for new users
       await clerkClient.users.updateUser(userId, {
         publicMetadata: {
-          role: 'commercant'
-        }
+          role: "commercant",
+        },
       });
-      
+
       console.log(`User ${userId} assigned default role: commercant`);
     } catch (error) {
-      console.error('Error updating user role:', error);
+      console.error("Error updating user role:", error);
     }
   }
 
-  return new Response('', { status: 200 });
+  return new Response("", { status: 200 });
 }
