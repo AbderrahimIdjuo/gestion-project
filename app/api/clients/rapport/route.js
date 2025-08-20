@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../../lib/prisma";
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   // Fetch the liste of devis withe dette > 0
@@ -13,15 +14,7 @@ export async function GET() {
     },
   });
 
-  return NextResponse.json(
-    {
-      devis,
-    },
-    {
-      headers: {
-        "Cache-Control":
-          "no-store, no-cache, must-revalidate, proxy-revalidate",
-      },
-    }
-  );
+  return NextResponse.json({
+    devis,
+  });
 }
