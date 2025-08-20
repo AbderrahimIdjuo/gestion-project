@@ -36,7 +36,12 @@ export function PaiementDialog({ isOpen, onClose, devis }) {
     watch,
     setValue,
     formState: { errors },
-  } = useForm();
+  } = useForm({
+    defaultValues: {
+      methodePaiement: "espece",
+      compte: "caisse",
+    },
+  });
 
   const comptes = useQuery({
     queryKey: ["comptes"],
@@ -47,16 +52,16 @@ export function PaiementDialog({ isOpen, onClose, devis }) {
     },
     onSuccess: data => {
       // Initialiser le compte par défaut si aucun type de paiement n'est sélectionné
-      if (!watch("typePaiement") && data && data.length > 0) {
+      if (!watch("methodePaiement") && data && data.length > 0) {
         // Par défaut, initialiser avec "espece" et "caisse"
-        setValue("typePaiement", "espece");
+        setValue("methodePaiement", "espece");
         setValue("compte", "caisse");
       }
     },
   });
   // Initialiser automatiquement le compte selon le type de paiement
-  const handleTypePaiementChange = value => {
-    setValue("typePaiement", value);
+  const handlemethodePaiementChange = value => {
+    setValue("methodePaiement", value);
 
     // Initialiser le compte selon le type de paiement
     if (value === "espece") {
@@ -114,7 +119,7 @@ export function PaiementDialog({ isOpen, onClose, devis }) {
               value={watch("methodePaiement")}
               onValueChange={value => {
                 reset();
-                handleTypePaiementChange(value);
+                handlemethodePaiementChange(value);
                 setDate(null);
               }}
               className="flex flex-row flex-wrap gap-4 justify-evenly"
@@ -160,7 +165,7 @@ export function PaiementDialog({ isOpen, onClose, devis }) {
               </div>
             </RadioGroup>
 
-            {watch("typePaiement") === "espece" && (
+            {watch("methodePaiement") === "espece" && (
               <div className="space-y-4 items-end grid grid-cols-3 gap-4">
                 <div className="w-full space-y-1.5">
                   <Label htmlFor="client">Date : </Label>
@@ -203,7 +208,7 @@ export function PaiementDialog({ isOpen, onClose, devis }) {
               </div>
             )}
 
-            {watch("typePaiement") === "versement" && (
+            {watch("methodePaiement") === "versement" && (
               <div className="space-y-4 items-end grid grid-cols-3 gap-4">
                 <div className="w-full space-y-1.5">
                   <Label htmlFor="client">Date : </Label>
@@ -243,7 +248,7 @@ export function PaiementDialog({ isOpen, onClose, devis }) {
               </div>
             )}
 
-            {watch("typePaiement") === "cheque" && (
+            {watch("methodePaiement") === "cheque" && (
               <div className="space-y-4 items-end grid grid-cols-3 grid-rows-2 gap-4">
                 <div className="w-full space-y-1.5">
                   <Label htmlFor="client">Date : </Label>

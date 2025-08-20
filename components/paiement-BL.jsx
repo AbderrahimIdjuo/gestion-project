@@ -50,7 +50,7 @@ export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
   };
 
   const onSubmit = async data => {
-    const { compte, montant, typePaiement, numero } = data;
+    const { compte, montant, methodePaiement, numero } = data;
     const transData = {
       bonLivraisonId: bonLivraison.id,
       fournisseurId: bonLivraison.fournisseurId,
@@ -59,7 +59,7 @@ export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
       lable: "paiement de :" + bonLivraison.numero,
       montant,
       type: "depense",
-      methodePaiement: typePaiement,
+      methodePaiement: methodePaiement,
       numeroCheque: numero,
       date,
       statutPaiement: statutPaiement(montant),
@@ -103,16 +103,16 @@ export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
     },
     onSuccess: data => {
       // Initialiser le compte par défaut si aucun type de paiement n'est sélectionné
-      if (!watch("typePaiement") && data && data.length > 0) {
+      if (!watch("methodePaiement") && data && data.length > 0) {
         // Par défaut, initialiser avec "espece" et "caisse"
-        setValue("typePaiement", "espece");
+        setValue("methodePaiement", "espece");
         setValue("compte", "caisse");
       }
     },
   });
   // Initialiser automatiquement le compte selon le type de paiement
-  const handleTypePaiementChange = value => {
-    setValue("typePaiement", value);
+  const handlemethodePaiementChange = value => {
+    setValue("methodePaiement", value);
 
     // Initialiser le compte selon le type de paiement
     if (value === "espece") {
@@ -138,10 +138,10 @@ export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
           </DialogHeader>
           <div className="py-4 space-y-4">
             <RadioGroup
-              value={watch("typePaiement")}
+              value={watch("methodePaiement")}
               onValueChange={value => {
                 reset();
-                handleTypePaiementChange(value);
+                handlemethodePaiementChange(value);
                 setDate(null);
               }}
               className="flex flex-row flex-wrap gap-4 justify-evenly"
@@ -187,7 +187,7 @@ export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
               </div>
             </RadioGroup>
 
-            {watch("typePaiement") === "espece" && (
+            {watch("methodePaiement") === "espece" && (
               <div className="space-y-4 items-end grid grid-cols-3 gap-4">
                 <div className="w-full space-y-1.5">
                   <Label htmlFor="client">Date : </Label>
@@ -230,7 +230,7 @@ export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
               </div>
             )}
 
-            {watch("typePaiement") === "versement" && (
+            {watch("methodePaiement") === "versement" && (
               <div className="space-y-4 items-end grid grid-cols-3 gap-4">
                 <div className="w-full space-y-1.5">
                   <Label htmlFor="client">Date : </Label>
@@ -270,7 +270,7 @@ export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
               </div>
             )}
             
-            {watch("typePaiement") === "cheque" && (
+            {watch("methodePaiement") === "cheque" && (
               <div className="space-y-4 items-end grid grid-cols-3 grid-rows-2 gap-4">
                 <div className="w-full space-y-1.5">
                   <Label htmlFor="client">Date : </Label>
