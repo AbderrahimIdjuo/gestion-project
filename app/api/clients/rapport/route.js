@@ -13,7 +13,15 @@ export async function GET() {
     },
   });
 
-  return NextResponse.json({
-    devis,
-  });
+  return NextResponse.json(
+    {
+      devis,
+    },
+    {
+      headers: {
+        "Cache-Control":
+          "no-store, no-cache, must-revalidate, proxy-revalidate",
+      },
+    }
+  );
 }
