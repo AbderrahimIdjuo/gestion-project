@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/table";
 import { formatCurrency, formatDate, formatMontant } from "@/lib/functions";
 import { useEffect, useState } from "react";
+import "./page.css";
 
 export default function ImprimerRapport() {
   const [bonLivraison, setBonLivraison] = useState();
@@ -26,15 +27,13 @@ export default function ImprimerRapport() {
       );
     }
   }, []);
-  const handlePrint = () => {
-    window.print();
-  };
+
   const fromDay = new Date(bonLivraison?.from);
   return (
     <>
-      <div className="container mx-auto p-8 max-w-4xl bg-white min-h-screen print:p-0 print:max-w-none mb-10">
+      <div className="container mx-auto p-8 max-w-6xl bg-white min-h-screen print:p-0 print:max-w-none mb-10">
         {/* Document Content */}
-        <div id="print-area" className="space-y-6">
+        <div id="print-area" className="space-y-3">
           {/* Header */}
           <EnteteDevis />
 
@@ -164,6 +163,7 @@ export default function ImprimerRapport() {
                       <TableHead className="text-right">Retour</TableHead>
                       <TableHead className="text-right">M.Payé</TableHead>
                       <TableHead className="text-right">Montant</TableHead>
+                      <TableHead className="text-right">Reste</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -186,13 +186,16 @@ export default function ImprimerRapport() {
                         <TableCell className="text-right">
                           {formatMontant(element.total)}
                         </TableCell>
+                        <TableCell className="text-right">
+                          {formatMontant(element.total - element.montantPaye)}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                   <TableFooter className="bg-none">
                     <TableRow>
                       <TableCell
-                        colSpan={6}
+                        colSpan={7}
                         className="text-right text-lg font-semibold p-2"
                       >
                         Total :
@@ -206,7 +209,7 @@ export default function ImprimerRapport() {
                     </TableRow>
                     <TableRow className="border-t border-gray-200">
                       <TableCell
-                        colSpan={6}
+                        colSpan={7}
                         className="text-right text-lg font-semibold p-2"
                       >
                         Total Payé :
@@ -220,7 +223,7 @@ export default function ImprimerRapport() {
                     </TableRow>
                     <TableRow className="border-t border-gray-200">
                       <TableCell
-                        colSpan={6}
+                        colSpan={7}
                         className="text-right text-lg font-semibold p-2"
                       >
                         Dette :

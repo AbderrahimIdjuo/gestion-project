@@ -1,4 +1,6 @@
 {
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 100,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.formatOnSave": true,
   "editor.formatOnPaste": true,
@@ -36,4 +38,4 @@
   "[markdown]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   }
-} 
+}

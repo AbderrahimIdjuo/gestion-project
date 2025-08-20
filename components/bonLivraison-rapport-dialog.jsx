@@ -272,14 +272,6 @@ export default function BonLivraisonRapportDialog() {
 
     return Array.from(map.values());
   }
-  // useEffect(() => {
-  //   if (Array.isArray(bonLivraisons?.data)) {
-  //     const resultat = regrouperBLParFournisseur(bonLivraisons?.data);
-  //     console.log("regrouperBLParFournisseur :", resultat);
-  //   } else {
-  //     console.log("Données non disponibles ou invalides");
-  //   }
-  // }, [bonLivraisons?.data]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

@@ -1,0 +1,160 @@
+/* Styles spécifiques pour l'impression du rapport des bons de livraison */
+@media print {
+  @page {
+    margin: 1cm;
+
+    size: A4 landscape; /* Orientation horizontale */
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-image: url("/images/LOGO-OUDAOUD.jpg");
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-position: center center;
+    opacity: 0.1;
+    z-index: -1;
+  }
+
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    background-color: white !important;
+  }
+
+  /* Hide everything except the print area */
+  body * {
+    visibility: hidden;
+  }
+
+  #print-area,
+  #print-area * {
+    visibility: visible;
+  }
+
+  #print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 0 !important;
+  }
+
+  /* Hide UI elements */
+  .print\\:hidden,
+  button,
+  nav,
+  .sidebar,
+  .navbar {
+    display: none !important;
+  }
+
+  /* Table styling - EMPÊCHER LA RÉPÉTITION DE L'EN-TÊTE ET DU FOOTER */
+  table {
+    width: 100% !important;
+    height: 90% !important;
+    page-break-inside: auto;
+    border-collapse: collapse !important;
+    font-size: 10px; /* Taille de police réduite pour l'orientation horizontale */
+  }
+
+  /* EMPÊCHER la répétition de l'en-tête ET du footer sur chaque page */
+  thead {
+    display: table-row-group !important;
+  }
+
+  /* EMPÊCHER la répétition du footer - une seule fois à la fin */
+  tfoot {
+    display: table-row-group !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  tr {
+    page-break-inside: avoid;
+  }
+
+  th,
+  td {
+    border-color: rgba(92, 92, 92, 0.776) !important;
+    padding: 4px 6px !important; /* Padding réduit pour l'orientation horizontale */
+  }
+
+  /* ESPACEMENT DE 5PX ENTRE TABLEAU ET PIEDDEVIS */
+  .table-to-footer-spacing {
+    margin-top: 5px !important;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: end;
+  }
+
+  /* PiedDevis fixé en bas de la dernière page */
+  .print-footer {
+    page-break-before: auto;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    margin-top: auto;
+    margin-bottom: auto;
+  }
+
+  .print-footer::before {
+    display: block;
+    page-break-before: auto;
+  }
+
+  /* Prevent page breaks inside important sections */
+  .print-block {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Améliorer la gestion des sauts de page pour les gros tableaux */
+  .main-table-container {
+    page-break-inside: auto;
+  }
+
+  /* S'assurer que le contenu ne chevauche pas avec le footer fixe */
+  #print-area {
+    padding-bottom: 80px !important;
+  }
+
+  /* Garder l'espace avant PiedDevis quand ce n'est pas en position fixe */
+  .table-to-footer-spacing {
+    margin-bottom: 80px !important;
+  }
+
+  /* Styles spécifiques pour l'orientation horizontale */
+  .container {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+
+  /* Ajuster la taille des en-têtes pour l'orientation horizontale */
+  h3 {
+    font-size: 14px !important;
+    margin-bottom: 8px !important;
+  }
+
+  /* Ajuster l'espacement des grilles pour l'orientation horizontale */
+  .grid {
+    gap: 8px !important;
+  }
+
+  /* Optimiser l'affichage des tableaux en mode paysage */
+  .overflow-x-auto {
+    overflow: visible !important;
+  }
+
+  /* Ajuster la largeur des colonnes pour l'orientation horizontale */
+  th,
+  td {
+    white-space: nowrap !important;
+    min-width: auto !important;
+  }
+}
