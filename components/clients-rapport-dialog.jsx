@@ -166,7 +166,10 @@ export default function ClientsRapportDialog() {
               className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full"
               variant="outline"
               onClick={() => {
-                const data = regrouperDevisParClientEnTableau(devis);
+                const data = {
+                  devis: regrouperDevisParClientEnTableau(devis),
+                  creditTotal,
+                };
                 window.open(`/clients/imprimer-rapport`, "_blank");
                 localStorage.setItem("clients-rapport", JSON.stringify(data));
               }}

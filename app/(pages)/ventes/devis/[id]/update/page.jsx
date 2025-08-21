@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { CircleX, Copy, Trash2 } from "lucide-react";
 import { customAlphabet } from "nanoid";
@@ -36,7 +37,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import toast, { Toaster } from "react-hot-toast";
-
 export default function UpdateDevisPage({ params }) {
   const [LoadingDevis, setLoadingDevis] = useState(true);
   const [items, setItems] = useState([]);
@@ -70,8 +70,8 @@ export default function UpdateDevisPage({ params }) {
   const getDevisById = async () => {
     const result = await axios.get(`/api/devis/${params.id}`);
     const { devi } = result.data;
-    console.log("update devis page , devis" , devi);
-    
+    console.log("update devis page , devis", devi);
+
     setValue("articls", devi?.articls);
     setClient(devi?.client);
     setValue("statut", devi?.statut);
@@ -98,8 +98,10 @@ export default function UpdateDevisPage({ params }) {
     const nanoidCustom = customAlphabet(digits, 6);
     return nanoidCustom();
   };
+
+  const queryClient = useQueryClient();
   const onSubmit = async data => {
-    const Data = {...data , date , echeance}
+    const Data = { ...data, date, echeance };
     toast.promise(
       (async () => {
         try {
@@ -107,6 +109,7 @@ export default function UpdateDevisPage({ params }) {
           router.push("/ventes/devis");
           if (response.status === 200) {
             console.log("Devi modifier avec succès");
+            queryClient.invalidateQueries(["clients-rapport"]);
           } else {
             throw new Error("Unexpected response status");
           }
