@@ -8,6 +8,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TableFooter,
 } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/functions";
 import { useEffect, useState } from "react";
@@ -24,19 +25,17 @@ export default function ImprimerRapport() {
       console.log("Data:", JSON.parse(storedData));
     }
   }, []);
-  const handlePrint = () => {
-    window.print();
-  };
+
   return (
     <>
       <div className="container mx-auto p-8 max-w-4xl bg-white min-h-screen print:p-0 print:max-w-none mb-10">
         {/* Document Content */}
-        <div id="print-area" className="space-y-6">
+        <div id="print-area" className="space-y-3">
           {/* Header */}
           <EnteteDevis />
           <div className="space-y-1">
             <h1 className="text-xl font-semibold text-center">
-              CALCUL DE REST D&apos;AVANCES DES CLIENTS
+              CALCUL DU RESTE D&apos;AVANCES DES CLIENTS
             </h1>
             <h1 className="text-xl font-semibold text-center">
               Date : {formatDate(new Date().toISOString())}
@@ -67,7 +66,7 @@ export default function ImprimerRapport() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data?.map(client =>
+                {data?.devis?.map(client =>
                   client.devis.map((devis, index) => (
                     <TableRow key={`${client.nom}-${devis.numero}`}>
                       {index === 0 && (
@@ -102,6 +101,22 @@ export default function ImprimerRapport() {
                   ))
                 )}
               </TableBody>
+              <TableFooter>
+                <TableRow>
+                  <TableCell
+                    colSpan={5}
+                    className="text-right text-rose-600 text-xl font-bold"
+                  >
+                    Total des crédits :
+                  </TableCell>
+                  <TableCell
+                    colSpan={1}
+                    className="text-left text-xl text-rose-600 font-bold"
+                  >
+                    {formatCurrency(data?.creditTotal)}
+                  </TableCell>
+                </TableRow>
+              </TableFooter>
             </Table>
           </div>
         </div>
