@@ -290,6 +290,7 @@ model Transactions {
   fournisseurId   String?
   clientId        String?
   date            DateTime?
+  typeDepense     String?
   chequeId        String?   @unique
   cheque          Cheques?  @relation(fields: [chequeId], references: [id], onDelete: Cascade)
   createdAt       DateTime  @default(now())

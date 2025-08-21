@@ -96,7 +96,7 @@ export default function TransactionDialog() {
     formState: { errors, isSubmiting },
   } = useForm({
     defaultValues: {
-      type: "recette",
+      type: "depense",
       reference: "",
       description: "",
       compte: "",
@@ -151,8 +151,11 @@ export default function TransactionDialog() {
     },
   });
   const onSubmit = async data => {
-    const Data = { ...data, date };
-    console.log("Data", Data);
+    const Data = {
+      ...data,
+      date,
+      typeDepense: isCharge || isChecked ? "fixe" : "variante",
+    };
     if (isChecked && !isCharge) {
       console.log("enrgistrer la charge");
       addCharges.mutate(watch("lable"));
@@ -194,9 +197,9 @@ export default function TransactionDialog() {
                 reset();
                 setValue("type", value);
               }}
-              className="flex flex-row flex-wrap gap-4 justify-between"
+              className="flex flex-row flex-wrap gap-4 justify-evenly"
             >
-              <div className="flex items-center space-x-2 rounded-md p-2">
+              {/* <div className="flex items-center space-x-2 rounded-md p-2">
                 <RadioGroupItem
                   value="recette"
                   id="recette"
@@ -208,7 +211,7 @@ export default function TransactionDialog() {
                 >
                   Recette
                 </Label>
-              </div>
+              </div> */}
               <div className="flex items-center space-x-2 rounded-md p-2">
                 <RadioGroupItem
                   value="depense"
@@ -343,7 +346,7 @@ export default function TransactionDialog() {
                   <Textarea
                     {...register("description")}
                     id="description"
-                    className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-purple-500"
+                    className="col-span-3  focus-visible:ring-purple-500"
                   />
                 </div>
               </div>
@@ -357,7 +360,7 @@ export default function TransactionDialog() {
                     onCheckedChange={setIsCharge}
                   />
                   <Label htmlFor="switch">
-                    {isCharge ? "Charges récurrentes" : "Charges variantes"}
+                    {isCharge ? "Charges fixes" : "Charges variantes"}
                   </Label>
                 </div>
 

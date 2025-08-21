@@ -126,8 +126,9 @@ export async function addtransaction(data) {
     methodePaiement,
     numeroCheque,
     clientId,
+    typeDepense,
   } = data;
-  const result = await prisma.$transaction(async (prisma) => {
+  const result = await prisma.$transaction(async prisma => {
     if (lable === "paiement devis") {
       const devis = await prisma.devis.findUnique({
         where: { numero: numero },
@@ -183,6 +184,7 @@ export async function addtransaction(data) {
         methodePaiement,
         clientId,
         date: date || new Date(),
+        typeDepense,
         cheque: cheque
           ? {
               connect: { id: cheque.id }, // ✅ association one-to-one

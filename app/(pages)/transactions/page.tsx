@@ -94,6 +94,7 @@ export default function Banques() {
     compte: "all",
     type: "all",
     methodePaiement: "all",
+    typeDepense: "all",
   });
   const queryClient = useQueryClient();
 
@@ -115,6 +116,7 @@ export default function Banques() {
       debouncedQuery,
       page,
       filters.type,
+      filters.typeDepense,
       filters.methodePaiement,
       filters.compte,
       startDate,
@@ -128,6 +130,7 @@ export default function Banques() {
           query: debouncedQuery,
           type: filters.type,
           compte: filters.compte,
+          typeDepense: filters.typeDepense,
           from: startDate,
           to: endDate,
           fournisseurId: selectedFournisseur?.id,
@@ -200,15 +203,6 @@ export default function Banques() {
     }
   };
 
-  const handlMethodePaiementLable = (methodePaiement: string) => {
-    if (methodePaiement === "espece") {
-      return "Espèce";
-    } else if (methodePaiement === "cheque") {
-      return "Chèque";
-    } else if (methodePaiement === "versement") {
-      return "Versement";
-    } else return "Inconnu";
-  };
   const handleChequeClick = (transaction: Transaction) => {
     if (transaction.methodePaiement === "cheque") {
       let beneficiaire = "Inconnu";
@@ -352,6 +346,28 @@ export default function Banques() {
                   </div>
                   <div className="grid items-center gap-3 my-2">
                     <Label htmlFor="type" className="text-left text-black">
+                      Type de dépenses :
+                    </Label>
+                    <Select
+                      value={filters.typeDepense}
+                      name="typeDepense"
+                      onValueChange={value =>
+                        setFilters({ ...filters, typeDepense: value })
+                      }
+                    >
+                      <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
+                        <SelectValue placeholder="Séléctionner un statut" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tous les types</SelectItem>
+                        <SelectItem value="fixe">Fixe</SelectItem>
+                        <SelectItem value="variante">Variante</SelectItem>
+                        <SelectItem value="charges">Charges</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid items-center gap-3 my-2">
+                    <Label htmlFor="type" className="text-left text-black">
                       Méthode de paiement :
                     </Label>
                     <Select
@@ -425,6 +441,7 @@ export default function Banques() {
                   from: startDate,
                   to: endDate,
                   fournisseurId: selectedFournisseur?.id,
+                  typeDepense: filters.typeDepense,
                 };
                 localStorage.setItem("params", JSON.stringify(params));
                 window.open("/transactions/impression", "_blank");
@@ -562,7 +579,7 @@ export default function Banques() {
                               <span className="sr-only">Supprimer</span>
                             </Button>
                           </div>
-                        </TableCell>                       
+                        </TableCell>
                       </TableRow>
                     ))
                   ) : (

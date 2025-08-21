@@ -11,10 +11,9 @@ export async function GET(req) {
   const to = searchParams.get("to"); // End date
   const fournisseurId = searchParams.get("fournisseurId");
   const methodePaiement = searchParams.get("methodePaiement");
+  const typeDepense = searchParams.get("typeDepense");
   const limit = parseInt(searchParams.get("limit") || "10");
   const filters = {};
-
-  console.log("transaction rout , from", from, "to", to);
 
   // Search filter
   filters.OR = [
@@ -35,6 +34,17 @@ export async function GET(req) {
   // methode de paiement filter
   if (methodePaiement !== "all") {
     filters.methodePaiement = methodePaiement;
+  }
+
+  // type de depense filter
+  if (typeDepense !== "all") {
+    if (typeDepense !== "charges") {
+      filters.typeDepense = typeDepense;
+    } else if (typeDepense === "charges") {
+      filters.typeDepense = {
+        in: ["fixe", "variante"],
+      };
+    }
   }
 
   // Date range filter
