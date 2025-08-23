@@ -51,7 +51,6 @@ export default function NouveauDevisPage() {
     reset,
     watch,
     setValue,
-    control,
     handleSubmit,
     formState: { errors, isSubmiting },
   } = useForm({
