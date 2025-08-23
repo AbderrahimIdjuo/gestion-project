@@ -1,6 +1,6 @@
 "use client";
 
-import { Printer } from "lucide-react";
+import { EnteteDevis } from "@/components/Entete-devis";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -8,35 +8,54 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  TableFooter,
-} from "@/components/ui/table";
-import { EnteteDevis } from "@/components/Entete-devis";
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/functions";
+import { Printer } from "lucide-react";
+
 function formatDate(dateString) {
   return dateString?.split("T")[0].split("-").join("-");
 }
+
 export default function PreviewBonLivraisonDialog({
   bonLivraison,
   isOpen,
   onClose,
 }) {
-  const totalFournitureDevis = (produits) => {
+  const totalFournitureDevis = produits => {
     return produits?.reduce((acc, produit) => {
       return acc + produit.quantite * produit.prixUnite;
     }, 0);
   };
-  const totalBL = (group) => {
+
+  const totalBL = group => {
     return group?.reduce((acc, order) => {
       return acc + totalFournitureDevis(order.produits);
     }, 0);
   };
+
+  // Fonction pour grouper les produits par catégorie
+  const groupProductsByCategory = produits => {
+    if (!produits || produits.length === 0) return [];
+
+    const grouped = produits.reduce((acc, product) => {
+      const category = product.produit.categorie || "Sans catégorie";
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push(product);
+      return acc;
+    }, {});
+
+    return Object.entries(grouped).map(([category, products]) => ({
+      category,
+      products,
+      total: products.reduce(
+        (sum, product) => sum + product.prixUnite * product.quantite,
+        0
+      ),
+    }));
+  };
+
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
@@ -81,7 +100,7 @@ export default function PreviewBonLivraisonDialog({
                 </div>
                 <div className="space-y-1 col-span-1">
                   <h3 className="font-medium text-sm text-muted-foreground">
-                    Total :
+                    Total du BL:
                   </h3>
                   <p className="font-semibold">
                     {formatCurrency(bonLivraison?.total)}
@@ -93,7 +112,7 @@ export default function PreviewBonLivraisonDialog({
                   {bonLivraison?.groups.map((group, index) => (
                     <div
                       key={group.id || index}
-                      className="border print:bg-none rounded-xl shadow-sm"
+                      className="border print:bg-none rounded-xl shadow-sm "
                     >
                       <div className="p-4 pb-2 border-b">
                         <div className="flex justify-between items-center">
@@ -130,57 +149,62 @@ export default function PreviewBonLivraisonDialog({
                       </div>
                       <div>
                         {group.produits && group.produits.length > 0 ? (
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead>Produit</TableHead>
-                                <TableHead className="text-center !py-2">
-                                  Qté
-                                </TableHead>
-                                <TableHead className="text-right !py-2">
-                                  Prix
-                                </TableHead>
-                                <TableHead className="text-right !py-2">
-                                  Montant
-                                </TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {group.produits.map((product, productIndex) => (
-                                <TableRow key={product.id || productIndex}>
-                                  <TableCell className=" font-semibold !py-2">
-                                    {product.produit.designation}
-                                  </TableCell>
-                                  <TableCell className="text-center !py-2">
-                                    {product.quantite}
-                                  </TableCell>
-                                  <TableCell className="text-right !py-2">
-                                    {formatCurrency(product.prixUnite)}
-                                  </TableCell>
-                                  <TableCell className="text-right !py-2">
-                                    {formatCurrency(
-                                      product.prixUnite * product.quantite
-                                    )}
-                                  </TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                            <TableFooter className="font-medium bg-none">
-                              <TableRow>
-                                <TableCell
-                                  colSpan={3}
-                                  className=" p-2 text-right font-bold text-lg"
-                                >
-                                  Total :
-                                </TableCell>
-                                <TableCell className="p-2 text-left font-bold text-lg">
-                                  {formatCurrency(
-                                    totalFournitureDevis(group.produits)
-                                  )}
-                                </TableCell>
-                              </TableRow>
-                            </TableFooter>
-                          </Table>
+                          <div>
+                            {groupProductsByCategory(group.produits).map(
+                              (categoryGroup, categoryIndex) => (
+                                <div key={categoryIndex}>
+                                  <Table>
+                                    <TableBody>
+                                      {categoryGroup.products.map(
+                                        (product, productIndex) => (
+                                          <TableRow
+                                            key={product.id || productIndex}
+                                            className="border-none"
+                                          >
+                                            <TableCell className="font-medium text-sm !py-1">
+                                              {product.produit.designation}
+                                            </TableCell>
+                                            <TableCell className="text-right !py-1">
+                                              {product.quantite} ×{" "}
+                                              {product.prixUnite}
+                                            </TableCell>
+                                            <TableCell className="text-right !py-1">
+                                              {formatCurrency(
+                                                product.prixUnite *
+                                                  product.quantite
+                                              )}
+                                            </TableCell>
+                                          </TableRow>
+                                        )
+                                      )}
+                                    </TableBody>
+                                    <div className="px-4 flex gap-3 ">
+                                      <h3 className="p-2 text-right font-semibold text-lg text-purple-700">
+                                        {categoryGroup.category} :
+                                      </h3>
+                                      <h3 className="p-2 text-right font-semibold text-lg text-purple-700">
+                                        {formatCurrency(categoryGroup.total)}
+                                      </h3>
+                                    </div>
+                                  </Table>
+                                </div>
+                              )
+                            )}
+                            <div className="px-4 pb-2 border-t">
+                              <div className=" border-gray-300 pt-2">
+                                <div className="flex justify-end">
+                                  <div className="text-right">
+                                    <p className="text-lg font-bold text-gray-800">
+                                      Total :{" "}
+                                      {formatCurrency(
+                                        totalFournitureDevis(group.produits)
+                                      )}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                         ) : (
                           <p className="text-center text-muted-foreground py-4">
                             aucun produit ajouter

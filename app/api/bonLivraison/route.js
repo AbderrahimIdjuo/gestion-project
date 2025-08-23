@@ -19,7 +19,7 @@ export async function POST(req) {
     } = response;
 
     const result = await prisma.$transaction(
-      async (prisma) => {
+      async prisma => {
         const bonLivraison = await prisma.bonLivraison.create({
           data: {
             date: date || new Date(),
@@ -36,13 +36,13 @@ export async function POST(req) {
               connect: { id: fournisseurId },
             },
             groups: {
-              create: bLGroups.map((group) => ({
+              create: bLGroups.map(group => ({
                 id: group.id,
                 devisNumero: group.devisNumber,
                 clientName: group.clientName,
                 charge: group.charge,
                 produits: {
-                  create: group.items.map((produit) => ({
+                  create: group.items.map(produit => ({
                     produit: {
                       connect: { id: produit.id },
                     },
@@ -99,8 +99,8 @@ export async function POST(req) {
 
         // Mettre à jour les devis liés aux groupes de BL
         const DevisNumbers = bLGroups
-          .map((g) => g.devisNumber)
-          .filter((num) => num !== null && num !== undefined);
+          .map(g => g.devisNumber)
+          .filter(num => num !== null && num !== undefined);
 
         if (DevisNumbers.length > 0) {
           await prisma.devis.updateMany({
@@ -155,12 +155,12 @@ export async function PUT(req) {
       },
     });
 
-    const existingGroupIds = existing?.groups.map((g) => g.id) || [];
-    const incomingGroupIds = bLGroups.map((group) => group.id);
+    const existingGroupIds = existing?.groups.map(g => g.id) || [];
+    const incomingGroupIds = bLGroups.map(group => group.id);
 
     // 2. Supprimer les groups retirés
     const groupsToDelete = existingGroupIds.filter(
-      (existingId) => !incomingGroupIds.includes(existingId)
+      existingId => !incomingGroupIds.includes(existingId)
     );
 
     await prisma.bLGroups.deleteMany({
@@ -176,11 +176,11 @@ export async function PUT(req) {
         select: { id: true },
       });
 
-      const existingProduitIds = existingProduits.map((p) => p.id);
-      const incomingProduitIds = group.items.map((p) => p.id);
+      const existingProduitIds = existingProduits.map(p => p.id);
+      const incomingProduitIds = group.items.map(p => p.id);
 
       const produitsToDelete = existingProduitIds.filter(
-        (id) => !incomingProduitIds.includes(id)
+        id => !incomingProduitIds.includes(id)
       );
 
       if (produitsToDelete.length > 0) {
@@ -206,14 +206,14 @@ export async function PUT(req) {
           connect: { id: fournisseurId },
         },
         groups: {
-          upsert: bLGroups.map((group) => ({
+          upsert: bLGroups.map(group => ({
             where: { id: group.id },
             update: {
               devisNumero: group.devisNumber,
               clientName: group.clientName,
               charge: group.charge,
               produits: {
-                upsert: group.items.map((produit) => ({
+                upsert: group.items.map(produit => ({
                   where: {
                     id: produit.id,
                   },
@@ -240,7 +240,7 @@ export async function PUT(req) {
               clientName: group.clientName,
               charge: group.charge,
               produits: {
-                create: group.items.map((produit) => ({
+                create: group.items.map(produit => ({
                   quantite: parseFloat(produit.quantite),
                   prixUnite: parseFloat(produit.prixUnite),
                   produit: {
@@ -372,6 +372,7 @@ export async function GET(req) {
                     select: {
                       designation: true,
                       prixAchat: true,
+                      categorie: true,
                     },
                   },
                 },
@@ -389,12 +390,12 @@ export async function GET(req) {
       }),
     ]);
   // Extract BL numbers for transaction lookup
-  const BlNumbers = bonLivraison.map((c) => c.numero);
+  const BlNumbers = bonLivraison.map(c => c.numero);
 
   // Fetch transactions for the BLs
   const transactionsList = await prisma.transactions.findMany({
     where: {
-      OR: BlNumbers.map((bl) => ({
+      OR: BlNumbers.map(bl => ({
         lable: { contains: bl },
       })),
     },

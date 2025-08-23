@@ -1,5 +1,7 @@
 "use client";
 import { BasicCard } from "@/components/customUi/BasicCardDashBoard";
+import TopArticlesCard from "@/components/customUi/TopArticlesCard";
+import TopProductsCard from "@/components/customUi/TopProductsCard";
 import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -41,6 +43,7 @@ export default function DashboardPage() {
   const [startDate, setStartDate] = useState();
   const [endDate, setEndDate] = useState();
   const [periode, setPeriode] = useState("");
+  const [sortBy, setSortBy] = useState("quantite"); // "quantite" ou "montant"
 
   // function formatCurrency(montant) {
   //   if (typeof montant !== "number") return montant;
@@ -100,12 +103,13 @@ export default function DashboardPage() {
   }
   const { from, to } = getDateRangeFromPeriode(periode);
   const statistiques = useQuery({
-    queryKey: ["statistiques", startDate, endDate, periode],
+    queryKey: ["statistiques", startDate, endDate, periode, sortBy],
     queryFn: async () => {
       const response = await axios.get("/api/statistiques", {
         params: {
           from: from && isValid(from) ? from.toISOString() : null,
           to: to && isValid(to) ? to.toISOString() : null,
+          sortBy: sortBy,
         },
       });
       // console.log("statistiques", response.data);
@@ -116,7 +120,7 @@ export default function DashboardPage() {
 
   return (
     <>
-      <div className="h-full flex flex-col space-y-4">
+      <div className="min-h-full flex flex-col space-y-4 pb-8">
         <h1 className="text-3xl font-bold">Tableau de bord</h1>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <div className="grid grid-cols-4 items-center gap-2">
@@ -290,6 +294,15 @@ export default function DashboardPage() {
             Icon={Wallet}
             isLoading={statistiques.isLoading || statistiques.isFetching}
           />
+        </div>
+
+        {/* Cartes des produits et articles sur la même ligne */}
+        <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
+          {/* Carte des produits les plus achetés */}
+          <TopProductsCard from={from} to={to} />
+
+          {/* Carte des articles les plus vendus */}
+          <TopArticlesCard from={from} to={to} />
         </div>
 
         {/* <div className="grid gap-4 grid-cols-1 shadow-md">

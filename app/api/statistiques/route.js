@@ -5,8 +5,8 @@ export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const from = searchParams.get("from");
   const to = searchParams.get("to");
+  const sortBy = searchParams.get("sortBy") || "quantite"; // "quantite" ou "montant"
 
-  console.log("from", from, "to", to);
 
   const fromDate = new Date(from);
   const toDate = new Date(to);
@@ -43,6 +43,7 @@ export async function GET(req) {
     caisse,
     comptePersonnel,
     compteProfessionnel,
+    produitsPlusAchetes,
   ] = await Promise.all([
     prisma.clients.count(),
     prisma.fournisseurs.count(),
@@ -105,5 +106,7 @@ export async function GET(req) {
     caisse: caisse?.solde,
     comptePersonnel: comptePersonnel?.solde,
     compteProfessionnel: compteProfessionnel?.solde,
+    produitsPlusAchetes,
+    
   });
 }
