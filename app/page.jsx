@@ -17,14 +17,14 @@ import { formatCurrency } from "@/lib/functions";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import {
+  endOfDay,
   endOfMonth,
   endOfQuarter,
   endOfYear,
-  isValid,
+  startOfDay,
   startOfMonth,
   startOfQuarter,
   startOfYear,
-  subMonths,
   subQuarters,
   subYears,
 } from "date-fns";
@@ -43,45 +43,27 @@ export default function DashboardPage() {
   const [startDate, setStartDate] = useState();
   const [endDate, setEndDate] = useState();
   const [periode, setPeriode] = useState("");
-  const [sortBy, setSortBy] = useState("quantite"); // "quantite" ou "montant"
 
-  // function formatCurrency(montant) {
-  //   if (typeof montant !== "number") return montant;
-
-  //   return Math.floor(montant)
-  //     .toString()
-  //     .replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-  // }
 
   function getDateRangeFromPeriode(periode) {
     const now = new Date();
 
     switch (periode) {
+      case "aujourd'hui":
+        return {
+          from: startOfDay(now),
+          to: endOfDay(now),
+        };
       case "ce-mois":
         return {
           from: startOfMonth(now),
           to: endOfMonth(now),
         };
-      case "3-derniers-mois":
+      case "mois-dernier":
+        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
         return {
-          from: subMonths(startOfMonth(now), 2),
-          to: endOfMonth(now),
-        };
-      case "6-derniers-mois":
-        return {
-          from: subMonths(startOfMonth(now), 5),
-          to: endOfMonth(now),
-        };
-      case "cette-annee":
-        return {
-          from: startOfYear(now),
-          to: endOfYear(now),
-        };
-      case "annee-derniere":
-        const lastYear = subYears(now, 1);
-        return {
-          from: startOfYear(lastYear),
-          to: endOfYear(lastYear),
+          from: startOfMonth(lastMonth),
+          to: endOfMonth(lastMonth),
         };
       case "trimestre-actuel":
         return {
@@ -94,22 +76,37 @@ export default function DashboardPage() {
           from: startOfQuarter(prevQuarter),
           to: endOfQuarter(prevQuarter),
         };
+      case "cette-annee":
+        return {
+          from: startOfYear(now),
+          to: endOfYear(now),
+        };
+      case "annee-derniere":
+        const lastYear = subYears(now, 1);
+        return {
+          from: startOfYear(lastYear),
+          to: endOfYear(lastYear),
+        };
+      case "personnalisee":
+        return {
+          from: startDate ? new Date(startDate) : null,
+          to: endDate ? new Date(endDate) : null,
+        };
       default:
         return {
-          from: new Date(startDate) ?? null,
-          to: new Date(endDate) ?? null,
+          from: null,
+          to: null,
         };
     }
   }
   const { from, to } = getDateRangeFromPeriode(periode);
   const statistiques = useQuery({
-    queryKey: ["statistiques", startDate, endDate, periode, sortBy],
+    queryKey: ["statistiques", startDate, endDate, periode],
     queryFn: async () => {
       const response = await axios.get("/api/statistiques", {
         params: {
           from: from && isValid(from) ? from.toISOString() : null,
           to: to && isValid(to) ? to.toISOString() : null,
-          sortBy: sortBy,
         },
       });
       // console.log("statistiques", response.data);
@@ -136,22 +133,18 @@ export default function DashboardPage() {
                   <SelectValue placeholder="Sélectionnez la période" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="aujourd'hui">Aujourd&apos;hui</SelectItem>
                   <SelectItem value="ce-mois">Ce mois</SelectItem>
-                  <SelectItem value="3-derniers-mois">
-                    Les 3 derniers mois
-                  </SelectItem>
-                  <SelectItem value="6-derniers-mois">
-                    Les 6 derniers mois
-                  </SelectItem>
-                  <SelectItem value="cette-annee">Cette année</SelectItem>
-                  <SelectItem value="annee-derniere">
-                    L&apos;année dernière
-                  </SelectItem>
+                  <SelectItem value="mois-dernier">Le mois dernier</SelectItem>
                   <SelectItem value="trimestre-actuel">
                     Trimestre actuel
                   </SelectItem>
                   <SelectItem value="trimestre-precedent">
                     Trimestre précédent
+                  </SelectItem>
+                  <SelectItem value="cette-annee">Cette année</SelectItem>
+                  <SelectItem value="annee-derniere">
+                    L&apos;année dernière
                   </SelectItem>
                   <SelectItem value="personnalisee">
                     Période personnalisée

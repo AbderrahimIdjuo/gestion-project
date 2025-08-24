@@ -5,10 +5,10 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
-  TableFooter,
 } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/functions";
 import { useEffect, useState } from "react";
@@ -25,6 +25,7 @@ export default function ImprimerRapport() {
       console.log("Data:", JSON.parse(storedData));
     }
   }, []);
+  const fromDay = new Date(data?.from);
 
   return (
     <>
@@ -33,13 +34,29 @@ export default function ImprimerRapport() {
         <div id="print-area" className="space-y-3">
           {/* Header */}
           <EnteteDevis />
-          <div className="space-y-1">
-            <h1 className="text-xl font-semibold text-center">
+          <div className="space-y-2">
+            <h3 className="font-semibold text-center text-lg text-gray-900 mb-2">
               CALCUL DU RESTE D&apos;AVANCES DES CLIENTS
-            </h1>
-            <h1 className="text-xl font-semibold text-center">
-              Date : {formatDate(new Date().toISOString())}
-            </h1>
+            </h3>
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex gap-2 items-center">
+                <h3 className="mb-1 font-semibold text-gray-900">Période :</h3>
+                <p className="text-sm text-gray-600">
+                  {`${fromDay.getDate()}-${
+                    fromDay.getMonth() + 1
+                  }-${fromDay.getFullYear()}`}{" "}
+                  • {formatDate(data?.to)}
+                </p>
+              </div>
+              <div className="flex gap-2 items-center">
+                <h3 className="mb-1 font-semibold text-gray-900">
+                  Date de création :
+                </h3>
+                <p className="text-sm text-gray-600">
+                  {formatDate(new Date().toISOString())}
+                </p>
+              </div>
+            </div>
           </div>
           <div className="rounded-xl print:rounded-sm border shadow-sm overflow-x-auto">
             <Table>
@@ -101,19 +118,47 @@ export default function ImprimerRapport() {
                   ))
                 )}
               </TableBody>
-              <TableFooter>
-                <TableRow>
+              <TableFooter className="bg-white">
+                <TableRow className="border-t border-gray-200">
                   <TableCell
-                    colSpan={5}
+                    colSpan={4}
+                    className="text-right text-sky-600 text-xl font-bold"
+                  >
+                    Total général :
+                  </TableCell>
+                  <TableCell
+                    colSpan={2}
+                    className="text-left text-xl text-sky-600 font-bold"
+                  >
+                    {formatCurrency(data?.totalGeneral)}
+                  </TableCell>
+                </TableRow>
+                <TableRow className="border-t border-gray-200">
+                  <TableCell
+                    colSpan={4}
+                    className="text-right text-emerald-600 text-xl font-bold"
+                  >
+                    Total payé :
+                  </TableCell>
+                  <TableCell
+                    colSpan={2}
+                    className="text-left text-xl text-emerald-600 font-bold"
+                  >
+                    {formatCurrency(data?.totalMontantPaye)}
+                  </TableCell>
+                </TableRow>
+                <TableRow className="border-t border-gray-200">
+                  <TableCell
+                    colSpan={4}
                     className="text-right text-rose-600 text-xl font-bold"
                   >
                     Total des crédits :
                   </TableCell>
                   <TableCell
-                    colSpan={1}
+                    colSpan={2}
                     className="text-left text-xl text-rose-600 font-bold"
                   >
-                    {formatCurrency(data?.creditTotal)}
+                    {formatCurrency(data?.totalResteAPayer)}
                   </TableCell>
                 </TableRow>
               </TableFooter>

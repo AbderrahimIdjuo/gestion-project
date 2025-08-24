@@ -3,7 +3,6 @@ import prisma from "../../../../lib/prisma";
 
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
-  const searchQuery = searchParams.get("query") || "";
   const compte = searchParams.get("compte") || "all";
   const from = searchParams.get("from"); // Start date
   const to = searchParams.get("to"); // End date

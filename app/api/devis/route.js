@@ -255,7 +255,7 @@ export async function GET(req) {
     const endDate = new Date(to);
     endDate.setHours(23, 59, 59, 999); // Set to end of the day
 
-    filters.createdAt = {
+    filters.date = {
       gte: startDate, // Greater than or equal to start of "from" day
       lte: endDate, // Less than or equal to end of "to" day
     };

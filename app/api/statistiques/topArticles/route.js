@@ -7,17 +7,19 @@ export async function GET(req) {
   const to = searchParams.get("to");
   const sortBy = searchParams.get("sortBy") || "quantite"; // "quantite" ou "montant"
 
-  const filters = {};
-  console.log("topArticles ## from", from, "to", to);
-  if (from && to) {
-    filters.date = {
-      gte: from, // Greater than or equal to "from"
-      lte: to, // Less than or equal to "to"
-    };
-  }
+  const filters = {
+    statutPaiement: { in: ["paye", "enPartie"] },
+    ...(from &&
+      to && {
+        date: {
+          gte: from,
+          lte: to,
+        },
+      }),
+  };
   const articlesPlusVendus = await prisma.devis
     .findMany({
-      where: filters.date,
+      where: filters,
       include: {
         articls: true,
       },
