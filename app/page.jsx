@@ -1,4 +1,5 @@
 "use client";
+
 import { BasicCard } from "@/components/customUi/BasicCardDashBoard";
 import TopArticlesCard from "@/components/customUi/TopArticlesCard";
 import TopProductsCard from "@/components/customUi/TopProductsCard";
@@ -13,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useConnectionStatus } from "@/hooks/useConnectionStatus";
 import { formatCurrency } from "@/lib/functions";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
@@ -43,7 +45,7 @@ export default function DashboardPage() {
   const [startDate, setStartDate] = useState();
   const [endDate, setEndDate] = useState();
   const [periode, setPeriode] = useState("");
-
+  const connectionStatus = useConnectionStatus();
 
   function getDateRangeFromPeriode(periode) {
     const now = new Date();
@@ -118,7 +120,9 @@ export default function DashboardPage() {
   return (
     <>
       <div className="min-h-full flex flex-col space-y-4 pb-8">
-        <h1 className="text-3xl font-bold">Tableau de bord</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Tableau de bord</h1>
+        </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <div className="grid grid-cols-4 items-center gap-2">
             <Label htmlFor="periode" className="text-sm font-medium col-span-1">
