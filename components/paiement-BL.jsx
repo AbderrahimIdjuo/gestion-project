@@ -114,7 +114,6 @@ export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
   // Initialiser automatiquement le compte selon le type de paiement
   const handlemethodePaiementChange = value => {
     setValue("methodePaiement", value);
-
     // Initialiser le compte selon le type de paiement
     if (value === "espece") {
       setValue("compte", "caisse");
