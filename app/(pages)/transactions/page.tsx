@@ -435,6 +435,7 @@ export default function Banques() {
               variant="outline"
               onClick={() => {
                 const params = {
+                  query: debouncedQuery,
                   type: filters.type,
                   compte: filters.compte,
                   methodePaiement: filters.methodePaiement,

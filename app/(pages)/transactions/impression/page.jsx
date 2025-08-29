@@ -10,15 +10,54 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { formatDate, typeDepenseLabel, typeLabel } from "@/lib/functions";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { useEffect, useState } from "react";
-function formatDate(dateString) {
-  return dateString?.split("T")[0]?.split("-")?.reverse()?.join("-");
-}
+import React, { useEffect, useState } from "react";
+import "./page.css";
+
 
 export default function ImpressionTransactions() {
   const [params, setParams] = useState();
+
+  function methodePaiementLabel(methodePaiement) {
+    if (methodePaiement === "versement") {
+      return "Versement";
+    } else if (methodePaiement === "cheque") {
+      return "Chèque";
+    } else if (methodePaiement === "espece") {
+      return "Espèce";
+    } else {
+      return "Tous";
+    }
+  }
+
+  // Fonction pour grouper les transactions par type
+  const groupTransactionsByType = transactions => {
+    if (!transactions || transactions.length === 0) return [];
+
+    const grouped = transactions.reduce((acc, transaction) => {
+      const type = transaction.type || "inconnu";
+      if (!acc[type]) {
+        acc[type] = [];
+      }
+      acc[type].push(transaction);
+      return acc;
+    }, {});
+
+    return Object.entries(grouped).map(([type, transactions]) => ({
+      type,
+      transactions,
+      total: transactions.reduce((sum, transaction) => {
+        if (type === "recette") {
+          return sum + transaction.montant;
+        } else if (type === "depense" || type === "vider") {
+          return sum - transaction.montant;
+        }
+        return sum;
+      }, 0),
+    }));
+  };
 
   useEffect(() => {
     const storedData = localStorage.getItem("params");
@@ -38,9 +77,6 @@ export default function ImpressionTransactions() {
     },
   });
 
-  const handlePrint = () => {
-    window.print();
-  };
   const total = () => {
     return transactions?.reduce((acc, t) => {
       if (t.type === "recette") {
@@ -51,16 +87,7 @@ export default function ImpressionTransactions() {
     }, 0);
   };
 
-  const typeLabel = type => {
-    if (type === "recette") {
-      return "Recette";
-    } else if (type === "depense") {
-      return "Dépense";
-    } else if (type === "vider") {
-      return "Vider la caisse";
-    }
-    return type;
-  };
+  const fromDay = new Date(params?.from);
 
   return (
     <>
@@ -72,16 +99,65 @@ export default function ImpressionTransactions() {
 
           <div className="flex justify-between gap-8"></div>
           <div className="space-y-6">
-            <div className="flex justify-between items-center ">
-              <h1 className="text-3xl font-bold">Transactions</h1>
+            <div className="space-y-2">
+              <h3 className="font-semibold text-lg text-gray-900 mb-2">
+                Transactions
+              </h3>
+              <div className="grid grid-cols-3 items-center mb-4">
+                <div className="flex gap-2 items-center">
+                  <h3 className="mb-1 font-semibold text-gray-900">
+                    Période :
+                  </h3>
+                  {params?.form && params?.to ? (
+                    <p className="text-sm text-gray-600">
+                      {`${fromDay.getDate()}-${
+                        fromDay.getMonth() + 1
+                      }-${fromDay.getFullYear()}`}{" "}
+                      • {formatDate(params?.to)}
+                    </p>
+                  ) : (
+                    <p className="text-sm text-gray-600">Indéterminer</p>
+                  )}
+                </div>
+                <div className="flex gap-2 items-center">
+                  <h3 className="mb-1 font-semibold text-gray-900">Compte :</h3>
+                  <p className="text-sm text-gray-600">
+                    {params?.compte === "all" ? "Tous" : params?.compte}
+                  </p>
+                </div>
+                <div className="flex gap-2 items-center">
+                  <h3 className="mb-1 font-semibold text-gray-900">
+                    Méthode de paiement:
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {methodePaiementLabel(params?.methodePaiement)}
+                  </p>
+                </div>
+                <div className="flex gap-2 items-center">
+                  <h3 className="mb-1 font-semibold text-gray-900">Type :</h3>
+                  <p className="text-sm text-gray-600">
+                    {typeLabel(params?.type)}
+                  </p>
+                </div>
+                {params?.type === "depense" && params?.typeDepense && (
+                  <div className="flex gap-2 items-center">
+                    <h3 className="mb-1 font-semibold text-gray-900">
+                      Type de charges:
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      {typeDepenseLabel(params?.typeDepense)}
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="rounded-xl border shadow-sm overflow-x-auto">
+            <div className="rounded-xl border shadow-sm overflow-x-auto main-table-container">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Date</TableHead>
                     <TableHead>Label</TableHead>
-                    <TableHead>Montant</TableHead>
+                    <TableHead className="text-right pr-4">Montant</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Méthode</TableHead>
                     <TableHead>Compte</TableHead>
@@ -89,38 +165,79 @@ export default function ImpressionTransactions() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {transactions?.map(t => (
-                    <TableRow key={t.id}>
-                      <TableCell className="px-1 py-2">
-                        {" "}
-                        {formatDate(t.date) || formatDate(t.createdAt)}
-                      </TableCell>
-                      <TableCell className="px-1 py-2">{t.lable}</TableCell>
-                      <TableCell className="px-1 py-2">
-                        {t.montant} DH
-                      </TableCell>
-                      <TableCell className="px-1 py-2">
-                        {typeLabel(t.type)}
-                      </TableCell>
-                      <TableCell className="px-1 py-2">
-                        {" "}
-                        {t.methodePaiement === "espece"
-                          ? "Espèce"
-                          : t.methodePaiement === "cheque"
-                          ? "Chèque"
-                          : t.methodePaiement}
-                      </TableCell>
-                      <TableCell className="px-1 py-2">
-                        {t.compte.replace("compte", "")}
-                      </TableCell>
-                      <TableCell className="px-1 py-2">
-                        {t.description.replace(
-                          "paiement du fournisseur",
-                          "Bénéficiaire : "
-                        )}
+                  {transactions?.length > 0 ? (
+                    groupTransactionsByType(transactions).map(
+                      (typeGroup, typeIndex) => (
+                        <React.Fragment key={typeIndex}>
+                          {/* Transactions du groupe */}
+                          {typeGroup.transactions.map(t => (
+                            <TableRow key={t.id}>
+                              <TableCell className="px-1 py-2">
+                                {" "}
+                                {formatDate(t.date) || formatDate(t.createdAt)}
+                              </TableCell>
+                              <TableCell className="px-1 py-2">
+                                {t.lable}
+                              </TableCell>
+                              <TableCell className="px-1 py-2 text-right pr-4">
+                                {t.montant} DH
+                              </TableCell>
+                              <TableCell className="px-1 py-2">
+                                {typeLabel(t.type)}
+                              </TableCell>
+                              <TableCell className="px-1 py-2">
+                                {" "}
+                                {t.methodePaiement === "espece"
+                                  ? "Espèce"
+                                  : t.methodePaiement === "cheque"
+                                  ? "Chèque"
+                                  : t.methodePaiement}
+                              </TableCell>
+                              <TableCell className="px-1 py-2">
+                                {t.compte?.replace("compte", "")}
+                              </TableCell>
+                              <TableCell className="px-1 py-2">
+                                {t.description.replace(
+                                  "paiement du fournisseur",
+                                  "Bénéficiaire : "
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                          {/* Total du groupe de type en bas */}
+                          <TableRow
+                            className={`${
+                              typeGroup.type === "depense"
+                                ? "bg-rose-50"
+                                : typeGroup.type === "recette"
+                                ? "bg-emerald-50"
+                                : "bg-sky-50"
+                            }`}
+                          >
+                            <TableCell
+                              colSpan={7}
+                              className={`font-semibold text-lg py-3 ${
+                                typeGroup.type === "depense"
+                                  ? "text-rose-700"
+                                  : typeGroup.type === "recette"
+                                  ? "text-emerald-700"
+                                  : "text-sky-700"
+                              }`}
+                            >
+                              Total {typeLabel(typeGroup.type)} :{" "}
+                              {typeGroup.total} DH
+                            </TableCell>
+                          </TableRow>
+                        </React.Fragment>
+                      )
+                    )
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center">
+                        Aucune transaction trouvée
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
                 <TableFooter className="bg-none">
                   <TableRow>
@@ -131,7 +248,7 @@ export default function ImpressionTransactions() {
                       Total :
                     </TableCell>
                     <TableCell
-                      colSpan={2}
+                      colSpan={1}
                       className="text-left text-lg font-semibold p-2"
                     >
                       {total()} DH

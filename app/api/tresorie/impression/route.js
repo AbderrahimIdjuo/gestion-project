@@ -18,6 +18,7 @@ export async function GET(req) {
   filters.OR = [
     { reference: { contains: searchQuery, mode: "insensitive" } },
     { description: { contains: searchQuery, mode: "insensitive" } },
+    { lable: { contains: searchQuery, mode: "insensitive" } },
   ];
   // Type filter
   if (type !== "all") {

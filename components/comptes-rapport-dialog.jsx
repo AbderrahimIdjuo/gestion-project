@@ -1,5 +1,4 @@
 "use client";
-
 import CompteBancairesSelectMenu from "@/components/compteBancairesSelectMenu";
 import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
 import { Button } from "@/components/ui/button";
@@ -45,7 +44,7 @@ import {
   subYears,
 } from "date-fns";
 import { FileText } from "lucide-react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 export default function ComptesRapportDialog() {
   const [open, setOpen] = useState(false);
@@ -141,14 +140,17 @@ export default function ComptesRapportDialog() {
     if (t === "recette") {
       return {
         lable: "Recette",
-        color: "bg-green-100 text-green-600 font-medium",
+        color: "bg-emerald-100 text-emerald-600 font-medium",
       };
     } else if (t === "depense") {
-      return { lable: "Dépense", color: "bg-red-100 text-red-600 font-medium" };
+      return {
+        lable: "Dépense",
+        color: "bg-rose-50 text-rose-600 font-medium",
+      };
     } else if (t === "vider") {
       return {
         lable: "Vider la caisse",
-        color: "bg-blue-100 text-blue-600 font-medium",
+        color: "bg-sky-100 text-sky-600 font-medium",
       };
     } else {
       return {
@@ -192,6 +194,34 @@ export default function ComptesRapportDialog() {
       return "text-rose-600";
     }
   };
+
+  // Fonction pour grouper les transactions par type
+  const groupTransactionsByType = transactions => {
+    if (!transactions || transactions.length === 0) return [];
+
+    const grouped = transactions.reduce((acc, transaction) => {
+      const type = transaction.type || "inconnu";
+      if (!acc[type]) {
+        acc[type] = [];
+      }
+      acc[type].push(transaction);
+      return acc;
+    }, {});
+
+    return Object.entries(grouped).map(([type, transactions]) => ({
+      type,
+      transactions,
+      total: transactions.reduce((sum, transaction) => {
+        if (type === "recette") {
+          return sum + transaction.montant;
+        } else if (type === "depense" || type === "vider") {
+          return sum - transaction.montant;
+        }
+        return sum;
+      }, 0),
+    }));
+  };
+
   useEffect(() => {
     if (!open) {
       reset();
@@ -372,52 +402,82 @@ export default function ComptesRapportDialog() {
                       </TableRow>
                     ))
                   ) : Data?.transactions.length > 0 ? (
-                    Data?.transactions.map((transaction, index) => (
-                      <TableRow key={transaction.id}>
-                        <TableCell className="font-medium py-2">
-                          {index + 1}
-                        </TableCell>
-                        <TableCell className="font-medium py-1">
-                          {formatDate(transaction.date) ||
-                            formatDate(transaction.createdAt)}
-                        </TableCell>
-                        <TableCell className="font-medium py-2">
-                          {transaction.lable}
-                        </TableCell>
-                        <TableCell className="font-medium py-2 text-right">
-                          {formatCurrency(transaction.montant)}
-                        </TableCell>
-                        <TableCell className="font-medium py-2">
-                          <span
-                            className={`text-sm p-[1px] px-3 rounded-full  ${
-                              handleTypeLableColor(transaction.type).color
+                    groupTransactionsByType(Data?.transactions).map(
+                      (typeGroup, typeIndex) => (
+                        <React.Fragment key={typeIndex}>
+                          {/* Transactions du groupe */}
+                          {typeGroup.transactions.map((transaction, index) => (
+                            <TableRow key={transaction.id}>
+                              <TableCell className="font-medium py-2">
+                                {index + 1}
+                              </TableCell>
+                              <TableCell className="font-medium py-1">
+                                {formatDate(transaction.date) ||
+                                  formatDate(transaction.createdAt)}
+                              </TableCell>
+                              <TableCell className="font-medium py-2">
+                                {transaction.lable}
+                              </TableCell>
+                              <TableCell className="font-medium py-2 text-right">
+                                {formatCurrency(transaction.montant)}
+                              </TableCell>
+                              <TableCell className="font-medium py-2">
+                                <span
+                                  className={`text-sm p-[1px] px-3 rounded-full  ${
+                                    handleTypeLableColor(transaction.type).color
+                                  }`}
+                                >
+                                  {handleTypeLableColor(transaction.type).lable}
+                                </span>
+                              </TableCell>
+
+                              <TableCell
+                                className={`font-medium py-2 ${
+                                  transaction.methodePaiement === "cheque" &&
+                                  "cursor-pointer"
+                                }`}
+                              >
+                                {transaction.methodePaiement === "espece"
+                                  ? "Espèce"
+                                  : transaction.methodePaiement === "cheque" &&
+                                    "Chèque"}
+                              </TableCell>
+
+                              <TableCell className="font-medium py-2">
+                                {transaction.compte}
+                              </TableCell>
+                              <TableCell className="font-medium py-2">
+                                {transaction.description}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                          {/* Total du groupe de type en bas */}
+                          <TableRow
+                            className={`${
+                              typeGroup.type === "depense"
+                                ? "bg-rose-50"
+                                : typeGroup.type === "recette"
+                                ? "bg-emerald-50"
+                                : "bg-sky-50"
                             }`}
                           >
-                            {handleTypeLableColor(transaction.type).lable}
-                          </span>
-                        </TableCell>
-
-                        <TableCell
-                          onClick={() => handleChequeClick(transaction)}
-                          className={`font-medium py-2 ${
-                            transaction.methodePaiement === "cheque" &&
-                            "cursor-pointer"
-                          }`}
-                        >
-                          {transaction.methodePaiement === "espece"
-                            ? "Espèce"
-                            : transaction.methodePaiement === "cheque" &&
-                              "Chèque"}
-                        </TableCell>
-
-                        <TableCell className="font-medium py-2">
-                          {transaction.compte}
-                        </TableCell>
-                        <TableCell className="font-medium py-2">
-                          {transaction.description}
-                        </TableCell>
-                      </TableRow>
-                    ))
+                            <TableCell
+                              colSpan={8}
+                              className={`font-semibold text-lg  py-3 ${
+                                typeGroup.type === "depense"
+                                  ? "text-rose-700 hover:bg-rose-50"
+                                  : typeGroup.type === "recette"
+                                  ? "text-emerald-700 hover:bg-emerald-50"
+                                  : "text-sky-700 hover:bg-sky-50"
+                              }`}
+                            >
+                              Total {handleTypeLableColor(typeGroup.type).lable}{" "}
+                              : {formatCurrency(typeGroup.total)}
+                            </TableCell>
+                          </TableRow>
+                        </React.Fragment>
+                      )
+                    )
                   ) : (
                     <TableRow>
                       <TableCell colSpan={8} className="text-center">

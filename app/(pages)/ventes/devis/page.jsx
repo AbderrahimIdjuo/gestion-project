@@ -260,6 +260,15 @@ export default function DevisPage() {
     { lable: "En partie", value: "enPartie", color: "amber" },
   ];
 
+  function calculateMarge(devis, totalFourniture) {
+    const diff = devis.total - totalFourniture;
+    if (totalFourniture === 0 || devis.statut === "En attente") {
+      return "";
+    } else if (totalFourniture > 0) {
+      return formatCurrency(diff);
+    }
+  }
+
   return (
     <>
       <Toaster position="top-center"></Toaster>
@@ -396,6 +405,26 @@ export default function DevisPage() {
                 </div>
               </SheetContent>
             </Sheet>
+            <Button
+              variant="outline"
+              onClick={() => {
+                const params = {
+                  query: debouncedQuery,
+                  statut: filters.statut,
+                  statutPaiement: filters.statutPaiement,
+                  from: startDate,
+                  to: endDate,
+                  minTotal: filters.montant[0],
+                  maxTotal: filters.montant[1],
+                };
+                localStorage.setItem("params", JSON.stringify(params));
+                window.open("/ventes/devis/impression", "_blank");
+              }}
+              className="border-purple-500 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900 rounded-full"
+            >
+              <Printer className="h-4 w-4" />
+              Imprimer
+            </Button>
             <Link href="/ventes/devis/nouveau">
               <AddButton
                 onClick={() => {
@@ -452,7 +481,7 @@ export default function DevisPage() {
                   </TableRow>
                 ))
               ) : devis.data?.length > 0 ? (
-                devis.data?.map((devis, index) => (
+                devis.data?.map(devis => (
                   <>
                     <Fragment key={devis.id}>
                       <TableRow>
@@ -509,9 +538,9 @@ export default function DevisPage() {
                           )}
                         </TableCell>
                         <TableCell className="!py-2 text-right">
-                          {formatCurrency(
-                            devis.total -
-                              totalFourniture(filteredOrders(devis.numero))
+                          {calculateMarge(
+                            devis,
+                            totalFourniture(filteredOrders(devis.numero))
                           )}
                         </TableCell>
                         <TableCell className="!py-2 text-right">

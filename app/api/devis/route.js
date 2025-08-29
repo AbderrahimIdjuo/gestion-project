@@ -230,7 +230,6 @@ export async function GET(req) {
   const filters = {};
 
   const devisPerPage = 10;
-  console.log("Devis route : from", from, "to ", to);
 
   // Search filter by numero and client name
   filters.OR = [
@@ -307,14 +306,6 @@ export async function GET(req) {
   const transactionsList = await prisma.transactions.findMany({
     where: { reference: { in: devisNumbers } },
   });
-
-  const totalPaye = numero => {
-    const trans = transactionsList?.filter(c => c.reference === numero);
-    const totalPaye = trans?.reduce((acc, transaction) => {
-      return acc + transaction.montant;
-    }, 0);
-    return totalPaye;
-  };
 
   // Fetch ordersGroups
   const bLGroupsList = await prisma.bLGroups.findMany({
