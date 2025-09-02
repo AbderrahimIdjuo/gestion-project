@@ -1,31 +1,16 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import Spinner from "@/components/customUi/Spinner";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChequeDetailsDialog } from "@/components/ui/cheque-details-dialog";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Mail,
-  Phone,
-  MapPin,
-  Smartphone,
-  NotebookText,
-  Hash,
-  CreditCard,
-  FileText,
-  TrendingUp,
-  Receipt,
-  Calendar,
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
-import Spinner from "@/components/customUi/Spinner";
 import {
   Table,
   TableBody,
@@ -34,9 +19,23 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatCurrency } from "@/lib/functions";
-import { formatDate } from "@/lib/functions";
-import { ChequeDetailsDialog } from "@/components/ui/cheque-details-dialog";
+import { formatCurrency, formatDate } from "@/lib/functions";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
+import {
+  Calendar,
+  CreditCard,
+  FileText,
+  Hash,
+  Mail,
+  MapPin,
+  NotebookText,
+  Phone,
+  Receipt,
+  Smartphone,
+  TrendingUp,
+} from "lucide-react";
+import { useState } from "react";
 
 export function ClientInfoDialog({ client, isOpen, onClose }) {
   const [devis, setDevis] = useState([]);
@@ -55,7 +54,7 @@ export function ClientInfoDialog({ client, isOpen, onClose }) {
     },
     enabled: !!client?.id,
   });
-  const getStatusColor = (status) => {
+  const getStatusColor = status => {
     switch (status) {
       case "En attente":
         return "bg-amber-500";
@@ -74,6 +73,15 @@ export function ClientInfoDialog({ client, isOpen, onClose }) {
     (sum, devis) => sum + devis.totalPaye,
     0
   );
+  const montantRestantDevis = devis.reduce((sum, devis) => {
+    if (
+      devis.statut === "Accepté" &&
+      (devis.statutPaiement === "enPartie" || devis.statutPaiement === "impaye")
+    ) {
+      return sum + (devis.total - devis.totalPaye);
+    }
+    return sum;
+  }, 0);
   return (
     <div className="p-8">
       <Dialog open={isOpen} onOpenChange={onClose}>
@@ -142,7 +150,7 @@ export function ClientInfoDialog({ client, isOpen, onClose }) {
                     </span>
                   </div>
                   <Badge variant="destructive" className="text-lg px-3 py-1">
-                    {formatCurrency(client?.dette)}
+                    {formatCurrency(montantRestantDevis)}
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200">
@@ -162,7 +170,7 @@ export function ClientInfoDialog({ client, isOpen, onClose }) {
               </div>
             </div>
 
-            <div className="space-y-4 grid grid-cols-1 grid-rows-2 grid-rows-1 justify-items-stretch">
+            <div className="space-y-4 grid grid-cols-1 grid-rows-2 justify-items-stretch">
               {/* liste de devis */}
               <Card className="flex-1">
                 <CardHeader className="grid grid-cols-5 items-center">

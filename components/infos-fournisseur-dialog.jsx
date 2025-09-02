@@ -132,6 +132,20 @@ export default function InfosFournisseurDialog({
     return getTopProduits(bonLivraisons, sortKey);
   }, [bonLivraisons, sortKey]);
 
+  const montantRestantBL = useMemo(() => {
+    return (
+      bonLivraisons?.reduce((acc, bl) => {
+        if (
+          bl.statutPaiement === "enPartie" ||
+          bl.statutPaiement === "impaye"
+        ) {
+          return acc + (bl.total - (bl.totalPaye || 0));
+        }
+        return acc;
+      }, 0) || 0
+    );
+  }, [bonLivraisons]);
+
   return (
     <div className="p-8">
       <Dialog open={isOpen} onOpenChange={onClose}>
@@ -255,7 +269,7 @@ export default function InfosFournisseurDialog({
                     </span>
                   </div>
                   <Badge variant="destructive" className="text-lg px-3 py-1">
-                    {formatCurrency(fournisseur?.dette)}
+                    {formatCurrency(montantRestantBL)}
                   </Badge>
                 </div>
 
