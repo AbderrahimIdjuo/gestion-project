@@ -45,7 +45,6 @@ export default function DashboardPage() {
   const [startDate, setStartDate] = useState();
   const [endDate, setEndDate] = useState();
   const [periode, setPeriode] = useState("");
-  const connectionStatus = useConnectionStatus();
 
   function getDateRangeFromPeriode(periode) {
     const now = new Date();
