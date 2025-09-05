@@ -22,7 +22,7 @@ export default function NoAccessPage() {
             Accès Refusé
           </CardTitle>
           <CardDescription className="text-gray-600 mt-2">
-            Votre compte n'a pas de rôle attribué. Veuillez contacter un
+            Votre compte n&apos;a pas de rôle attribué. Veuillez contacter un
             administrateur pour obtenir les permissions nécessaires.
           </CardDescription>
         </CardHeader>
@@ -34,7 +34,7 @@ export default function NoAccessPage() {
             </p>
             <ul className="text-sm text-yellow-700 mt-2 space-y-1">
               <li>• Contactez votre administrateur système</li>
-              <li>• Demandez l'attribution d'un rôle approprié</li>
+              <li>• Demandez l&apos;attribution d&apos;un rôle approprié</li>
               <li>• Vérifiez que votre compte est correctement configuré</li>
             </ul>
           </div>
@@ -43,7 +43,7 @@ export default function NoAccessPage() {
             <Button asChild className="flex-1">
               <Link href="/">
                 <Home className="w-4 h-4 mr-2" />
-                Retour à l'accueil
+                Retour à l&apos;accueil
               </Link>
             </Button>
 

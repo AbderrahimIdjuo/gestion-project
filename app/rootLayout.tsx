@@ -32,7 +32,6 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   const [queryClient] = useState(() => new QueryClient());
-  const connectionStatus = useConnectionStatus();
 
   return (
     <ClerkProviderWrapper>
