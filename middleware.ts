@@ -1,13 +1,30 @@
+import { clerkClient } from "@clerk/clerk-sdk-node";
 import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 export default clerkMiddleware(async (auth, request) => {
   const { pathname } = request.nextUrl;
-
-  // Get the auth object by calling the auth function
   const authObject = await auth();
 
-  // Define routes that require authentication
+  // Routes à exclure de la vérification (SSO callback, API, etc.)
+  const excludedRoutes = [
+    "/sso-callback",
+    "/api",
+    "/_next",
+    "/favicon.ico",
+    "/no-access",
+  ];
+
+  const isExcludedRoute = excludedRoutes.some(route =>
+    pathname.startsWith(route)
+  );
+
+  // Si c'est une route exclue, laisser passer
+  if (isExcludedRoute) {
+    return NextResponse.next();
+  }
+
+  // Routes protégées
   const protectedRoutes = [
     "/admin",
     "/commercant",
@@ -19,19 +36,45 @@ export default clerkMiddleware(async (auth, request) => {
     "/parametres",
     "/Employes",
     "/articls",
+    "/dashboard",
   ];
 
-  // Check if the route is protected
   const isProtectedRoute = protectedRoutes.some(route =>
     pathname.startsWith(route)
   );
 
-  // If user is not authenticated and trying to access protected routes, redirect to sign-in
+  // Si pas connecté et route protégée → rediriger
   if (!authObject.userId && isProtectedRoute) {
     return NextResponse.redirect(new URL("/sign-in", request.url));
   }
 
-  // If user is authenticated and trying to access auth pages, redirect to home
+  // Vérification du rôle pour TOUS les utilisateurs connectés
+  if (authObject.userId) {
+    try {
+      const user = await clerkClient.users.getUser(authObject.userId);
+
+      // On suppose que tu stockes le rôle dans `publicMetadata.role`
+      const role = user.publicMetadata.role as string | undefined;
+
+      // Si aucun rôle → refuser l'accès à toute l'app
+      if (!role) {
+        return NextResponse.redirect(new URL("/no-access", request.url));
+      }
+
+      // Vérification spécifique pour la page de gestion des utilisateurs
+      if (pathname.startsWith("/parametres/users-management")) {
+        if (role !== "admin") {
+          return NextResponse.redirect(new URL("/no-access", request.url));
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching user in middleware:", error);
+      // En cas d'erreur, rediriger vers no-access pour éviter les boucles
+      return NextResponse.redirect(new URL("/no-access", request.url));
+    }
+  }
+
+  // Si déjà connecté et essaie d'aller sur /sign-in ou /sign-up → redirect dashboard
   if (
     authObject.userId &&
     (pathname.startsWith("/sign-in") || pathname.startsWith("/sign-up"))
@@ -39,37 +82,11 @@ export default clerkMiddleware(async (auth, request) => {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  // Role-based access control for specific routes
-  if (authObject.userId) {
-    // Admin-only routes
-    if (pathname.startsWith("/admin")) {
-      const userRole = (authObject.sessionClaims?.metadata as any)?.role;
-      if (userRole !== "admin") {
-        return NextResponse.redirect(new URL("/", request.url));
-      }
-    }
-
-    // Commercant-only routes
-    if (pathname.startsWith("/commercant")) {
-      const userRole = (authObject.sessionClaims?.metadata as any)?.role;
-      if (userRole !== "commercant" && userRole !== "admin") {
-        return NextResponse.redirect(new URL("/", request.url));
-      }
-    }
-  }
-
   return NextResponse.next();
 });
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     */
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

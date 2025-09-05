@@ -26,6 +26,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { useUser } from "@clerk/nextjs";
 import { zodResolver } from "@hookform/resolvers/zod";
 import axios from "axios";
 import { CircleX, Copy, Trash2 } from "lucide-react";
@@ -45,6 +46,8 @@ export default function NouveauDevisPage() {
   const [lastDeviNumber, setLastDeviNumber] = useState();
   const [date, setDate] = useState(null);
   const [echeance, setEcheance] = useState(null);
+  const { user } = useUser();
+  console.log("user", user);
 
   const {
     register,

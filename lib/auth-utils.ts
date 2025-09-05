@@ -132,3 +132,18 @@ export async function requireAdmin() {
 
   return { userId, userRole };
 }
+
+/**
+ * Check if a user exists in Clerk
+ * @param userId - The user ID to check
+ * @returns true if user exists, false otherwise
+ */
+export async function userExistsInClerk(userId: string): Promise<boolean> {
+  try {
+    const client = await clerkClient();
+    await client.users.getUser(userId);
+    return true;
+  } catch (error) {
+    return false;
+  }
+}

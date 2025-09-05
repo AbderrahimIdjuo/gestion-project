@@ -12,6 +12,7 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
+    "@clerk/clerk-sdk-node": "^5.1.6",
     "@clerk/localizations": "^3.21.2",
     "@clerk/nextjs": "^6.31.1",
     "@hookform/resolvers": "^3.10.0",

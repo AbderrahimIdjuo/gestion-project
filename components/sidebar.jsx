@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { useUser } from "@clerk/nextjs";
 import {
   ChevronDown,
   ChevronRight,
@@ -101,6 +102,7 @@ const menuItems = [
       { label: "Comptes bancaires", href: "/parametres/banques" },
       { label: "Modes de paiement", href: "/parametres/modesPaiement" },
       { label: "Type de tâches", href: "/parametres/typeTaches" },
+      { label: "Utilisateurs", href: "/parametres/users-management" },
     ],
   },
 ];
@@ -110,6 +112,7 @@ export function Sidebar() {
   const router = useRouter();
   const [isExpanded, setIsExpanded] = useState(false);
   const [openMenus, setOpenMenus] = useState(["produits", "achats", "ventes"]);
+  const { user } = useUser();
 
   const toggleMenu = href => {
     setOpenMenus(current =>
@@ -130,6 +133,30 @@ export function Sidebar() {
     return pathname === href;
   };
 
+  // Filtrer les éléments du menu en fonction du rôle de l'utilisateur
+  const getFilteredMenuItems = () => {
+    return menuItems.map(item => {
+      if (item.subItems) {
+        // Filtrer les sous-éléments pour les paramètres
+        const filteredSubItems = item.subItems.filter(subItem => {
+          // Masquer "Utilisateurs" si l'utilisateur n'est pas admin
+          if (subItem.href === "/parametres/users-management") {
+            return user?.publicMetadata?.role === "admin";
+          }
+          return true;
+        });
+
+        return {
+          ...item,
+          subItems: filteredSubItems,
+        };
+      }
+      return item;
+    });
+  };
+
+  const filteredMenuItems = getFilteredMenuItems();
+
   return (
     <div
       className={`h-full bg-white border-r border-gray-200 transition-all duration-300 ease-in-out caret-transparent ${
@@ -140,7 +167,7 @@ export function Sidebar() {
     >
       <nav className="h-full overflow-y-auto">
         <ul className="space-y-1 p-2">
-          {menuItems.map((item, index) => {
+          {filteredMenuItems.map((item, index) => {
             const isMenuActive = isActive(item.href);
             const isOpen = openMenus.includes(item.href);
             const Icon = item.icon;
