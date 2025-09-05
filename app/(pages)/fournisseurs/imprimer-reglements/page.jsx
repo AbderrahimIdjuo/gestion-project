@@ -38,9 +38,9 @@ export default function ImprimerReglements() {
 
   return (
     <>
-      <div className="container mx-auto p-6 max-w-4xl bg-white min-h-screen print:p-0 print:max-w-none mb-10">
+      <div className="container mx-auto max-w-4xl bg-white min-h-screen print:p-0 print:max-w-none mb-10  p-6">
         {/* Document Content */}
-        <div id="print-area" className="space-y-4">
+        <div id="print-area" className="space-y-4 ">
           {/* Header */}
           <EnteteDevis />
 

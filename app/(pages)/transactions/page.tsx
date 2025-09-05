@@ -5,7 +5,9 @@ import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
 import CustomPagination from "@/components/customUi/customPagination";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import { LoadingDots } from "@/components/loading-dots";
+import { Navbar } from "@/components/navbar";
 import TransactionDialog from "@/components/new-transaction";
+import { Sidebar } from "@/components/sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -262,346 +264,379 @@ export default function Banques() {
   return (
     <>
       <Toaster position="top-center" />
-      <div className="space-y-6 mb-[5rem]">
-        <div className="flex justify-between items-center ">
-          <h1 className="text-3xl font-bold">Transactions</h1>
-        </div>
-        <div className="flex justify-between space-x-2">
-          <div className="relative w-full sm:w-96">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Recherche..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="pl-9 w-full rounded-full bg-gray-50 focus-visible:ring-purple-500 focus-visible:ring-offset-0"
-            />
-            <div className="absolute right-6 top-1/3 h-4 w-4 -translate-y-1/2 text-muted-foreground">
-              {transactions.isFetching && !transactions.isLoading && (
-                <LoadingDots />
-              )}
-            </div>
-          </div>
-          <div className="flex gap-2 items-center">
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="border-purple-500 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900 rounded-full"
-                >
-                  <Filter className="mr-2 h-4 w-4" />
-                  Filtres
-                </Button>
-              </SheetTrigger>
-              <SheetContent className="border-l-purple-200 bg-white">
-                <SheetHeader>
-                  <SheetTitle className="text-black">Filtres</SheetTitle>
-                  <SheetDescription className="text-gray-600">
-                    Ajustez les filtres pour affiner votre recherche de
-                    transactions.
-                  </SheetDescription>
-                </SheetHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid items-center gap-3 my-2">
-                    <Label htmlFor="type" className="text-left text-black">
-                      Type :
-                    </Label>
-                    <Select
-                      value={filters.type}
-                      name="type"
-                      onValueChange={value =>
-                        setFilters({ ...filters, type: value })
-                      }
-                    >
-                      <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
-                        <SelectValue placeholder="Séléctionner un statut" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Tous les types</SelectItem>
-                        <SelectItem value="recette">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`h-2 w-2 shadow-md rounded-full bg-green-500`}
-                            />
-                            Recette
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="depense">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`h-2 w-2 rounded-full bg-red-500`}
-                            />
-                            Dépense
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="vider">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`h-2 w-2 rounded-full bg-blue-500`}
-                            />
-                            Vider la caisse
-                          </div>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid items-center gap-3 my-2">
-                    <Label htmlFor="type" className="text-left text-black">
-                      Type de dépenses :
-                    </Label>
-                    <Select
-                      value={filters.typeDepense}
-                      name="typeDepense"
-                      onValueChange={value =>
-                        setFilters({ ...filters, typeDepense: value })
-                      }
-                    >
-                      <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
-                        <SelectValue placeholder="Séléctionner un statut" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Tous les types</SelectItem>
-                        <SelectItem value="fixe">Fixe</SelectItem>
-                        <SelectItem value="variante">Variante</SelectItem>
-                        <SelectItem value="charges">Charges</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid items-center gap-3 my-2">
-                    <Label htmlFor="type" className="text-left text-black">
-                      Méthode de paiement :
-                    </Label>
-                    <Select
-                      value={filters.methodePaiement}
-                      name="methodePaiement"
-                      onValueChange={value =>
-                        setFilters({ ...filters, methodePaiement: value })
-                      }
-                    >
-                      <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
-                        <SelectValue placeholder="Séléctionner un statut" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Tous</SelectItem>
-                        <SelectItem value="espece">Éspece</SelectItem>
-                        <SelectItem value="cheque">Chèque</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid items-center gap-3 my-2">
-                    <Label htmlFor="compte" className="text-left text-black">
-                      Compte :
-                    </Label>
-                    <Select
-                      value={filters.compte}
-                      name="compte"
-                      onValueChange={value =>
-                        setFilters({ ...filters, compte: value })
-                      }
-                    >
-                      <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
-                        <SelectValue placeholder="Séléctionner un statut" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Tous les comptes</SelectItem>
-                        {comptes.data?.map((element: Compte, index: number) => (
-                          <SelectItem key={index} value={element.compte}>
-                            {element.compte}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="date" className="text-left text-black">
-                      Date :
-                    </Label>
-                    <CustomDateRangePicker
-                      startDate={startDate}
-                      setStartDate={setStartDate}
-                      endDate={endDate}
-                      setEndDate={setEndDate}
+      <div className="flex flex-col h-screen">
+        {/* Navbar - prend toute la largeur */}
+        <Navbar />
+
+        {/* Container principal avec sidebar et contenu */}
+        <div className="flex flex-1">
+          {/* Sidebar */}
+          <Sidebar />
+
+          {/* Main content area */}
+          <div className="flex-1 flex flex-col">
+            {/* Page content */}
+            <div className="flex-1 overflow-auto">
+              <div className="space-y-6 mb-[5rem] p-6">
+                <div className="flex justify-between items-center ">
+                  <h1 className="text-3xl font-bold">Transactions</h1>
+                </div>
+                <div className="flex justify-between space-x-2">
+                  <div className="relative w-full sm:w-96">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      placeholder="Recherche..."
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                      className="pl-9 w-full rounded-full bg-gray-50 focus-visible:ring-purple-500 focus-visible:ring-offset-0"
                     />
+                    <div className="absolute right-6 top-1/3 h-4 w-4 -translate-y-1/2 text-muted-foreground">
+                      {transactions.isFetching && !transactions.isLoading && (
+                        <LoadingDots />
+                      )}
+                    </div>
                   </div>
-                  <div className="w-full space-y-2">
-                    <ComboBoxFournisseur
-                      fournisseur={selectedFournisseur}
-                      setFournisseur={setSelectedFournisseur}
-                    />
+                  <div className="flex gap-2 items-center">
+                    <Sheet>
+                      <SheetTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="border-purple-500 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900 rounded-full"
+                        >
+                          <Filter className="mr-2 h-4 w-4" />
+                          Filtres
+                        </Button>
+                      </SheetTrigger>
+                      <SheetContent className="border-l-purple-200 bg-white">
+                        <SheetHeader>
+                          <SheetTitle className="text-black">
+                            Filtres
+                          </SheetTitle>
+                          <SheetDescription className="text-gray-600">
+                            Ajustez les filtres pour affiner votre recherche de
+                            transactions.
+                          </SheetDescription>
+                        </SheetHeader>
+                        <div className="grid gap-4 py-4">
+                          <div className="grid items-center gap-3 my-2">
+                            <Label
+                              htmlFor="type"
+                              className="text-left text-black"
+                            >
+                              Type :
+                            </Label>
+                            <Select
+                              value={filters.type}
+                              name="type"
+                              onValueChange={value =>
+                                setFilters({ ...filters, type: value })
+                              }
+                            >
+                              <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
+                                <SelectValue placeholder="Séléctionner un statut" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">
+                                  Tous les types
+                                </SelectItem>
+                                <SelectItem value="recette">
+                                  <div className="flex items-center gap-2">
+                                    <span
+                                      className={`h-2 w-2 shadow-md rounded-full bg-green-500`}
+                                    />
+                                    Recette
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="depense">
+                                  <div className="flex items-center gap-2">
+                                    <span
+                                      className={`h-2 w-2 rounded-full bg-red-500`}
+                                    />
+                                    Dépense
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="vider">
+                                  <div className="flex items-center gap-2">
+                                    <span
+                                      className={`h-2 w-2 rounded-full bg-blue-500`}
+                                    />
+                                    Vider la caisse
+                                  </div>
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="grid items-center gap-3 my-2">
+                            <Label
+                              htmlFor="type"
+                              className="text-left text-black"
+                            >
+                              Méthode de paiement :
+                            </Label>
+                            <Select
+                              value={filters.methodePaiement}
+                              name="methodePaiement"
+                              onValueChange={value =>
+                                setFilters({
+                                  ...filters,
+                                  methodePaiement: value,
+                                })
+                              }
+                            >
+                              <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
+                                <SelectValue placeholder="Séléctionner un statut" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">Tous</SelectItem>
+                                <SelectItem value="espece">Éspece</SelectItem>
+                                <SelectItem value="cheque">Chèque</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="grid items-center gap-3 my-2">
+                            <Label
+                              htmlFor="compte"
+                              className="text-left text-black"
+                            >
+                              Compte :
+                            </Label>
+                            <Select
+                              value={filters.compte}
+                              name="compte"
+                              onValueChange={value =>
+                                setFilters({ ...filters, compte: value })
+                              }
+                            >
+                              <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
+                                <SelectValue placeholder="Séléctionner un statut" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">
+                                  Tous les comptes
+                                </SelectItem>
+                                {comptes.data?.map(
+                                  (element: Compte, index: number) => (
+                                    <SelectItem
+                                      key={index}
+                                      value={element.compte}
+                                    >
+                                      {element.compte}
+                                    </SelectItem>
+                                  )
+                                )}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="grid gap-2">
+                            <Label
+                              htmlFor="date"
+                              className="text-left text-black"
+                            >
+                              Date :
+                            </Label>
+                            <CustomDateRangePicker
+                              startDate={startDate}
+                              setStartDate={setStartDate}
+                              endDate={endDate}
+                              setEndDate={setEndDate}
+                            />
+                          </div>
+                          <div className="w-full space-y-2">
+                            <ComboBoxFournisseur
+                              fournisseur={selectedFournisseur}
+                              setFournisseur={setSelectedFournisseur}
+                            />
+                          </div>
+                        </div>
+                      </SheetContent>
+                    </Sheet>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        const params = {
+                          type: filters.type,
+                          compte: filters.compte,
+                          methodePaiement: filters.methodePaiement,
+                          from: startDate,
+                          to: endDate,
+                          fournisseurId: selectedFournisseur?.id,
+                        };
+                        localStorage.setItem("params", JSON.stringify(params));
+                        window.open("/transactions/impression", "_blank");
+                      }}
+                      className="border-purple-500 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900 rounded-full"
+                    >
+                      <Printer className="h-4 w-4" />
+                      Imprimer
+                    </Button>
+                    <TransactionDialog />
+                    <ComptesRapportDialog />
                   </div>
                 </div>
-              </SheetContent>
-            </Sheet>
-            <Button
-              variant="outline"
-              onClick={() => {
-                const params = {
-                  query: debouncedQuery,
-                  type: filters.type,
-                  compte: filters.compte,
-                  methodePaiement: filters.methodePaiement,
-                  from: startDate,
-                  to: endDate,
-                  fournisseurId: selectedFournisseur?.id,
-                  typeDepense: filters.typeDepense,
-                };
-                localStorage.setItem("params", JSON.stringify(params));
-                window.open("/transactions/impression", "_blank");
-              }}
-              className="border-purple-500 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900 rounded-full"
-            >
-              <Printer className="h-4 w-4" />
-              Imprimer
-            </Button>
-            <TransactionDialog />
-            <ComptesRapportDialog />
-          </div>
-        </div>
-        <div className="flex justify between gap-6 items-start">
-          <div className="w-full col-span-1 sm:col-span-2 md:col-span-3">
-            {/* Table */}
-            <div className="rounded-lg border overflow-x-auto mb-3">
-              <Table className="w-full">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[150px]">Date</TableHead>
-                    <TableHead>Label</TableHead>
-                    <TableHead>Montant</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Méthode</TableHead>
-                    <TableHead>Compte</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead className="text-center">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {transactions.isLoading ? (
-                    [...Array(10)].map((_, index) => (
-                      <TableRow
-                        className="h-[2rem] MuiTableRow-root"
-                        role="checkbox"
-                        tabIndex={-1}
-                        key={index}
-                      >
-                        <TableCell
-                          className="!py-2 text-sm md:text-base"
-                          align="left"
-                        >
-                          <Skeleton className="h-4 w-[150px]" />
-                        </TableCell>
-                        <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-[150px]" />
-                        </TableCell>
-                        <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-[150px]" />
-                        </TableCell>
-                        <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-[100px]" />
-                        </TableCell>
-                        <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-[100px]" />
-                        </TableCell>
-                        <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-[100px]" />
-                        </TableCell>
-                        <TableCell className="!py-2" align="left">
-                          <Skeleton className="h-4 w-[100px]" />
-                        </TableCell>
-                        <TableCell className="!py-2">
-                          <div className="flex gap-2 justify-end">
-                            <Skeleton className="h-7 w-7 rounded-full" />
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : transactions.data?.length > 0 ? (
-                    transactions.data?.map((transaction: Transaction) => (
-                      <TableRow key={transaction.id}>
-                        <TableCell className="font-medium py-1">
-                          {formatDate(transaction.date) ||
-                            formatDate(transaction.createdAt)}
-                        </TableCell>
-                        <TableCell className="font-medium py-0">
-                          {transaction.lable}
-                        </TableCell>
-                        <TableCell className="font-medium py-0">
-                          {formatCurrency(transaction.montant)}
-                        </TableCell>
-                        <TableCell className="font-medium py-0">
-                          <span
-                            className={`text-sm p-[1px] px-3 rounded-full  ${
-                              handleTypeLableColor(transaction.type).color
-                            }`}
-                          >
-                            {handleTypeLableColor(transaction.type).lable}
-                          </span>
-                        </TableCell>
+                <div className="flex justify between gap-6 items-start">
+                  <div className="w-full col-span-1 sm:col-span-2 md:col-span-3">
+                    {/* Table */}
+                    <div className="rounded-lg border overflow-x-auto mb-3">
+                      <Table className="w-full">
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-[150px]">Date</TableHead>
+                            <TableHead>Label</TableHead>
+                            <TableHead>Montant</TableHead>
+                            <TableHead>Type</TableHead>
+                            <TableHead>Méthode</TableHead>
+                            <TableHead>Compte</TableHead>
+                            <TableHead>Description</TableHead>
+                            <TableHead className="text-center">
+                              Actions
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {transactions.isLoading ? (
+                            [...Array(10)].map((_, index) => (
+                              <TableRow
+                                className="h-[2rem] MuiTableRow-root"
+                                role="checkbox"
+                                tabIndex={-1}
+                                key={index}
+                              >
+                                <TableCell
+                                  className="!py-2 text-sm md:text-base"
+                                  align="left"
+                                >
+                                  <Skeleton className="h-4 w-[150px]" />
+                                </TableCell>
+                                <TableCell className="!py-2" align="left">
+                                  <Skeleton className="h-4 w-[150px]" />
+                                </TableCell>
+                                <TableCell className="!py-2" align="left">
+                                  <Skeleton className="h-4 w-[150px]" />
+                                </TableCell>
+                                <TableCell className="!py-2" align="left">
+                                  <Skeleton className="h-4 w-[100px]" />
+                                </TableCell>
+                                <TableCell className="!py-2" align="left">
+                                  <Skeleton className="h-4 w-[100px]" />
+                                </TableCell>
+                                <TableCell className="!py-2" align="left">
+                                  <Skeleton className="h-4 w-[100px]" />
+                                </TableCell>
+                                <TableCell className="!py-2" align="left">
+                                  <Skeleton className="h-4 w-[100px]" />
+                                </TableCell>
+                                <TableCell className="!py-2">
+                                  <div className="flex gap-2 justify-end">
+                                    <Skeleton className="h-7 w-7 rounded-full" />
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          ) : transactions.data?.length > 0 ? (
+                            transactions.data?.map(
+                              (transaction: Transaction) => (
+                                <TableRow key={transaction.id}>
+                                  <TableCell className="font-medium py-1">
+                                    {formatDate(transaction.date) ||
+                                      formatDate(transaction.createdAt)}
+                                  </TableCell>
+                                  <TableCell className="font-medium py-0">
+                                    {transaction.lable}
+                                  </TableCell>
+                                  <TableCell className="font-medium py-0">
+                                    {formatCurrency(transaction.montant)}
+                                  </TableCell>
+                                  <TableCell className="font-medium py-0">
+                                    <span
+                                      className={`text-sm p-[1px] px-3 rounded-full  ${
+                                        handleTypeLableColor(transaction.type)
+                                          .color
+                                      }`}
+                                    >
+                                      {
+                                        handleTypeLableColor(transaction.type)
+                                          .lable
+                                      }
+                                    </span>
+                                  </TableCell>
 
-                        <TableCell
-                          onClick={() => handleChequeClick(transaction)}
-                          className={`font-medium py-0 ${
-                            transaction.methodePaiement === "cheque" &&
-                            "cursor-pointer"
-                          }`}
-                        >
-                          {methodePaiementLabel(transaction)}
-                        </TableCell>
+                                  <TableCell
+                                    onClick={() =>
+                                      handleChequeClick(transaction)
+                                    }
+                                    className={`font-medium py-0 ${
+                                      transaction.methodePaiement ===
+                                        "cheque" && "cursor-pointer"
+                                    }`}
+                                  >
+                                    {methodePaiementLabel(transaction)}
+                                  </TableCell>
 
-                        <TableCell className="font-medium py-0">
-                          {transaction.compte}
-                        </TableCell>
-                        <TableCell className="font-medium py-0">
-                          {transaction.description}
-                        </TableCell>
+                                  <TableCell className="font-medium py-0">
+                                    {transaction.compte}
+                                  </TableCell>
+                                  <TableCell className="font-medium py-0">
+                                    {transaction.description}
+                                  </TableCell>
 
-                        <TableCell className="text-right py-2">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              onClick={() => {
-                                setUpdateDialog(true);
-                                setTransaction(transaction);
-                              }}
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
-                            >
-                              <Pen className="h-4 w-4" />
-                              <span className="sr-only">modifier</span>
-                            </Button>
-                            <Button
-                              onClick={() => {
-                                setDeleteDialog(true);
-                                setTransaction(transaction);
-                              }}
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              <span className="sr-only">Supprimer</span>
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center">
-                        Aucune transaction trouvée
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                                  <TableCell className="text-right py-2">
+                                    <div className="flex justify-end gap-2">
+                                      <Button
+                                        onClick={() => {
+                                          setUpdateDialog(true);
+                                          setTransaction(transaction);
+                                        }}
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
+                                      >
+                                        <Pen className="h-4 w-4" />
+                                        <span className="sr-only">
+                                          modifier
+                                        </span>
+                                      </Button>
+                                      <Button
+                                        onClick={() => {
+                                          setDeleteDialog(true);
+                                          setTransaction(transaction);
+                                        }}
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                        <span className="sr-only">
+                                          Supprimer
+                                        </span>
+                                      </Button>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              )
+                            )
+                          ) : (
+                            <TableRow>
+                              <TableCell colSpan={7} className="text-center">
+                                Aucune transaction trouvée
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                    {totalPages && totalPages > 1 ? (
+                      <CustomPagination
+                        currentPage={page}
+                        setCurrentPage={setPage}
+                        totalPages={totalPages}
+                      />
+                    ) : (
+                      ""
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
-            {totalPages && totalPages > 1 ? (
-              <CustomPagination
-                currentPage={page}
-                setCurrentPage={setPage}
-                totalPages={totalPages}
-              />
-            ) : (
-              ""
-            )}
           </div>
         </div>
       </div>

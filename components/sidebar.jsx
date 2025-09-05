@@ -1,24 +1,25 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
+import { useUser } from "@clerk/nextjs";
 import {
-  LayoutDashboard,
-  Users,
-  Package,
-  FileText,
-  Truck,
   ChevronDown,
   ChevronRight,
   ContactRound,
-  Settings,
-  Landmark,
-  Grid2X2,
-  ScrollText,
+  FileText,
   Files,
+  Grid2X2,
+  Landmark,
+  LayoutDashboard,
+  Package,
+  ScrollText,
+  Settings,
+  Truck,
+  Users,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
 
 const menuItems = [
   //  { icon: TestTubeDiagonal, label: "Test", href: "/test" },
@@ -94,13 +95,14 @@ const menuItems = [
         label: "Catégories des produits",
         href: "/parametres/categories",
       },
-        {
+      {
         label: "Charges récurrentes",
         href: "/parametres/charges",
       },
       { label: "Comptes bancaires", href: "/parametres/banques" },
       { label: "Modes de paiement", href: "/parametres/modesPaiement" },
       { label: "Type de tâches", href: "/parametres/typeTaches" },
+      { label: "Utilisateurs", href: "/parametres/users-management" },
     ],
   },
 ];
@@ -110,25 +112,50 @@ export function Sidebar() {
   const router = useRouter();
   const [isExpanded, setIsExpanded] = useState(false);
   const [openMenus, setOpenMenus] = useState(["produits", "achats", "ventes"]);
+  const { user } = useUser();
 
-  const toggleMenu = (href) => {
-    setOpenMenus((current) =>
+  const toggleMenu = href => {
+    setOpenMenus(current =>
       current.includes(href)
-        ? current.filter((item) => item !== href)
+        ? current.filter(item => item !== href)
         : [...current, href]
     );
   };
 
-  const isActive = (href) => {
+  const isActive = href => {
     if (href === "/") {
       return pathname === href;
     }
     return pathname.startsWith(href);
   };
 
-  const isSubActive = (href) => {
+  const isSubActive = href => {
     return pathname === href;
   };
+
+  // Filtrer les éléments du menu en fonction du rôle de l'utilisateur
+  const getFilteredMenuItems = () => {
+    return menuItems.map(item => {
+      if (item.subItems) {
+        // Filtrer les sous-éléments pour les paramètres
+        const filteredSubItems = item.subItems.filter(subItem => {
+          // Masquer "Utilisateurs" si l'utilisateur n'est pas admin
+          if (subItem.href === "/parametres/users-management") {
+            return user?.publicMetadata?.role === "admin";
+          }
+          return true;
+        });
+
+        return {
+          ...item,
+          subItems: filteredSubItems,
+        };
+      }
+      return item;
+    });
+  };
+
+  const filteredMenuItems = getFilteredMenuItems();
 
   return (
     <div
@@ -140,7 +167,7 @@ export function Sidebar() {
     >
       <nav className="h-full overflow-y-auto">
         <ul className="space-y-1 p-2">
-          {menuItems.map((item, index) => {
+          {filteredMenuItems.map((item, index) => {
             const isMenuActive = isActive(item.href);
             const isOpen = openMenus.includes(item.href);
             const Icon = item.icon;
@@ -213,7 +240,7 @@ export function Sidebar() {
 
                 {isExpanded && item.subItems && isOpen && (
                   <ul className="ml-1 w-full mt-1 space-y-1">
-                    {item.subItems.map((subItem) => {
+                    {item.subItems.map(subItem => {
                       const isSubItemActive = isSubActive(subItem.href);
 
                       return (
