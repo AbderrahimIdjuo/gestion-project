@@ -1,5 +1,10 @@
-import { clerkClient } from "@clerk/clerk-sdk-node";
+import { createClerkClient } from "@clerk/backend";
 import { NextResponse } from "next/server";
+
+// Create Clerk client instance
+const clerkClient = createClerkClient({
+  secretKey: process.env.CLERK_SECRET_KEY,
+});
 
 // GET - Récupérer tous les utilisateurs
 export async function GET() {
@@ -40,6 +45,27 @@ export async function POST(req) {
 
     console.log("POST request received", nom, email, role);
 
+    // Check if user with this email already exists
+    try {
+      const existingUsers = await clerkClient.users.getUserList({
+        emailAddress: [email],
+        limit: 1,
+      });
+
+      if (existingUsers.data.length > 0) {
+        return NextResponse.json(
+          {
+            error:
+              "Cette adresse email est déjà utilisée. Veuillez en choisir une autre.",
+          },
+          { status: 409 }
+        );
+      }
+    } catch (checkError) {
+      // If check fails, continue with creation attempt
+      console.log("Could not check existing users:", checkError.message);
+    }
+
     const user = await clerkClient.users.createUser({
       firstName: nom,
       emailAddress: [email],
@@ -61,6 +87,21 @@ export async function POST(req) {
       "Erreur lors de la création de l'utilisateur:",
       JSON.stringify(error, null, 2)
     );
+
+    // Handle specific Clerk errors
+    if (error.clerkError && error.errors && error.errors.length > 0) {
+      const clerkError = error.errors[0];
+      if (clerkError.code === "form_identifier_exists") {
+        return NextResponse.json(
+          {
+            error:
+              "Cette adresse email est déjà utilisée. Veuillez en choisir une autre.",
+          },
+          { status: 409 }
+        );
+      }
+    }
+
     return NextResponse.json(
       { error: error.message || "Erreur lors de la création de l'utilisateur" },
       { status: 500 }

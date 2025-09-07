@@ -239,7 +239,6 @@ export default function UsersManagement() {
                             <TableHead>Nom</TableHead>
                             <TableHead>Email</TableHead>
                             <TableHead>Rôle</TableHead>
-                            <TableHead>Statut</TableHead>
                             <TableHead>Dernière connexion</TableHead>
                             <TableHead className="text-right">
                               Actions
@@ -264,22 +263,15 @@ export default function UsersManagement() {
                                   <span
                                     className={`px-2 py-1 rounded-full text-xs font-medium ${
                                       user.role === "admin"
-                                        ? "bg-blue-100 text-blue-800"
-                                        : "bg-green-100 text-green-800"
+                                        ? "bg-purple-100 text-purple-800"
+                                        : "bg-emerald-100 text-emerald-800"
                                     }`}
                                   >
-                                    {user.role}
-                                  </span>
-                                </TableCell>
-                                <TableCell>
-                                  <span
-                                    className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                      user.actif
-                                        ? "bg-green-100 text-green-800"
-                                        : "bg-red-100 text-red-800"
-                                    }`}
-                                  >
-                                    {user.actif ? "Actif" : "Inactif"}
+                                    {user.role === "admin"
+                                      ? "Admin"
+                                      : user.role === "commercant"
+                                      ? "Commerçant"
+                                      : "Indeterminer"}
                                   </span>
                                 </TableCell>
                                 <TableCell>

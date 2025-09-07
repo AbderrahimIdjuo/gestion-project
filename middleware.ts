@@ -1,10 +1,15 @@
-import { clerkClient } from "@clerk/clerk-sdk-node";
+import { createClerkClient } from "@clerk/backend";
 import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 export default clerkMiddleware(async (auth, request) => {
   const { pathname } = request.nextUrl;
   const authObject = await auth();
+
+  // Create Clerk client instance
+  const clerkClient = createClerkClient({
+    secretKey: process.env.CLERK_SECRET_KEY!,
+  });
 
   // Routes à exclure de la vérification (SSO callback, API, etc.)
   const excludedRoutes = [

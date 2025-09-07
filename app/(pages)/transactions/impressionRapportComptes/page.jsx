@@ -10,8 +10,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatCurrency, formatDate, typeLabel , methodePaiementLabel } from "@/lib/functions";
-import React, { useEffect, useState } from "react";
+import { formatCurrency, formatDate } from "@/lib/functions";
+import { useEffect, useState } from "react";
 import "./page.css";
 
 export default function ImpressionRapport() {
@@ -25,31 +25,53 @@ export default function ImpressionRapport() {
     }
   }, []);
 
-  // Fonction pour grouper les transactions par type
-  const groupTransactionsByType = transactions => {
+  // Fonction pour calculer les totaux et le solde
+  const calculateTotals = transactions => {
+    if (!transactions || transactions.length === 0)
+      return { totalRecettes: 0, totalDepenses: 0, solde: 0 };
+
+    const totals = transactions.reduce(
+      (acc, transaction) => {
+        if (transaction.type === "recette") {
+          acc.totalRecettes += transaction.montant;
+        } else if (
+          transaction.type === "depense" ||
+          transaction.type === "vider"
+        ) {
+          acc.totalDepenses += transaction.montant;
+        }
+        return acc;
+      },
+      { totalRecettes: 0, totalDepenses: 0 }
+    );
+
+    totals.solde = totals.totalRecettes - totals.totalDepenses;
+    return totals;
+  };
+
+  // Fonction pour trier les transactions par date et calculer le solde cumulé
+  const sortTransactionsWithBalance = transactions => {
     if (!transactions || transactions.length === 0) return [];
 
-    const grouped = transactions.reduce((acc, transaction) => {
-      const type = transaction.type || "inconnu";
-      if (!acc[type]) {
-        acc[type] = [];
-      }
-      acc[type].push(transaction);
-      return acc;
-    }, {});
+    const sorted = [...transactions].sort((a, b) => {
+      const dateA = new Date(a.date || a.createdAt);
+      const dateB = new Date(b.date || b.createdAt);
+      return dateA - dateB;
+    });
 
-    return Object.entries(grouped).map(([type, transactions]) => ({
-      type,
-      transactions,
-      total: transactions.reduce((sum, transaction) => {
-        if (type === "recette") {
-          return sum + transaction.montant;
-        } else if (type === "depense" || type === "vider") {
-          return sum - transaction.montant;
-        }
-        return sum;
-      }, 0),
-    }));
+    // Commencer avec le solde initial de la caisse
+    let runningBalance = data?.soldeInitial || 0;
+    return sorted.map(transaction => {
+      if (transaction.type === "recette") {
+        runningBalance += transaction.montant;
+      } else if (
+        transaction.type === "depense" ||
+        transaction.type === "vider"
+      ) {
+        runningBalance -= transaction.montant;
+      }
+      return { ...transaction, runningBalance };
+    });
   };
 
   function ajouterUneHeure(from) {
@@ -98,121 +120,164 @@ export default function ImpressionRapport() {
                 </p>
               </div>
             </div>
+            {/* Section de résumé */}
+            <div className="bg-gray-50 p-4 rounded-lg mb-6 print-block">
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-600 mb-1">
+                    Total Des Recettes
+                  </h3>
+                  <p className="text-lg font-bold text-green-600">
+                    {formatCurrency(
+                      calculateTotals(data?.transactions).totalRecettes
+                    )}
+                  </p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-600 mb-1">
+                    Total Des Dépenses
+                  </h3>
+                  <p className="text-lg font-bold text-red-600">
+                    {formatCurrency(
+                      calculateTotals(data?.transactions).totalDepenses
+                    )}
+                  </p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-600 mb-1">
+                    Solde
+                  </h3>
+                  <p
+                    className={`text-lg font-bold ${soldeColor(
+                      data?.soldeActuel
+                    )}`}
+                  >
+                    {formatCurrency(data?.soldeActuel)}
+                  </p>
+                </div>
+              </div>
+            </div>
             <div className="rounded-xl border shadow-sm overflow-x-auto main-table-container print-block">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Date</TableHead>
-                    <TableHead>Label</TableHead>
-                    <TableHead className="text-right">Montant</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Méthode</TableHead>
-                    <TableHead>Compte</TableHead>
-                    <TableHead>Description</TableHead>
+                    <TableHead>Désignation (Recettes)</TableHead>
+                    <TableHead className="text-right">MNT</TableHead>
+                    <TableHead>Désignation (Dépenses)</TableHead>
+                    <TableHead className="text-right">MNT</TableHead>
+                    <TableHead className="text-right">Solde</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {data?.transactions?.length > 0 ? (
-                    groupTransactionsByType(data.transactions).map(
-                      (typeGroup, typeIndex) => (
-                        <React.Fragment key={typeIndex}>
-                          {/* Transactions du groupe */}
-                          {typeGroup.transactions.map((transaction, index) => (
-                            <TableRow key={transaction.id}>
-                              <TableCell className="px-1 py-2">
-                                {formatDate(transaction.date) ||
-                                  formatDate(transaction.createdAt)}
-                              </TableCell>
-                              <TableCell className="px-1 py-2">
-                                {transaction.lable}
-                              </TableCell>
-                              <TableCell className="px-1 py-2 text-right pr-4">
-                                {transaction.montant} DH
-                              </TableCell>
-                              <TableCell className="px-1 py-2">
-                                {typeLabel(transaction.type)}
-                              </TableCell>
-                              <TableCell className="px-1 py-2">
-                                {methodePaiementLabel(transaction.methodePaiement)}
-                              </TableCell>
-                              <TableCell className="px-1 py-2">
-                                {transaction.compte.replace("compte", "")}
-                              </TableCell>
-                              <TableCell className="px-1 py-2">
-                                {transaction.description.replace(
-                                  "paiement du fournisseur",
-                                  "Bénéficiaire : "
-                                )}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                          {/* Total du groupe de type en bas */}
-                          <TableRow
-                            className={`${
-                              typeGroup.type === "depense"
-                                ? "bg-rose-50"
-                                : typeGroup.type === "recette"
-                                ? "bg-emerald-50"
-                                : "bg-sky-50"
-                            }`}
-                          >
+                    <>
+                      {/* Solde initial */}
+                      <TableRow>
+                        <TableCell className="px-1 py-2 font-semibold">
+                          SOLDE DE CAISSE
+                        </TableCell>
+                        <TableCell className="px-1 py-2"></TableCell>
+                        <TableCell className="px-1 py-2 text-right pr-4"></TableCell>
+                        <TableCell className="px-1 py-2"></TableCell>
+                        <TableCell className="px-1 py-2 text-right pr-4"></TableCell>
+                        <TableCell
+                          className={`px-1 py-2 text-right pr-4 font-semibold ${soldeColor(
+                            data?.soldeInitial || 0
+                          )}`}
+                        >
+                          {formatCurrency(data?.soldeInitial || 0)}
+                        </TableCell>
+                      </TableRow>
+                      {/* Transactions */}
+                      {sortTransactionsWithBalance(data.transactions).map(
+                        transaction => (
+                          <TableRow key={transaction.id}>
+                            <TableCell className="px-1 py-2">
+                              {formatDate(transaction.date) ||
+                                formatDate(transaction.createdAt)}
+                            </TableCell>
+                            <TableCell className="px-1 py-2">
+                              {transaction.type === "recette"
+                                ? transaction.lable
+                                : ""}
+                            </TableCell>
+                            <TableCell className="px-1 py-2 text-right pr-4">
+                              {transaction.type === "recette"
+                                ? formatCurrency(transaction.montant)
+                                : ""}
+                            </TableCell>
+                            <TableCell className="px-1 py-2">
+                              {transaction.type === "depense" ||
+                              transaction.type === "vider"
+                                ? transaction.lable
+                                : ""}
+                            </TableCell>
+                            <TableCell className="px-1 py-2 text-right pr-4">
+                              {transaction.type === "depense" ||
+                              transaction.type === "vider"
+                                ? formatCurrency(transaction.montant)
+                                : ""}
+                            </TableCell>
                             <TableCell
-                              colSpan={7}
-                              className={`font-semibold text-lg py-3 ${
-                                typeGroup.type === "depense"
-                                  ? "text-rose-700"
-                                  : typeGroup.type === "recette"
-                                  ? "text-emerald-700"
-                                  : "text-sky-700"
-                              }`}
+                              className={`px-1 py-2 text-right pr-4 font-semibold ${soldeColor(
+                                transaction.runningBalance
+                              )}`}
                             >
-                              Total {typeLabel(typeGroup.type)} :{" "}
-                              {formatCurrency(typeGroup.total)}
+                              {formatCurrency(transaction.runningBalance)}
                             </TableCell>
                           </TableRow>
-                        </React.Fragment>
-                      )
-                    )
+                        )
+                      )}
+                    </>
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center">
+                      <TableCell colSpan={6} className="text-center">
                         Aucune transaction trouvée
                       </TableCell>
                     </TableRow>
                   )}
                 </TableBody>
-                <TableFooter className="bg-none">
+                <TableFooter className="bg-gray-50">
                   <TableRow>
-                    <TableCell
-                      colSpan={6}
-                      className={`text-right text-lg font-semibold p-2 ${soldeColor(
-                        data?.totalTransactions
-                      )}`}
-                    >
-                      Total des transactions :
+                    <TableCell className="text-lg font-semibold p-2">
+                      Total des recettes :
                     </TableCell>
-                    <TableCell
-                      colSpan={1}
-                      className={`text-left text-lg font-semibold p-2 ${soldeColor(
-                        data?.totalTransactions
-                      )}`}
-                    >
-                      {formatCurrency(data?.totalTransactions)}
+                    <TableCell className="p-2"></TableCell>
+                    <TableCell className="text-right text-lg font-semibold p-2 text-green-600">
+                      {formatCurrency(
+                        calculateTotals(data?.transactions).totalRecettes
+                      )}
                     </TableCell>
+                    <TableCell className="p-2"></TableCell>
+                    <TableCell className="p-2"></TableCell>
+                    <TableCell className="p-2"></TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell
-                      colSpan={6}
-                      className={`text-right text-lg font-semibold p-2 ${soldeColor(
-                        data?.soldeActuel
-                      )}`}
-                    >
-                      Solde actuel:
+                    <TableCell className="text-lg font-semibold p-2">
+                      Total des dépenses :
                     </TableCell>
+                    <TableCell className="p-2"></TableCell>
+                    <TableCell className="p-2"></TableCell>
+                    <TableCell className="p-2"></TableCell>
+                    <TableCell className="text-right text-lg font-semibold p-2 text-red-600">
+                      {formatCurrency(
+                        calculateTotals(data?.transactions).totalDepenses
+                      )}
+                    </TableCell>
+                    <TableCell className="p-2"></TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="text-lg font-semibold p-2">
+                      Solde :
+                    </TableCell>
+                    <TableCell className="p-2"></TableCell>
+                    <TableCell className="p-2"></TableCell>
+                    <TableCell className="p-2"></TableCell>
+                    <TableCell className="p-2"></TableCell>
                     <TableCell
-                      colSpan={1}
-                      className={`text-left text-lg font-semibold p-2 ${soldeColor(
-                        data?.soldeActuel
+                      className={`text-right text-lg font-semibold p-2 ${soldeColor(
+                        calculateTotals(data?.transactions).solde
                       )}`}
                     >
                       {formatCurrency(data?.soldeActuel)}

@@ -232,9 +232,33 @@ export default function ComptesRapportDialog() {
     return Data?.comptes.find(c => c.compte === compte).solde;
   };
 
-  // const soldeInitial = () => {
-  //   return soldeActuel() - solde();
-  // };
+  const soldeInitial = () => {
+    return soldeActuel() - solde();
+  };
+
+  // Fonction pour calculer les totaux et le solde
+  const calculateTotals = transactions => {
+    if (!transactions || transactions.length === 0)
+      return { totalRecettes: 0, totalDepenses: 0, solde: 0 };
+
+    const totals = transactions.reduce(
+      (acc, transaction) => {
+        if (transaction.type === "recette") {
+          acc.totalRecettes += transaction.montant;
+        } else if (
+          transaction.type === "depense" ||
+          transaction.type === "vider"
+        ) {
+          acc.totalDepenses += transaction.montant;
+        }
+        return acc;
+      },
+      { totalRecettes: 0, totalDepenses: 0 }
+    );
+
+    totals.solde = totals.totalRecettes - totals.totalDepenses;
+    return totals;
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -352,6 +376,41 @@ export default function ComptesRapportDialog() {
         )}
         {currentStep === 2 && (
           <div>
+            {/* Section de résumé */}
+            <div className="bg-gray-50 p-4 rounded-lg mb-6 print-block">
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-600 mb-1">
+                    Total Des Recettes
+                  </h3>
+                  <p className="text-lg font-bold text-green-600">
+                    {formatCurrency(
+                      calculateTotals(Data?.transactions).totalRecettes
+                    )}
+                  </p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-600 mb-1">
+                    Total Des Dépenses
+                  </h3>
+                  <p className="text-lg font-bold text-red-600">
+                    {formatCurrency(
+                      calculateTotals(Data?.transactions).totalDepenses
+                    )}
+                  </p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-600 mb-1">
+                    Solde
+                  </h3>
+                  <p
+                    className={`text-lg font-bold ${soldeColor(soldeActuel())}`}
+                  >
+                    {formatCurrency(soldeActuel())}
+                  </p>
+                </div>
+              </div>
+            </div>
             <div className="rounded-lg border overflow-x-auto mb-3">
               <Table className="w-full">
                 <TableHeader>
@@ -549,6 +608,7 @@ export default function ComptesRapportDialog() {
                     to,
                     totalTransactions: solde(),
                     soldeActuel: soldeActuel(),
+                    soldeInitial: soldeInitial(),
                   };
                   localStorage.setItem(
                     "transaction-rapport",
