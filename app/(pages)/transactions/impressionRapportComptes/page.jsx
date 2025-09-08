@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatCurrency, formatDate } from "@/lib/functions";
+import { ajouterUneHeure, formatCurrency, formatDate } from "@/lib/functions";
 import { useEffect, useState } from "react";
 import "./page.css";
 
@@ -74,22 +74,9 @@ export default function ImpressionRapport() {
     });
   };
 
-  function ajouterUneHeure(from) {
-    // Si "from" est déjà un objet Date, on l'utilise directement
-    const date =
-      from instanceof Date ? new Date(from) : new Date(String(from).trim());
-
-    if (isNaN(date.getTime())) {
-      throw new Error(`Date invalide : ${from}`);
-    }
-
-    date.setHours(date.getHours() + 1);
-    return date.toISOString();
-  }
-
   const soldeColor = solde => {
     if (solde > 0) {
-      return "text-green-500";
+      return "text-green-600";
     } else if (solde < 0) {
       return "text-rose-600";
     }
@@ -108,16 +95,20 @@ export default function ImpressionRapport() {
           <div className="flex justify-between gap-8"></div>
           <div className="space-y-6">
             <div className="grid grid-cols-2 items-center mb-4 print-block">
-              <div className="flex gap-2 items-center">
-                <h3 className="mb-1 font-semibold text-gray-900">Compte :</h3>
-                <p className="text-sm text-gray-600">{data?.compte}</p>
+              <div className="flex flex-row gap-2 items-center">
+                <h3 className="font-semibold text-gray-900">
+                  Compte :{" "}
+                  <span className="text-sm text-gray-600">{data?.compte}</span>
+                </h3>
               </div>
-              <div className="flex gap-2 items-center">
-                <h3 className="mb-1 font-semibold text-gray-900">Période :</h3>
-                <p className="text-sm text-gray-600">
-                  {data?.from ? formatDate(ajouterUneHeure(data.from)) : "—"} •{" "}
-                  {data?.to ? formatDate(data.to) : "—"}
-                </p>
+              <div className="flex flex-row gap-2 items-center">
+                <h3 className="font-semibold text-gray-900">
+                  Période :{" "}
+                  <span className="text-sm text-gray-600">
+                    {data?.from ? formatDate(ajouterUneHeure(data.from)) : "—"}{" "}
+                    • {data?.to ? formatDate(data.to) : "—"}
+                  </span>
+                </h3>
               </div>
             </div>
             {/* Section de résumé */}
@@ -158,33 +149,39 @@ export default function ImpressionRapport() {
               </div>
             </div>
             <div className="rounded-xl border shadow-sm overflow-x-auto main-table-container print-block">
-              <Table>
+              <Table className="border-collapse">
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Désignation (Recettes)</TableHead>
-                    <TableHead className="text-right">MNT</TableHead>
-                    <TableHead>Désignation (Dépenses)</TableHead>
-                    <TableHead className="text-right">MNT</TableHead>
-                    <TableHead className="text-right">Solde</TableHead>
+                  <TableRow className="border-b">
+                    <TableHead className="border-r border-b">Date</TableHead>
+                    <TableHead className="w-[15rem] border-r border-b">
+                      Désignation (Recettes)
+                    </TableHead>
+                    <TableHead className="text-right border-r border-b">
+                      MNT
+                    </TableHead>
+                    <TableHead className="w-[15rem] border-r border-b">
+                      Désignation (Dépenses)
+                    </TableHead>
+                    <TableHead className="text-right border-r border-b">
+                      MNT
+                    </TableHead>
+                    <TableHead className="text-right border-b">Solde</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {data?.transactions?.length > 0 ? (
                     <>
                       {/* Solde initial */}
-                      <TableRow>
-                        <TableCell className="px-1 py-2 font-semibold">
+                      <TableRow className="bg-gray-700 text-white hover:!bg-gray-700 hover:!text-white border-b">
+                        <TableCell className="px-1 py-2 font-semibold border-r">
                           SOLDE DE CAISSE
                         </TableCell>
-                        <TableCell className="px-1 py-2"></TableCell>
-                        <TableCell className="px-1 py-2 text-right pr-4"></TableCell>
-                        <TableCell className="px-1 py-2"></TableCell>
-                        <TableCell className="px-1 py-2 text-right pr-4"></TableCell>
+                        <TableCell className="px-1 py-2 w-[15rem] border-r"></TableCell>
+                        <TableCell className="px-1 py-2 text-right pr-4 border-r"></TableCell>
+                        <TableCell className="px-1 py-2 w-[15rem] border-r"></TableCell>
+                        <TableCell className="px-1 py-2 text-right pr-4 border-r"></TableCell>
                         <TableCell
-                          className={`px-1 py-2 text-right pr-4 font-semibold ${soldeColor(
-                            data?.soldeInitial || 0
-                          )}`}
+                          className={`px-1 py-2 text-right pr-4 font-semibold`}
                         >
                           {formatCurrency(data?.soldeInitial || 0)}
                         </TableCell>
@@ -192,28 +189,28 @@ export default function ImpressionRapport() {
                       {/* Transactions */}
                       {sortTransactionsWithBalance(data.transactions).map(
                         transaction => (
-                          <TableRow key={transaction.id}>
-                            <TableCell className="px-1 py-2">
+                          <TableRow key={transaction.id} className="border-b">
+                            <TableCell className="px-1 py-2 border-r">
                               {formatDate(transaction.date) ||
                                 formatDate(transaction.createdAt)}
                             </TableCell>
-                            <TableCell className="px-1 py-2">
+                            <TableCell className="px-1 py-2 border-r">
                               {transaction.type === "recette"
                                 ? transaction.lable
                                 : ""}
                             </TableCell>
-                            <TableCell className="px-1 py-2 text-right pr-4">
+                            <TableCell className="px-1 py-2 text-right pr-4 border-r">
                               {transaction.type === "recette"
                                 ? formatCurrency(transaction.montant)
                                 : ""}
                             </TableCell>
-                            <TableCell className="px-1 py-2">
+                            <TableCell className="px-1 py-2 border-r">
                               {transaction.type === "depense" ||
                               transaction.type === "vider"
                                 ? transaction.lable
                                 : ""}
                             </TableCell>
-                            <TableCell className="px-1 py-2 text-right pr-4">
+                            <TableCell className="px-1 py-2 text-right pr-4 border-r">
                               {transaction.type === "depense" ||
                               transaction.type === "vider"
                                 ? formatCurrency(transaction.montant)
@@ -239,28 +236,32 @@ export default function ImpressionRapport() {
                   )}
                 </TableBody>
                 <TableFooter className="bg-gray-50">
-                  <TableRow>
-                    <TableCell className="text-lg font-semibold p-2">
-                      Total des recettes :
+                  <TableRow className="border-b">
+                    <TableCell className="text-lg font-semibold p-2 border-r">
+                      Total :
                     </TableCell>
-                    <TableCell className="p-2"></TableCell>
-                    <TableCell className="text-right text-lg font-semibold p-2 text-green-600">
+                    <TableCell className="p-2 border-r"></TableCell>
+                    <TableCell className="text-right text-lg font-semibold p-2 text-green-600 border-r">
                       {formatCurrency(
                         calculateTotals(data?.transactions).totalRecettes
                       )}
                     </TableCell>
-                    <TableCell className="p-2"></TableCell>
-                    <TableCell className="p-2"></TableCell>
-                    <TableCell className="p-2"></TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="text-lg font-semibold p-2">
-                      Total des dépenses :
+                    <TableCell className="p-2 border-r"></TableCell>
+                    <TableCell className="text-right text-lg font-semibold p-2 text-red-600 border-r">
+                      {formatCurrency(
+                        calculateTotals(data?.transactions).totalDepenses
+                      )}
                     </TableCell>
                     <TableCell className="p-2"></TableCell>
-                    <TableCell className="p-2"></TableCell>
-                    <TableCell className="p-2"></TableCell>
-                    <TableCell className="text-right text-lg font-semibold p-2 text-red-600">
+                  </TableRow>
+                  {/* <TableRow className="border-b">
+                    <TableCell className="text-lg font-semibold p-2 border-r">
+                      Total des dépenses :
+                    </TableCell>
+                    <TableCell className="p-2 border-r"></TableCell>
+                    <TableCell className="p-2 border-r"></TableCell>
+                    <TableCell className="p-2 border-r"></TableCell>
+                    <TableCell className="text-right text-lg font-semibold p-2 text-red-600 border-r">
                       {formatCurrency(
                         calculateTotals(data?.transactions).totalDepenses
                       )}
@@ -268,13 +269,13 @@ export default function ImpressionRapport() {
                     <TableCell className="p-2"></TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="text-lg font-semibold p-2">
+                    <TableCell className="text-lg font-semibold p-2 border-r">
                       Solde :
                     </TableCell>
-                    <TableCell className="p-2"></TableCell>
-                    <TableCell className="p-2"></TableCell>
-                    <TableCell className="p-2"></TableCell>
-                    <TableCell className="p-2"></TableCell>
+                    <TableCell className="p-2 border-r"></TableCell>
+                    <TableCell className="p-2 border-r"></TableCell>
+                    <TableCell className="p-2 border-r"></TableCell>
+                    <TableCell className="p-2 border-r"></TableCell>
                     <TableCell
                       className={`text-right text-lg font-semibold p-2 ${soldeColor(
                         calculateTotals(data?.transactions).solde
@@ -282,17 +283,15 @@ export default function ImpressionRapport() {
                     >
                       {formatCurrency(data?.soldeActuel)}
                     </TableCell>
-                  </TableRow>
+                  </TableRow> */}
                 </TableFooter>
               </Table>
             </div>
           </div>
         </div>
-        <div
-          className="flex items-center justify-end 
-print:hidden mt-5"
-        >
-          <DirectPrintButton className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full">
+        {/* Bouton d'impression fixé en bas de la page */}
+        <div className="fixed  bottom-4 right-4 z-50 print:hidden">
+          <DirectPrintButton className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full shadow-lg">
             Imprimer
           </DirectPrintButton>
         </div>

@@ -60,7 +60,8 @@
     height: 90% !important;
     page-break-inside: auto;
     border-collapse: collapse !important;
-    font-size: 10px; /* Taille de police réduite pour l'orientation horizontale */
+    font-size: 8px; /* Taille de police réduite pour éviter le débordement */
+    table-layout: auto !important; /* Permet l'ajustement automatique des colonnes */
   }
 
   /* EMPÊCHER la répétition de l'en-tête ET du footer sur chaque page */
@@ -81,7 +82,8 @@
 
   th,
   td {
-    border-color: rgba(92, 92, 92, 0.776) !important;
+    border: 1px solid #374151 !important; /* Bordure plus visible */
+    border-color: #374151 !important;
     padding: 4px 6px !important; /* Padding réduit pour l'orientation horizontale */
   }
 
@@ -156,5 +158,45 @@
   td {
     white-space: nowrap !important;
     min-width: auto !important;
+  }
+
+  /* Largeur fixe pour la colonne date - ajustée au contenu */
+  th:nth-child(1),
+  td:nth-child(1) {
+    width: 6rem !important;
+    min-width: 6rem !important;
+    max-width: 6rem !important;
+    white-space: nowrap !important;
+  }
+
+  /* Largeur fixe pour les colonnes de désignation avec retour à la ligne */
+  th:nth-child(2),
+  th:nth-child(4),
+  td:nth-child(2),
+  td:nth-child(4) {
+    width: 12rem !important;
+    min-width: 12rem !important;
+    max-width: 10rem !important;
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+  }
+
+  /* Ajuster les colonnes de montant pour éviter le chevauchement */
+  th:nth-child(3),
+  th:nth-child(5),
+  td:nth-child(3),
+  td:nth-child(5) {
+    width: 8rem !important;
+    min-width: 8rem !important;
+    text-align: right !important;
+  }
+
+  /* Colonne de solde */
+  th:nth-child(6),
+  td:nth-child(6) {
+    width: 8rem !important;
+    min-width: 8rem !important;
+    text-align: right !important;
   }
 }

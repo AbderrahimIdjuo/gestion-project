@@ -189,7 +189,7 @@ export default function ComptesRapportDialog() {
 
   const soldeColor = solde => {
     if (solde > 0) {
-      return "text-green-500";
+      return "text-green-600";
     } else if (solde < 0) {
       return "text-rose-600";
     }
@@ -376,6 +376,20 @@ export default function ComptesRapportDialog() {
         )}
         {currentStep === 2 && (
           <div>
+            <div className="grid grid-cols-2 items-center mb-4 print-block">
+              <div className="flex flex-row gap-2 items-center">
+                <h3 className="font-semibold text-gray-900">
+                  Compte :{" "}
+                  <span className="text-sm text-gray-600">{compte}</span>
+                </h3>
+              </div>
+              <div className="flex flex-row gap-2 items-center">
+                <h3 className="font-semibold text-gray-900">
+                  Période :{" "}
+                  <span className="text-sm text-gray-600">{periode} </span>
+                </h3>
+              </div>
+            </div>
             {/* Section de résumé */}
             <div className="bg-gray-50 p-4 rounded-lg mb-6 print-block">
               <div className="grid grid-cols-3 gap-4 text-center">
@@ -524,14 +538,14 @@ export default function ComptesRapportDialog() {
                               colSpan={8}
                               className={`font-semibold text-lg  py-3 ${
                                 typeGroup.type === "depense"
-                                  ? "text-rose-700 hover:bg-rose-50"
+                                  ? "text-red-600 hover:bg-rose-50"
                                   : typeGroup.type === "recette"
-                                  ? "text-emerald-700 hover:bg-emerald-50"
-                                  : "text-sky-700 hover:bg-sky-50"
+                                  ? "text-green-600 hover:bg-emerald-50"
+                                  : "text-sky-600 hover:bg-sky-50"
                               }`}
                             >
                               Total {handleTypeLableColor(typeGroup.type).lable}{" "}
-                              : {formatCurrency(typeGroup.total)}
+                              : {formatCurrency(Math.abs(typeGroup.total))}
                             </TableCell>
                           </TableRow>
                         </React.Fragment>
@@ -546,6 +560,24 @@ export default function ComptesRapportDialog() {
                   )}
                 </TableBody>
                 <TableFooter className="bg-none">
+                  <TableRow>
+                    <TableCell
+                      colSpan={6}
+                      className={`text-right text-lg font-semibold p-2 ${soldeColor(
+                        soldeInitial()
+                      )}`}
+                    >
+                      Solde initial :
+                    </TableCell>
+                    <TableCell
+                      colSpan={2}
+                      className={`text-left text-lg font-semibold p-2 ${soldeColor(
+                        soldeInitial()
+                      )}`}
+                    >
+                      {formatCurrency(soldeInitial())}
+                    </TableCell>
+                  </TableRow>
                   <TableRow>
                     <TableCell
                       colSpan={6}
