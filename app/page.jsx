@@ -16,7 +16,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useConnectionStatus } from "@/hooks/useConnectionStatus";
 import { formatCurrency } from "@/lib/functions";
 import { SignIn, useUser } from "@clerk/nextjs";
 import { useQuery } from "@tanstack/react-query";
@@ -533,6 +532,14 @@ export default function Page() {
                       statistiques.isLoading || statistiques.isFetching
                     }
                   />
+                </div>
+                {/* Cartes des produits et articles sur la même ligne */}
+                <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
+                  {/* Carte des produits les plus achetés */}
+                  <TopProductsCard from={from} to={to} />
+
+                  {/* Carte des articles les plus vendus */}
+                  <TopArticlesCard from={from} to={to} />
                 </div>
 
                 {/* <div className="grid gap-4 grid-cols-1 shadow-md">
