@@ -34,7 +34,9 @@ jobs:
       - name: Setup rclone config
         run: |
           mkdir -p ~/.config/rclone
-          echo "${{ secrets.RCLONE_CONF_BASE64 }}" | base64 --decode > ~/.config/rclone/rclone.conf
+          cat > ~/.config/rclone/rclone.conf <<'EOF'
+          ${{ secrets.RCLONE_CONF }}
+          EOF
 
       - name: Debug rclone config
         run: |
