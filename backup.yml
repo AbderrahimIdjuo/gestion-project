@@ -36,6 +36,13 @@ jobs:
           mkdir -p ~/.config/rclone
           echo "${{ secrets.RCLONE_CONF_BASE64 }}" | base64 --decode > ~/.config/rclone/rclone.conf
 
+      - name: Debug rclone config
+        run: |
+          echo "=== rclone.conf inside runner ==="
+          cat ~/.config/rclone/rclone.conf
+          echo "=== Available remotes ==="
+          rclone listremotes
+
       - name: Generate backup filename
         id: backup_filename
         run: |
