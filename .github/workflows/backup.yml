@@ -1,0 +1,83 @@
+name: Neon Database Backup to Google Drive
+
+on:
+  # Exécution automatique chaque jour à 02h00 UTC
+  schedule:
+    - cron: "0 2 * * *"
+
+  # Exécution manuelle depuis l'interface GitHub
+  workflow_dispatch:
+    inputs:
+      backup_name:
+        description: "Nom personnalisé pour le backup (optionnel)"
+        required: false
+        type: string
+
+jobs:
+  backup-database:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PostgreSQL client
+        uses: harmon758/postgresql-action@v1
+        with:
+          postgresql version: "15"
+          postgresql password: "dummy"
+
+      - name: Install rclone
+        run: |
+          curl https://rclone.org/install.sh | sudo bash
+
+      - name: Configure rclone
+        run: |
+          mkdir -p ~/.config/rclone
+          echo "${{ secrets.RCLONE_CONFIG }}" > ~/.config/rclone/rclone.conf
+
+      - name: Generate backup filename
+        id: backup_filename
+        run: |
+          if [ -n "${{ github.event.inputs.backup_name }}" ]; then
+            echo "filename=backup-${{ github.event.inputs.backup_name }}-$(date +%Y-%m-%d-%H%M).sql.gz" >> $GITHUB_OUTPUT
+          else
+            echo "filename=backup-$(date +%Y-%m-%d-%H%M).sql.gz" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create database backup
+        run: |
+          echo "Creating database backup..."
+          pg_dump "${{ secrets.NEON_DB_URL }}" | gzip > ${{ steps.backup_filename.outputs.filename }}
+
+          # Vérifier que le fichier a été créé et n'est pas vide
+          if [ ! -s "${{ steps.backup_filename.outputs.filename }}" ]; then
+            echo "Error: Backup file is empty or was not created"
+            exit 1
+          fi
+
+          # Afficher la taille du fichier
+          ls -lh ${{ steps.backup_filename.outputs.filename }}
+
+      - name: Upload backup to Google Drive
+        run: |
+          echo "Uploading backup to Google Drive..."
+          rclone copy ${{ steps.backup_filename.outputs.filename }} gdrive:neon-db-backups/
+
+          # Vérifier que l'upload s'est bien passé
+          rclone ls gdrive:neon-db-backups/ | grep "${{ steps.backup_filename.outputs.filename }}"
+
+      - name: Clean up local backup file
+        if: always()
+        run: |
+          rm -f ${{ steps.backup_filename.outputs.filename }}
+
+      - name: Backup completed
+        run: |
+          echo "✅ Backup completed successfully!"
+          echo "📁 File: ${{ steps.backup_filename.outputs.filename }}"
+          echo "📂 Location: Google Drive/neon-db-backups/"
+          echo "🕐 Time: $(date)"
+      
+      
+          
