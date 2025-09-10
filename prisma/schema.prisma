@@ -218,6 +218,7 @@ model Devis {
   tva            Float
   totalPaye      Float?
   echeance       DateTime?
+  userId         String?
   articls        Articls[]
   client         Clients   @relation(fields: [clientId], references: [id], onDelete: Cascade)
 }

@@ -150,12 +150,20 @@ export default function TransactionDialog() {
       queryClient.invalidateQueries({ queryKey: ["statistiques"] });
     },
   });
+  const typeDepense = type => {
+    if (type === "depense") {
+      return isCharge || isChecked ? "fixe" : "variante";
+    } else if (type === "vider" || type === "recette") {
+      return null;
+    }
+  };
   const onSubmit = async data => {
     const Data = {
       ...data,
       date,
-      typeDepense: isCharge || isChecked ? "fixe" : "variante",
+      typeDepense: typeDepense(watch("type")),
     };
+    console.log("## Data ###", Data);
     if (isChecked && !isCharge) {
       console.log("enrgistrer la charge");
       addCharges.mutate(watch("lable"));
@@ -199,7 +207,7 @@ export default function TransactionDialog() {
               }}
               className="flex flex-row flex-wrap gap-4 justify-evenly"
             >
-              {/* <div className="flex items-center space-x-2 rounded-md p-2">
+              <div className="flex items-center space-x-2 rounded-md p-2">
                 <RadioGroupItem
                   value="recette"
                   id="recette"
@@ -211,7 +219,7 @@ export default function TransactionDialog() {
                 >
                   Recette
                 </Label>
-              </div> */}
+              </div>
               <div className="flex items-center space-x-2 rounded-md p-2">
                 <RadioGroupItem
                   value="depense"

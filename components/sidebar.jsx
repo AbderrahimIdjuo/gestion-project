@@ -16,6 +16,7 @@ import {
   Settings,
   Truck,
   Users,
+  Ruler,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -49,6 +50,7 @@ const menuItems = [
     label: "Employés",
     href: "/Employes",
   },
+
   // {
   //   icon: ShoppingCart,
   //   label: "Commandes clients",
@@ -68,20 +70,21 @@ const menuItems = [
     label: "Transactions",
     href: "/transactions",
   },
-  // {
-  //   icon: Truck,
-  //   label: "Achats",
-  //   href: "/achats",
-  //   subItems: [
-  //     {
-  //       label: "Fournisseurs",
-  //       href: "/achats/fournisseurs",
-  //     },
-  //     { label: "Commandes Fournitures", href: "/achats/commandes" },
-  //     { label: "Dépenses fix", href: "/achats/depenses-recurrentes" },
-  //     // { label: "Dépenses variantes", href: "/achats/depenses-variantes" },
-  //   ],
-  // },
+  {
+    icon: Ruler,
+    label: "Débitage",
+    href: "/debitage",
+    subItems: [
+      {
+        label: "Marbre",
+        href: "/debitage/marbre",
+      },
+      {
+        label: "Verre",
+        href: "/debitage/verre",
+      },
+    ],
+  },
   {
     icon: Settings,
     label: "Paramètres",

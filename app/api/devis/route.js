@@ -17,6 +17,7 @@ export async function POST(req) {
       note,
       echeance,
       date,
+      userId,
     } = resopns;
 
     const result = await prisma.$transaction(
@@ -35,6 +36,7 @@ export async function POST(req) {
             typeReduction,
             note,
             echeance,
+            userId,
             articls: {
               create: articls.map(articl => ({
                 key: articl.key, //permet de supprimer un articl doublon

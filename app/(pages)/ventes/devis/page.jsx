@@ -70,6 +70,25 @@ export default function DevisPage() {
   const [info, setInfo] = useState(false);
   const [deleteTransDialog, setDeleteTransDialog] = useState(false);
   const [deletedTrans, setDeletedTrans] = useState();
+
+  const getUsers = async () => {
+    const response = await axios.get("/api/users");
+    console.log("users :", response.data);
+
+    return response.data;
+  };
+
+  // Fonction pour récupérer le nom de l'utilisateur par son ID
+  const getUserName = userId => {
+    if (!userId || !users.data) return "";
+    const user = users.data.find(u => u.id === userId);
+    return user ? user.nom : "";
+  };
+
+  const users = useQuery({
+    queryKey: ["users"],
+    queryFn: getUsers,
+  });
   const deleteTrans = useMutation({
     mutationFn: async id => {
       const loadingToast = toast.loading("Suppression...");
@@ -457,6 +476,7 @@ export default function DevisPage() {
                         <TableHead>Date</TableHead>
                         <TableHead>Numéro</TableHead>
                         <TableHead>Client</TableHead>
+                        <TableHead>Editeur</TableHead>
                         <TableHead className="text-right">
                           Montant total
                         </TableHead>
@@ -479,7 +499,7 @@ export default function DevisPage() {
                             tabIndex={-1}
                             key={index}
                           >
-                            {[...Array(9)].map((_, cellIndex) => (
+                            {[...Array(10)].map((_, cellIndex) => (
                               <TableCell
                                 key={cellIndex}
                                 className="!py-2 text-sm md:text-base"
@@ -548,6 +568,9 @@ export default function DevisPage() {
                                 <TableCell className="!py-2">
                                   {devis.client.nom.toUpperCase()}
                                 </TableCell>
+                                <TableCell className="!py-2">
+                                  {getUserName(devis.userId)}
+                                </TableCell>
                                 <TableCell className="!py-2  text-right">
                                   {formatCurrency(devis.total)}
                                 </TableCell>
@@ -599,7 +622,7 @@ export default function DevisPage() {
                               </TableRow>
                               {info && expandedDevis === devis.id && (
                                 <TableRow>
-                                  <TableCell colSpan={10} className="p-0">
+                                  <TableCell colSpan={11} className="p-0">
                                     <div className="px-8 py-6 animate-in slide-in-from-top-2 duration-200">
                                       <div className="space-y-6">
                                         {/* Header Section */}
@@ -723,7 +746,7 @@ export default function DevisPage() {
                         ))
                       ) : (
                         <TableRow>
-                          <TableCell colSpan={10} align="center">
+                          <TableCell colSpan={11} align="center">
                             <div className="text-center py-10 text-muted-foreground">
                               <svg
                                 xmlns="http://www.w3.org/2000/svg"
