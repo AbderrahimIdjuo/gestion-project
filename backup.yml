@@ -31,10 +31,19 @@ jobs:
         run: |
           curl https://rclone.org/install.sh | sudo bash
 
-      - name: Configure rclone
+      - name: Setup rclone config
         run: |
           mkdir -p ~/.config/rclone
-          echo "${{ secrets.RCLONE_CONFIG }}" > ~/.config/rclone/rclone.conf
+          cat > ~/.config/rclone/rclone.conf <<'EOF'
+          ${{ secrets.RCLONE_CONFIG }}
+          EOF
+
+      - name: Debug rclone config
+        run: |
+          echo "=== rclone.conf inside runner ==="
+          cat ~/.config/rclone/rclone.conf
+          echo "=== Available remotes ==="
+          rclone listremotes
 
       - name: Generate backup filename
         id: backup_filename
@@ -62,7 +71,7 @@ jobs:
       - name: Upload backup to Google Drive
         run: |
           echo "Uploading backup to Google Drive..."
-          rclone copy ${{ steps.backup_filename.outputs.filename }} gdrive:neon-db-backups/
+          rclone copy ${{ steps.backup_filename.outputs.filename }} gdrive:neon-db-backups/ --progress
 
           # Vérifier que l'upload s'est bien passé
           rclone ls gdrive:neon-db-backups/ | grep "${{ steps.backup_filename.outputs.filename }}"
