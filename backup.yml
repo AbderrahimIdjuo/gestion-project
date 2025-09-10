@@ -38,12 +38,23 @@ jobs:
 
       - name: Debug rclone config
         run: |
+          echo "=== Checking if secret exists ==="
+          if [ -z "${{ secrets.RCLONE_CONFIG }}" ]; then
+            echo "ERROR: RCLONE_CONFIG secret is empty or not set!"
+            exit 1
+          else
+            echo "RCLONE_CONFIG secret is set (length: ${#RCLONE_CONFIG})"
+          fi
           echo "=== rclone.conf inside runner ==="
           cat ~/.config/rclone/rclone.conf
           echo "=== File size ==="
           ls -la ~/.config/rclone/rclone.conf
+          echo "=== File content with line numbers ==="
+          cat -n ~/.config/rclone/rclone.conf
           echo "=== Available remotes ==="
           rclone listremotes
+          echo "=== Testing rclone config ==="
+          rclone config show gdrive
 
       - name: Generate backup filename
         id: backup_filename
