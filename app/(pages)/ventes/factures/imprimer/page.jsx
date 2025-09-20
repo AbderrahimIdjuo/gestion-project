@@ -14,6 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useEffect, useState } from "react";
+import { formatCurrency } from "@/lib/functions";
 
 function nombreEnLettres(n) {
   const unites = [
@@ -105,9 +106,7 @@ export default function DevisPDFPage() {
     console.log("devi", JSON.parse(storedData));
   }, []);
   const { articls, date, numero, total, client } = facture ? facture : {};
-  const handlePrint = () => {
-    window.print();
-  };
+
 
   const tva = total => parseFloat(total * 0.2).toFixed(2);
   const totalTTC = total =>
@@ -220,7 +219,7 @@ export default function DevisPDFPage() {
                   </TableHead>
                   <TableHead
                     rowSpan="2"
-                    className="text-black font-bold border-l border-b border-black p-2 text-center p-1"
+                    className="text-black font-bold border-l border-b border-black text-center p-1"
                   >
                     P.U/m²
                   </TableHead>
@@ -265,10 +264,10 @@ export default function DevisPDFPage() {
                       {articl.quantite}
                     </TableCell>
                     <TableCell className="border-l border-b  border-black p-1 text-center">
-                      {articl.prixUnite} DH
+                      {formatCurrency(articl.prixUnite)}
                     </TableCell>
                     <TableCell className="border-l border-b border-black p-1 text-center font-bold">
-                      {articl.prixUnite * articl.quantite} DH
+                      {formatCurrency(articl.prixUnite * articl.quantite)}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -285,7 +284,7 @@ export default function DevisPDFPage() {
                     colSpan={2}
                     className="border-l border-black p-2 text-left text-lg font-bold"
                   >
-                    {total?.toFixed(2)} DH
+                    {formatCurrency(total)}
                   </TableCell>
                 </TableRow>
 
@@ -300,7 +299,7 @@ export default function DevisPDFPage() {
                     colSpan={2}
                     className="border-l border-t border-black p-2 text-lg text-left font-bold"
                   >
-                    {tva(total)} DH
+                    {formatCurrency(tva(total))}
                   </TableCell>
                 </TableRow>
                 <TableRow>
@@ -314,7 +313,7 @@ export default function DevisPDFPage() {
                     colSpan={2}
                     className="border-l border-t border-black p-2 text-xl text-gray-900 text-left font-extrabold"
                   >
-                    {totalTTC(total)} DH
+                    {formatCurrency(totalTTC(total))}
                   </TableCell>
                 </TableRow>
               </TableFooter>
@@ -325,7 +324,7 @@ export default function DevisPDFPage() {
             <h3 className="text-sm font-medium mb-0">
               Arrêtée la présente facture à la somme de :{" "}
               <span className="text-sm font-bold mb-0 ">
-                {nombreEnLettres(total)}{" "}
+                {nombreEnLettres(totalTTC(total))}{" "}
               </span>{" "}
               Dirhams
             </h3>
@@ -333,7 +332,7 @@ export default function DevisPDFPage() {
           </div>
         </div>
         <div
-          className="flex items-center justify-between print:hidden
+          className="flex items-center justify-between 
 print:hidden"
         >
           <div className="flex items-center space-x-2 ">
