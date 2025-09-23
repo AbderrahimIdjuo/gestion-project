@@ -455,6 +455,26 @@ export default function DevisPage() {
                         </div>
                       </SheetContent>
                     </Sheet>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        const params = {
+                          query: debouncedQuery,
+                          statut: filters.statut,
+                          statutPaiement: filters.statutPaiement,
+                          from: startDate,
+                          to: endDate,
+                          minTotal: filters.montant[0],
+                          maxTotal: filters.montant[1],
+                        };
+                        localStorage.setItem("params", JSON.stringify(params));
+                        window.open("/ventes/devis/impression", "_blank");
+                      }}
+                      className="border-purple-500 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900 rounded-full"
+                    >
+                      <Printer className="h-4 w-4" />
+                      Imprimer
+                    </Button>
                     <Link href="/ventes/devis/nouveau">
                       <AddButton
                         onClick={() => {

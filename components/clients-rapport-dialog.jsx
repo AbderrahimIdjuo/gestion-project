@@ -138,13 +138,14 @@ export default function ClientsRapportDialog() {
       }
 
       const restePaye = devis.total - devis.totalPaye;
-
-      clientsMap[nomClient].devis.push({
-        numero: devis.numero,
-        total: devis.total,
-        totalPaye: devis.totalPaye,
-        restePaye,
-      });
+      if (restePaye > 0) {
+        clientsMap[nomClient].devis.push({
+          numero: devis.numero,
+          total: devis.total,
+          totalPaye: devis.totalPaye,
+          restePaye,
+        });
+      }
 
       clientsMap[nomClient].totalRestePaye += restePaye;
     });
