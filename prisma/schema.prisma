@@ -37,6 +37,7 @@ model Employes {
   salaire   Float?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  devis     Devis[]
 }
 
 model Produits {
@@ -218,6 +219,8 @@ model Devis {
   tva            Float
   totalPaye      Float?
   echeance       DateTime?
+  commercant     Employes? @relation(fields: [commercantId], references: [id], onDelete: Cascade)
+  commercantId   String?
   userId         String?
   articls        Articls[]
   client         Clients   @relation(fields: [clientId], references: [id], onDelete: Cascade)
@@ -292,6 +295,8 @@ model Transactions {
   clientId        String?
   date            DateTime?
   typeDepense     String?
+  motif           String?
+  datePrelevement DateTime?
   chequeId        String?   @unique
   cheque          Cheques?  @relation(fields: [chequeId], references: [id], onDelete: Cascade)
   createdAt       DateTime  @default(now())
@@ -299,17 +304,18 @@ model Transactions {
 }
 
 model Cheques {
-  id            String        @id @default(uuid())
-  type          String
-  montant       Float
-  compte        String?
-  numero        String?
-  fournisseurId String?
-  fournisseur   Fournisseurs? @relation(fields: [fournisseurId], references: [id], onDelete: Cascade)
-  dateReglement DateTime?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  transaction   Transactions?
+  id              String        @id @default(uuid())
+  type            String
+  montant         Float
+  compte          String?
+  numero          String?
+  fournisseurId   String?
+  fournisseur     Fournisseurs? @relation(fields: [fournisseurId], references: [id], onDelete: Cascade)
+  dateReglement   DateTime?
+  datePrelevement DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  transaction     Transactions?
 }
 
 model TachesEmployes {
