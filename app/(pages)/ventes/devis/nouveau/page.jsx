@@ -3,6 +3,7 @@
 import newDeviSchema from "@/app/zodSchemas/newDeviSchema";
 import { ArticleSelectionDialog } from "@/components/articls-selection-dialog";
 import ComboBoxClients from "@/components/comboBox-clients";
+import ComboBoxEmployes from "@/components/comboBox-employes";
 import { CustomDatePicker } from "@/components/customUi/customDatePicker";
 import { AddButton } from "@/components/customUi/styledButton";
 import { Navbar } from "@/components/navbar";
@@ -49,7 +50,7 @@ export default function NouveauDevisPage() {
   const [date, setDate] = useState(null);
   const [echeance, setEcheance] = useState(null);
   const { user } = useUser();
-  console.log("user", user);
+  const [employe, setEmploye] = useState(null);
 
   const {
     register,
@@ -77,16 +78,57 @@ export default function NouveauDevisPage() {
     { lable: "Annulé", color: "red-500" },
   ];
   useEffect(() => {
-    const storedData = localStorage.getItem("lastDeviNumber");
-    console.log("storedData", JSON.parse(storedData));
+    // Get last devis number from API
+    const getLastDevis = async () => {
+      try {
+        const response = await axios.get("/api/devis/lastDevis");
+        const { lastDevi } = response.data;
+        console.log("#### lastDevi :", lastDevi);
+        if (lastDevi) {
+          setLastDeviNumber(lastDevi.numero);
+          //        localStorage.setItem("lastDeviNumber", JSON.stringify(lastDevi.numero));
+        }
+      } catch (error) {
+        console.error("Error fetching last devis:", error);
+      }
+    };
 
-    if (storedData) {
-      setLastDeviNumber(JSON.parse(storedData));
-    } else setLastDeviNumber("DEV-0");
+    getLastDevis();
+    // const storedData = localStorage.getItem("lastDeviNumber");
+
+    // if (storedData) {
+    //   setLastDeviNumber(JSON.parse(storedData));
+    // } else setLastDeviNumber("DEV-0");
   }, []);
+  // const generateDeviNumber = () => {
+  //   const numero = Number(lastDeviNumber?.replace("DEV-", "")) || 0;
+  //   return `DEV-${numero + 1}`;
+  // };
+
   const generateDeviNumber = () => {
-    const numero = Number(lastDeviNumber?.replace("DEV-", "")) || 0;
-    return `DEV-${numero + 1}`;
+    const currentDate = new Date();
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth() + 1; // getMonth() returns 0-11
+
+    // Extract the sequence number from lastDeviNumber if it exists
+    let sequence = 1;
+    if (lastDeviNumber) {
+      const match = lastDeviNumber.match(/DEV-\d{4}\/\d{1,2}-(\d+)/);
+      if (match) {
+        // Check if the year/month matches current
+        const lastYear = lastDeviNumber.match(/DEV-(\d{4})/)[1];
+        const lastMonth = lastDeviNumber.match(/\/(\d{1,2})-/)[1];
+
+        if (lastYear === year.toString() && lastMonth === month.toString()) {
+          sequence = parseInt(match[1]) + 1;
+        }
+      }
+    }
+
+    // Pad sequence number with leading zeros
+    const paddedSequence = sequence.toString().padStart(2, "0");
+
+    return `DEV-${year}/${month}-${paddedSequence}`;
   };
 
   const generateUniqueKey = () => {
@@ -148,12 +190,12 @@ export default function NouveauDevisPage() {
         ...article,
       })),
     ]);
-    console.log("newArticles", newArticles);
-    console.log("items ", items);
+    // console.log("newArticles", newArticles);
+    //console.log("items ", items);
   };
   const removeItem = deletedItem => {
-    console.log("deletedItem", deletedItem);
-    console.log("items", items);
+    // console.log("deletedItem", deletedItem);
+    //console.log("items", items);
     setItems(prev => prev.filter(item => item.key !== deletedItem.key));
   };
   const calculateSubTotal = () => {
@@ -219,8 +261,8 @@ export default function NouveauDevisPage() {
               <Card className="w-full">
                 <CardContent className="p-6 space-y-6">
                   {/* Header Section */}
-                  <div className="grid grid-cols-4 gap-4">
-                    <div>
+                  <div className="grid grid-cols-6 gap-4">
+                    <div className="col-span-3">
                       <ComboBoxClients setClient={setClient} client={client} />
                       {errors.clientId && (
                         <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
@@ -229,12 +271,24 @@ export default function NouveauDevisPage() {
                         </p>
                       )}
                     </div>
-                    <div className="w-full space-y-2">
-                      <Label htmlFor="client">Date : </Label>
+                    <div className="col-span-3">
+                      <ComboBoxEmployes
+                        setEmploye={setEmploye}
+                        employe={employe}
+                      />
+                      {errors.employeId && (
+                        <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
+                          <CircleX className="h-4 w-4" />
+                          {errors.employeId.message}
+                        </p>
+                      )}
+                    </div>
+                    <div className="w-full space-y-2 col-span-2">
+                      <Label htmlFor="date">Date : </Label>
                       <CustomDatePicker date={date} onDateChange={setDate} />
                     </div>
-                    <div className="w-full space-y-2">
-                      <Label htmlFor="client">Échéance : </Label>
+                    <div className="w-full space-y-2 col-span-2">
+                      <Label htmlFor="echeance">Échéance : </Label>
                       <CustomDatePicker
                         date={echeance}
                         onDateChange={setEcheance}
@@ -293,7 +347,7 @@ export default function NouveauDevisPage() {
                     </p>
                   )}
                 </div> */}
-                    <div className="space-y-2">
+                    <div className="space-y-2 col-span-2">
                       <Label htmlFor="statut" className="text-right text-black">
                         Statut
                       </Label>
@@ -546,8 +600,8 @@ export default function NouveauDevisPage() {
                                               key: generateUniqueKey(),
                                             },
                                           ]);
-                                          console.log("Cloned item");
-                                          console.log("items", items);
+                                          //console.log("Cloned item");
+                                          //console.log("items", items);
                                         }}
                                         className="h-8 w-8 rounded-full hover:bg-blue-100 hover:text-blue-600"
                                       >
@@ -679,7 +733,7 @@ export default function NouveauDevisPage() {
                     onClick={() => {
                       setValue("numero", generateDeviNumber());
                       setValue("clientId", client?.id);
-
+                      setValue("employeId", employe?.id);
                       setValue(
                         "sousTotal",
                         parseFloat(calculateSubTotal().toFixed(2))
@@ -694,7 +748,6 @@ export default function NouveauDevisPage() {
                         "form data validation :",
                         newDeviSchema.parse(watch())
                       );
-                      console.log("data details:", watch());
                     }}
                     type="submit"
                     className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 hover:scale-105 text-white hover:!text-white font-semibold transition-all duration-300 transform rounded-full"

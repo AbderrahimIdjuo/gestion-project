@@ -27,7 +27,14 @@ export async function GET(req) {
     },
   });
 
+  const devisNumero = devis.map(c => c.numero);
+
+  const transactions = await prisma.transactions.findMany({
+    where: { reference: { in: devisNumero } },
+  });
+
   return NextResponse.json({
     devis,
+    transactions,
   });
 }

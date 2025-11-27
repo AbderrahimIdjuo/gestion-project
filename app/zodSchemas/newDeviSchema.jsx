@@ -112,6 +112,7 @@ const articlSchema = z.object({
 });
 const newDeviSchema = z.object({
   clientId: z.string({ required_error: "Champ obligatoir" }),
+  employeId: z.string().optional(),
   numero: z.string(),
   statut: z.string(),
   tva: z.preprocess(

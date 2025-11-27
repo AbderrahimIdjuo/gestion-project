@@ -23,7 +23,7 @@ const validateFloat = (value) => {
 const articlSchema = z.object({
   key: z.string(),
   designation: z.string().nonempty({ message: "La désignation est requise" }),
-  quantite: z.preprocess((value) => {
+  quantite: z.preprocess(value => {
     // Convert "" or undefined to undefined
     if (value === "" || value === undefined) return undefined;
 
@@ -40,14 +40,7 @@ const articlSchema = z.object({
 
     return number;
   }, z.number({ invalid_type_error: "Ce champ doit contenir un nombre valide" }).optional()),
-  prixUnite: z.preprocess(
-    (value) =>
-      value === "" || value === undefined ? undefined : validateFloat(value),
-    z
-      .number({ invalid_type_error: "Le prix d'unite doit être un nombre" })
-      .min(1, { message: "Le prix d'unite doit être au moins 1" })
-  ),
-  length: z.preprocess((value) => {
+  prixUnite: z.preprocess(value => {
     // Convert "" or undefined to undefined
     if (value === "" || value === undefined) return undefined;
 
@@ -64,7 +57,7 @@ const articlSchema = z.object({
 
     return number;
   }, z.number({ invalid_type_error: "Ce champ doit contenir un nombre valide" }).optional()),
-  width: z.preprocess((value) => {
+  length: z.preprocess(value => {
     // Convert "" or undefined to undefined
     if (value === "" || value === undefined) return undefined;
 
@@ -81,7 +74,24 @@ const articlSchema = z.object({
 
     return number;
   }, z.number({ invalid_type_error: "Ce champ doit contenir un nombre valide" }).optional()),
-  height: z.preprocess((value) => {
+  width: z.preprocess(value => {
+    // Convert "" or undefined to undefined
+    if (value === "" || value === undefined) return undefined;
+
+    // Convert string with comma to dot notation
+    if (typeof value === "string") {
+      value = value.replace(",", ".");
+      // Remove any whitespace that might interfere
+      value = value.trim();
+    }
+
+    const number = parseFloat(value);
+    // If the conversion fails, return undefined to trigger the validation error
+    if (isNaN(number)) return undefined;
+
+    return number;
+  }, z.number({ invalid_type_error: "Ce champ doit contenir un nombre valide" }).optional()),
+  height: z.preprocess(value => {
     // Convert "" or undefined to undefined
     if (value === "" || value === undefined) return undefined;
 
@@ -104,6 +114,7 @@ const articlSchema = z.object({
 const updateDeviSchema = z.object({
   id: z.string(),
   clientId: z.string({ required_error: "Champ obligatoir" }),
+  employeId: z.string().optional(),
   numero: z.string(),
   statut: z.string(),
   tva: z.preprocess(

@@ -15,6 +15,8 @@ export async function POST(req) {
       fournisseurId,
       dateReglement,
       numeroCheque,
+      motif,
+      datePrelevement,
     } = resopns;
     const result = await prisma.$transaction(
       async prisma => {
@@ -44,6 +46,8 @@ export async function POST(req) {
             fournisseurId: fournisseurId,
             lable,
             description,
+            motif,
+            datePrelevement,
             methodePaiement,
             date: dateReglement || new Date(),
             cheque: cheque

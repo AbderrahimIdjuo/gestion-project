@@ -23,7 +23,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import toast from "react-hot-toast";
 
 export default function PaiementFournisseurDialog({
   fournisseur,
@@ -31,6 +30,7 @@ export default function PaiementFournisseurDialog({
   onClose,
 }) {
   const [date, setDate] = useState(null);
+  const [datePrelevement, setDatePrelevement] = useState(null);
 
   const {
     register,
@@ -59,7 +59,7 @@ export default function PaiementFournisseurDialog({
 
   const createTransaction = useMutation({
     mutationFn: async data => {
-      const { compte, montant, typePaiement, numero } = data;
+      const { compte, montant, typePaiement, numero, motif } = data;
       const transData = {
         fournisseurId: fournisseur.id,
         compte,
@@ -70,22 +70,24 @@ export default function PaiementFournisseurDialog({
         methodePaiement: typePaiement,
         numeroCheque: numero,
         dateReglement: date,
+        datePrelevement: datePrelevement,
+        motif: motif,
       };
       console.log("transData", transData);
-      const loadingToast = toast.loading("Paiement en cours...");
-      try {
-        const result = await axios.post(
-          "/api/fournisseurs/paiement",
-          transData
-        );
-        toast.success("Paiement éffectué avec succès");
-        return result.data;
-      } catch (error) {
-        toast.error("Échec de l'opération!");
-        throw error;
-      } finally {
-        toast.dismiss(loadingToast);
-      }
+      // const loadingToast = toast.loading("Paiement en cours...");
+      // try {
+      //   const result = await axios.post(
+      //     "/api/fournisseurs/paiement",
+      //     transData
+      //   );
+      //   toast.success("Paiement éffectué avec succès");
+      //   return result.data;
+      // } catch (error) {
+      //   toast.error("Échec de l'opération!");
+      //   throw error;
+      // } finally {
+      //   toast.dismiss(loadingToast);
+      // }
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["transactions"]);
@@ -118,7 +120,7 @@ export default function PaiementFournisseurDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[1000px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-full max-w-[95vw] sm:max-w-[1000px] max-h-[90vh] overflow-y-auto">
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogHeader>
             <DialogTitle>Paiement en faveur de {fournisseur?.nom}</DialogTitle>
@@ -135,7 +137,7 @@ export default function PaiementFournisseurDialog({
                 handleTypePaiementChange(value);
                 setDate(null);
               }}
-              className="flex flex-row flex-wrap gap-4 justify-evenly"
+              className="flex flex-wrap gap-3 justify-between sm:justify-evenly"
             >
               <div className="flex items-center space-x-2 rounded-md p-2">
                 <RadioGroupItem
@@ -176,10 +178,23 @@ export default function PaiementFournisseurDialog({
                   Chèque
                 </Label>
               </div>
+              <div className="flex items-center space-x-2 rounded-md p-2">
+                <RadioGroupItem
+                  value="traite"
+                  id="traite"
+                  className="text-amber-600 "
+                />
+                <Label
+                  htmlFor="traite"
+                  className="text-amber-600 font-medium cursor-pointer"
+                >
+                  Traite
+                </Label>
+              </div>
             </RadioGroup>
 
             {watch("typePaiement") === "espece" && (
-              <div className="space-y-4 items-end grid grid-cols-3 gap-4">
+              <div className="space-y-4 items-end grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="w-full space-y-1.5">
                   <Label htmlFor="client">Date : </Label>
                   <CustomDatePicker date={date} onDateChange={setDate} />
@@ -222,9 +237,9 @@ export default function PaiementFournisseurDialog({
             )}
 
             {watch("typePaiement") === "versement" && (
-              <div className="space-y-4 items-end grid grid-cols-3 gap-4">
+              <div className="space-y-4 items-end grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="w-full space-y-1.5">
-                  <Label htmlFor="client">Date : </Label>
+                  <Label htmlFor="dateCreation">Date de création : </Label>
                   <CustomDatePicker date={date} onDateChange={setDate} />
                 </div>
                 <div className="grid w-full items-center gap-1.5">
@@ -258,14 +273,29 @@ export default function PaiementFournisseurDialog({
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="grid w-full items-center gap-2 sm:col-span-2 lg:col-span-3">
+                  <Label htmlFor="numero">Numéro de versement bancaire</Label>
+                  <Input
+                    {...register("numero")}
+                    className="w-full focus-visible:ring-purple-500"
+                    id="numero"
+                  />
+                </div>
               </div>
             )}
 
             {watch("typePaiement") === "cheque" && (
-              <div className="space-y-4 items-end grid grid-cols-3 grid-rows-2 gap-4">
+              <div className="space-y-4 items-end grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="w-full space-y-1.5">
-                  <Label htmlFor="client">Date : </Label>
+                  <Label htmlFor="dateCreation">Date de création : </Label>
                   <CustomDatePicker date={date} onDateChange={setDate} />
+                </div>
+                <div className="w-full space-y-1.5">
+                  <Label htmlFor="datePrelevement">Date de prélèvement: </Label>
+                  <CustomDatePicker
+                    date={datePrelevement}
+                    onDateChange={setDatePrelevement}
+                  />
                 </div>
                 <div className="grid w-full items-center gap-2">
                   <Label htmlFor="montant">Montant</Label>
@@ -298,7 +328,7 @@ export default function PaiementFournisseurDialog({
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="grid w-full items-center gap-2 col-span-3">
+                <div className="grid w-full items-center gap-2 sm:col-span-2 lg:col-span-4">
                   <Label htmlFor="numero">Numéro de chèque</Label>
                   <Input
                     {...register("numero")}
@@ -308,6 +338,14 @@ export default function PaiementFournisseurDialog({
                 </div>
               </div>
             )}
+            <div className="grid w-full items-center gap-2">
+              <Label htmlFor="motif">Motif du paiement</Label>
+              <Input
+                {...register("motif")}
+                className="w-full focus-visible:ring-purple-500"
+                id="motif"
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button

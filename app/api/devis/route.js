@@ -18,6 +18,7 @@ export async function POST(req) {
       echeance,
       date,
       userId,
+      employeId,
     } = resopns;
 
     const result = await prisma.$transaction(
@@ -34,6 +35,7 @@ export async function POST(req) {
             total,
             totalPaye: 0,
             typeReduction,
+            commercantId: employeId || null,
             note,
             echeance,
             userId,
@@ -97,6 +99,7 @@ export async function PUT(req) {
       note,
       echeance,
       date,
+      employeId,
     } = requestBody;
 
     // Fetch existing devis with articls
@@ -147,6 +150,7 @@ export async function PUT(req) {
           typeReduction,
           note,
           echeance,
+          commercantId: employeId || null,
           date: date || new Date(),
           articls: {
             update: existingArticls.map(articl => ({
@@ -270,8 +274,11 @@ export async function GET(req) {
     };
   }
 
+  const currentDate = new Date();
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth() + 1;
   // Fetch filtered commandes with pagination and related data
-  const [devis, totalDevis, deviMaxTotal, lastDevi] = await Promise.all([
+  const [devis, totalDevis, deviMaxTotal] = await Promise.all([
     prisma.devis.findMany({
       where: filters,
       skip: (page - 1) * devisPerPage,
@@ -280,6 +287,7 @@ export async function GET(req) {
       include: {
         client: true,
         articls: true,
+        commercant: true,
       },
     }),
     prisma.devis.count({ where: filters }), // Get total count for pagination
@@ -291,12 +299,6 @@ export async function GET(req) {
         total: true, // Only fetch the total field
       },
     }),
-    prisma.$queryRaw`
-  SELECT *
-  FROM "Devis"
-  ORDER BY CAST(REGEXP_REPLACE(numero, '[^0-9]', '', 'g') AS INTEGER) DESC
-  LIMIT 1
-`,
   ]);
 
   // Calculate total pages for pagination
@@ -346,7 +348,6 @@ export async function GET(req) {
     totalDevis,
     transactionsList,
     bLGroupsList,
-    lastDevi: lastDevi[0],
   });
 }
 

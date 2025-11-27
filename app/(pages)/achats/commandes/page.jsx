@@ -1,5 +1,6 @@
 "use client";
 
+import AddBonLivraison from "@/components/add-bonLivraison-liee-commande";
 import AddCommandeFournisseur from "@/components/add-commande-fournisseur";
 import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
 import CustomPagination from "@/components/customUi/customPagination";
@@ -49,7 +50,26 @@ export default function CommandesAchats() {
   const [endDate, setEndDate] = useState();
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState();
+  const [lastBonLivraison, setLastBonLivraison] = useState();
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    // Get last BL number from API
+    const getLastBonLivraison = async () => {
+      try {
+        const response = await axios.get("/api/bonLivraison/lastBonLivraison");
+        const { lastBonLivraison } = response.data;
+        console.log("#### lastBonLivraison :", lastBonLivraison);
+        if (lastBonLivraison) {
+          setLastBonLivraison(lastBonLivraison);
+        }
+      } catch (error) {
+        console.error("Error fetching last devis:", error);
+      }
+    };
+
+    getLastBonLivraison();
+  }, []);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -73,7 +93,8 @@ export default function CommandesAchats() {
           to: endDate,
         },
       });
-
+      console.log("##### response.data.commandes", response.data.commandes);
+      
       setLastCommande(response.data.lastCommande);
       setTotalPages(response.data.totalPages);
       return response.data.commandes;
@@ -253,6 +274,12 @@ export default function CommandesAchats() {
                                   </CustomTooltip>
                                   <CustomTooltip message="Aperçu">
                                     <PreviewCommandeFournitureDialog
+                                      commande={commande}
+                                    />
+                                  </CustomTooltip>
+                                  <CustomTooltip message="BL">
+                                    <AddBonLivraison
+                                      lastBonLivraison={lastBonLivraison}
                                       commande={commande}
                                     />
                                   </CustomTooltip>

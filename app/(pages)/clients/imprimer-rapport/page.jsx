@@ -1,6 +1,7 @@
 "use client";
 
 import { EnteteDevis } from "@/components/Entete-devis";
+import { DirectPrintButton } from "@/components/ui/print-button";
 import {
   Table,
   TableBody,
@@ -10,11 +11,45 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatCurrency } from "@/lib/functions";
+import { formatCurrency, formatDate } from "@/lib/functions";
+import { format } from "date-fns";
 import { useEffect, useState } from "react";
+import "./page.css";
 
-import { DirectPrintButton } from "@/components/ui/print-button";
-import { formatDate } from "@/lib/functions";
+// Composant pour afficher les détails des transactions
+function TransactionsDetails({ transactions }) {
+  if (!transactions || transactions.length === 0) {
+    return <div className="text-center text-gray-500 text-sm"></div>;
+  }
+
+  return (
+    <div className="bg-white border-gray-200">
+      {/* Corps du tableau */}
+      <div className="max-h-32 overflow-y-auto">
+        {transactions.map((transaction, index) => (
+          <div
+            key={index}
+            className={`grid grid-cols-2 gap-2 px-3 py-2 text-xs border-b border-gray-200 last:border-b-0 bg-white`}
+          >
+            <div className="space-y-1  border-gray-200 pr-2">
+              <div className="font-medium text-gray-800">
+                {format(new Date(transaction.date), "dd/MM/yy")}
+              </div>
+              <div className="text-gray-600 text-xs">
+                {transaction.methodePaiement || "Non spécifié"}
+              </div>
+            </div>
+            <div className="text-right pl-2 flex items-center justify-end">
+              <div className="font-semibold text-green-600 ">
+                {formatCurrency(transaction.montant)}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function ImprimerRapport() {
   const [data, setData] = useState();
@@ -29,7 +64,7 @@ export default function ImprimerRapport() {
 
   return (
     <>
-      <div className="container mx-auto p-8 max-w-4xl bg-white min-h-screen print:p-0 print:max-w-none mb-10">
+      <div className="container mx-auto p-8 max-w-5xl bg-white min-h-screen print:p-0 print:max-w-none mb-10">
         {/* Document Content */}
         <div id="print-area" className="space-y-3">
           {/* Header */}
@@ -72,6 +107,9 @@ export default function ImprimerRapport() {
                     Total
                   </TableHead>
                   <TableHead className="text-center px-1 border-b border-t border-l text-black font-semibold">
+                    Paiements
+                  </TableHead>
+                  <TableHead className="text-center px-1 border-b border-t border-l text-black font-semibold">
                     Montant payé
                   </TableHead>
                   <TableHead className="text-center px-1 border-b border-t border-l text-black font-semibold">
@@ -100,6 +138,11 @@ export default function ImprimerRapport() {
                       <TableCell className="text-right border-b border-l px-1 ">
                         {formatCurrency(devis.total)}
                       </TableCell>
+                      <TableCell className="text-center p-0 border-b border-l">
+                        <TransactionsDetails
+                          transactions={devis.transactions}
+                        />
+                      </TableCell>
                       <TableCell className="text-right border-b border-l px-1">
                         {formatCurrency(devis.totalPaye)}
                       </TableCell>
@@ -121,7 +164,7 @@ export default function ImprimerRapport() {
               <TableFooter className="bg-white">
                 <TableRow className="border-t border-gray-200">
                   <TableCell
-                    colSpan={4}
+                    colSpan={5}
                     className="text-right text-sky-600 text-xl font-bold"
                   >
                     Total général :
@@ -135,7 +178,7 @@ export default function ImprimerRapport() {
                 </TableRow>
                 <TableRow className="border-t border-gray-200">
                   <TableCell
-                    colSpan={4}
+                    colSpan={5}
                     className="text-right text-emerald-600 text-xl font-bold"
                   >
                     Total payé :
@@ -149,7 +192,7 @@ export default function ImprimerRapport() {
                 </TableRow>
                 <TableRow className="border-t border-gray-200">
                   <TableCell
-                    colSpan={4}
+                    colSpan={5}
                     className="text-right text-rose-600 text-xl font-bold"
                   >
                     Total des crédits :
@@ -165,10 +208,7 @@ export default function ImprimerRapport() {
             </Table>
           </div>
         </div>
-        <div
-          className="flex items-center justify-end print:hidden
-print:hidden mt-5"
-        >
+        <div className="flex items-center justify-end print:hidden mt-5">
           <DirectPrintButton className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full">
             Imprimer
           </DirectPrintButton>

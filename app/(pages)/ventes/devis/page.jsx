@@ -65,7 +65,7 @@ export default function DevisPage() {
   const [endDate, setEndDate] = useState();
   const [transactions, setTransactions] = useState();
   const [BlGroups, setBlGroups] = useState();
-  const [lastDevi, setLastDevi] = useState();
+  // const [lastDevi, setLastDevi] = useState();
   const [expandedDevis, setExpandedDevis] = useState(null);
   const [info, setInfo] = useState(false);
   const [deleteTransDialog, setDeleteTransDialog] = useState(false);
@@ -122,6 +122,7 @@ export default function DevisPage() {
     montant: [0, maxMontant],
     statut: "all",
     statutPaiement: "all",
+    manager: "all",
   });
   const queryClient = useQueryClient();
   useEffect(() => {
@@ -144,6 +145,7 @@ export default function DevisPage() {
       endDate,
       filters.montant,
       filters.statutPaiement,
+      filters.manager,
     ],
     queryFn: async () => {
       const response = await axios.get("/api/devis", {
@@ -156,11 +158,11 @@ export default function DevisPage() {
           minTotal: filters.montant[0],
           maxTotal: filters.montant[1],
           statutPaiement: filters.statutPaiement,
+          manager: filters.manager,
         },
       });
-      console.log("last Devis :", response.data.lastDevi);
+      console.log("Devis :", response.data.devis);
 
-      setLastDevi(response.data.lastDevi);
       setBlGroups(response.data.bLGroupsList);
       setTransactions(response.data.transactionsList);
       setMaxMontant(response.data.maxMontant);
@@ -291,6 +293,15 @@ export default function DevisPage() {
     }
   }
 
+  const managers = useQuery({
+    queryKey: ["managers"],
+    queryFn: async () => {
+      const response = await axios.get("/api/employes/managersList");
+      console.log("Managers ###:", response.data.employes);
+      return response.data.employes;
+    },
+  });
+
   return (
     <>
       <Toaster position="top-center"></Toaster>
@@ -415,6 +426,42 @@ export default function DevisPage() {
                           </div>
                           <div className="grid grid-cols-4 items-center gap-4 my-2">
                             <Label
+                              htmlFor="manager"
+                              className="text-left text-black"
+                            >
+                              Gérant :
+                            </Label>
+                            <Select
+                              value={filters.manager}
+                              name="manager"
+                              onValueChange={value =>
+                                setFilters({
+                                  ...filters,
+                                  manager: value,
+                                })
+                              }
+                            >
+                              <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
+                                <SelectValue placeholder="Sélectionner un gérant" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">
+                                  <div className="flex items-center gap-2">
+                                    Tous
+                                  </div>
+                                </SelectItem>
+                                {managers.data?.map((employe, index) => (
+                                  <SelectItem key={index} value={employe.nom}>
+                                    <div className={`flex items-center gap-2`}>
+                                      {employe.nom}
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="grid grid-cols-4 items-center gap-4 my-2">
+                            <Label
                               htmlFor="statut"
                               className="col-span-1 text-left text-black"
                             >
@@ -466,6 +513,7 @@ export default function DevisPage() {
                           to: endDate,
                           minTotal: filters.montant[0],
                           maxTotal: filters.montant[1],
+                          manager: filters.manager,
                         };
                         localStorage.setItem("params", JSON.stringify(params));
                         window.open("/ventes/devis/impression", "_blank");
@@ -476,15 +524,7 @@ export default function DevisPage() {
                       Imprimer
                     </Button>
                     <Link href="/ventes/devis/nouveau">
-                      <AddButton
-                        onClick={() => {
-                          localStorage.setItem(
-                            "lastDeviNumber",
-                            JSON.stringify(lastDevi.numero)
-                          );
-                        }}
-                        title="Nouveau devis"
-                      />
+                      <AddButton title="Nouveau devis" />
                     </Link>
                   </div>
                 </div>
@@ -496,7 +536,7 @@ export default function DevisPage() {
                         <TableHead>Date</TableHead>
                         <TableHead>Numéro</TableHead>
                         <TableHead>Client</TableHead>
-                        <TableHead>Editeur</TableHead>
+                        <TableHead>Commercant</TableHead>
                         <TableHead className="text-right">
                           Montant total
                         </TableHead>
@@ -589,7 +629,7 @@ export default function DevisPage() {
                                   {devis.client.nom.toUpperCase()}
                                 </TableCell>
                                 <TableCell className="!py-2">
-                                  {getUserName(devis.userId)}
+                                  {devis.commercant?.nom.toUpperCase()}
                                 </TableCell>
                                 <TableCell className="!py-2  text-right">
                                   {formatCurrency(devis.total)}

@@ -34,6 +34,7 @@ import {
   endOfMonth,
   endOfQuarter,
   endOfYear,
+  format,
   startOfDay,
   startOfMonth,
   startOfQuarter,
@@ -44,12 +45,50 @@ import {
 import { FileText, Printer } from "lucide-react";
 import { useEffect, useState } from "react";
 
+// Composant pour afficher les détails des transactions
+function TransactionsDetails({ transactions }) {
+  if (!transactions || transactions.length === 0) {
+    return (
+      <div className="text-center text-gray-500 text-sm"></div>
+    );
+  }
+
+  return (
+    <div className="bg-white border-gray-200">
+      {/* Corps du tableau */}
+      <div className="max-h-32 overflow-y-auto">
+        {transactions.map((transaction, index) => (
+          <div
+            key={index}
+            className={`grid grid-cols-2 gap-2 px-3 py-2 text-xs border-b border-gray-200 last:border-b-0 bg-white`}
+          >
+            <div className="space-y-1  border-gray-200 pr-2">
+              <div className="font-medium text-gray-800">
+                {format(new Date(transaction.date), "dd/MM/yy")}
+              </div>
+              <div className="text-gray-600 text-xs">
+                {transaction.methodePaiement || "Non spécifié"}
+              </div>
+            </div>
+            <div className="text-right pl-2 flex items-center justify-end">
+              <div className="font-semibold text-green-600 ">
+                {formatCurrency(transaction.montant)}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function ClientsRapportDialog() {
   const [open, setOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [startDate, setStartDate] = useState();
   const [endDate, setEndDate] = useState();
   const [periode, setPeriode] = useState();
+  const [transactions, setTransactions] = useState();
   function getDateRangeFromPeriode(periode) {
     const now = new Date();
 
@@ -115,6 +154,8 @@ export default function ClientsRapportDialog() {
         },
       });
       console.log("devis rapport", response.data.devis);
+      setTransactions(response.data.transactions);
+      console.log("transactions rapport", response.data.transactions);
       return response.data.devis;
     },
   });
@@ -139,11 +180,18 @@ export default function ClientsRapportDialog() {
 
       const restePaye = devis.total - devis.totalPaye;
       if (restePaye > 0) {
+        // Filtrer les transactions pour ce devis
+        const devisTransactions =
+          transactions?.filter(
+            transaction => transaction.reference === devis.numero
+          ) || [];
+
         clientsMap[nomClient].devis.push({
           numero: devis.numero,
           total: devis.total,
           totalPaye: devis.totalPaye,
           restePaye,
+          transactions: devisTransactions,
         });
       }
 
@@ -287,10 +335,19 @@ export default function ClientsRapportDialog() {
                   <TableRow>
                     <TableHead>Client</TableHead>
                     <TableHead>Numéro devis</TableHead>
-                    <TableHead className="text-right">Total</TableHead>
-                    <TableHead className="text-right">Montant payé</TableHead>
-                    <TableHead className="text-right">Reste à payer</TableHead>
-                    <TableHead className="text-center">Crédit</TableHead>
+                    <TableHead className="text-right border-l">Total</TableHead>
+                    <TableHead className="text-center border-l">
+                      Paiements
+                    </TableHead>
+                    <TableHead className="text-right border-l">
+                      Montant payé
+                    </TableHead>
+                    <TableHead className="text-right border-l">
+                      Reste à payer
+                    </TableHead>
+                    <TableHead className="text-center border-l">
+                      Crédit
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -305,14 +362,19 @@ export default function ClientsRapportDialog() {
                             {client.nom.toUpperCase()}
                           </TableCell>
                         )}
-                        <TableCell>{devis.numero}</TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="border-l">{devis.numero}</TableCell>
+                        <TableCell className="text-right border-l">
                           {formatCurrency(devis.total)}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-center p-0 border-l">
+                          <TransactionsDetails
+                            transactions={devis.transactions}
+                          />
+                        </TableCell>
+                        <TableCell className="text-right border-l">
                           {formatCurrency(devis.totalPaye)}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right border-l">
                           {formatCurrency(devis.restePaye)}
                         </TableCell>
                         {index === 0 && (
@@ -330,7 +392,7 @@ export default function ClientsRapportDialog() {
                 <TableFooter className="bg-white">
                   <TableRow className="border-t border-gray-200">
                     <TableCell
-                      colSpan={4}
+                      colSpan={5}
                       className="text-right text-sky-600 text-xl font-bold"
                     >
                       Total général :
@@ -344,7 +406,7 @@ export default function ClientsRapportDialog() {
                   </TableRow>
                   <TableRow className="border-t border-gray-200">
                     <TableCell
-                      colSpan={4}
+                      colSpan={5}
                       className="text-right text-emerald-600 text-xl font-bold"
                     >
                       Total payé :
@@ -358,7 +420,7 @@ export default function ClientsRapportDialog() {
                   </TableRow>
                   <TableRow className="border-t border-gray-200">
                     <TableCell
-                      colSpan={4}
+                      colSpan={5}
                       className="text-right text-rose-600 text-xl font-bold"
                     >
                       Total des crédits :
@@ -391,6 +453,7 @@ export default function ClientsRapportDialog() {
                     totalGeneral: totaux.totalGeneral,
                     totalMontantPaye: totaux.totalMontantPaye,
                     totalResteAPayer: totaux.totalResteAPayer,
+                    transactions: transactions,
                     from,
                     to,
                   };

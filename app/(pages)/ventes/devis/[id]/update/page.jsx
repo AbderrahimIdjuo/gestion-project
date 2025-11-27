@@ -3,6 +3,7 @@
 import updateDeviSchema from "@/app/zodSchemas/updateDeviSchema";
 import { ArticleSelectionDialog } from "@/components/articls-selection-dialog";
 import ComboBoxClients from "@/components/comboBox-clients";
+import ComboBoxEmployes from "@/components/comboBox-employes";
 import { CustomDatePicker } from "@/components/customUi/customDatePicker";
 import { AddButton } from "@/components/customUi/styledButton";
 import { LoadingDots } from "@/components/loading-dots";
@@ -39,6 +40,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import toast, { Toaster } from "react-hot-toast";
+
 export default function UpdateDevisPage({ params }) {
   const [LoadingDevis, setLoadingDevis] = useState(true);
   const [items, setItems] = useState([]);
@@ -47,6 +49,8 @@ export default function UpdateDevisPage({ params }) {
   const [isArticleDialogOpen, setIsArticleDialogOpen] = useState(false);
   const [date, setDate] = useState(null);
   const [echeance, setEcheance] = useState(null);
+  const [employe, setEmploye] = useState(null);
+
   const {
     register,
     watch,
@@ -76,6 +80,7 @@ export default function UpdateDevisPage({ params }) {
 
     setValue("articls", devi?.articls);
     setClient(devi?.client);
+    setEmploye(devi?.commercant);
     setValue("statut", devi?.statut);
     setValue("avance", devi?.avance);
     setValue("compte", devi?.compte);
@@ -212,8 +217,8 @@ export default function UpdateDevisPage({ params }) {
               <Card className="w-full">
                 <CardContent className="p-6 space-y-6">
                   {/* Header Section */}
-                  <div className="grid grid-cols-4 gap-6">
-                    <div>
+                  <div className="grid grid-cols-6 gap-6">
+                    <div className="col-span-3">
                       <ComboBoxClients setClient={setClient} client={client} />
                       {errors.clientId && (
                         <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
@@ -222,11 +227,23 @@ export default function UpdateDevisPage({ params }) {
                         </p>
                       )}
                     </div>
-                    <div className="w-full space-y-2">
+                    <div className="col-span-3">
+                      <ComboBoxEmployes
+                        setEmploye={setEmploye}
+                        employe={employe}
+                      />
+                      {errors.employeId && (
+                        <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
+                          <CircleX className="h-4 w-4" />
+                          {errors.employeId.message}
+                        </p>
+                      )}
+                    </div>
+                    <div className="w-full space-y-2 col-span-2">
                       <Label htmlFor="client">Date : </Label>
                       <CustomDatePicker date={date} onDateChange={setDate} />
                     </div>
-                    <div className="w-full space-y-2">
+                    <div className="w-full space-y-2 col-span-2">
                       <Label htmlFor="client">Échéance : </Label>
                       <CustomDatePicker
                         date={echeance}
@@ -286,7 +303,7 @@ export default function UpdateDevisPage({ params }) {
                     </p>
                   )}
                 </div> */}
-                    <div className="space-y-2">
+                    <div className="space-y-2 col-span-2">
                       <Label htmlFor="statut" className="text-right text-black">
                         Statut
                       </Label>
@@ -659,6 +676,7 @@ export default function UpdateDevisPage({ params }) {
                   <Button
                     onClick={() => {
                       setValue("clientId", client?.id);
+                      setValue("employeId", employe?.id);
                       setValue(
                         "sousTotal",
                         parseFloat(calculateSubTotal().toFixed(2))

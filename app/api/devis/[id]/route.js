@@ -23,6 +23,7 @@ export async function GET(_, { params }) {
     include: {
       client: true,
       articls: true,
+      commercant: true,
     },
   });
   return NextResponse.json({ devi });
