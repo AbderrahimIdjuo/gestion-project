@@ -36,34 +36,50 @@ export async function POST(req) {
           });
         }
 
-        // creation de la transaction
-        await prisma.transactions.create({
+        // Création d'un nouveau règlement
+        await prisma.reglement.create({
           data: {
-            reference: fournisseurId ? fournisseurId : null,
-            type,
-            montant,
-            compte,
             fournisseurId: fournisseurId,
-            lable,
-            description,
-            motif,
-            datePrelevement,
-            methodePaiement,
-            date: dateReglement || new Date(),
-            cheque: cheque
-              ? {
-                  connect: { id: cheque.id }, // ✅ association one-to-one
-                }
-              : undefined,
+            compte: compte,
+            montant: montant,
+            methodePaiement: methodePaiement,
+            dateReglement: dateReglement || new Date(),
+            datePrelevement: datePrelevement || null,
+            motif: motif || null,
+            statut: "en_attente",
+            facture: false,
+            chequeId: cheque ? cheque.id : null,
           },
-        }),
-          // mise à jour du solde du compte bancaire
-          await prisma.comptesBancaires.updateMany({
-            where: { compte: compte },
-            data: {
-              solde: { decrement: montant },
-            },
-          });
+        });
+
+        // creation de la transaction
+        // await prisma.transactions.create({
+        //   data: {
+        //     reference: fournisseurId ? fournisseurId : null,
+        //     type,
+        //     montant,
+        //     compte,
+        //     fournisseurId: fournisseurId,
+        //     lable,
+        //     description,
+        //     motif,
+        //     datePrelevement,
+        //     methodePaiement,
+        //     date: dateReglement || new Date(),
+        //     cheque: cheque
+        //       ? {
+        //           connect: { id: cheque.id }, // ✅ association one-to-one
+        //         }
+        //       : undefined,
+        //   },
+        // }),
+        // mise à jour du solde du compte bancaire
+        await prisma.comptesBancaires.updateMany({
+          where: { compte: compte },
+          data: {
+            solde: { decrement: montant },
+          },
+        });
 
         // mise à jour de la dette du fournisseur
         // await prisma.fournisseurs.update({
