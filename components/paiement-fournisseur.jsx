@@ -48,8 +48,12 @@ export default function PaiementFournisseurDialog({
     // Initialiser le compte selon le type de paiement
     if (value === "espece") {
       setValue("compte", "caisse");
-    } else if (value === "versement" || value === "cheque") {
-      // Pour les versements, utiliser le premier compte bancaire disponible (pas caisse)
+    } else if (
+      value === "versement" ||
+      value === "cheque" ||
+      value === "traite"
+    ) {
+      // Pour les versements, chèques et traites, utiliser le premier compte bancaire disponible (pas caisse)
       const compteBancaire = comptes.data?.find(c => c.compte !== "caisse");
       if (compteBancaire) {
         setValue("compte", compteBancaire.compte);

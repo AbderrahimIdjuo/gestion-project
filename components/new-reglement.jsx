@@ -49,8 +49,12 @@ export default function NewReglementDialog() {
     // Initialiser le compte selon le type de paiement
     if (value === "espece") {
       setValue("compte", "caisse");
-    } else if (value === "versement" || value === "cheque") {
-      // Pour les versements, utiliser le premier compte bancaire disponible (pas caisse)
+    } else if (
+      value === "versement" ||
+      value === "cheque" ||
+      value === "traite"
+    ) {
+      // Pour les versements, chèques et traites, utiliser le premier compte bancaire disponible (pas caisse)
       const compteBancaire = comptes.data?.find(c => c.compte !== "caisse");
       if (compteBancaire) {
         setValue("compte", compteBancaire.compte);
@@ -288,8 +292,8 @@ export default function NewReglementDialog() {
                       handleTypePaiementChange(value);
                       setDate(null);
                       setDatePrelevement(null);
-                      setFormattedDate(null);
-                      setFormattedDatePrelevement(null);
+                      // setFormattedDate(null);
+                      // setFormattedDatePrelevement(null);
                     }}
                     className="flex flex-wrap gap-3 justify-between sm:justify-evenly"
                   >
@@ -465,6 +469,75 @@ export default function NewReglementDialog() {
                   )}
 
                   {watch("typePaiement") === "cheque" && (
+                    <div className="space-y-4 items-end grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 payment-form-animate">
+                      <div className="w-full space-y-1.5">
+                        <Label htmlFor="dateCreation">
+                          Date de création :{" "}
+                        </Label>
+                        <CustomDatePicker date={date} onDateChange={setDate} />
+                      </div>
+                      <div className="w-full space-y-1.5">
+                        <Label htmlFor="datePrelevement">
+                          Date de prélèvement:{" "}
+                        </Label>
+                        <CustomDatePicker
+                          date={datePrelevement}
+                          onDateChange={setDatePrelevement}
+                        />
+                      </div>
+                      <div className="grid w-full items-center gap-2">
+                        <Label htmlFor="montant">Montant</Label>
+                        <Input
+                          {...register("montant", { valueAsNumber: true })}
+                          className="w-full focus-visible:ring-purple-500"
+                          id="montant"
+                        />
+                      </div>
+                      <div className="grid w-full items-center gap-2">
+                        <Label htmlFor="compte">Compte bancaire</Label>
+                        <Select
+                          value={watch("compte")}
+                          name="compte"
+                          onValueChange={value => setValue("compte", value)}
+                        >
+                          <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
+                            <SelectValue placeholder="Séléctionner..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {comptes.data
+                              ?.filter(c => c.compte !== "caisse")
+                              .map(element => (
+                                <SelectItem
+                                  key={element.id}
+                                  value={element.compte}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    {element.compte}
+                                  </div>
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid w-full items-center gap-2 sm:col-span-2 lg:col-span-4">
+                        <Label htmlFor="numero">Numéro de chèque</Label>
+                        <Input
+                          {...register("numero")}
+                          className="w-full focus-visible:ring-purple-500"
+                          id="numero"
+                        />
+                      </div>
+                      <div className="grid w-full items-center gap-2 sm:col-span-2 lg:col-span-4">
+                        <Label htmlFor="motif">Motif du paiement</Label>
+                        <Input
+                          {...register("motif")}
+                          className="w-full focus-visible:ring-purple-500"
+                          id="motif"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {watch("typePaiement") === "traite" && (
                     <div className="space-y-4 items-end grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 payment-form-animate">
                       <div className="w-full space-y-1.5">
                         <Label htmlFor="dateCreation">
