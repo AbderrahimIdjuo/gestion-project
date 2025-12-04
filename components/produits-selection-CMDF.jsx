@@ -177,7 +177,7 @@ export function ProduitsSelection({ onArticlesAdd }) {
             <div className="p-4 border-b">
               <span className="font-semibold">Ajouter les produits </span>
             </div>
-            <div className="h-[600px] flex gap-3 gap-2 px-4 ">
+            <div className="h-[600px] flex gap-2 px-4 ">
               <div className="w-full h-full">
                 <div
                   name="selectCategorie"
@@ -230,15 +230,21 @@ export function ProduitsSelection({ onArticlesAdd }) {
                           )}
                           onClick={() => handleToggleArticle(article)}
                         >
-                          <div className="space-y-1">
+                          <div className="space-y-1 w-[90%]">
                             <p className="text-md font-medium">
                               {article.designation}
                             </p>
-                            <div className="flex justify-between">
+                            <div className="flex justify-between w-full">
                               <p className="text-xs text-muted-foreground flex items-center gap-1">
                                 Prix d&apos;unité :{" "}
                                 {article.prixAchat.toFixed(2) || "0"} MAD
                               </p>
+                              
+                            {article.reference && (
+                              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                Réf : {article.reference}
+                              </p>
+                            )}
                             </div>
                           </div>
                           <div

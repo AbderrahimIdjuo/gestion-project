@@ -92,9 +92,6 @@ export default function HistoriquePaiement() {
                       <TableHead className="text-black  font-bold text-left border-l border-b border-black">
                         Méthode de paiement
                       </TableHead>
-                      <TableHead className="text-black  font-bold text-left border-l border-b border-black">
-                        Compte
-                      </TableHead>
                       <TableHead className="text-black font-bold border-l border-b border-black text-right">
                         Montant
                       </TableHead>
@@ -110,9 +107,6 @@ export default function HistoriquePaiement() {
                         <TableCell className=" p-2 text-left border-l border-b border-black font-semibold">
                           {methodePaiementLabel(transaction)}
                         </TableCell>
-                        <TableCell className=" p-2 text-left border-l border-b border-black font-semibold">
-                          {transaction.compte}
-                        </TableCell>
                         <TableCell className="border-l border-b border-black p-2 text-right font-semibold">
                           {formatCurrency(transaction.montant)}
                         </TableCell>
@@ -122,19 +116,19 @@ export default function HistoriquePaiement() {
                   <TableFooter className="font-medium">
                     <TableRow>
                       <TableCell
-                        colSpan={3}
+                        colSpan={2}
                         className="text-lg border-b border-black text-gray-900 p-2 text-right font-extrabold"
                       >
                         Total payé :
                       </TableCell>
-                      <TableCell className="border-l border-b border-black border-black p-2 text-lg text-gray-900 text-right font-extrabold">
+                      <TableCell className="border-l border-b border-black p-2 text-lg text-gray-900 text-right font-extrabold">
                         {formatCurrency(totalPaye)}
                       </TableCell>
                     </TableRow>
 
                     <TableRow>
                       <TableCell
-                        colSpan={3}
+                        colSpan={2}
                         className="text-lg text-gray-900 p-2 text-right font-extrabold"
                       >
                         Reste à payer :

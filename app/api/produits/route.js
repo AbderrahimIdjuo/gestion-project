@@ -69,6 +69,7 @@ export async function GET(req) {
   filters.OR = [
     { designation: { contains: searchQuery, mode: "insensitive" } },
     { categorie: { contains: searchQuery, mode: "insensitive" } },
+    { reference: { contains: searchQuery, mode: "insensitive" } },
   ];
 
   // Filtre par catégorie

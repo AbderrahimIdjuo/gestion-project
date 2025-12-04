@@ -12,11 +12,11 @@ import {
   Landmark,
   LayoutDashboard,
   Package,
+  Ruler,
   ScrollText,
   Settings,
   Truck,
   Users,
-  Ruler,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -70,6 +70,11 @@ const menuItems = [
     label: "Transactions",
     href: "/transactions",
   },
+  // {
+  //   icon: ReceiptText,
+  //   label: "Règlement",
+  //   href: "/reglement",
+  // },
   {
     icon: Ruler,
     label: "Débitage",

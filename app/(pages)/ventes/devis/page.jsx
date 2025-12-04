@@ -36,10 +36,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { formatCurrency, methodePaiementLabel } from "@/lib/functions";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import {
+  AlertTriangle,
   CalendarDays,
   CircleDollarSign,
   CreditCard,
@@ -606,10 +613,10 @@ export default function DevisPage() {
                                   "cursor-pointer hover:text-orange-400"
                                 }`}
                                 >
-                                  <div>
-                                    <span className="mr-2">{devis.numero}</span>
+                                  <div className="flex items-center gap-2">
+                                    <span>{devis.numero}</span>
                                     <span
-                                      className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold uppercase ${
+                                      className={`px-2 py-1 rounded-full text-xs font-semibold uppercase ${
                                         statutPaiement(
                                           devis.totalPaye,
                                           devis.total
@@ -623,6 +630,30 @@ export default function DevisPage() {
                                         )?.lable
                                       }
                                     </span>
+                                    {(() => {
+                                      const fourniture = totalFourniture(
+                                        filteredOrders(devis.numero)
+                                      );
+                                      const montantPaye = devis.totalPaye;
+                                      const shouldShowWarning =
+                                        fourniture > montantPaye;
+
+                                      return shouldShowWarning ? (
+                                        <TooltipProvider>
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <AlertTriangle className="h-4 w-4 text-amber-500 cursor-help" />
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                              <p className="font-medium">
+                                                Fourniture supérieure au montant
+                                                payé
+                                              </p>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
+                                      ) : null;
+                                    })()}
                                   </div>
                                 </TableCell>
                                 <TableCell className="!py-2">

@@ -46,8 +46,6 @@ export default function ImpressionTransactions() {
     return list;
   };
 
-
-
   function calculateMarge(devis, totalFourniture) {
     const diff = devis.total - totalFourniture;
     if (totalFourniture === 0 || devis.statut === "En attente") {
@@ -56,7 +54,6 @@ export default function ImpressionTransactions() {
       return formatMontant(diff);
     }
   }
-
 
   useEffect(() => {
     const storedData = localStorage.getItem("params");
@@ -90,6 +87,40 @@ export default function ImpressionTransactions() {
   }
 
   const fromDay = new Date(params?.from);
+
+  // Calcul des totaux
+  const calculateTotals = () => {
+    if (!devis?.data || devis.data.length === 0) {
+      return {
+        totalMontant: 0,
+        totalFournitures: 0,
+        totalMarge: 0,
+        totalPaye: 0,
+      };
+    }
+
+    const totals = devis.data.reduce(
+      (acc, devis) => {
+        const fourniture = totalFourniture(filteredOrders(devis.numero));
+        const marge =
+          devis.statut === "En attente" || fourniture === 0
+            ? 0
+            : (devis.total || 0) - (fourniture || 0);
+
+        return {
+          totalMontant: acc.totalMontant + (devis.total || 0),
+          totalFournitures: acc.totalFournitures + (fourniture || 0),
+          totalMarge: acc.totalMarge + marge,
+          totalPaye: acc.totalPaye + (devis.totalPaye || 0),
+        };
+      },
+      { totalMontant: 0, totalFournitures: 0, totalMarge: 0, totalPaye: 0 }
+    );
+
+    return totals;
+  };
+
+  const totals = calculateTotals();
 
   return (
     <>
@@ -199,53 +230,78 @@ export default function ImpressionTransactions() {
                       </TableRow>
                     ))
                   ) : devis?.data?.length > 0 ? (
-                    devis?.data?.map((devis, index) => (
-                      <>
-                        <Fragment key={devis.id}>
-                          <TableRow>
-                            <TableCell className="!py-2">{index + 1}</TableCell>
-                            <TableCell className="!py-2">
-                              {formatDate(devis.date)}
-                            </TableCell>
-                            <TableCell className={`font-medium !py-2`}>
-                              <div>
-                                <span className="mr-2">{devis.numero}</span>
-                              </div>
-                            </TableCell>
-                            <TableCell className="!py-2">
-                              {devis.client.nom.toUpperCase()}
-                            </TableCell>
-                            <TableCell className="!py-2  text-right">
-                              {formatMontant(devis.total)}
-                            </TableCell>
-                            <TableCell className="!py-2 text-right">
-                              {formatMontant(
-                                totalFourniture(filteredOrders(devis.numero))
-                              )}
-                            </TableCell>
-                            <TableCell className="!py-2 text-right">
-                              {calculateMarge(
-                                devis,
-                                totalFourniture(filteredOrders(devis.numero))
-                              )}
-                            </TableCell>
-                            <TableCell className="!py-2 text-right">
-                              {formatMontant(devis.totalPaye)}
-                            </TableCell>
+                    <>
+                      {devis?.data?.map((devis, index) => (
+                        <>
+                          <Fragment key={devis.id}>
+                            <TableRow>
+                              <TableCell className="!py-2">
+                                {index + 1}
+                              </TableCell>
+                              <TableCell className="!py-2">
+                                {formatDate(devis.date)}
+                              </TableCell>
+                              <TableCell className={`font-medium !py-2`}>
+                                <div>
+                                  <span className="mr-2">{devis.numero}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="!py-2">
+                                {devis.client.nom.toUpperCase()}
+                              </TableCell>
+                              <TableCell className="!py-2  text-right">
+                                {formatMontant(devis.total)}
+                              </TableCell>
+                              <TableCell className="!py-2 text-right">
+                                {formatMontant(
+                                  totalFourniture(filteredOrders(devis.numero))
+                                )}
+                              </TableCell>
+                              <TableCell className="!py-2 text-right">
+                                {calculateMarge(
+                                  devis,
+                                  totalFourniture(filteredOrders(devis.numero))
+                                )}
+                              </TableCell>
+                              <TableCell className="!py-2 text-right">
+                                {formatMontant(devis.totalPaye)}
+                              </TableCell>
 
-                            <TableCell className="!py-2 text-right">
-                              {formatMontant(
-                                devis.total.toFixed(2) -
-                                  devis.totalPaye.toFixed(2)
-                              )}
-                            </TableCell>
-                            <TableCell className="!py-2 text-left">
-                              {devis.statut}
-                            </TableCell>
-                          </TableRow>
-                        </Fragment>
-                      </>
-                    ))
+                              <TableCell className="!py-2 text-right">
+                                {formatMontant(
+                                  devis.total.toFixed(2) -
+                                    devis.totalPaye.toFixed(2)
+                                )}
+                              </TableCell>
+                              <TableCell className="!py-2 text-left">
+                                {devis.statut}
+                              </TableCell>
+                            </TableRow>
+                          </Fragment>
+                        </>
+                      ))}
+                      <TableRow className="font-semibold bg-gray-50">
+                        <TableCell className="!py-2" colSpan={4}>
+                          <strong>TOTAL</strong>
+                        </TableCell>
+                        <TableCell className="!py-2 text-right">
+                          <strong>{formatMontant(totals.totalMontant)}</strong>
+                        </TableCell>
+                        <TableCell className="!py-2 text-right">
+                          <strong>
+                            {formatMontant(totals.totalFournitures)}
+                          </strong>
+                        </TableCell>
+                        <TableCell className="!py-2 text-right">
+                          <strong>{formatMontant(totals.totalMarge)}</strong>
+                        </TableCell>
+                        <TableCell className="!py-2 text-right">
+                          <strong>{formatMontant(totals.totalPaye)}</strong>
+                        </TableCell>
+                        <TableCell className="!py-2 text-right"></TableCell>
+                        <TableCell className="!py-2 text-left"></TableCell>
+                      </TableRow>
+                    </>
                   ) : (
                     <TableRow>
                       <TableCell colSpan={10} align="center">

@@ -23,6 +23,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "react-hot-toast";
 
 export default function PaiementFournisseurDialog({
   fournisseur,
@@ -74,20 +75,20 @@ export default function PaiementFournisseurDialog({
         motif: motif,
       };
       console.log("transData", transData);
-      // const loadingToast = toast.loading("Paiement en cours...");
-      // try {
-      //   const result = await axios.post(
-      //     "/api/fournisseurs/paiement",
-      //     transData
-      //   );
-      //   toast.success("Paiement éffectué avec succès");
-      //   return result.data;
-      // } catch (error) {
-      //   toast.error("Échec de l'opération!");
-      //   throw error;
-      // } finally {
-      //   toast.dismiss(loadingToast);
-      // }
+      const loadingToast = toast.loading("Paiement en cours...");
+      try {
+        const result = await axios.post(
+          "/api/fournisseurs/paiement",
+          transData
+        );
+        toast.success("Paiement éffectué avec succès");
+        return result.data;
+      } catch (error) {
+        toast.error("Échec de l'opération!");
+        throw error;
+      } finally {
+        toast.dismiss(loadingToast);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["transactions"]);

@@ -12,10 +12,15 @@ export async function GET(req) {
     const filters = {};
 
     if (searchQuery) {
-      filters.designation = {
-        contains: searchQuery,
-        mode: "insensitive",
-      };
+      // filters.designation = {
+      //   contains: searchQuery,
+      //   mode: "insensitive",
+      // };
+      filters.OR = [
+        { designation: { contains: searchQuery, mode: "insensitive" } },
+        { categorie: { contains: searchQuery, mode: "insensitive" } },
+        { reference: { contains: searchQuery, mode: "insensitive" } },
+      ];
     }
     // Filtre par catégorie
     if (categorie !== "all") {

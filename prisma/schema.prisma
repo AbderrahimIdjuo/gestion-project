@@ -93,6 +93,7 @@ model Fournisseurs {
   bonLivraisons        BonLivraison[]
   commandesFournitures CommandeFourniture[]
   Cheques              Cheques[]
+  reglements           Reglement[]
 }
 
 model Commandes {
@@ -316,6 +317,29 @@ model Cheques {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
   transaction     Transactions?
+  reglement       Reglement?
+}
+
+model Reglement {
+  id              String       @id @default(uuid())
+  fournisseurId   String
+  compte          String
+  montant         Float
+  methodePaiement String // espece, cheque, versement, traite
+  dateReglement   DateTime // Date de réglement
+  datePrelevement DateTime? // Date de prélèvement
+  motif           String? // Motif du règlement
+  statut          String       @default("en_attente") // en_attente, paye, en_retard, annule
+  facture         Boolean      @default(false) // Indique si une facture a été créée
+  chequeId        String?      @unique
+  cheque          Cheques?     @relation(fields: [chequeId], references: [id], onDelete: Cascade)
+  fournisseur     Fournisseurs @relation(fields: [fournisseurId], references: [id], onDelete: Cascade)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([fournisseurId])
+  @@index([dateReglement])
+  @@index([statut])
 }
 
 model TachesEmployes {
