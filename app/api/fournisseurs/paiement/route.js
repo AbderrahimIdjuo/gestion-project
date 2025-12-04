@@ -53,26 +53,26 @@ export async function POST(req) {
         });
 
         // creation de la transaction
-        // await prisma.transactions.create({
-        //   data: {
-        //     reference: fournisseurId ? fournisseurId : null,
-        //     type,
-        //     montant,
-        //     compte,
-        //     fournisseurId: fournisseurId,
-        //     lable,
-        //     description,
-        //     motif,
-        //     datePrelevement,
-        //     methodePaiement,
-        //     date: dateReglement || new Date(),
-        //     cheque: cheque
-        //       ? {
-        //           connect: { id: cheque.id }, // ✅ association one-to-one
-        //         }
-        //       : undefined,
-        //   },
-        // }),
+        await prisma.transactions.create({
+          data: {
+            reference: fournisseurId ? fournisseurId : null,
+            type,
+            montant,
+            compte,
+            fournisseurId: fournisseurId,
+            lable,
+            description,
+            motif,
+            datePrelevement,
+            methodePaiement,
+            date: dateReglement || new Date(),
+            cheque: cheque
+              ? {
+                  connect: { id: cheque.id }, // ✅ association one-to-one
+                }
+              : undefined,
+          },
+        }),
         // mise à jour du solde du compte bancaire
         await prisma.comptesBancaires.updateMany({
           where: { compte: compte },
@@ -82,12 +82,12 @@ export async function POST(req) {
         });
 
         // mise à jour de la dette du fournisseur
-        // await prisma.fournisseurs.update({
-        //   where: { id: fournisseurId },
-        //   data: {
-        //     dette: { decrement: montant },
-        //   },
-        // });
+        await prisma.fournisseurs.update({
+          where: { id: fournisseurId },
+          data: {
+            dette: { decrement: montant },
+          },
+        });
 
         // Paye les BL du fournisseur
         const montantDisponible = montant; // par exemple

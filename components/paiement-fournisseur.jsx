@@ -120,245 +120,347 @@ export default function PaiementFournisseurDialog({
   });
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-full max-w-[95vw] sm:max-w-[1000px] max-h-[90vh] overflow-y-auto">
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <DialogHeader>
-            <DialogTitle>Paiement en faveur de {fournisseur?.nom}</DialogTitle>
-            <DialogDescription>
-              Sélectionnez le type de paiement et remplissez les détails
-              nécessaires.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4 space-y-4">
-            <RadioGroup
-              value={watch("typePaiement")}
-              onValueChange={value => {
-                reset();
-                handleTypePaiementChange(value);
-                setDate(null);
-              }}
-              className="flex flex-wrap gap-3 justify-between sm:justify-evenly"
-            >
-              <div className="flex items-center space-x-2 rounded-md p-2">
-                <RadioGroupItem
-                  value="espece"
-                  id="espece"
-                  className="text-green-600 "
-                />
-                <Label
-                  htmlFor="espece"
-                  className="text-green-600 font-medium cursor-pointer"
-                >
-                  Espèce
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem
-                  value="versement"
-                  id="versement"
-                  className="text-sky-600"
-                />
-                <Label
-                  htmlFor="versement"
-                  className="text-sky-600 font-medium cursor-pointer"
-                >
-                  Versement
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2 rounded-md p-2">
-                <RadioGroupItem
-                  value="cheque"
-                  id="cheque"
-                  className="text-violet-600 "
-                />
-                <Label
-                  htmlFor="cheque"
-                  className="text-violet-600 font-medium cursor-pointer"
-                >
-                  Chèque
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2 rounded-md p-2">
-                <RadioGroupItem
-                  value="traite"
-                  id="traite"
-                  className="text-amber-600 "
-                />
-                <Label
-                  htmlFor="traite"
-                  className="text-amber-600 font-medium cursor-pointer"
-                >
-                  Traite
-                </Label>
-              </div>
-            </RadioGroup>
-
-            {watch("typePaiement") === "espece" && (
-              <div className="space-y-4 items-end grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div className="w-full space-y-1.5">
-                  <Label htmlFor="client">Date : </Label>
-                  <CustomDatePicker date={date} onDateChange={setDate} />
-                </div>
-                <div className="grid w-full items-center gap-1.5">
-                  <Label htmlFor="montant">Montant</Label>
-                  <Input
-                    {...register("montant", { valueAsNumber: true })}
-                    className="w-full focus-visible:ring-purple-500"
-                    id="montant"
+    <>
+      {" "}
+      <style>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .payment-form-animate {
+          animation: fadeInUp 0.4s ease-out;
+        }
+      `}</style>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="w-full max-w-[95vw] sm:max-w-[1000px] max-h-[90vh] overflow-y-auto">
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <DialogHeader>
+              <DialogTitle>
+                Paiement en faveur de {fournisseur?.nom}
+              </DialogTitle>
+              <DialogDescription>
+                Sélectionnez le type de paiement et remplissez les détails
+                nécessaires.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4 space-y-4">
+              <RadioGroup
+                value={watch("typePaiement")}
+                onValueChange={value => {
+                  reset();
+                  handleTypePaiementChange(value);
+                  setDate(null);
+                }}
+                className="flex flex-wrap gap-3 justify-between sm:justify-evenly"
+              >
+                <div className="flex items-center space-x-2 rounded-md p-2">
+                  <RadioGroupItem
+                    value="espece"
+                    id="espece"
+                    className="text-green-600 "
                   />
-                </div>
-                <div className="grid w-full items-center gap-1.5">
-                  <Label htmlFor="compte">Compte bancaire</Label>
-                  <Select
-                    value={watch("compte")}
-                    name="compte"
-                    onValueChange={value => setValue("compte", value)}
+                  <Label
+                    htmlFor="espece"
+                    className="text-green-600 font-medium cursor-pointer"
                   >
-                    <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500 mt-2">
-                      <SelectValue placeholder="Séléctionner..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {comptes.data?.map(element => (
-                        <SelectItem key={element.id} value={element.compte}>
-                          <div className="flex items-center gap-2">
-                            {element.compte}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {errors.compte && (
-                    <p className="text-red-500 text-sm">
-                      {errors.compte.message}
-                    </p>
-                  )}
+                    Espèce
+                  </Label>
                 </div>
-              </div>
-            )}
-
-            {watch("typePaiement") === "versement" && (
-              <div className="space-y-4 items-end grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div className="w-full space-y-1.5">
-                  <Label htmlFor="dateCreation">Date de création : </Label>
-                  <CustomDatePicker date={date} onDateChange={setDate} />
-                </div>
-                <div className="grid w-full items-center gap-1.5">
-                  <Label htmlFor="montant">Montant</Label>
-                  <Input
-                    {...register("montant", { valueAsNumber: true })}
-                    className="w-full focus-visible:ring-purple-500"
-                    id="montant"
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem
+                    value="versement"
+                    id="versement"
+                    className="text-sky-600"
                   />
-                </div>
-                <div className="grid w-full items-center gap-2">
-                  <Label htmlFor="compte">Compte bancaire</Label>
-                  <Select
-                    value={watch("compte")}
-                    name="compte"
-                    onValueChange={value => setValue("compte", value)}
+                  <Label
+                    htmlFor="versement"
+                    className="text-sky-600 font-medium cursor-pointer"
                   >
-                    <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
-                      <SelectValue placeholder="Séléctionner..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {comptes.data
-                        ?.filter(c => c.compte !== "caisse")
-                        .map(element => (
+                    Versement
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2 rounded-md p-2">
+                  <RadioGroupItem
+                    value="cheque"
+                    id="cheque"
+                    className="text-violet-600 "
+                  />
+                  <Label
+                    htmlFor="cheque"
+                    className="text-violet-600 font-medium cursor-pointer"
+                  >
+                    Chèque
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2 rounded-md p-2">
+                  <RadioGroupItem
+                    value="traite"
+                    id="traite"
+                    className="text-amber-600 "
+                  />
+                  <Label
+                    htmlFor="traite"
+                    className="text-amber-600 font-medium cursor-pointer"
+                  >
+                    Traite
+                  </Label>
+                </div>
+              </RadioGroup>
+
+              {watch("typePaiement") === "espece" && (
+                <div className="space-y-4 items-end grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 payment-form-animate">
+                  <div className="w-full space-y-1.5">
+                    <Label htmlFor="client">Date : </Label>
+                    <CustomDatePicker date={date} onDateChange={setDate} />
+                  </div>
+                  <div className="grid w-full items-center gap-1.5">
+                    <Label htmlFor="montant">Montant</Label>
+                    <Input
+                      {...register("montant", { valueAsNumber: true })}
+                      className="w-full focus-visible:ring-purple-500"
+                      id="montant"
+                    />
+                  </div>
+                  <div className="grid w-full items-center gap-1.5">
+                    <Label htmlFor="compte">Compte bancaire</Label>
+                    <Select
+                      value={watch("compte")}
+                      name="compte"
+                      onValueChange={value => setValue("compte", value)}
+                    >
+                      <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500 mt-2">
+                        <SelectValue placeholder="Séléctionner..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {comptes.data?.map(element => (
                           <SelectItem key={element.id} value={element.compte}>
                             <div className="flex items-center gap-2">
                               {element.compte}
                             </div>
                           </SelectItem>
                         ))}
-                    </SelectContent>
-                  </Select>
+                      </SelectContent>
+                    </Select>
+                    {errors.compte && (
+                      <p className="text-red-500 text-sm">
+                        {errors.compte.message}
+                      </p>
+                    )}
+                  </div>
+                  <div className="grid w-full items-center gap-2 sm:col-span-2 lg:col-span-4">
+                    <Label htmlFor="motif">Motif du paiement</Label>
+                    <Input
+                      {...register("motif")}
+                      className="w-full focus-visible:ring-purple-500"
+                      id="motif"
+                    />
+                  </div>
                 </div>
-                <div className="grid w-full items-center gap-2 sm:col-span-2 lg:col-span-3">
-                  <Label htmlFor="numero">Numéro de versement bancaire</Label>
-                  <Input
-                    {...register("numero")}
-                    className="w-full focus-visible:ring-purple-500"
-                    id="numero"
-                  />
-                </div>
-              </div>
-            )}
+              )}
 
-            {watch("typePaiement") === "cheque" && (
-              <div className="space-y-4 items-end grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="w-full space-y-1.5">
-                  <Label htmlFor="dateCreation">Date de création : </Label>
-                  <CustomDatePicker date={date} onDateChange={setDate} />
+              {watch("typePaiement") === "versement" && (
+                <div className="space-y-4 items-end grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 payment-form-animate">
+                  <div className="w-full space-y-1.5">
+                    <Label htmlFor="dateCreation">Date de création : </Label>
+                    <CustomDatePicker date={date} onDateChange={setDate} />
+                  </div>
+                  <div className="grid w-full items-center gap-1.5">
+                    <Label htmlFor="montant">Montant</Label>
+                    <Input
+                      {...register("montant", { valueAsNumber: true })}
+                      className="w-full focus-visible:ring-purple-500"
+                      id="montant"
+                    />
+                  </div>
+                  <div className="grid w-full items-center gap-2">
+                    <Label htmlFor="compte">Compte bancaire</Label>
+                    <Select
+                      value={watch("compte")}
+                      name="compte"
+                      onValueChange={value => setValue("compte", value)}
+                    >
+                      <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
+                        <SelectValue placeholder="Séléctionner..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {comptes.data
+                          ?.filter(c => c.compte !== "caisse")
+                          .map(element => (
+                            <SelectItem key={element.id} value={element.compte}>
+                              <div className="flex items-center gap-2">
+                                {element.compte}
+                              </div>
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid w-full items-center gap-2 sm:col-span-2 lg:col-span-3">
+                    <Label htmlFor="numero">Numéro de versement bancaire</Label>
+                    <Input
+                      {...register("numero")}
+                      className="w-full focus-visible:ring-purple-500"
+                      id="numero"
+                    />
+                  </div>
+                  <div className="grid w-full items-center gap-2 sm:col-span-2 lg:col-span-4">
+                    <Label htmlFor="motif">Motif du paiement</Label>
+                    <Input
+                      {...register("motif")}
+                      className="w-full focus-visible:ring-purple-500"
+                      id="motif"
+                    />
+                  </div>
                 </div>
-                <div className="w-full space-y-1.5">
-                  <Label htmlFor="datePrelevement">Date de prélèvement: </Label>
-                  <CustomDatePicker
-                    date={datePrelevement}
-                    onDateChange={setDatePrelevement}
-                  />
+              )}
+
+              {watch("typePaiement") === "cheque" && (
+                <div className="space-y-4 items-end grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 payment-form-animate">
+                  <div className="w-full space-y-1.5">
+                    <Label htmlFor="dateCreation">Date de création : </Label>
+                    <CustomDatePicker date={date} onDateChange={setDate} />
+                  </div>
+                  <div className="w-full space-y-1.5">
+                    <Label htmlFor="datePrelevement">
+                      Date de prélèvement:{" "}
+                    </Label>
+                    <CustomDatePicker
+                      date={datePrelevement}
+                      onDateChange={setDatePrelevement}
+                    />
+                  </div>
+                  <div className="grid w-full items-center gap-2">
+                    <Label htmlFor="montant">Montant</Label>
+                    <Input
+                      {...register("montant", { valueAsNumber: true })}
+                      className="w-full focus-visible:ring-purple-500"
+                      id="montant"
+                    />
+                  </div>
+                  <div className="grid w-full items-center gap-2">
+                    <Label htmlFor="compte">Compte bancaire</Label>
+                    <Select
+                      value={watch("compte")}
+                      name="compte"
+                      onValueChange={value => setValue("compte", value)}
+                    >
+                      <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
+                        <SelectValue placeholder="Séléctionner..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {comptes.data
+                          ?.filter(c => c.compte !== "caisse")
+                          .map(element => (
+                            <SelectItem key={element.id} value={element.compte}>
+                              <div className="flex items-center gap-2">
+                                {element.compte}
+                              </div>
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid w-full items-center gap-2 sm:col-span-2 lg:col-span-4">
+                    <Label htmlFor="numero">Numéro de chèque</Label>
+                    <Input
+                      {...register("numero")}
+                      className="w-full focus-visible:ring-purple-500"
+                      id="numero"
+                    />
+                  </div>
+                  <div className="grid w-full items-center gap-2 sm:col-span-2 lg:col-span-4">
+                    <Label htmlFor="motif">Motif du paiement</Label>
+                    <Input
+                      {...register("motif")}
+                      className="w-full focus-visible:ring-purple-500"
+                      id="motif"
+                    />
+                  </div>
                 </div>
-                <div className="grid w-full items-center gap-2">
-                  <Label htmlFor="montant">Montant</Label>
-                  <Input
-                    {...register("montant", { valueAsNumber: true })}
-                    className="w-full focus-visible:ring-purple-500"
-                    id="montant"
-                  />
+              )}
+              {watch("typePaiement") === "traite" && (
+                <div className="space-y-4 items-end grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 payment-form-animate">
+                  <div className="w-full space-y-1.5">
+                    <Label htmlFor="dateCreation">Date de création : </Label>
+                    <CustomDatePicker date={date} onDateChange={setDate} />
+                  </div>
+                  <div className="w-full space-y-1.5">
+                    <Label htmlFor="datePrelevement">
+                      Date de prélèvement:{" "}
+                    </Label>
+                    <CustomDatePicker
+                      date={datePrelevement}
+                      onDateChange={setDatePrelevement}
+                    />
+                  </div>
+                  <div className="grid w-full items-center gap-2">
+                    <Label htmlFor="montant">Montant</Label>
+                    <Input
+                      {...register("montant", { valueAsNumber: true })}
+                      className="w-full focus-visible:ring-purple-500"
+                      id="montant"
+                    />
+                  </div>
+                  <div className="grid w-full items-center gap-2">
+                    <Label htmlFor="compte">Compte bancaire</Label>
+                    <Select
+                      value={watch("compte")}
+                      name="compte"
+                      onValueChange={value => setValue("compte", value)}
+                    >
+                      <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
+                        <SelectValue placeholder="Séléctionner..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {comptes.data
+                          ?.filter(c => c.compte !== "caisse")
+                          .map(element => (
+                            <SelectItem key={element.id} value={element.compte}>
+                              <div className="flex items-center gap-2">
+                                {element.compte}
+                              </div>
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid w-full items-center gap-2 sm:col-span-2 lg:col-span-4">
+                    <Label htmlFor="numero">Numéro de chèque</Label>
+                    <Input
+                      {...register("numero")}
+                      className="w-full focus-visible:ring-purple-500"
+                      id="numero"
+                    />
+                  </div>
+                  <div className="grid w-full items-center gap-2 sm:col-span-2 lg:col-span-4">
+                    <Label htmlFor="motif">Motif du paiement</Label>
+                    <Input
+                      {...register("motif")}
+                      className="w-full focus-visible:ring-purple-500"
+                      id="motif"
+                    />
+                  </div>
                 </div>
-                <div className="grid w-full items-center gap-2">
-                  <Label htmlFor="compte">Compte bancaire</Label>
-                  <Select
-                    value={watch("compte")}
-                    name="compte"
-                    onValueChange={value => setValue("compte", value)}
-                  >
-                    <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
-                      <SelectValue placeholder="Séléctionner..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {comptes.data
-                        ?.filter(c => c.compte !== "caisse")
-                        .map(element => (
-                          <SelectItem key={element.id} value={element.compte}>
-                            <div className="flex items-center gap-2">
-                              {element.compte}
-                            </div>
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid w-full items-center gap-2 sm:col-span-2 lg:col-span-4">
-                  <Label htmlFor="numero">Numéro de chèque</Label>
-                  <Input
-                    {...register("numero")}
-                    className="w-full focus-visible:ring-purple-500"
-                    id="numero"
-                  />
-                </div>
-              </div>
-            )}
-            <div className="grid w-full items-center gap-2">
-              <Label htmlFor="motif">Motif du paiement</Label>
-              <Input
-                {...register("motif")}
-                className="w-full focus-visible:ring-purple-500"
-                id="motif"
-              />
+              )}
             </div>
-          </div>
-          <DialogFooter>
-            <Button
-              className="bg-[#00e701] hover:bg-[#00e701] shadow-lg hover:scale-105 text-white text-md rounded-full font-bold transition-all duration-300 transform"
-              type="submit"
-              disabled={isSubmiting}
-            >
-              {isSubmiting ? "En cours..." : "Confirmer"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+            <DialogFooter>
+              <Button
+                className="bg-[#00e701] hover:bg-[#00e701] shadow-lg hover:scale-105 text-white text-md rounded-full font-bold transition-all duration-300 transform"
+                type="submit"
+                disabled={isSubmiting}
+              >
+                {isSubmiting ? "En cours..." : "Confirmer"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
