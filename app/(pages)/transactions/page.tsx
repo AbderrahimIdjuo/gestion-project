@@ -206,7 +206,10 @@ export default function Banques() {
   };
 
   const handleChequeClick = (transaction: Transaction) => {
-    if (transaction.methodePaiement === "cheque" || transaction.methodePaiement === "traite") {
+    if (
+      transaction.methodePaiement === "cheque" ||
+      transaction.methodePaiement === "traite"
+    ) {
       let beneficiaire = "Inconnu";
       if (transaction.description.includes("bénéficiaire")) {
         beneficiaire = transaction.description
@@ -565,8 +568,11 @@ export default function Banques() {
                                       handleChequeClick(transaction)
                                     }
                                     className={`font-medium py-0 ${
-                                      transaction.methodePaiement ===
-                                        "cheque" || transaction.methodePaiement === "traite" && "cursor-pointer"
+                                      (transaction.methodePaiement ===
+                                        "cheque" ||
+                                        transaction.methodePaiement ===
+                                          "traite") &&
+                                      "cursor-pointer"
                                     }`}
                                   >
                                     {methodePaiementLabel(transaction)}

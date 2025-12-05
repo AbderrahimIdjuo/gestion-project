@@ -82,14 +82,31 @@ export default function NouveauDevisPage() {
     const getLastDevis = async () => {
       try {
         const response = await axios.get("/api/devis/lastDevis");
-        const { lastDevi } = response.data;
+        const { lastDevi, error } = response.data;
+
+        console.log("#### lastDevi response:", response.data);
         console.log("#### lastDevi :", lastDevi);
-        if (lastDevi) {
+
+        if (error) {
+          console.error("API Error:", error);
+          // Set default value if API fails
+          setLastDeviNumber(null);
+          return;
+        }
+
+        if (lastDevi && lastDevi.numero) {
           setLastDeviNumber(lastDevi.numero);
-          //        localStorage.setItem("lastDeviNumber", JSON.stringify(lastDevi.numero));
+        } else {
+          // No devis found for current month - this is normal for new months
+          console.log(
+            "No devis found for current month, starting from sequence 01"
+          );
+          setLastDeviNumber(null);
         }
       } catch (error) {
         console.error("Error fetching last devis:", error);
+        // Set default value on error
+        setLastDeviNumber(null);
       }
     };
 

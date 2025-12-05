@@ -2,7 +2,9 @@
 
 import { EnteteDevis } from "@/components/Entete-devis";
 import LoadingHistoriquePaiements from "@/components/loading-historique-paiements";
+import { Label } from "@/components/ui/label";
 import { DirectPrintButton } from "@/components/ui/print-button";
+import { Switch } from "@/components/ui/switch";
 import {
   Table,
   TableBody,
@@ -26,6 +28,7 @@ function formatPhoneNumber(phone) {
 export default function HistoriquePaiement() {
   const [devis, setDevis] = useState();
   const [transactions, setTransactions] = useState();
+  const [showCompte, setShowCompte] = useState(false);
   const handlePrint = () => {
     window.print();
   };
@@ -79,9 +82,21 @@ export default function HistoriquePaiement() {
             </div>
             {/* Items Table */}
             <div>
-              <h3 className="font-semibold text-lg text-gray-900 mb-2">
-                Historique des paiements :
-              </h3>
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="font-semibold text-lg text-gray-900">
+                  Historique des paiements :
+                </h3>
+                <div className="flex items-center space-x-2 print:hidden">
+                  <Switch
+                    id="show-compte"
+                    checked={showCompte}
+                    onCheckedChange={setShowCompte}
+                  />
+                  <Label htmlFor="show-compte" className="cursor-pointer">
+                    Afficher le compte
+                  </Label>
+                </div>
+              </div>
               <div className="overflow-hidden rounded-lg border border-black">
                 <Table className="w-full border-collapse">
                   <TableHeader className="text-[1rem] border-black">
@@ -92,6 +107,11 @@ export default function HistoriquePaiement() {
                       <TableHead className="text-black  font-bold text-left border-l border-b border-black">
                         Méthode de paiement
                       </TableHead>
+                      {showCompte && (
+                        <TableHead className="text-black font-bold text-left border-l border-b border-black">
+                          Compte
+                        </TableHead>
+                      )}
                       <TableHead className="text-black font-bold border-l border-b border-black text-right">
                         Montant
                       </TableHead>
@@ -107,6 +127,11 @@ export default function HistoriquePaiement() {
                         <TableCell className=" p-2 text-left border-l border-b border-black font-semibold">
                           {methodePaiementLabel(transaction)}
                         </TableCell>
+                        {showCompte && (
+                          <TableCell className=" p-2 text-left border-l border-b border-black font-semibold">
+                            {transaction.compte || "N/A"}
+                          </TableCell>
+                        )}
                         <TableCell className="border-l border-b border-black p-2 text-right font-semibold">
                           {formatCurrency(transaction.montant)}
                         </TableCell>
@@ -116,7 +141,7 @@ export default function HistoriquePaiement() {
                   <TableFooter className="font-medium">
                     <TableRow>
                       <TableCell
-                        colSpan={2}
+                        colSpan={showCompte ? 3 : 2}
                         className="text-lg border-b border-black text-gray-900 p-2 text-right font-extrabold"
                       >
                         Total payé :
@@ -128,7 +153,7 @@ export default function HistoriquePaiement() {
 
                     <TableRow>
                       <TableCell
-                        colSpan={2}
+                        colSpan={showCompte ? 3 : 2}
                         className="text-lg text-gray-900 p-2 text-right font-extrabold"
                       >
                         Reste à payer :

@@ -193,10 +193,25 @@ export default function DevisPage() {
         return "bg-emerald-500";
       case "Annulé":
         return "bg-red-500";
-      case "Expiré":
-        return "bg-gray-500";
+      case "Terminer":
+        return "bg-purple-500";
       default:
         return "bg-gray-500";
+    }
+  };
+
+  const getStatutColor = statut => {
+    switch (statut) {
+      case "En attente":
+        return "bg-amber-100 text-amber-700";
+      case "Accepté":
+        return "bg-green-100 text-green-700";
+      case "Annulé":
+        return "bg-red-100 text-red-700";
+      case "Terminer":
+        return "bg-purple-100 text-purple-700";
+      default:
+        return "bg-gray-100 text-gray-700";
     }
   };
   function formatDate(dateString) {
@@ -233,12 +248,29 @@ export default function DevisPage() {
     },
   });
 
+  const updateStatut = useMutation({
+    mutationFn: async ({ id, statut }) => {
+      try {
+        await axios.patch(`/api/devis/${id}`, { statut });
+        toast.success("Statut mis à jour avec succès!");
+      } catch (error) {
+        console.error("Erreur lors de la mise à jour du statut :", error);
+        toast.error("Échec de la mise à jour du statut");
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["devis"]);
+    },
+  });
+
   const status = [
     { value: "all", lable: "Tous les statut", color: "" },
     { value: "En attente", lable: "En attente", color: "amber-500" },
     { value: "Accepté", lable: "Accepté", color: "green-500" },
     { value: "Annulé", lable: "Annulé", color: "red-500" },
-    { value: "Expiré", lable: "Expiré", color: "gray-500" },
+    // { value: "Expiré", lable: "Expiré", color: "gray-500" },
+    { value: "Terminer", lable: "Terminer", color: "purple-500" },
   ];
   const totalFourniture = group => {
     return group?.reduce((acc, item) => {
@@ -691,16 +723,45 @@ export default function DevisPage() {
                                   )}
                                 </TableCell>
                                 <TableCell className="!py-2">
-                                  <div className="flex items-center gap-2">
-                                    <span
-                                      className={`h-2 w-2 rounded-full ${getStatusColor(
-                                        devis.statut
-                                      )}`}
-                                    />
-                                    <span className="text-sm text-muted-foreground">
-                                      {devis.statut}
-                                    </span>
-                                  </div>
+                                  <Select
+                                    value={devis.statut}
+                                    onValueChange={value => {
+                                      updateStatut.mutate({
+                                        id: devis.id,
+                                        statut: value,
+                                      });
+                                    }}
+                                    disabled={updateStatut.isPending}
+                                  >
+                                    <SelectTrigger className="h-8 w-[130px] text-xs border-0 bg-transparent hover:bg-gray-50">
+                                      <SelectValue>
+                                        <span
+                                          className={`text-xs px-2 py-1 rounded-full ${getStatutColor(
+                                            devis.statut
+                                          )}`}
+                                        >
+                                          {devis.statut}
+                                        </span>
+                                      </SelectValue>
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {status
+                                        .filter(s => s.value !== "all")
+                                        .map((statut, index) => (
+                                          <SelectItem
+                                            key={index}
+                                            value={statut.value}
+                                          >
+                                            <span className="flex items-center gap-2">
+                                              <span
+                                                className={`h-2 w-2 rounded-full bg-${statut.color}`}
+                                              />
+                                              {statut.lable}
+                                            </span>
+                                          </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                  </Select>
                                 </TableCell>
                                 <TableCell className="text-right !py-2">
                                   <DevisActions

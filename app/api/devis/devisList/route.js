@@ -7,7 +7,11 @@ export async function GET(req) {
     const cursor = searchParams.get("cursor") || null;
     const limit = parseInt(searchParams.get("limit")) || 10;
     const searchQuery = searchParams.get("query");
-    const filters = {};
+    const filters = {
+      statut: {
+        not: "Terminer",
+      },
+    };
 
     if (searchQuery) {
       filters.OR = [

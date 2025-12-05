@@ -28,3 +28,23 @@ export async function GET(_, { params }) {
   });
   return NextResponse.json({ devi });
 }
+
+export async function PATCH(req, { params }) {
+  try {
+    const id = params.id;
+    const { statut } = await req.json();
+
+    const devi = await prisma.devis.update({
+      where: { id },
+      data: { statut },
+    });
+
+    return NextResponse.json({ devi });
+  } catch (error) {
+    console.error("Error updating devis statut:", error);
+    return NextResponse.json(
+      { error: "Failed to update devis statut" },
+      { status: 500 }
+    );
+  }
+}
