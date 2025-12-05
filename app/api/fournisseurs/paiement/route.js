@@ -23,7 +23,7 @@ export async function POST(req) {
         //Creation du chèque
         let cheque = null;
 
-        if (methodePaiement === "cheque") {
+        if (methodePaiement === "cheque" || methodePaiement === "traite") {
           cheque = await prisma.cheques.create({
             data: {
               type: "EMIS",
