@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -12,10 +11,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useForm } from "react-hook-form";
-import toast from "react-hot-toast";
-import { CircleX } from "lucide-react";
-import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import {
   Select,
   SelectContent,
@@ -23,21 +18,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import axios from "axios";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+import { CircleX } from "lucide-react";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import toast from "react-hot-toast";
+import { z } from "zod";
 
 export function UpdateEmployeDialog({ employe, open, onOpenChange }) {
   const employeSchema = z.object({
     id: z.string(),
     nom: z.string().min(1, "Veuillez insérer le nom de l'employé"),
-    telephone: z.preprocess((telephone) => {
+    telephone: z.preprocess(telephone => {
       // If telephone is empty or undefined, return null
       return telephone === "" ? null : telephone;
     }, z.string().length(10, "Téléphone doit contenir 10 chiffres").regex(/^\d+$/, "Téléphone doit contenir des chiffres").nullable()),
     cin: z.string().optional(),
     salaire: z.preprocess(
-      (value) =>
+      value =>
         value === "" || value === undefined ? undefined : Number(value),
       z
         .number({ invalid_type_error: "Le salaire doit être un nombre" })
@@ -45,13 +45,10 @@ export function UpdateEmployeDialog({ employe, open, onOpenChange }) {
     ),
     role: z.string().optional(),
     adresse: z.string().optional(),
-    rib: z.preprocess((rib) => {
+    rib: z.preprocess(rib => {
       // If rib is empty or undefined, return null
       return rib === "" || rib === undefined ? null : rib;
-    }, z.union([
-      z.string().length(24, "Le RIB doit contenir 24 chiffres").regex(/^\d+$/, "Le RIB doit contenir uniquement des chiffres"),
-      z.null()
-    ]).optional()),
+    }, z.union([z.string().length(24, "Le RIB doit contenir 24 chiffres").regex(/^\d+$/, "Le RIB doit contenir uniquement des chiffres"), z.null()]).optional()),
   });
 
   const {
@@ -95,7 +92,7 @@ export function UpdateEmployeDialog({ employe, open, onOpenChange }) {
   const queryClient = useQueryClient();
 
   const updateEmploye = useMutation({
-    mutationFn: async (data) => {
+    mutationFn: async data => {
       const loadingToast = toast.loading("Modification de l'employé...");
       try {
         const response = await axios.put("/api/employes", data);
@@ -116,7 +113,7 @@ export function UpdateEmployeDialog({ employe, open, onOpenChange }) {
     },
   });
 
-  const onSubmit = async (data) => {
+  const onSubmit = async data => {
     setValue("id", employe.id);
     updateEmploye.mutate(data);
   };
@@ -126,9 +123,9 @@ export function UpdateEmployeDialog({ employe, open, onOpenChange }) {
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogHeader>
-            <DialogTitle>Modifier l'employé</DialogTitle>
+            <DialogTitle>Modifier l&apos;employé</DialogTitle>
             <DialogDescription>
-              Modifiez les informations de l'employé ici. Cliquez sur
+              Modifiez les informations de l&apos;employé ici. Cliquez sur
               enregistrer lorsque vous avez terminé.
             </DialogDescription>
           </DialogHeader>
@@ -218,14 +215,14 @@ export function UpdateEmployeDialog({ employe, open, onOpenChange }) {
               </Label>
               <Select
                 name="role"
-                onValueChange={(value) => setValue("role", value)}
+                onValueChange={value => setValue("role", value)}
                 value={watch("role")}
               >
                 <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
                   <SelectValue placeholder="Sélectionner ..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {query.data?.map((element) => (
+                  {query.data?.map(element => (
                     <SelectItem key={element.id} value={element.tache}>
                       {element.tache}
                     </SelectItem>
@@ -293,4 +290,3 @@ export function UpdateEmployeDialog({ employe, open, onOpenChange }) {
     </Dialog>
   );
 }
-
