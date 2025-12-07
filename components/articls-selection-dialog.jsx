@@ -1,24 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { LoadingDots } from "@/components/loading-dots";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Search, Check, Plus, Minus, Tags } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import axios from "axios";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { LoadingDots } from "@/components/loading-dots";
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { useInView } from "react-intersection-observer";
 import {
   Select,
   SelectContent,
@@ -26,7 +20,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import axios from "axios";
+import { Check, Minus, Plus, Search, Tags } from "lucide-react";
 import { customAlphabet } from "nanoid";
+import { useEffect, useState } from "react";
+import { useInView } from "react-intersection-observer";
 
 export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -37,8 +37,8 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
   });
   const { ref, inView } = useInView();
 
-  const handleToggleArticle = (article) => {
-    setSelectedArticles((prev) => {
+  const handleToggleArticle = article => {
+    setSelectedArticles(prev => {
       const newSelected = { ...prev };
       if (newSelected[article.id]) {
         delete newSelected[article.id];
@@ -53,7 +53,7 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
   };
 
   const handleQuantityChange = (articleId, delta) => {
-    setSelectedArticles((prev) => {
+    setSelectedArticles(prev => {
       const currentQty = prev[articleId]?.quantite || 0;
       const newQty = Math.max(0, currentQty + delta);
 
@@ -73,7 +73,7 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
   };
   const handleInputChange = (e, articleId) => {
     const { value } = e.target;
-    setSelectedArticles((prev) => {
+    setSelectedArticles(prev => {
       return {
         ...prev,
         [articleId]: {
@@ -90,7 +90,7 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
   };
   const handleAddItems = () => {
     const articlesToAdd = Object.values(selectedArticles)
-      .filter((article) => article.quantite > 0)
+      .filter(article => article.quantite > 0)
       .map(({ id, designation, quantite }) => ({
         id,
         key: generateUniqueKey(),
@@ -133,11 +133,11 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
         });
         return response.data;
       },
-      getNextPageParam: (lastPage) => lastPage.nextCursor || null,
+      getNextPageParam: lastPage => lastPage.nextCursor || null,
       keepPreviousData: true,
     });
 
-  const articls = data?.pages.flatMap((page) => page.articls) || [];
+  const articls = data?.pages.flatMap(page => page.articls) || [];
 
   useEffect(() => {
     if (inView && hasNextPage) {
@@ -169,7 +169,7 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
               <div name="selectCategorie" className=" relative px-4 pt-2 pb-1">
                 <Select
                   value={filters.categorie}
-                  onValueChange={(value) =>
+                  onValueChange={value =>
                     setFilters({ ...filters, categorie: value })
                   }
                 >
@@ -180,7 +180,7 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
                     <SelectItem key="all" value="all">
                       Toutes les catégories
                     </SelectItem>
-                    {categories.data?.map((element) => (
+                    {categories.data?.map(element => (
                       <SelectItem key={element.id} value={element.categorie}>
                         {element.categorie}
                       </SelectItem>
@@ -193,7 +193,7 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
                 <Input
                   placeholder="Chercher un articl..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={e => setSearchQuery(e.target.value)}
                   className="pl-9 w-full text-left rounded-lg focus:!ring-purple-500"
                 />
                 <div className="absolute mt-1 right-10 top-1/3 h-4 w-4 -translate-y-1/2 text-muted-foreground">
@@ -203,7 +203,7 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
               <div className="h-[500px] space-y-2">
                 <ScrollArea className="h-[100%] w-full">
                   {articls?.length > 0 ? (
-                    articls?.map((article) => (
+                    articls?.map(article => (
                       <div
                         key={article.id}
                         className={cn(
@@ -266,7 +266,7 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
                 </div>
                 <ScrollArea className="h-[100%] w-full mt-3">
                   <div className="space-y-3 ">
-                    {Object.values(selectedArticles).map((article) => (
+                    {Object.values(selectedArticles).map(article => (
                       <div
                         key={article.id}
                         className="flex items-center justify-between p-3 border rounded-lg w-full"
@@ -288,7 +288,7 @@ export function ArticleSelectionDialog({ open, onOpenChange, onArticlesAdd }) {
                             id="quantite"
                             name="quantite"
                             value={article.quantite}
-                            onChange={(e) => handleInputChange(e, article.id)}
+                            onChange={e => handleInputChange(e, article.id)}
                             className="w-20 text-center focus:!ring-purple-500"
                           />
                           <Button

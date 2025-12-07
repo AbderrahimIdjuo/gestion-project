@@ -77,39 +77,45 @@ export default function NouveauDevisPage() {
     { lable: "Accepté", color: "green-500" },
     { lable: "Annulé", color: "red-500" },
   ];
-  useEffect(() => {
-    // Get last devis number from API
-    const getLastDevis = async () => {
-      try {
-        const response = await axios.get("/api/devis/lastDevis");
-        const { lastDevi, error } = response.data;
 
-        console.log("#### lastDevi response:", response.data);
-        console.log("#### lastDevi :", lastDevi);
+  // Get last devis number from API
+  const getLastDevis = async () => {
+    try {
+      const response = await axios.get("/api/devis/lastDevis", {
+        // Désactiver le cache pour toujours obtenir les données les plus récentes
+        params: {
+          _t: Date.now(), // Timestamp pour éviter le cache
+        },
+      });
+      const { lastDevi, error } = response.data;
 
-        if (error) {
-          console.error("API Error:", error);
-          // Set default value if API fails
-          setLastDeviNumber(null);
-          return;
-        }
+      console.log("#### lastDevi response:", response.data);
+      console.log("#### lastDevi :", lastDevi);
 
-        if (lastDevi && lastDevi.numero) {
-          setLastDeviNumber(lastDevi.numero);
-        } else {
-          // No devis found for current month - this is normal for new months
-          console.log(
-            "No devis found for current month, starting from sequence 01"
-          );
-          setLastDeviNumber(null);
-        }
-      } catch (error) {
-        console.error("Error fetching last devis:", error);
-        // Set default value on error
+      if (error) {
+        console.error("API Error:", error);
+        // Set default value if API fails
+        setLastDeviNumber(null);
+        return;
+      }
+
+      if (lastDevi && lastDevi.numero) {
+        setLastDeviNumber(lastDevi.numero);
+      } else {
+        // No devis found for current month - this is normal for new months
+        console.log(
+          "No devis found for current month, starting from sequence 01"
+        );
         setLastDeviNumber(null);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching last devis:", error);
+      // Set default value on error
+      setLastDeviNumber(null);
+    }
+  };
 
+  useEffect(() => {
     getLastDevis();
     // const storedData = localStorage.getItem("lastDeviNumber");
 
@@ -168,7 +174,11 @@ export default function NouveauDevisPage() {
         try {
           const response = await axios.post("/api/devis", Data);
           console.log("Devi ajouté avec succès");
-          router.push("/ventes/devis");
+
+          // Rafraîchir le lastDevis après la création réussie
+          // pour que le prochain devis ait le bon numéro
+          await getLastDevis();
+
           reset();
           setItems([]);
           setClient(null);
@@ -178,8 +188,10 @@ export default function NouveauDevisPage() {
           } else {
             throw new Error("Unexpected response status");
           }
+          router.push("/ventes/devis");
         } catch (error) {
           console.log(error);
+          throw error;
         }
       })(),
       {
