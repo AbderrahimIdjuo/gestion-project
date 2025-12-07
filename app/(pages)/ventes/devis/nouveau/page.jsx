@@ -117,16 +117,8 @@ export default function NouveauDevisPage() {
 
   useEffect(() => {
     getLastDevis();
-    // const storedData = localStorage.getItem("lastDeviNumber");
-
-    // if (storedData) {
-    //   setLastDeviNumber(JSON.parse(storedData));
-    // } else setLastDeviNumber("DEV-0");
   }, []);
-  // const generateDeviNumber = () => {
-  //   const numero = Number(lastDeviNumber?.replace("DEV-", "")) || 0;
-  //   return `DEV-${numero + 1}`;
-  // };
+
 
   const generateDeviNumber = () => {
     const currentDate = new Date();

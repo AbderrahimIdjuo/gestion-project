@@ -370,7 +370,6 @@ export default function DevisPage() {
     { value: "En attente", lable: "En attente", color: "amber-500" },
     { value: "Accepté", lable: "Accepté", color: "green-500" },
     { value: "Annulé", lable: "Annulé", color: "red-500" },
-    // { value: "Expiré", lable: "Expiré", color: "gray-500" },
     { value: "Terminer", lable: "Terminer", color: "purple-500" },
   ];
   const totalFourniture = group => {
