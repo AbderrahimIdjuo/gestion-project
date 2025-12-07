@@ -90,6 +90,12 @@ export async function GET(req) {
             datePrelevement: true,
           },
         },
+        factureAchats: {
+          select: {
+            id: true,
+            numero: true,
+          },
+        },
       },
     });
 
@@ -125,10 +131,7 @@ export async function PATCH(req) {
     // Vérifier que le statut est valide
     const statutsValides = ["en_attente", "paye", "en_retard", "annule"];
     if (!statutsValides.includes(statut)) {
-      return NextResponse.json(
-        { error: "Statut invalide" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Statut invalide" }, { status: 400 });
     }
 
     // Mettre à jour le statut du règlement
@@ -150,6 +153,170 @@ export async function PATCH(req) {
   }
 }
 
+export async function PUT(req) {
+  try {
+    const body = await req.json();
+    const {
+      id,
+      montant,
+      compte,
+      methodePaiement,
+      dateReglement,
+      datePrelevement,
+      motif,
+      numeroCheque,
+    } = body;
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "ID du règlement requis" },
+        { status: 400 }
+      );
+    }
+
+    // Récupérer le règlement existant
+    const reglementExistant = await prisma.reglement.findUnique({
+      where: { id },
+      include: { cheque: true },
+    });
+
+    if (!reglementExistant) {
+      return NextResponse.json(
+        { error: "Règlement non trouvé" },
+        { status: 404 }
+      );
+    }
+
+    // Utiliser une transaction Prisma pour garantir la cohérence
+    const result = await prisma.$transaction(async tx => {
+      // Gérer le chèque si la méthode de paiement est chèque
+      let chequeId = reglementExistant.chequeId;
+
+      if (methodePaiement === "cheque" || methodePaiement === "traite") {
+        if (reglementExistant.cheque) {
+          // Mettre à jour le chèque existant
+          await tx.cheques.update({
+            where: { id: reglementExistant.cheque.id },
+            data: {
+              numero: numeroCheque || reglementExistant.cheque.numero,
+              montant: montant || reglementExistant.montant,
+              compte: compte || reglementExistant.compte,
+              dateReglement: dateReglement
+                ? new Date(dateReglement)
+                : reglementExistant.dateReglement,
+              datePrelevement: datePrelevement
+                ? new Date(datePrelevement)
+                : reglementExistant.cheque.datePrelevement,
+            },
+          });
+        } else {
+          // Créer un nouveau chèque
+          const nouveauCheque = await tx.cheques.create({
+            data: {
+              type: "EMIS",
+              montant: montant || reglementExistant.montant,
+              compte: compte || reglementExistant.compte,
+              numero: numeroCheque,
+              fournisseurId: reglementExistant.fournisseurId,
+              dateReglement: dateReglement
+                ? new Date(dateReglement)
+                : reglementExistant.dateReglement,
+              datePrelevement: datePrelevement
+                ? new Date(datePrelevement)
+                : null,
+            },
+          });
+          chequeId = nouveauCheque.id;
+        }
+      } else {
+        // Si on change de chèque à autre chose, supprimer le chèque
+        if (reglementExistant.chequeId) {
+          await tx.cheques.delete({
+            where: { id: reglementExistant.chequeId },
+          });
+          chequeId = null;
+        }
+      }
+
+      // Mettre à jour le compte bancaire si le montant ou le compte change
+      if (
+        montant !== reglementExistant.montant ||
+        compte !== reglementExistant.compte
+      ) {
+        // Remettre l'ancien montant dans l'ancien compte
+        await tx.comptesBancaires.updateMany({
+          where: { compte: reglementExistant.compte },
+          data: {
+            solde: { increment: reglementExistant.montant },
+          },
+        });
+
+        // Déduire le nouveau montant du nouveau compte
+        const nouveauCompte = compte || reglementExistant.compte;
+        const nouveauMontant = montant || reglementExistant.montant;
+        await tx.comptesBancaires.updateMany({
+          where: { compte: nouveauCompte },
+          data: {
+            solde: { decrement: nouveauMontant },
+          },
+        });
+      }
+
+      // Mettre à jour le règlement
+      const reglement = await tx.reglement.update({
+        where: { id },
+        data: {
+          montant: montant || reglementExistant.montant,
+          compte: compte || reglementExistant.compte,
+          methodePaiement: methodePaiement || reglementExistant.methodePaiement,
+          dateReglement: dateReglement
+            ? new Date(dateReglement)
+            : reglementExistant.dateReglement,
+          datePrelevement: datePrelevement
+            ? new Date(datePrelevement)
+            : reglementExistant.datePrelevement,
+          motif: motif !== undefined ? motif : reglementExistant.motif,
+          chequeId: chequeId,
+        },
+        include: {
+          fournisseur: {
+            select: {
+              id: true,
+              nom: true,
+              email: true,
+              telephone: true,
+              adresse: true,
+              ice: true,
+            },
+          },
+          cheque: {
+            select: {
+              id: true,
+              numero: true,
+              dateReglement: true,
+              datePrelevement: true,
+            },
+          },
+        },
+      });
+
+      return {
+        success: true,
+        message: "Règlement mis à jour avec succès",
+        reglement,
+      };
+    });
+
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error("Erreur lors de la mise à jour du règlement:", error);
+    return NextResponse.json(
+      { error: "Erreur lors de la mise à jour du règlement" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function DELETE(req) {
   try {
     const { searchParams } = new URL(req.url);
@@ -163,7 +330,7 @@ export async function DELETE(req) {
     }
 
     // Utiliser une transaction Prisma pour garantir la cohérence des données
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async tx => {
       // Récupérer le règlement avec ses relations
       const reglement = await tx.reglement.findUnique({
         where: { id },
@@ -199,7 +366,7 @@ export async function DELETE(req) {
     return NextResponse.json(result);
   } catch (error) {
     console.error("Erreur lors de la suppression du règlement:", error);
-    
+
     if (error.message === "Règlement non trouvé") {
       return NextResponse.json(
         { error: "Règlement non trouvé" },

@@ -1,9 +1,9 @@
 "use client";
 import ComboBoxFournisseur from "@/components/comboBox-fournisseurs";
 import ComptesRapportDialog from "@/components/comptes-rapport-dialog";
+import CreatefactureAchatsDialog from "@/components/create-facture-societe-dialog";
 import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
 import CustomPagination from "@/components/customUi/customPagination";
-import CustomTooltip from "@/components/customUi/customTooltip";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import { LoadingDots } from "@/components/loading-dots";
 import { Navbar } from "@/components/navbar";
@@ -11,6 +11,14 @@ import NewReglementDialog from "@/components/new-reglement";
 import { Sidebar } from "@/components/sidebar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -37,7 +45,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import UpdateTransactionDialog from "@/components/update-transaction";
+import UpdateReglementDialog from "@/components/update-reglement";
 import {
   formatCurrency,
   formatDate,
@@ -46,7 +54,6 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import {
-  Check,
   FileText,
   Filter,
   Pen,
@@ -68,7 +75,11 @@ type Reglement = {
   datePrelevement?: string | null;
   motif?: string | null;
   statut: "en_attente" | "paye" | "en_retard" | "annule";
-  facture: boolean;
+  factureAchatsId?: string | null;
+  factureAchats?: {
+    id: string;
+    numero: string | null;
+  } | null;
   fournisseur: {
     id: string;
     nom: string;
@@ -85,7 +96,7 @@ type Reglement = {
   } | null;
 };
 
-// Type pour compatibilité avec le tableau
+// Type pour compatibilité avec le tableau et le composant UpdateReglementDialog
 type Transaction = {
   id: string;
   createdAt: string;
@@ -97,11 +108,14 @@ type Transaction = {
   description: string;
   methodePaiement: string;
   date: string;
+  dateReglement?: string;
+  datePrelevement?: string | null;
   typeDepense?: string;
   motif?: string;
   cheque?: {
     numero?: string;
     dateReglement?: string;
+    datePrelevement?: string | null;
   };
   facture: boolean;
   statut?: "en_attente" | "paye" | "en_retard" | "annule";
@@ -127,13 +141,16 @@ type Compte = {
 
 const PAGE_SIZE = 10;
 
-const getPrelevementDate = (transaction: Transaction) => {
+const getPrelevementDate = (reglement: Reglement) => {
   // Pour les règlements, utiliser datePrelevement si disponible, sinon dateReglement
-  return transaction.date || transaction.cheque?.dateReglement;
+  return reglement.datePrelevement || reglement.cheque?.dateReglement;
 };
 
-const getPrelevementChip = (transaction: Transaction) => {
-  const targetDate = getPrelevementDate(transaction);
+const getPrelevementChip = (reglement: Reglement) => {
+  // Afficher le badge uniquement si la date de prélèvement existe
+  if (!reglement.datePrelevement) return null;
+
+  const targetDate = reglement.datePrelevement;
   if (!targetDate) return null;
 
   const today = new Date();
@@ -168,7 +185,9 @@ const getPrelevementChip = (transaction: Transaction) => {
 };
 export default function Banques() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [transaction, setTransaction] = useState<Transaction | undefined>();
+  const [reglementForTable, setReglementForTable] = useState<
+    Transaction | undefined
+  >();
   const [deleteDialog, setDeleteDialog] = useState<boolean>(false);
   const [page, setPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>();
@@ -178,6 +197,9 @@ export default function Banques() {
   const [selectedFournisseur, setSelectedFournisseur] =
     useState<Fournisseur | null>();
   const [updateDialog, setUpdateDialog] = useState(false);
+  const [factureDialog, setFactureDialog] = useState(false);
+  const [reglementForFacture, setReglementForFacture] =
+    useState<Reglement | null>(null);
   const [filters, setFilters] = useState({
     compte: "all",
     statut: "all",
@@ -186,6 +208,13 @@ export default function Banques() {
   const [statuts, setStatuts] = useState<
     Record<string, "en_attente" | "paye" | "en_retard" | "annule">
   >({});
+  const [statutChangeDialog, setStatutChangeDialog] = useState(false);
+  const [pendingStatutChange, setPendingStatutChange] = useState<{
+    id: string;
+    currentStatut: string;
+    newStatut: "en_attente" | "paye" | "en_retard" | "annule";
+    fournisseurNom?: string;
+  } | null>(null);
   const queryClient = useQueryClient();
 
   // Debounce input (waits 500ms after the last keystroke)
@@ -244,8 +273,8 @@ export default function Banques() {
     }
   }, [reglements.data?.totalPages]);
 
-  // Fonction pour mapper Reglement vers Transaction pour le tableau
-  const mapReglementToTransaction = (reglement: Reglement): Transaction => {
+  // Fonction pour mapper Reglement vers format tableau
+  const mapReglementForTable = (reglement: Reglement): Transaction => {
     // Formater l'ID en numéro de 20 chiffres (prendre les 20 premiers caractères de l'UUID sans tirets)
     const numeroReglement = reglement.id.replace(/-/g, "").substring(0, 20);
     // Utiliser datePrelevement si disponible, sinon dateReglement
@@ -261,20 +290,23 @@ export default function Banques() {
       description: `bénéficiaire : ${reglement.fournisseur.nom}`,
       methodePaiement: reglement.methodePaiement,
       date: dateForChip, // Utiliser datePrelevement pour le chip si disponible
+      dateReglement: reglement.dateReglement,
+      datePrelevement: reglement.datePrelevement,
       motif: reglement.motif || undefined,
       cheque: reglement.cheque
         ? {
             numero: reglement.cheque.numero || undefined,
             dateReglement: reglement.cheque.dateReglement || undefined,
+            datePrelevement: reglement.cheque.datePrelevement || undefined,
           }
         : undefined,
-      facture: reglement.facture,
+      facture: !!reglement.factureAchatsId || !!reglement.factureAchats,
       statut: reglement.statut,
       numeroReglement: numeroReglement,
     };
   };
 
-  const hasTransactions = (reglements.data?.reglements?.length || 0) > 0;
+  const hasReglements = (reglements.data?.reglements?.length || 0) > 0;
 
   const deleteReglement = useMutation({
     mutationFn: async () => {
@@ -282,7 +314,7 @@ export default function Banques() {
       try {
         await axios.delete("/api/reglement", {
           params: {
-            id: transaction?.id,
+            id: reglementForTable?.id,
           },
         });
         toast(<span>Règlement supprimé avec succès!</span>, {
@@ -383,33 +415,54 @@ export default function Banques() {
 
   const handleChangeStatut = (
     reglementId: string,
-    newStatut: "en_attente" | "paye" | "en_retard" | "annule"
+    newStatut: "en_attente" | "paye" | "en_retard" | "annule",
+    currentStatut: "en_attente" | "paye" | "en_retard" | "annule",
+    fournisseurNom?: string
   ) => {
+    // Stocker le changement en attente et ouvrir le dialog
+    setPendingStatutChange({
+      id: reglementId,
+      currentStatut: getStatutLabel(currentStatut),
+      newStatut: newStatut,
+      fournisseurNom: fournisseurNom,
+    });
+    setStatutChangeDialog(true);
+  };
+
+  const confirmStatutChange = () => {
+    if (!pendingStatutChange) return;
+
     // Mettre à jour l'état local immédiatement pour un feedback visuel instantané
     setStatuts(prev => ({
       ...prev,
-      [reglementId]: newStatut,
+      [pendingStatutChange.id]: pendingStatutChange.newStatut,
     }));
 
     // Appeler la mutation pour persister le changement en base de données
     updateStatut.mutate(
-      { id: reglementId, statut: newStatut },
+      { id: pendingStatutChange.id, statut: pendingStatutChange.newStatut },
       {
         onSuccess: () => {
           toast.success(
-            `Statut changé en "${getStatutLabel(newStatut)}" avec succès`
+            `Statut changé en "${getStatutLabel(
+              pendingStatutChange.newStatut
+            )}" avec succès`
           );
+          setStatutChangeDialog(false);
+          setPendingStatutChange(null);
         },
         onError: (error: any) => {
           // En cas d'erreur, restaurer l'état précédent
           setStatuts(prev => {
             const updated = { ...prev };
-            delete updated[reglementId];
+            delete updated[pendingStatutChange.id];
             return updated;
           });
           toast.error(
             error?.response?.data?.error || "Échec de la mise à jour du statut"
           );
+          setStatutChangeDialog(false);
+          setPendingStatutChange(null);
         },
       }
     );
@@ -420,62 +473,6 @@ export default function Banques() {
     if (numero.length <= 12) return numero;
     // Afficher les 8 premiers et 4 derniers chiffres
     return `${numero.substring(0, 8)}...${numero.substring(numero.length - 4)}`;
-  };
-
-  const handleChequeClick = (transaction: Transaction) => {
-    if (transaction.methodePaiement === "cheque") {
-      let beneficiaire = "Inconnu";
-      if (transaction.description.includes("bénéficiaire")) {
-        beneficiaire = transaction.description
-          ?.replace(/bénéficiaire\s*:/i, "") // plus flexible
-          .trim();
-      } else if (transaction.description.includes("DEV")) {
-        beneficiaire = "ste.OUDAOUDOX ";
-      }
-
-      const numeroCheque = transaction.cheque?.numero || "Inconnu";
-      const montant = transaction.montant || "Inconnu";
-      const dateRegelemen = transaction.cheque?.dateReglement || "Inconnu";
-      const compte = transaction.compte || "Inconnu";
-
-      toast(
-        t => (
-          <div className="flex flex-col gap-4 justify-start items-center ">
-            <div className="flex flex-col  text-sm w-full">
-              <span>
-                Bénéficiaire: <b>{beneficiaire}</b>
-              </span>
-              <span>
-                Montant: <b>{montant}</b>
-              </span>
-              <span>
-                Date de réglement: <b>{formatDate(dateRegelemen)}</b>
-              </span>
-              <span>
-                Compte: <b>{compte}</b>
-              </span>
-              <span>
-                Numéro de chèque: <b>{numeroCheque}</b>
-              </span>
-            </div>
-
-            <button
-              onClick={() => toast.dismiss(t.id)}
-              className="ml-auto text-white bg-purple-500 px-3 py-1 rounded hover:bg-purple-600 text-sm"
-            >
-              Fermer
-            </button>
-          </div>
-        ),
-        {
-          style: {
-            padding: "12px",
-            backgroundColor: "#f9f9f9",
-          },
-          duration: 50000,
-        }
-      );
-    }
   };
 
   return (
@@ -531,7 +528,7 @@ export default function Banques() {
                           </SheetTitle>
                           <SheetDescription className="text-gray-600">
                             Ajustez les filtres pour affiner votre recherche de
-                            transactions.
+                            règlements.
                           </SheetDescription>
                         </SheetHeader>
                         <div className="grid gap-4 py-4">
@@ -776,15 +773,15 @@ export default function Banques() {
                                 </TableCell>
                               </TableRow>
                             ))
-                          ) : hasTransactions ? (
+                          ) : hasReglements ? (
                             reglements.data?.reglements?.map(
                               (reglement: Reglement) => {
-                                const transaction =
-                                  mapReglementToTransaction(reglement);
+                                const reglementTable =
+                                  mapReglementForTable(reglement);
                                 const prelevementChip =
-                                  getPrelevementChip(transaction);
+                                  getPrelevementChip(reglement);
                                 const prelevementDate =
-                                  getPrelevementDate(transaction);
+                                  getPrelevementDate(reglement);
                                 return (
                                   <TableRow key={reglement.id}>
                                     <TableCell className="font-medium py-1">
@@ -811,21 +808,13 @@ export default function Banques() {
                                       {reglement.fournisseur.nom || "—"}
                                     </TableCell>
                                     <TableCell className="font-medium py-0">
-                                      {formatCurrency(transaction.montant)}
-                                    </TableCell>
-                                    <TableCell
-                                      onClick={() =>
-                                        handleChequeClick(transaction)
-                                      }
-                                      className={`font-medium py-0 ${
-                                        transaction.methodePaiement ===
-                                          "cheque" && "cursor-pointer"
-                                      }`}
-                                    >
-                                      {methodePaiementLabel(transaction)}
+                                      {formatCurrency(reglementTable.montant)}
                                     </TableCell>
                                     <TableCell className="font-medium py-0">
-                                      {transaction.compte}
+                                      {methodePaiementLabel(reglementTable)}
+                                    </TableCell>
+                                    <TableCell className="font-medium py-0">
+                                      {reglementTable.compte}
                                     </TableCell>
                                     <TableCell className="font-medium py-0">
                                       <Select
@@ -841,7 +830,15 @@ export default function Banques() {
                                               | "en_attente"
                                               | "paye"
                                               | "en_retard"
-                                              | "annule"
+                                              | "annule",
+                                            (statuts[reglement.id] ||
+                                              reglement.statut ||
+                                              "en_attente") as
+                                              | "en_attente"
+                                              | "paye"
+                                              | "en_retard"
+                                              | "annule",
+                                            reglement.fournisseur.nom
                                           )
                                         }
                                       >
@@ -889,36 +886,33 @@ export default function Banques() {
                                       </Select>
                                     </TableCell>
                                     <TableCell className="font-medium py-0">
-                                      {transaction.numeroReglement ? (
-                                        <CustomTooltip
-                                          message={transaction.numeroReglement}
-                                        >
-                                          <span className="cursor-help">
-                                            {formatNumeroReglement(
-                                              transaction.numeroReglement
-                                            )}
-                                          </span>
-                                        </CustomTooltip>
-                                      ) : (
-                                        transaction.cheque?.numero || "—"
-                                      )}
+                                      {reglementTable.cheque?.numero || "—"}
                                     </TableCell>
                                     <TableCell className="font-medium py-0 text-center">
-                                      {transaction.facture ? (
-                                        <Check className="h-5 w-5 text-green-500" />
+                                      {reglement.factureAchatsId ||
+                                      reglement.factureAchats ? (
+                                        <span className="text-green-600 font-semibold">
+                                          {reglement.factureAchats?.numero ||
+                                            "—"}
+                                        </span>
                                       ) : (
-                                        <X className="h-5 w-5 text-red-500" />
+                                        reglementTable.compte ===
+                                          "compte professionnel" && (
+                                          <X className="h-5 w-5 text-red-500" />
+                                        )
                                       )}
                                     </TableCell>
                                     <TableCell className="font-medium py-0">
-                                      {transaction.motif || "—"}
+                                      {reglementTable.motif || "—"}
                                     </TableCell>
                                     <TableCell className="text-right py-2">
                                       <div className="flex justify-end gap-2">
                                         <Button
                                           onClick={() => {
                                             setUpdateDialog(true);
-                                            setTransaction(transaction);
+                                            setReglementForTable(
+                                              reglementTable
+                                            );
                                           }}
                                           variant="ghost"
                                           size="icon"
@@ -932,7 +926,9 @@ export default function Banques() {
                                         <Button
                                           onClick={() => {
                                             setDeleteDialog(true);
-                                            setTransaction(transaction);
+                                            setReglementForTable(
+                                              reglementTable
+                                            );
                                           }}
                                           variant="ghost"
                                           size="icon"
@@ -944,6 +940,10 @@ export default function Banques() {
                                           </span>
                                         </Button>
                                         <Button
+                                          onClick={() => {
+                                            setReglementForFacture(reglement);
+                                            setFactureDialog(true);
+                                          }}
                                           variant="ghost"
                                           size="icon"
                                           className="h-8 w-8 rounded-full hover:bg-blue-100 hover:text-blue-600"
@@ -998,12 +998,53 @@ export default function Banques() {
         }}
       />
 
-      <UpdateTransactionDialog
+      <UpdateReglementDialog
         isOpen={updateDialog}
         onClose={() => {
           setUpdateDialog(false);
         }}
-        transaction={transaction}
+        reglement={reglementForTable}
+      />
+
+      <Dialog open={statutChangeDialog} onOpenChange={setStatutChangeDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmer le changement de statut</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir changer le statut du règlement{" "}
+              {pendingStatutChange?.fournisseurNom && (
+                <>
+                  pour <b>{pendingStatutChange.fournisseurNom.toUpperCase()}</b>{" "}
+                </>
+              )}
+              de <b>{pendingStatutChange?.currentStatut}</b> à{" "}
+              <b>{getStatutLabel(pendingStatutChange?.newStatut)}</b> ?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              className="rounded-full"
+              variant="outline"
+              onClick={() => {
+                setStatutChangeDialog(false);
+                setPendingStatutChange(null);
+              }}
+            >
+              Annuler
+            </Button>
+            <Button
+              className="rounded-full bg-green-500 hover:bg-green-600 text-white"
+              onClick={confirmStatutChange}
+            >
+              Confirmer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <CreatefactureAchatsDialog
+        reglement={reglementForFacture}
+        open={factureDialog}
+        onOpenChange={setFactureDialog}
       />
     </>
   );

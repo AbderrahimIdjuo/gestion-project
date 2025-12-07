@@ -34,9 +34,27 @@ export async function PATCH(req, { params }) {
     const id = params.id;
     const { statut } = await req.json();
 
+    // Récupérer le devis actuel pour connaître son statut
+    const currentDevi = await prisma.devis.findUnique({
+      where: { id },
+      select: { statut: true },
+    });
+
+    // Préparer les données à mettre à jour
+    const updateData = { statut };
+
+    // Si le statut est "Terminer", définir dateEnd à la date actuelle
+    if (statut === "Terminer") {
+      updateData.dateEnd = new Date();
+    }
+    // Si le statut actuel est "Terminer" et le nouveau statut n'est pas "Terminer", réinitialiser dateEnd à null
+    else if (currentDevi?.statut === "Terminer" && statut !== "Terminer") {
+      updateData.dateEnd = null;
+    }
+
     const devi = await prisma.devis.update({
       where: { id },
-      data: { statut },
+      data: updateData,
     });
 
     return NextResponse.json({ devi });

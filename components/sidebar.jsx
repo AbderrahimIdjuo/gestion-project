@@ -12,6 +12,7 @@ import {
   Landmark,
   LayoutDashboard,
   Package,
+  ReceiptText,
   Ruler,
   ScrollText,
   Settings,
@@ -42,7 +43,7 @@ const menuItems = [
     href: "/articls",
   },
   { icon: FileText, label: "Devis", href: "/ventes/devis" },
-  { icon: Files, label: "Factures", href: "/ventes/factures" },
+  { icon: Files, label: "Factures Ventes", href: "/ventes/factures" },
   { icon: Truck, label: "Commandes", href: "/achats/commandes" },
   { icon: ScrollText, label: "BL", href: "/achats/bonLivraison" },
   {
@@ -74,6 +75,11 @@ const menuItems = [
   //   icon: ReceiptText,
   //   label: "Règlement",
   //   href: "/reglement",
+  // },
+  // {
+  //   icon: FileText,
+  //   label: "Factures Achats",
+  //   href: "/facturesAchats",
   // },
   {
     icon: Ruler,

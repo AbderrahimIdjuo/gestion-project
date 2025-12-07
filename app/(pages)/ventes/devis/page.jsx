@@ -10,8 +10,22 @@ import { LoadingDots } from "@/components/loading-dots";
 import { Navbar } from "@/components/navbar";
 import { Sidebar } from "@/components/sidebar";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -46,12 +60,13 @@ import { formatCurrency, methodePaiementLabel } from "@/lib/functions";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import {
-  AlertTriangle,
   CalendarDays,
   CircleDollarSign,
   CreditCard,
   Filter,
   Landmark,
+  OctagonAlert,
+  OctagonMinus,
   Printer,
   Search,
   Trash2,
@@ -59,6 +74,22 @@ import {
 import Link from "next/link";
 import { Fragment, useEffect, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
+
+// Valeurs par défaut pour la visibilité des colonnes (toutes visibles par défaut)
+const defaultVisibleColumns = {
+  date: true,
+  dateStart: true,
+  dateEnd: true,
+  numero: true,
+  client: true,
+  commercant: true,
+  montantTotal: true,
+  fournitures: true,
+  marge: true,
+  paye: true,
+  reste: true,
+  statut: true,
+};
 
 export default function DevisPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -70,6 +101,10 @@ export default function DevisPage() {
   const [maxMontant, setMaxMontant] = useState();
   const [startDate, setStartDate] = useState();
   const [endDate, setEndDate] = useState();
+  const [dateStartFrom, setDateStartFrom] = useState();
+  const [dateStartTo, setDateStartTo] = useState();
+  const [dateEndFrom, setDateEndFrom] = useState();
+  const [dateEndTo, setDateEndTo] = useState();
   const [transactions, setTransactions] = useState();
   const [BlGroups, setBlGroups] = useState();
   // const [lastDevi, setLastDevi] = useState();
@@ -77,6 +112,46 @@ export default function DevisPage() {
   const [info, setInfo] = useState(false);
   const [deleteTransDialog, setDeleteTransDialog] = useState(false);
   const [deletedTrans, setDeletedTrans] = useState();
+  const [statutChangeDialog, setStatutChangeDialog] = useState(false);
+  const [pendingStatutChange, setPendingStatutChange] = useState(null);
+
+  // Configuration des colonnes avec leurs labels
+  const columnDefinitions = [
+    { key: "date", label: "Date" },
+    { key: "dateStart", label: "Début" },
+    { key: "dateEnd", label: "Fin" },
+    { key: "numero", label: "Numéro" },
+    { key: "client", label: "Client" },
+    { key: "commercant", label: "Commerçant" },
+    { key: "montantTotal", label: "Montant total" },
+    { key: "fournitures", label: "Fournitures" },
+    { key: "marge", label: "Marge" },
+    { key: "paye", label: "Payé" },
+    { key: "reste", label: "Reste" },
+    { key: "statut", label: "Statut" },
+  ];
+
+  // État pour la visibilité des colonnes (initialisé avec les valeurs par défaut pour éviter les erreurs d'hydratation)
+  const [visibleColumns, setVisibleColumns] = useState(defaultVisibleColumns);
+  const [isColumnsLoaded, setIsColumnsLoaded] = useState(false);
+
+  // Charger les préférences depuis localStorage après le montage (côté client uniquement)
+  useEffect(() => {
+    if (typeof window !== "undefined" && !isColumnsLoaded) {
+      const saved = localStorage.getItem("devis-visible-columns");
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          // S'assurer que toutes les colonnes sont présentes (au cas où de nouvelles colonnes ont été ajoutées)
+          setVisibleColumns({ ...defaultVisibleColumns, ...parsed });
+        } catch (e) {
+          // Si erreur de parsing, utiliser les valeurs par défaut
+          console.error("Error parsing visible columns from localStorage:", e);
+        }
+      }
+      setIsColumnsLoaded(true);
+    }
+  }, [isColumnsLoaded]);
 
   const getUsers = async () => {
     const response = await axios.get("/api/users");
@@ -129,7 +204,7 @@ export default function DevisPage() {
     montant: [0, maxMontant],
     statut: "all",
     statutPaiement: "all",
-    manager: "all",
+    commercant: "all",
   });
   const queryClient = useQueryClient();
   useEffect(() => {
@@ -150,9 +225,13 @@ export default function DevisPage() {
       page,
       startDate,
       endDate,
+      dateStartFrom,
+      dateStartTo,
+      dateEndFrom,
+      dateEndTo,
       filters.montant,
       filters.statutPaiement,
-      filters.manager,
+      filters.commercant,
     ],
     queryFn: async () => {
       const response = await axios.get("/api/devis", {
@@ -162,10 +241,14 @@ export default function DevisPage() {
           statut: filters.statut,
           from: startDate,
           to: endDate,
+          dateStartFrom: dateStartFrom,
+          dateStartTo: dateStartTo,
+          dateEndFrom: dateEndFrom,
+          dateEndTo: dateEndTo,
           minTotal: filters.montant[0],
           maxTotal: filters.montant[1],
           statutPaiement: filters.statutPaiement,
-          manager: filters.manager,
+          commercant: filters.commercant,
         },
       });
       console.log("Devis :", response.data.devis);
@@ -184,6 +267,24 @@ export default function DevisPage() {
   useEffect(() => {
     setFilters(prev => ({ ...prev, montant: [0, maxMontant] }));
   }, [maxMontant]);
+
+  // Sauvegarder les colonnes visibles dans localStorage (seulement après le chargement initial)
+  useEffect(() => {
+    if (typeof window !== "undefined" && isColumnsLoaded) {
+      localStorage.setItem(
+        "devis-visible-columns",
+        JSON.stringify(visibleColumns)
+      );
+    }
+  }, [visibleColumns, isColumnsLoaded]);
+
+  // Fonction pour toggle la visibilité d'une colonne
+  const toggleColumn = columnKey => {
+    setVisibleColumns(prev => ({
+      ...prev,
+      [columnKey]: !prev[columnKey],
+    }));
+  };
 
   const getStatusColor = status => {
     switch (status) {
@@ -265,7 +366,7 @@ export default function DevisPage() {
   });
 
   const status = [
-    { value: "all", lable: "Tous les statut", color: "" },
+    { value: "all", lable: "Tous", color: "" },
     { value: "En attente", lable: "En attente", color: "amber-500" },
     { value: "Accepté", lable: "Accepté", color: "green-500" },
     { value: "Annulé", lable: "Annulé", color: "red-500" },
@@ -331,12 +432,19 @@ export default function DevisPage() {
       return formatCurrency(diff);
     }
   }
-
-  const managers = useQuery({
-    queryKey: ["managers"],
+  const employes = useQuery({
+    queryKey: ["employes"],
+    queryFn: async () => {
+      const response = await axios.get("/api/employes");
+      console.log("employes ###:", response.data.employes);
+      return response.data.employes;
+    },
+  });
+  const commercants = useQuery({
+    queryKey: ["commercants"],
     queryFn: async () => {
       const response = await axios.get("/api/employes/managersList");
-      console.log("Managers ###:", response.data.employes);
+      console.log("Commercants ###:", response.data.employes);
       return response.data.employes;
     },
   });
@@ -362,11 +470,11 @@ export default function DevisPage() {
                   <h1 className="text-3xl font-bold">Devis</h1>
                 </div>
 
-                <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-6">
+                <div className="flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0 sm:space-x-4 mb-2">
                   <div className="relative w-full sm:w-96">
                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
-                      placeholder="Rechercher des devis..."
+                      placeholder="Rechercher par numéro, client ou commerçant..."
                       value={searchQuery}
                       onChange={e => setSearchQuery(e.target.value)}
                       className="pl-9 w-full rounded-full bg-gray-50 focus-visible:ring-purple-500 focus-visible:ring-offset-0"
@@ -398,10 +506,10 @@ export default function DevisPage() {
                           </SheetDescription>
                         </SheetHeader>
                         <div className="grid gap-4 py-4">
-                          <div className="grid grid-cols-4 items-center gap-4 my-2">
+                          <div className="grid grid-rows-2 grid-cols-4 items-center ">
                             <Label
                               htmlFor="statut"
-                              className="text-left text-black"
+                              className="text-left text-black col-span-4"
                             >
                               Statut :
                             </Label>
@@ -412,7 +520,7 @@ export default function DevisPage() {
                                 setFilters({ ...filters, statut: value })
                               }
                             >
-                              <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
+                              <SelectTrigger className="col-span-4  bg-white focus:ring-purple-500">
                                 <SelectValue placeholder="Séléctionner un statut" />
                               </SelectTrigger>
                               <SelectContent>
@@ -429,10 +537,10 @@ export default function DevisPage() {
                               </SelectContent>
                             </Select>
                           </div>
-                          <div className="grid grid-cols-4 items-center gap-4 my-2">
+                          <div className="grid grid-cols-4 grid-rows-2 items-center ">
                             <Label
                               htmlFor="statut"
-                              className="text-left text-black"
+                              className="text-left text-black col-span-4"
                             >
                               Statut de Paiement :
                             </Label>
@@ -446,7 +554,7 @@ export default function DevisPage() {
                                 })
                               }
                             >
-                              <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
+                              <SelectTrigger className="col-span-4 bg-white focus:ring-purple-500">
                                 <SelectValue placeholder="Sélectionner un statut" />
                               </SelectTrigger>
                               <SelectContent>
@@ -463,25 +571,25 @@ export default function DevisPage() {
                               </SelectContent>
                             </Select>
                           </div>
-                          <div className="grid grid-cols-4 items-center gap-4 my-2">
+                          <div className="grid grid-rows-2 grid-cols-4 items-center">
                             <Label
-                              htmlFor="manager"
-                              className="text-left text-black"
+                              htmlFor="commercant"
+                              className="text-left text-black col-span-4"
                             >
-                              Gérant :
+                              Commerçant :
                             </Label>
                             <Select
-                              value={filters.manager}
-                              name="manager"
+                              value={filters.commercant}
+                              name="commercant"
                               onValueChange={value =>
                                 setFilters({
                                   ...filters,
-                                  manager: value,
+                                  commercant: value,
                                 })
                               }
                             >
-                              <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
-                                <SelectValue placeholder="Sélectionner un gérant" />
+                              <SelectTrigger className="col-span-4 bg-white focus:ring-purple-500">
+                                <SelectValue placeholder="Sélectionner un commerçant" />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="all">
@@ -489,7 +597,7 @@ export default function DevisPage() {
                                     Tous
                                   </div>
                                 </SelectItem>
-                                {managers.data?.map((employe, index) => (
+                                {employes.data?.map((employe, index) => (
                                   <SelectItem key={index} value={employe.nom}>
                                     <div className={`flex items-center gap-2`}>
                                       {employe.nom}
@@ -499,14 +607,14 @@ export default function DevisPage() {
                               </SelectContent>
                             </Select>
                           </div>
-                          <div className="grid grid-cols-4 items-center gap-4 my-2">
+                          <div className="grid grid-cols-4 grid-rows-2 items-center">
                             <Label
                               htmlFor="statut"
-                              className="col-span-1 text-left text-black"
+                              className="text-left text-black col-span-4"
                             >
-                              Date :
+                              Date de création:
                             </Label>
-                            <div className="col-span-3">
+                            <div className="col-span-4">
                               <CustomDateRangePicker
                                 startDate={startDate}
                                 setStartDate={setStartDate}
@@ -515,14 +623,46 @@ export default function DevisPage() {
                               />
                             </div>
                           </div>
-                          <div className="grid grid-cols-4 items-start gap-4 my-4">
+                          <div className="grid grid-cols-4 grid-rows-2 items-center">
+                            <Label
+                              htmlFor="dateStart"
+                              className="col-span-4 text-left text-black"
+                            >
+                              Date de début :
+                            </Label>
+                            <div className="col-span-4">
+                              <CustomDateRangePicker
+                                startDate={dateStartFrom}
+                                setStartDate={setDateStartFrom}
+                                endDate={dateStartTo}
+                                setEndDate={setDateStartTo}
+                              />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-4 grid-rows-2 items-center">
+                            <Label
+                              htmlFor="dateEnd"
+                              className="col-span-4 text-left text-black"
+                            >
+                              Date de fin :
+                            </Label>
+                            <div className="col-span-4">
+                              <CustomDateRangePicker
+                                startDate={dateEndFrom}
+                                setStartDate={setDateEndFrom}
+                                endDate={dateEndTo}
+                                setEndDate={setDateEndTo}
+                              />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-4 grid-rows-2 items-start">
                             <Label
                               htmlFor="montant"
-                              className="text-left text-black"
+                              className="text-left text-black col-span-4"
                             >
                               Montant total :
                             </Label>
-                            <div className="col-span-3">
+                            <div className="col-span-4">
                               <PriceRangeSlider
                                 min={0}
                                 max={maxMontant}
@@ -550,9 +690,13 @@ export default function DevisPage() {
                           statutPaiement: filters.statutPaiement,
                           from: startDate,
                           to: endDate,
+                          dateStartFrom: dateStartFrom,
+                          dateStartTo: dateStartTo,
+                          dateEndFrom: dateEndFrom,
+                          dateEndTo: dateEndTo,
                           minTotal: filters.montant[0],
                           maxTotal: filters.montant[1],
-                          manager: filters.manager,
+                          commercant: filters.commercant,
                         };
                         localStorage.setItem("params", JSON.stringify(params));
                         window.open("/ventes/devis/impression", "_blank");
@@ -567,25 +711,87 @@ export default function DevisPage() {
                     </Link>
                   </div>
                 </div>
+                <div className="flex flex-col sm:flex-row justify-end">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      {/* <Button
+                          variant="outline"
+                          className="border-purple-500 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900 rounded-full"
+                        >
+                          <Columns className="mr-2 h-4 w-4" />
+                          Colonnes
+                        </Button> */}
+                      <Button
+                        variant="outline"
+                        className="ml-auto rounded-full"
+                      >
+                        Colonnes
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-56" align="end">
+                      <div className="space-y-3">
+                        <h4 className="font-medium text-sm text-gray-900">
+                          Colonnes visibles
+                        </h4>
+                        <div className="space-y-2">
+                          {columnDefinitions.map(column => (
+                            <div
+                              key={column.key}
+                              className="flex items-center space-x-2"
+                            >
+                              <Checkbox
+                                id={column.key}
+                                checked={visibleColumns[column.key]}
+                                onCheckedChange={() => toggleColumn(column.key)}
+                              />
+                              <Label
+                                htmlFor={column.key}
+                                className="text-sm font-normal cursor-pointer"
+                              >
+                                {column.label}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
 
                 <div className="border rounded-lg">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Numéro</TableHead>
-                        <TableHead>Client</TableHead>
-                        <TableHead>Commercant</TableHead>
-                        <TableHead className="text-right">
-                          Montant total
-                        </TableHead>
-                        <TableHead className="text-right">
-                          Fournitures
-                        </TableHead>
-                        <TableHead className="text-right">Marge</TableHead>
-                        <TableHead className="text-right">Payé</TableHead>
-                        <TableHead className="text-right">Reste</TableHead>
-                        <TableHead>Statut</TableHead>
+                        {visibleColumns.date && <TableHead>Date</TableHead>}
+                        {visibleColumns.dateStart && (
+                          <TableHead>Début</TableHead>
+                        )}
+                        {visibleColumns.dateEnd && <TableHead>Fin</TableHead>}
+                        {visibleColumns.numero && <TableHead>Numéro</TableHead>}
+                        {visibleColumns.client && <TableHead>Client</TableHead>}
+                        {visibleColumns.commercant && (
+                          <TableHead>Commerçant</TableHead>
+                        )}
+                        {visibleColumns.montantTotal && (
+                          <TableHead className="text-right">
+                            Montant total
+                          </TableHead>
+                        )}
+                        {visibleColumns.fournitures && (
+                          <TableHead className="text-right">
+                            Fournitures
+                          </TableHead>
+                        )}
+                        {visibleColumns.marge && (
+                          <TableHead className="text-right">Marge</TableHead>
+                        )}
+                        {visibleColumns.paye && (
+                          <TableHead className="text-right">Payé</TableHead>
+                        )}
+                        {visibleColumns.reste && (
+                          <TableHead className="text-right">Reste</TableHead>
+                        )}
+                        {visibleColumns.statut && <TableHead>Statut</TableHead>}
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -598,15 +804,17 @@ export default function DevisPage() {
                             tabIndex={-1}
                             key={index}
                           >
-                            {[...Array(10)].map((_, cellIndex) => (
-                              <TableCell
-                                key={cellIndex}
-                                className="!py-2 text-sm md:text-base"
-                                align="left"
-                              >
-                                <Skeleton className="h-4 w-full" />
-                              </TableCell>
-                            ))}
+                            {Object.values(visibleColumns)
+                              .filter(Boolean)
+                              .map((_, cellIndex) => (
+                                <TableCell
+                                  key={cellIndex}
+                                  className="!py-2 text-sm md:text-base"
+                                  align="left"
+                                >
+                                  <Skeleton className="h-4 w-full" />
+                                </TableCell>
+                              ))}
                             <TableCell className="!py-2">
                               <div className="flex gap-2 justify-end">
                                 <Skeleton className="h-7 w-7 rounded-full" />
@@ -619,150 +827,214 @@ export default function DevisPage() {
                           <>
                             <Fragment key={devis.id}>
                               <TableRow>
-                                <TableCell className="!py-2">
-                                  {formatDate(devis.date)}
-                                </TableCell>
-                                <TableCell
-                                  onClick={() => {
-                                    toggleExpand(devis.id);
-                                    if (devis.totalPaye !== 0) {
-                                      if (currentDevi?.id === devis.id) {
-                                        setInfo(!info);
-                                      } else setInfo(true);
-                                      setCurrentDevi(devis);
-                                    }
-                                  }}
-                                  className={`font-medium !py-2  ${
-                                    devis.total > 0 &&
-                                    (devis.totalPaye === devis.total ||
-                                      devis.totalPaye > devis.total) &&
-                                    "cursor-pointer hover:text-green-400"
-                                  } 
+                                {visibleColumns.date && (
+                                  <TableCell className="!py-2">
+                                    {formatDate(devis.date)}
+                                  </TableCell>
+                                )}
+                                {visibleColumns.dateStart && (
+                                  <TableCell className="!py-2">
+                                    {devis.dateStart
+                                      ? formatDate(devis.dateStart)
+                                      : "-"}
+                                  </TableCell>
+                                )}
+                                {visibleColumns.dateEnd && (
+                                  <TableCell className="!py-2">
+                                    {devis.dateEnd
+                                      ? formatDate(devis.dateEnd)
+                                      : "-"}
+                                  </TableCell>
+                                )}
+                                {visibleColumns.numero && (
+                                  <TableCell
+                                    onClick={() => {
+                                      toggleExpand(devis.id);
+                                      if (devis.totalPaye !== 0) {
+                                        if (currentDevi?.id === devis.id) {
+                                          setInfo(!info);
+                                        } else setInfo(true);
+                                        setCurrentDevi(devis);
+                                      }
+                                    }}
+                                    className={`font-medium !py-2  ${
+                                      devis.total > 0 &&
+                                      (devis.totalPaye === devis.total ||
+                                        devis.totalPaye > devis.total) &&
+                                      "cursor-pointer hover:text-green-400"
+                                    } 
                                 
                                 ${
                                   devis.totalPaye !== 0 &&
                                   devis.totalPaye < devis.total &&
                                   "cursor-pointer hover:text-orange-400"
                                 }`}
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <span>{devis.numero}</span>
-                                    <span
-                                      className={`px-2 py-1 rounded-full text-xs font-semibold uppercase ${
-                                        statutPaiement(
-                                          devis.totalPaye,
-                                          devis.total
-                                        )?.color
-                                      }`}
-                                    >
-                                      {
-                                        statutPaiement(
-                                          devis.totalPaye,
-                                          devis.total
-                                        )?.lable
-                                      }
-                                    </span>
-                                    {(() => {
-                                      const fourniture = totalFourniture(
-                                        filteredOrders(devis.numero)
-                                      );
-                                      const montantPaye = devis.totalPaye;
-                                      const shouldShowWarning =
-                                        fourniture > montantPaye;
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <span>{devis.numero}</span>
+                                      <span
+                                        className={`px-2 py-1 rounded-full text-xs font-semibold uppercase ${
+                                          statutPaiement(
+                                            devis.totalPaye,
+                                            devis.total
+                                          )?.color
+                                        }`}
+                                      >
+                                        {
+                                          statutPaiement(
+                                            devis.totalPaye,
+                                            devis.total
+                                          )?.lable
+                                        }
+                                      </span>
+                                      {(() => {
+                                        const fourniture = totalFourniture(
+                                          filteredOrders(devis.numero)
+                                        );
+                                        const montantPaye = devis.totalPaye;
+                                        const shouldShowWarning =
+                                          fourniture > montantPaye;
 
-                                      return shouldShowWarning ? (
-                                        <TooltipProvider>
-                                          <Tooltip>
-                                            <TooltipTrigger asChild>
-                                              <AlertTriangle className="h-4 w-4 text-amber-500 cursor-help" />
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                              <p className="font-medium">
-                                                Fourniture supérieure au montant
-                                                payé
-                                              </p>
-                                            </TooltipContent>
-                                          </Tooltip>
-                                        </TooltipProvider>
-                                      ) : null;
-                                    })()}
-                                  </div>
-                                </TableCell>
-                                <TableCell className="!py-2">
-                                  {devis.client.nom.toUpperCase()}
-                                </TableCell>
-                                <TableCell className="!py-2">
-                                  {devis.commercant?.nom.toUpperCase()}
-                                </TableCell>
-                                <TableCell className="!py-2  text-right">
-                                  {formatCurrency(devis.total)}
-                                </TableCell>
-                                <TableCell className="!py-2 text-right">
-                                  {formatCurrency(
-                                    totalFourniture(
-                                      filteredOrders(devis.numero)
-                                    )
-                                  )}
-                                </TableCell>
-                                <TableCell className="!py-2 text-right">
-                                  {formatCurrency(
-                                    devis.total -
+                                        return shouldShowWarning ? (
+                                          <TooltipProvider>
+                                            <Tooltip>
+                                              <TooltipTrigger asChild>
+                                                <OctagonAlert className="h-5 w-5 text-amber-500 cursor-help" />
+                                              </TooltipTrigger>
+                                              <TooltipContent>
+                                                <p className="font-medium">
+                                                  Fourniture supérieure au
+                                                  montant payé
+                                                </p>
+                                              </TooltipContent>
+                                            </Tooltip>
+                                          </TooltipProvider>
+                                        ) : null;
+                                      })()}
+                                      {(() => {
+                                        const paiementStatut = statutPaiement(
+                                          devis.totalPaye,
+                                          devis.total
+                                        );
+                                        const shouldShowWarning =
+                                          devis.statut === "Terminer" &&
+                                          (paiementStatut?.lable ===
+                                            "En partie" ||
+                                            paiementStatut?.lable === "Impayé");
+
+                                        return shouldShowWarning ? (
+                                          <TooltipProvider>
+                                            <Tooltip>
+                                              <TooltipTrigger asChild>
+                                                <OctagonMinus className="h-5 w-5 text-red-500 cursor-help" />
+                                              </TooltipTrigger>
+                                              <TooltipContent>
+                                                <p className="font-medium">
+                                                  Devis terminé avec paiement
+                                                  incomplet
+                                                </p>
+                                              </TooltipContent>
+                                            </Tooltip>
+                                          </TooltipProvider>
+                                        ) : null;
+                                      })()}
+                                    </div>
+                                  </TableCell>
+                                )}
+                                {visibleColumns.client && (
+                                  <TableCell className="!py-2">
+                                    {devis.client.nom.toUpperCase()}
+                                  </TableCell>
+                                )}
+                                {visibleColumns.commercant && (
+                                  <TableCell className="!py-2">
+                                    {devis.commercant?.nom.toUpperCase()}
+                                  </TableCell>
+                                )}
+                                {visibleColumns.montantTotal && (
+                                  <TableCell className="!py-2  text-right">
+                                    {formatCurrency(devis.total)}
+                                  </TableCell>
+                                )}
+                                {visibleColumns.fournitures && (
+                                  <TableCell className="!py-2 text-right">
+                                    {formatCurrency(
                                       totalFourniture(
                                         filteredOrders(devis.numero)
                                       )
-                                  )}
-                                </TableCell>
-                                <TableCell className="!py-2 text-right">
-                                  {formatCurrency(devis.totalPaye)}
-                                </TableCell>
-
-                                <TableCell className="!py-2 text-right">
-                                  {formatCurrency(
-                                    devis.total.toFixed(2) -
-                                      devis.totalPaye.toFixed(2)
-                                  )}
-                                </TableCell>
-                                <TableCell className="!py-2">
-                                  <Select
-                                    value={devis.statut}
-                                    onValueChange={value => {
-                                      updateStatut.mutate({
-                                        id: devis.id,
-                                        statut: value,
-                                      });
-                                    }}
-                                    disabled={updateStatut.isPending}
-                                  >
-                                    <SelectTrigger className="h-8 w-[130px] text-xs border-0 bg-transparent hover:bg-gray-50">
-                                      <SelectValue>
-                                        <span
-                                          className={`text-xs px-2 py-1 rounded-full ${getStatutColor(
-                                            devis.statut
-                                          )}`}
-                                        >
-                                          {devis.statut}
-                                        </span>
-                                      </SelectValue>
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {status
-                                        .filter(s => s.value !== "all")
-                                        .map((statut, index) => (
-                                          <SelectItem
-                                            key={index}
-                                            value={statut.value}
+                                    )}
+                                  </TableCell>
+                                )}
+                                {visibleColumns.marge && (
+                                  <TableCell className="!py-2 text-right">
+                                    {formatCurrency(
+                                      devis.total -
+                                        totalFourniture(
+                                          filteredOrders(devis.numero)
+                                        )
+                                    )}
+                                  </TableCell>
+                                )}
+                                {visibleColumns.paye && (
+                                  <TableCell className="!py-2 text-right">
+                                    {formatCurrency(devis.totalPaye)}
+                                  </TableCell>
+                                )}
+                                {visibleColumns.reste && (
+                                  <TableCell className="!py-2 text-right">
+                                    {formatCurrency(
+                                      devis.total.toFixed(2) -
+                                        devis.totalPaye.toFixed(2)
+                                    )}
+                                  </TableCell>
+                                )}
+                                {visibleColumns.statut && (
+                                  <TableCell className="!py-2">
+                                    <Select
+                                      value={devis.statut}
+                                      onValueChange={value => {
+                                        // Ouvrir le dialogue de confirmation au lieu d'appliquer directement
+                                        setPendingStatutChange({
+                                          id: devis.id,
+                                          statut: value,
+                                          currentStatut: devis.statut,
+                                          numero: devis.numero,
+                                        });
+                                        setStatutChangeDialog(true);
+                                      }}
+                                      disabled={updateStatut.isPending}
+                                    >
+                                      <SelectTrigger className="h-8 w-[130px] text-xs border-0 bg-transparent hover:bg-gray-50">
+                                        <SelectValue>
+                                          <span
+                                            className={`text-xs px-2 py-1 rounded-full ${getStatutColor(
+                                              devis.statut
+                                            )}`}
                                           >
-                                            <span className="flex items-center gap-2">
-                                              <span
-                                                className={`h-2 w-2 rounded-full bg-${statut.color}`}
-                                              />
-                                              {statut.lable}
-                                            </span>
-                                          </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                  </Select>
-                                </TableCell>
+                                            {devis.statut}
+                                          </span>
+                                        </SelectValue>
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {status
+                                          .filter(s => s.value !== "all")
+                                          .map((statut, index) => (
+                                            <SelectItem
+                                              key={index}
+                                              value={statut.value}
+                                            >
+                                              <span className="flex items-center gap-2">
+                                                <span
+                                                  className={`h-2 w-2 rounded-full bg-${statut.color}`}
+                                                />
+                                                {statut.lable}
+                                              </span>
+                                            </SelectItem>
+                                          ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </TableCell>
+                                )}
                                 <TableCell className="text-right !py-2">
                                   <DevisActions
                                     devis={devis}
@@ -774,7 +1046,14 @@ export default function DevisPage() {
                               </TableRow>
                               {info && expandedDevis === devis.id && (
                                 <TableRow>
-                                  <TableCell colSpan={11} className="p-0">
+                                  <TableCell
+                                    colSpan={
+                                      Object.values(visibleColumns).filter(
+                                        Boolean
+                                      ).length + 1
+                                    }
+                                    className="p-0"
+                                  >
                                     <div className="px-8 py-6 animate-in slide-in-from-top-2 duration-200">
                                       <div className="space-y-6">
                                         {/* Header Section */}
@@ -898,7 +1177,13 @@ export default function DevisPage() {
                         ))
                       ) : (
                         <TableRow>
-                          <TableCell colSpan={11} align="center">
+                          <TableCell
+                            colSpan={
+                              Object.values(visibleColumns).filter(Boolean)
+                                .length + 1
+                            }
+                            align="center"
+                          >
                             <div className="text-center py-10 text-muted-foreground">
                               <svg
                                 xmlns="http://www.w3.org/2000/svg"
@@ -958,6 +1243,47 @@ export default function DevisPage() {
           setDeleteTransDialog(false);
         }}
       />
+      <Dialog open={statutChangeDialog} onOpenChange={setStatutChangeDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmer le changement de statut</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir changer le statut du devis{" "}
+              <b>{pendingStatutChange?.numero?.toUpperCase()}</b> de{" "}
+              <b>{pendingStatutChange?.currentStatut}</b> à{" "}
+              <b>{pendingStatutChange?.statut}</b> ?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              className="rounded-full"
+              variant="outline"
+              onClick={() => {
+                setStatutChangeDialog(false);
+                setPendingStatutChange(null);
+              }}
+            >
+              Annuler
+            </Button>
+            <Button
+              className="rounded-full bg-green-500 hover:bg-green-600 text-white"
+              onClick={() => {
+                if (pendingStatutChange) {
+                  updateStatut.mutate({
+                    id: pendingStatutChange.id,
+                    statut: pendingStatutChange.statut,
+                  });
+                  setStatutChangeDialog(false);
+                  setPendingStatutChange(null);
+                }
+              }}
+              disabled={updateStatut.isPending}
+            >
+              {updateStatut.isPending ? "Chargement..." : "Confirmer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

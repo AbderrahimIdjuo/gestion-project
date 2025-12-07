@@ -3,7 +3,7 @@ import prisma from "../../../lib/prisma";
 
 export async function POST(req) {
   try {
-    const resopns = await req.json();
+    const response = await req.json();
     const {
       numero,
       clientId,
@@ -19,37 +19,45 @@ export async function POST(req) {
       date,
       userId,
       employeId,
-    } = resopns;
+    } = response;
+
+    // Validation des données requises
+    if (!numero || !clientId || !articls || !Array.isArray(articls) || articls.length === 0) {
+      return NextResponse.json(
+        { error: "Données manquantes ou invalides. Le devis doit contenir au moins un article." },
+        { status: 400 }
+      );
+    }
 
     const result = await prisma.$transaction(
       async prisma => {
         await prisma.devis.create({
           data: {
             numero,
-            date: date || new Date(),
+            date: date ? new Date(date) : new Date(),
             clientId,
             statut,
-            sousTotal,
-            tva: parseFloat(tva),
-            reduction,
-            total,
+            sousTotal: parseFloat(sousTotal) || 0,
+            tva: parseFloat(tva) || 0,
+            reduction: parseInt(reduction) || 0,
+            total: parseFloat(total) || 0,
             totalPaye: 0,
-            typeReduction,
+            typeReduction: typeReduction || "%",
             commercantId: employeId || null,
-            note,
-            echeance,
-            userId,
+            note: note || "",
+            echeance: echeance ? new Date(echeance) : null,
+            userId: userId || null,
             articls: {
               create: articls.map(articl => ({
                 key: articl.key, //permet de supprimer un articl doublon
-                height: articl.height || 0,
-                length: articl.length || 0,
+                height: parseFloat(articl.height) || 0,
+                length: parseFloat(articl.length) || 0,
                 unite: articl.unite || "U",
-                width: articl.width || 0,
-                designation: articl.designation,
-                quantite: articl.quantite,
-                prixUnite: articl.prixUnite || 0,
-                montant: articl.quantite * articl.prixUnite,
+                width: parseFloat(articl.width) || 0,
+                designation: articl.designation || "",
+                quantite: parseFloat(articl.quantite) || 0,
+                prixUnite: parseFloat(articl.prixUnite) || 0,
+                montant: (parseFloat(articl.quantite) || 0) * (parseFloat(articl.prixUnite) || 0),
               })),
             },
           },
@@ -65,18 +73,21 @@ export async function POST(req) {
         // });
       },
       {
-        // Temps max d’exécution de la transaction
+        // Temps max d'exécution de la transaction
         timeout: 60_000, // 15 s (par défaut 5_000 ms)
-        // Temps max d’attente avant de démarrer (connexion/locks)
+        // Temps max d'attente avant de démarrer (connexion/locks)
         maxWait: 5_000, // optionnel
         // isolationLevel: "ReadCommitted", // optionnel
       }
     );
     return NextResponse.json({ result });
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Error creating devis:", error);
     return NextResponse.json(
-      { error: "Une erreur est survenue lors de la création de la commande." },
+      { 
+        error: "Une erreur est survenue lors de la création du devis.",
+        details: error.message || "Erreur inconnue"
+      },
       { status: 500 }
     );
   }
@@ -137,21 +148,34 @@ export async function PUT(req) {
       }
 
       // Update devis and its articles
+      const updateData = {
+        numero,
+        clientId,
+        statut,
+        sousTotal,
+        tva,
+        reduction,
+        total,
+        typeReduction,
+        note,
+        echeance,
+        commercantId: employeId || null,
+        date: date || new Date(),
+      };
+
+      // Si le statut est "Terminer", définir dateEnd à la date actuelle
+      if (statut === "Terminer") {
+        updateData.dateEnd = new Date();
+      }
+      // Si le statut actuel est "Terminer" et le nouveau statut n'est pas "Terminer", réinitialiser dateEnd à null
+      else if (devi.statut === "Terminer" && statut !== "Terminer") {
+        updateData.dateEnd = null;
+      }
+
       await prisma.devis.update({
         where: { id },
         data: {
-          numero,
-          clientId,
-          statut,
-          sousTotal,
-          tva,
-          reduction,
-          total,
-          typeReduction,
-          note,
-          echeance,
-          commercantId: employeId || null,
-          date: date || new Date(),
+          ...updateData,
           articls: {
             update: existingArticls.map(articl => ({
               where: { id: articl.id },
@@ -230,18 +254,26 @@ export async function GET(req) {
   const statut = searchParams.get("statut");
   const from = searchParams.get("from"); // Start date
   const to = searchParams.get("to"); // End date
+  const dateStartFrom = searchParams.get("dateStartFrom"); // Date de début - début
+  const dateStartTo = searchParams.get("dateStartTo"); // Date de début - fin
+  const dateEndFrom = searchParams.get("dateEndFrom"); // Date de fin - début
+  const dateEndTo = searchParams.get("dateEndTo"); // Date de fin - fin
   const minTotal = searchParams.get("minTotal");
   const maxTotal = searchParams.get("maxTotal");
   const statutPaiement = searchParams.get("statutPaiement");
+  const commercant = searchParams.get("commercant");
   const filters = {};
 
   const devisPerPage = 10;
 
-  // Search filter by numero and client name
-  filters.OR = [
-    { numero: { contains: searchQuery, mode: "insensitive" } },
-    { client: { nom: { contains: searchQuery, mode: "insensitive" } } },
-  ];
+  // Search filter by numero, client name, and commercant
+  if (searchQuery) {
+    filters.OR = [
+      { numero: { contains: searchQuery, mode: "insensitive" } },
+      { client: { nom: { contains: searchQuery, mode: "insensitive" } } },
+      { commercant: { nom: { contains: searchQuery, mode: "insensitive" } } },
+    ];
+  }
 
   // Statut filter
   if (statut !== "all") {
@@ -251,6 +283,13 @@ export async function GET(req) {
   // StatutPaiement filter
   if (statutPaiement !== "all") {
     filters.statutPaiement = statutPaiement;
+  }
+
+  // Commercant filter
+  if (commercant && commercant !== "all") {
+    filters.commercant = {
+      nom: commercant,
+    };
   }
 
   if (from && to) {
@@ -263,6 +302,34 @@ export async function GET(req) {
     filters.date = {
       gte: startDate, // Greater than or equal to start of "from" day
       lte: endDate, // Less than or equal to end of "to" day
+    };
+  }
+
+  // Date de début filter
+  if (dateStartFrom && dateStartTo) {
+    const startDateStart = new Date(dateStartFrom);
+    startDateStart.setHours(0, 0, 0, 0); // Set to beginning of the day
+
+    const endDateStart = new Date(dateStartTo);
+    endDateStart.setHours(23, 59, 59, 999); // Set to end of the day
+
+    filters.dateStart = {
+      gte: startDateStart, // Greater than or equal to start of "dateStartFrom" day
+      lte: endDateStart, // Less than or equal to end of "dateStartTo" day
+    };
+  }
+
+  // Date de fin filter
+  if (dateEndFrom && dateEndTo) {
+    const startDateEnd = new Date(dateEndFrom);
+    startDateEnd.setHours(0, 0, 0, 0); // Set to beginning of the day
+
+    const endDateEnd = new Date(dateEndTo);
+    endDateEnd.setHours(23, 59, 59, 999); // Set to end of the day
+
+    filters.dateEnd = {
+      gte: startDateEnd, // Greater than or equal to start of "dateEndFrom" day
+      lte: endDateEnd, // Less than or equal to end of "dateEndTo" day
     };
   }
 

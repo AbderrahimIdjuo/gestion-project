@@ -94,6 +94,7 @@ model Fournisseurs {
   commandesFournitures CommandeFourniture[]
   Cheques              Cheques[]
   reglements           Reglement[]
+  FacturesAchats       FacturesAchats[]
 }
 
 model Commandes {
@@ -206,6 +207,8 @@ model Articls {
 model Devis {
   id             String    @id @default(uuid())
   date           DateTime?
+  dateStart      DateTime?
+  dateEnd        DateTime?
   numero         String    @unique
   clientId       String
   statut         String
@@ -225,6 +228,18 @@ model Devis {
   userId         String?
   articls        Articls[]
   client         Clients   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+}
+
+model FacturesAchats {
+  id            String       @id @default(uuid())
+  date          DateTime?
+  numero        String?
+  total         Float?
+  fournisseurId String
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  fournisseur   Fournisseurs @relation(fields: [fournisseurId], references: [id], onDelete: Cascade)
+  reglements    Reglement[]
 }
 
 model Factures {
@@ -321,7 +336,7 @@ model Cheques {
 }
 
 model Reglement {
-  id              String       @id @default(uuid())
+  id              String          @id @default(uuid())
   fournisseurId   String
   compte          String
   montant         Float
@@ -329,17 +344,19 @@ model Reglement {
   dateReglement   DateTime // Date de réglement
   datePrelevement DateTime? // Date de prélèvement
   motif           String? // Motif du règlement
-  statut          String       @default("en_attente") // en_attente, paye, en_retard, annule
-  facture         Boolean      @default(false) // Indique si une facture a été créée
-  chequeId        String?      @unique
-  cheque          Cheques?     @relation(fields: [chequeId], references: [id], onDelete: Cascade)
-  fournisseur     Fournisseurs @relation(fields: [fournisseurId], references: [id], onDelete: Cascade)
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  statut          String          @default("en_attente") // en_attente, paye, en_retard, annule
+  factureAchatsId String?
+  factureAchats   FacturesAchats? @relation(fields: [factureAchatsId], references: [id], onDelete: Cascade)
+  chequeId        String?         @unique
+  cheque          Cheques?        @relation(fields: [chequeId], references: [id], onDelete: Cascade)
+  fournisseur     Fournisseurs    @relation(fields: [fournisseurId], references: [id], onDelete: Cascade)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 
   @@index([fournisseurId])
   @@index([dateReglement])
   @@index([statut])
+  @@index([factureAchatsId])
 }
 
 model TachesEmployes {

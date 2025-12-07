@@ -103,14 +103,49 @@ export async function POST(req) {
           .filter(num => num !== null && num !== undefined);
 
         if (DevisNumbers.length > 0) {
-          await prisma.devis.updateMany({
+          // Récupérer les devis pour vérifier leurs statuts et dateStart
+          const devisList = await prisma.devis.findMany({
             where: {
               numero: { in: DevisNumbers },
             },
-            data: {
-              statut: "Accepté",
+            select: {
+              numero: true,
+              statut: true,
+              dateStart: true,
             },
           });
+
+          // Mettre à jour dateStart pour les devis qui n'ont pas de dateStart
+          const devisWithoutDateStart = devisList
+            .filter(d => d.dateStart === null)
+            .map(d => d.numero);
+
+          if (devisWithoutDateStart.length > 0) {
+            await prisma.devis.updateMany({
+              where: {
+                numero: { in: devisWithoutDateStart },
+              },
+              data: {
+                dateStart: date || new Date(),
+              },
+            });
+          }
+
+          // Mettre à jour le statut pour les devis qui ne sont pas "Terminer"
+          const devisNotTerminer = devisList
+            .filter(d => d.statut !== "Terminer")
+            .map(d => d.numero);
+
+          if (devisNotTerminer.length > 0) {
+            await prisma.devis.updateMany({
+              where: {
+                numero: { in: devisNotTerminer },
+              },
+              data: {
+                statut: "Accepté",
+              },
+            });
+          }
         }
       },
       {

@@ -140,7 +140,8 @@ export async function addtransaction(data) {
       await prisma.devis.update({
         where: { numero: numero },
         data: {
-          statut: "Accepté",
+          ...(devis.dateStart === null && { dateStart: date || new Date() }),
+          ...(devis.statut !== "Terminer" && { statut: "Accepté" }),
           totalPaye: {
             increment: montant, //augmente le montant paye
           },
@@ -149,14 +150,14 @@ export async function addtransaction(data) {
       });
 
       // La dette du client sera décrémentée
-      await prisma.clients.update({
-        where: { id: clientId },
-        data: {
-          dette: {
-            decrement: montant, // Decrement la dette du client
-          },
-        },
-      });
+      //   await prisma.clients.update({
+      //     where: { id: clientId },
+      //     data: {
+      //       dette: {
+      //         decrement: montant, // Decrement la dette du client
+      //       },
+      //     },
+      //   });
     }
     //Creation du chèque
     let cheque = null;

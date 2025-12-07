@@ -43,12 +43,12 @@ export async function POST(req) {
             compte: compte,
             montant: montant,
             methodePaiement: methodePaiement,
-            dateReglement: dateReglement || new Date(),
-            datePrelevement: datePrelevement || null,
+            dateReglement: dateReglement ? new Date(dateReglement) : new Date(),
+            datePrelevement: datePrelevement ? new Date(datePrelevement) : null,
             motif: motif || null,
             statut: "en_attente",
-            facture: false,
             chequeId: cheque ? cheque.id : null,
+            // factureAchatsId est optionnel et sera null par défaut
           },
         });
 
@@ -73,13 +73,13 @@ export async function POST(req) {
               : undefined,
           },
         }),
-        // mise à jour du solde du compte bancaire
-        await prisma.comptesBancaires.updateMany({
-          where: { compte: compte },
-          data: {
-            solde: { decrement: montant },
-          },
-        });
+          // mise à jour du solde du compte bancaire
+          await prisma.comptesBancaires.updateMany({
+            where: { compte: compte },
+            data: {
+              solde: { decrement: montant },
+            },
+          });
 
         // mise à jour de la dette du fournisseur
         await prisma.fournisseurs.update({
