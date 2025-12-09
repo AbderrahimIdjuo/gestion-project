@@ -48,15 +48,13 @@ import { useEffect, useState } from "react";
 // Composant pour afficher les détails des transactions
 function TransactionsDetails({ transactions }) {
   if (!transactions || transactions.length === 0) {
-    return (
-      <div className="text-center text-gray-500 text-sm"></div>
-    );
+    return <div className="text-center text-gray-500 text-sm"></div>;
   }
 
   return (
     <div className="bg-white border-gray-200">
       {/* Corps du tableau */}
-      <div className="max-h-32 overflow-y-auto">
+      <div>
         {transactions.map((transaction, index) => (
           <div
             key={index}
@@ -362,7 +360,9 @@ export default function ClientsRapportDialog() {
                             {client.nom.toUpperCase()}
                           </TableCell>
                         )}
-                        <TableCell className="border-l">{devis.numero}</TableCell>
+                        <TableCell className="border-l">
+                          {devis.numero}
+                        </TableCell>
                         <TableCell className="text-right border-l">
                           {formatCurrency(devis.total)}
                         </TableCell>

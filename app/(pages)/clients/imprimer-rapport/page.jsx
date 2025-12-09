@@ -25,7 +25,7 @@ function TransactionsDetails({ transactions }) {
   return (
     <div className="bg-white border-gray-200">
       {/* Corps du tableau */}
-      <div className="max-h-32 overflow-y-auto">
+      <div>
         {transactions.map((transaction, index) => (
           <div
             key={index}
