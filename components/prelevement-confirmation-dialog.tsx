@@ -103,9 +103,6 @@ export function PrelevementConfirmationDialog({
       setNewDate(undefined);
       setShowDatePicker(false);
 
-      // Invalidate notifications query to remove the handled notification
-      queryClient.invalidateQueries({ queryKey: ["today-prelevements"] });
-
       // Call the onConfirm callback to refresh data
       onConfirm();
 

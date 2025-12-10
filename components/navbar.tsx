@@ -1,5 +1,4 @@
 "use client";
-import { NotificationsDropdown } from "@/components/notifications-dropdown";
 import { UserButton, useUser } from "@clerk/nextjs";
 import Image from "next/image";
 import Link from "next/link";
@@ -26,7 +25,6 @@ export function Navbar() {
         {/* Navigation et contrôles utilisateur */}
         <div className="flex items-center space-x-4">
           <>
-            <NotificationsDropdown />
             {/* Role-based navigation links */}
             {user?.publicMetadata?.role === "admin" && (
               <Link

@@ -1523,7 +1523,6 @@ function ReglementContent() {
         }
         onConfirm={() => {
           queryClient.invalidateQueries({ queryKey: ["reglements"] });
-          queryClient.invalidateQueries({ queryKey: ["today-prelevements"] });
         }}
       />
     </>
