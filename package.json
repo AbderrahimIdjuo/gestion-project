@@ -12,7 +12,8 @@
     "format:check": "prettier --check .",
     "migrate:categories": "node scripts/migrateCategories.mjs",
     "migrate:articles-categories": "node scripts/migrateArticlesCategories.mjs",
-    "migrate:items-categories": "node scripts/migrateArticlesCategories.mjs"
+    "migrate:items-categories": "node scripts/migrateArticlesCategories.mjs",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@clerk/backend": "^1.0.0",
