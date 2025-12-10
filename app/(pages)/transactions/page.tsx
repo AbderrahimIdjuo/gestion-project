@@ -112,6 +112,19 @@ export default function Banques() {
     };
   }, [searchQuery]);
 
+  // Réinitialiser la page à 1 lorsque les filtres changent
+  useEffect(() => {
+    setPage(1);
+  }, [
+    filters.type,
+    filters.typeDepense,
+    filters.methodePaiement,
+    filters.compte,
+    startDate,
+    endDate,
+    selectedFournisseur,
+  ]);
+
   const transactions = useQuery({
     queryKey: [
       "transactions",

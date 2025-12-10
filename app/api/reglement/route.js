@@ -10,8 +10,13 @@ export async function GET(req) {
     const compte = searchParams.get("compte") || "all";
     const statut = searchParams.get("statut") || "all";
     const methodePaiement = searchParams.get("methodePaiement") || "all";
-    const from = searchParams.get("from"); // Start date
-    const to = searchParams.get("to"); // End date
+    const statusPrelevement = searchParams.get("statusPrelevement") || "all";
+    const from = searchParams.get("from"); // Start date (dateReglement)
+    const to = searchParams.get("to"); // End date (dateReglement)
+    const fromPrelevement = searchParams.get("fromPrelevement"); // Start date (datePrelevement)
+    const toPrelevement = searchParams.get("toPrelevement"); // End date (datePrelevement)
+    const minMontant = searchParams.get("minMontant");
+    const maxMontant = searchParams.get("maxMontant");
     const fournisseurId = searchParams.get("fournisseurId");
     const limit = parseInt(searchParams.get("limit") || "10");
     const filters = {};
@@ -43,6 +48,30 @@ export async function GET(req) {
       filters.methodePaiement = methodePaiement;
     }
 
+    // Statut de prélèvement filter
+    if (statusPrelevement !== "all") {
+      if (statusPrelevement === "en_retard") {
+        // "en_retard" est un état calculé : datePrelevement < today ET statusPrelevement = "en_attente"
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        filters.statusPrelevement = "en_attente";
+        filters.datePrelevement = {
+          not: null,
+          lt: today, // Date de prélèvement est dans le passé
+        };
+      } else {
+        filters.statusPrelevement = statusPrelevement;
+        // Si on filtre par "en_attente" et qu'il n'y a pas de filtre de date,
+        // exclure les règlements sans date de prélèvement
+        if (statusPrelevement === "en_attente") {
+          filters.datePrelevement = {
+            not: null,
+          };
+        }
+      }
+    }
+
     // Date range filter (sur dateReglement)
     if (from && to) {
       const startDate = new Date(from);
@@ -55,6 +84,42 @@ export async function GET(req) {
         gte: startDate,
         lte: endDate,
       };
+    }
+
+    // Date range filter (sur datePrelevement)
+    // Note: Si statusPrelevement = "en_retard", on a déjà défini datePrelevement
+    if (fromPrelevement && toPrelevement) {
+      const startDatePrelevement = new Date(fromPrelevement);
+      startDatePrelevement.setHours(0, 0, 0, 0);
+
+      const endDatePrelevement = new Date(toPrelevement);
+      endDatePrelevement.setHours(23, 59, 59, 999);
+
+      // Si on a déjà un filtre datePrelevement (pour en_retard), on doit combiner
+      if (filters.datePrelevement && statusPrelevement === "en_retard") {
+        // Combiner les filtres : datePrelevement < today ET dans la plage sélectionnée
+        filters.datePrelevement = {
+          ...filters.datePrelevement,
+          gte: startDatePrelevement,
+          lte: endDatePrelevement,
+        };
+      } else {
+        filters.datePrelevement = {
+          gte: startDatePrelevement,
+          lte: endDatePrelevement,
+        };
+      }
+    }
+
+    // Montant filter
+    if (minMontant || maxMontant) {
+      filters.montant = {};
+      if (minMontant) {
+        filters.montant.gte = parseFloat(minMontant);
+      }
+      if (maxMontant) {
+        filters.montant.lte = parseFloat(maxMontant);
+      }
     }
 
     // Fournisseur filter

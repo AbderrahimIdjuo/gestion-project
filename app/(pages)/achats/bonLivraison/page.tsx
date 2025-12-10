@@ -140,6 +140,17 @@ export default function BonLivraison() {
     };
   }, [searchQuery]);
 
+  // Réinitialiser la page à 1 lorsque les filtres changent
+  useEffect(() => {
+    setPage(1);
+  }, [
+    filters.type,
+    filters.statutPaiement,
+    filters.montant,
+    startDate,
+    endDate,
+  ]);
+
   const {
     data: bonLivraison,
     isLoading,

@@ -1,16 +1,18 @@
 "use client";
 import ComboBoxFournisseur from "@/components/comboBox-fournisseurs";
-import ComptesRapportDialog from "@/components/comptes-rapport-dialog";
 import CreatefactureAchatsDialog from "@/components/create-facture-societe-dialog";
 import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
 import CustomPagination from "@/components/customUi/customPagination";
+import { PriceRangeSlider } from "@/components/customUi/customSlider";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import { LoadingDots } from "@/components/loading-dots";
 import { Navbar } from "@/components/navbar";
 import NewReglementDialog from "@/components/new-reglement";
+import { PrelevementConfirmationDialog } from "@/components/prelevement-confirmation-dialog";
 import { Sidebar } from "@/components/sidebar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -19,8 +21,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -54,14 +68,18 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import {
+  CalendarClock,
+  Columns,
   FileText,
   Filter,
+  MoreVertical,
   Pen,
   Printer,
   Search,
   Trash2,
   X,
 } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -73,6 +91,12 @@ type Reglement = {
   methodePaiement: string;
   dateReglement: string;
   datePrelevement?: string | null;
+  statusPrelevement?:
+    | "en_attente"
+    | "confirme"
+    | "echoue"
+    | "reporte"
+    | "refuse";
   motif?: string | null;
   statut: "en_attente" | "paye" | "en_retard" | "annule";
   factureAchatsId?: string | null;
@@ -141,6 +165,35 @@ type Compte = {
 
 const PAGE_SIZE = 10;
 
+// Valeurs par défaut pour la visibilité des colonnes (toutes visibles par défaut)
+const defaultVisibleColumns = {
+  dateCreation: true,
+  datePrelevement: true,
+  fournisseur: true,
+  montant: true,
+  methode: true,
+  compte: true,
+  statut: true,
+  numero: true,
+  facture: true,
+  motif: true,
+  actions: true, // Actions toujours visible
+};
+
+// Configuration des colonnes avec leurs labels
+const columnDefinitions = [
+  { key: "dateCreation", label: "Date de création" },
+  { key: "datePrelevement", label: "Date de prélèvement" },
+  { key: "fournisseur", label: "Fournisseur" },
+  { key: "montant", label: "Montant" },
+  { key: "methode", label: "Méthode" },
+  { key: "compte", label: "Compte" },
+  { key: "statut", label: "Statut" },
+  { key: "numero", label: "Numéro" },
+  { key: "facture", label: "Facture" },
+  { key: "motif", label: "Motif" },
+];
+
 const getPrelevementDate = (reglement: Reglement) => {
   // Pour les règlements, utiliser datePrelevement si disponible, sinon dateReglement
   return reglement.datePrelevement || reglement.cheque?.dateReglement;
@@ -150,6 +203,7 @@ const getPrelevementChip = (reglement: Reglement) => {
   // Afficher le badge uniquement si la date de prélèvement existe
   if (!reglement.datePrelevement) return null;
 
+  const statusPrelevement = reglement.statusPrelevement || "en_attente";
   const targetDate = reglement.datePrelevement;
   if (!targetDate) return null;
 
@@ -164,6 +218,38 @@ const getPrelevementChip = (reglement: Reglement) => {
 
   if (isNaN(diffDays)) return null;
 
+  // Si le statut est "reporte", afficher le compte à rebours avec un style différent
+  if (statusPrelevement === "reporte") {
+    if (diffDays > 0) {
+      return {
+        label: `Reporté - J-${diffDays}`,
+        className: "bg-amber-100 text-amber-700",
+      };
+    }
+    if (diffDays === 0) {
+      return {
+        label: "Reporté - Aujourd'hui",
+        className: "bg-amber-100 text-amber-700",
+      };
+    }
+    // Date passée pour un reporté
+    return {
+      label: "Reporté - En retard",
+      className: "bg-red-100 text-red-700",
+    };
+  }
+
+  // Pour les autres statuts (confirme, echoue, refuse), afficher juste le statut
+  if (statusPrelevement !== "en_attente") {
+    const statusLabels: Record<string, { label: string; className: string }> = {
+      confirme: { label: "Confirmé", className: "bg-green-100 text-green-700" },
+      echoue: { label: "Échoué", className: "bg-red-100 text-red-700" },
+      refuse: { label: "Refusé", className: "bg-gray-100 text-gray-700" },
+    };
+    return statusLabels[statusPrelevement] || null;
+  }
+
+  // Pour "en_attente", afficher le compte à rebours normal
   if (diffDays > 0) {
     return {
       label: `J-${diffDays}`,
@@ -178,12 +264,15 @@ const getPrelevementChip = (reglement: Reglement) => {
     };
   }
 
+  // En retard (date passée et toujours en_attente)
   return {
-    label: `J+${Math.abs(diffDays)}`,
+    label: "En retard",
     className: "bg-red-100 text-red-700",
   };
 };
 export default function Banques() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [reglementForTable, setReglementForTable] = useState<
     Transaction | undefined
@@ -194,6 +283,9 @@ export default function Banques() {
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
+  const [startDatePrelevement, setStartDatePrelevement] = useState<Date>();
+  const [endDatePrelevement, setEndDatePrelevement] = useState<Date>();
+  const [maxMontant, setMaxMontant] = useState<number>(0);
   const [selectedFournisseur, setSelectedFournisseur] =
     useState<Fournisseur | null>();
   const [updateDialog, setUpdateDialog] = useState(false);
@@ -204,6 +296,8 @@ export default function Banques() {
     compte: "all",
     statut: "all",
     methodePaiement: "all",
+    statusPrelevement: "all",
+    montant: [0, 0] as [number, number],
   });
   const [statuts, setStatuts] = useState<
     Record<string, "en_attente" | "paye" | "en_retard" | "annule">
@@ -215,7 +309,15 @@ export default function Banques() {
     newStatut: "en_attente" | "paye" | "en_retard" | "annule";
     fournisseurNom?: string;
   } | null>(null);
+  const [prelevementDialogOpen, setPrelevementDialogOpen] = useState(false);
+  const [selectedReglementForPrelevement, setSelectedReglementForPrelevement] =
+    useState<Reglement | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const queryClient = useQueryClient();
+
+  // État pour la visibilité des colonnes
+  const [visibleColumns, setVisibleColumns] = useState(defaultVisibleColumns);
+  const [isColumnsLoaded, setIsColumnsLoaded] = useState(false);
 
   // Debounce input (waits 500ms after the last keystroke)
   useEffect(() => {
@@ -229,6 +331,22 @@ export default function Banques() {
     };
   }, [searchQuery]);
 
+  // Réinitialiser la page à 1 lorsque les filtres changent
+  useEffect(() => {
+    setPage(1);
+  }, [
+    filters.statut,
+    filters.methodePaiement,
+    filters.compte,
+    filters.statusPrelevement,
+    filters.montant,
+    startDate,
+    endDate,
+    startDatePrelevement,
+    endDatePrelevement,
+    selectedFournisseur,
+  ]);
+
   const reglements = useQuery({
     queryKey: [
       "reglements",
@@ -237,8 +355,12 @@ export default function Banques() {
       filters.statut,
       filters.methodePaiement,
       filters.compte,
+      filters.statusPrelevement,
+      filters.montant,
       startDate,
       endDate,
+      startDatePrelevement,
+      endDatePrelevement,
       selectedFournisseur,
     ],
     queryFn: async () => {
@@ -252,18 +374,80 @@ export default function Banques() {
               ? undefined
               : filters.methodePaiement,
           compte: filters.compte === "all" ? undefined : filters.compte,
+          statusPrelevement:
+            filters.statusPrelevement === "all"
+              ? undefined
+              : filters.statusPrelevement,
           from: startDate,
           to: endDate,
+          fromPrelevement: startDatePrelevement,
+          toPrelevement: endDatePrelevement,
+          minMontant: filters.montant[0] > 0 ? filters.montant[0] : undefined,
+          maxMontant:
+            filters.montant[1] < maxMontant ? filters.montant[1] : undefined,
           fournisseurId: selectedFournisseur?.id,
           limit: PAGE_SIZE,
         },
       });
       console.log("reglements: ", response.data.reglements);
       setTotalPages(response.data.totalPages);
+
+      // Calculer le montant maximum depuis les données
+      if (response.data.reglements && response.data.reglements.length > 0) {
+        const max = Math.max(
+          ...response.data.reglements.map((r: Reglement) => r.montant)
+        );
+        if (max > maxMontant) {
+          setMaxMontant(Math.ceil(max / 100) * 100); // Arrondir à la centaine supérieure
+        }
+      }
+
       return response.data;
     },
     keepPreviousData: true,
   });
+
+  // Initialiser le filtre de montant quand maxMontant est disponible
+  useEffect(() => {
+    if (maxMontant > 0 && filters.montant[1] === 0) {
+      setFilters(prev => ({ ...prev, montant: [0, maxMontant] }));
+    }
+  }, [maxMontant]);
+
+  // Charger les préférences de colonnes depuis localStorage
+  useEffect(() => {
+    if (typeof window !== "undefined" && !isColumnsLoaded) {
+      const saved = localStorage.getItem("reglement-visible-columns");
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          // S'assurer que toutes les colonnes sont présentes
+          setVisibleColumns({ ...defaultVisibleColumns, ...parsed });
+        } catch (e) {
+          console.error("Error parsing visible columns from localStorage:", e);
+        }
+      }
+      setIsColumnsLoaded(true);
+    }
+  }, [isColumnsLoaded]);
+
+  // Sauvegarder les préférences de colonnes dans localStorage
+  useEffect(() => {
+    if (isColumnsLoaded && typeof window !== "undefined") {
+      localStorage.setItem(
+        "reglement-visible-columns",
+        JSON.stringify(visibleColumns)
+      );
+    }
+  }, [visibleColumns, isColumnsLoaded]);
+
+  // Fonction pour toggle la visibilité d'une colonne
+  const toggleColumn = (columnKey: string) => {
+    setVisibleColumns(prev => ({
+      ...prev,
+      [columnKey]: !prev[columnKey as keyof typeof prev],
+    }));
+  };
 
   useEffect(() => {
     if (reglements.data?.totalPages) {
@@ -272,6 +456,24 @@ export default function Banques() {
       setTotalPages(1);
     }
   }, [reglements.data?.totalPages]);
+
+  // Removed automatic toast notification - notifications are now handled by the navbar notification icon
+
+  // Handle URL parameter to open prelevement dialog
+  useEffect(() => {
+    const prelevementId = searchParams.get("prelevement");
+    if (prelevementId && reglements.data?.reglements) {
+      const reglement = reglements.data.reglements.find(
+        (r: Reglement) => r.id === prelevementId
+      );
+      if (reglement && reglement.datePrelevement) {
+        setSelectedReglementForPrelevement(reglement);
+        setPrelevementDialogOpen(true);
+        // Remove the parameter from URL
+        router.replace("/reglement", { scroll: false });
+      }
+    }
+  }, [searchParams, reglements.data, router]);
 
   // Fonction pour mapper Reglement vers format tableau
   const mapReglementForTable = (reglement: Reglement): Transaction => {
@@ -610,8 +812,12 @@ export default function Banques() {
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="all">Tous</SelectItem>
-                                <SelectItem value="espece">Éspece</SelectItem>
+                                <SelectItem value="espece">Espèce</SelectItem>
+                                <SelectItem value="versement">
+                                  Versement
+                                </SelectItem>
                                 <SelectItem value="cheque">Chèque</SelectItem>
+                                <SelectItem value="traite">Traite</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
@@ -654,7 +860,7 @@ export default function Banques() {
                               htmlFor="date"
                               className="text-left text-black"
                             >
-                              Date :
+                              Date de règlement :
                             </Label>
                             <CustomDateRangePicker
                               startDate={startDate}
@@ -662,6 +868,111 @@ export default function Banques() {
                               endDate={endDate}
                               setEndDate={setEndDate}
                             />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label
+                              htmlFor="datePrelevement"
+                              className="text-left text-black"
+                            >
+                              Date de prélèvement :
+                            </Label>
+                            <CustomDateRangePicker
+                              startDate={startDatePrelevement}
+                              setStartDate={setStartDatePrelevement}
+                              endDate={endDatePrelevement}
+                              setEndDate={setEndDatePrelevement}
+                            />
+                          </div>
+                          <div className="grid items-center gap-3 my-2">
+                            <Label
+                              htmlFor="statusPrelevement"
+                              className="text-left text-black"
+                            >
+                              Statut de prélèvement :
+                            </Label>
+                            <Select
+                              value={filters.statusPrelevement}
+                              name="statusPrelevement"
+                              onValueChange={value =>
+                                setFilters({
+                                  ...filters,
+                                  statusPrelevement: value,
+                                })
+                              }
+                            >
+                              <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
+                                <SelectValue placeholder="Sélectionner un statut" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">
+                                  Tous les statuts
+                                </SelectItem>
+                                <SelectItem value="en_attente">
+                                  <div className="flex items-center gap-2">
+                                    <span className="h-2 w-2 shadow-md rounded-full bg-amber-500" />
+                                    En attente
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="confirme">
+                                  <div className="flex items-center gap-2">
+                                    <span className="h-2 w-2 rounded-full bg-green-500" />
+                                    Confirmé
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="refuse">
+                                  <div className="flex items-center gap-2">
+                                    <span className="h-2 w-2 rounded-full bg-gray-500" />
+                                    Refusé
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="reporte">
+                                  <div className="flex items-center gap-2">
+                                    <span className="h-2 w-2 rounded-full bg-amber-500" />
+                                    Reporté
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="en_retard">
+                                  <div className="flex items-center gap-2">
+                                    <span className="h-2 w-2 rounded-full bg-red-500" />
+                                    En retard
+                                  </div>
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="grid grid-cols-4 grid-rows-2 items-start">
+                            <Label
+                              htmlFor="montant"
+                              className="text-left text-black col-span-4"
+                            >
+                              Montant :
+                            </Label>
+                            <div className="col-span-4">
+                              {maxMontant > 0 ? (
+                                <>
+                                  <PriceRangeSlider
+                                    min={0}
+                                    max={maxMontant}
+                                    step={100}
+                                    value={filters.montant}
+                                    onValueChange={value => {
+                                      setFilters({
+                                        ...filters,
+                                        montant: value as [number, number],
+                                      });
+                                    }}
+                                  />
+                                  <div className="flex justify-between mt-2">
+                                    <span>{filters.montant[0]} DH</span>
+                                    <span>{filters.montant[1]} DH</span>
+                                  </div>
+                                </>
+                              ) : (
+                                <div className="text-sm text-gray-500 py-2">
+                                  Chargement...
+                                </div>
+                              )}
+                            </div>
                           </div>
                           <div className="w-full space-y-2">
                             <ComboBoxFournisseur
@@ -676,11 +987,23 @@ export default function Banques() {
                       variant="outline"
                       onClick={() => {
                         const params = {
+                          query: debouncedQuery || undefined,
                           statut: filters.statut,
                           compte: filters.compte,
                           methodePaiement: filters.methodePaiement,
+                          statusPrelevement: filters.statusPrelevement,
                           from: startDate,
                           to: endDate,
+                          fromPrelevement: startDatePrelevement,
+                          toPrelevement: endDatePrelevement,
+                          minMontant:
+                            filters.montant[0] > 0
+                              ? filters.montant[0]
+                              : undefined,
+                          maxMontant:
+                            filters.montant[1] < maxMontant
+                              ? filters.montant[1]
+                              : undefined,
                           fournisseurId: selectedFournisseur?.id,
                         };
                         localStorage.setItem("params", JSON.stringify(params));
@@ -692,8 +1015,48 @@ export default function Banques() {
                       Imprimer
                     </Button>
                     <NewReglementDialog />
-                    <ComptesRapportDialog />
                   </div>
+                </div>
+                <div className="flex justify-end mb-4">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="rounded-full">
+                        <Columns className="mr-2 h-4 w-4" />
+                        Colonnes
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-56" align="end">
+                      <div className="space-y-3">
+                        <h4 className="font-medium text-sm text-gray-900">
+                          Colonnes visibles
+                        </h4>
+                        <div className="space-y-2">
+                          {columnDefinitions.map(column => (
+                            <div
+                              key={column.key}
+                              className="flex items-center space-x-2"
+                            >
+                              <Checkbox
+                                id={column.key}
+                                checked={
+                                  visibleColumns[
+                                    column.key as keyof typeof visibleColumns
+                                  ]
+                                }
+                                onCheckedChange={() => toggleColumn(column.key)}
+                              />
+                              <Label
+                                htmlFor={column.key}
+                                className="text-sm font-normal cursor-pointer"
+                              >
+                                {column.label}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 <div className="flex justify between gap-6 items-start">
                   <div className="w-full col-span-1 sm:col-span-2 md:col-span-3">
@@ -702,21 +1065,43 @@ export default function Banques() {
                       <Table className="w-full">
                         <TableHeader>
                           <TableRow>
-                            <TableHead className="w-[150px]">
-                              Date de création
-                            </TableHead>
-                            <TableHead>Date de prélèvement</TableHead>
-                            <TableHead>Fournisseur</TableHead>
-                            <TableHead>Montant</TableHead>
-                            <TableHead>Méthode</TableHead>
-                            <TableHead>Compte</TableHead>
-                            <TableHead>Statut</TableHead>
-                            <TableHead>Numéro</TableHead>
-                            <TableHead>Facture</TableHead>
-                            <TableHead>motif</TableHead>
-                            <TableHead className="text-center">
-                              Actions
-                            </TableHead>
+                            {visibleColumns.dateCreation && (
+                              <TableHead className="w-[150px]">
+                                Date de création
+                              </TableHead>
+                            )}
+                            {visibleColumns.datePrelevement && (
+                              <TableHead>Date de prélèvement</TableHead>
+                            )}
+                            {visibleColumns.fournisseur && (
+                              <TableHead>Fournisseur</TableHead>
+                            )}
+                            {visibleColumns.montant && (
+                              <TableHead>Montant</TableHead>
+                            )}
+                            {visibleColumns.methode && (
+                              <TableHead>Méthode</TableHead>
+                            )}
+                            {visibleColumns.compte && (
+                              <TableHead>Compte</TableHead>
+                            )}
+                            {visibleColumns.statut && (
+                              <TableHead>Statut</TableHead>
+                            )}
+                            {visibleColumns.numero && (
+                              <TableHead>Numéro</TableHead>
+                            )}
+                            {visibleColumns.facture && (
+                              <TableHead>Facture</TableHead>
+                            )}
+                            {visibleColumns.motif && (
+                              <TableHead>Motif</TableHead>
+                            )}
+                            {visibleColumns.actions && (
+                              <TableHead className="text-center">
+                                Actions
+                              </TableHead>
+                            )}
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -784,185 +1169,255 @@ export default function Banques() {
                                   getPrelevementDate(reglement);
                                 return (
                                   <TableRow key={reglement.id}>
-                                    <TableCell className="font-medium py-1">
-                                      {formatDate(reglement.dateReglement) ||
-                                        "—"}
-                                    </TableCell>
-                                    <TableCell className="font-medium py-0">
-                                      <div className="flex items-center gap-2">
-                                        <span>
-                                          {formatDate(
-                                            reglement.datePrelevement
-                                          ) || "—"}
-                                        </span>
-                                        {prelevementChip && (
-                                          <Badge
-                                            className={`text-xs font-medium ${prelevementChip.className}`}
-                                          >
-                                            {prelevementChip.label}
-                                          </Badge>
-                                        )}
-                                      </div>
-                                    </TableCell>
-                                    <TableCell className="font-medium py-0">
-                                      {reglement.fournisseur.nom || "—"}
-                                    </TableCell>
-                                    <TableCell className="font-medium py-0">
-                                      {formatCurrency(reglementTable.montant)}
-                                    </TableCell>
-                                    <TableCell className="font-medium py-0">
-                                      {methodePaiementLabel(reglementTable)}
-                                    </TableCell>
-                                    <TableCell className="font-medium py-0">
-                                      {reglementTable.compte}
-                                    </TableCell>
-                                    <TableCell className="font-medium py-0">
-                                      <Select
-                                        value={
-                                          statuts[reglement.id] ||
-                                          reglement.statut ||
-                                          "en_attente"
-                                        }
-                                        onValueChange={value =>
-                                          handleChangeStatut(
-                                            reglement.id,
-                                            value as
-                                              | "en_attente"
-                                              | "paye"
-                                              | "en_retard"
-                                              | "annule",
-                                            (statuts[reglement.id] ||
-                                              reglement.statut ||
-                                              "en_attente") as
-                                              | "en_attente"
-                                              | "paye"
-                                              | "en_retard"
-                                              | "annule",
-                                            reglement.fournisseur.nom
-                                          )
-                                        }
-                                      >
-                                        <SelectTrigger className="h-8 w-[130px] text-xs border-0 bg-transparent hover:bg-gray-50">
-                                          <SelectValue>
-                                            <span
-                                              className={`text-xs px-2 py-1 rounded-full ${getStatutColor(
-                                                statuts[reglement.id] ||
-                                                  reglement.statut
-                                              )}`}
+                                    {visibleColumns.dateCreation && (
+                                      <TableCell className="font-medium py-1">
+                                        {formatDate(reglement.dateReglement) ||
+                                          "—"}
+                                      </TableCell>
+                                    )}
+                                    {visibleColumns.datePrelevement && (
+                                      <TableCell className="font-medium py-0">
+                                        <div className="flex items-center gap-2">
+                                          <span>
+                                            {formatDate(
+                                              reglement.datePrelevement
+                                            ) || "—"}
+                                          </span>
+                                          {prelevementChip && (
+                                            <Badge
+                                              className={`text-xs font-medium ${prelevementChip.className}`}
                                             >
-                                              {getStatutLabel(
-                                                statuts[reglement.id] ||
-                                                  reglement.statut
-                                              )}
-                                            </span>
-                                          </SelectValue>
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          <SelectItem value="en_attente">
-                                            <span className="flex items-center gap-2">
-                                              <span className="h-2 w-2 rounded-full bg-amber-500"></span>
-                                              En attente
-                                            </span>
-                                          </SelectItem>
-                                          <SelectItem value="paye">
-                                            <span className="flex items-center gap-2">
-                                              <span className="h-2 w-2 rounded-full bg-green-500"></span>
-                                              Payé
-                                            </span>
-                                          </SelectItem>
-                                          <SelectItem value="en_retard">
-                                            <span className="flex items-center gap-2">
-                                              <span className="h-2 w-2 rounded-full bg-red-500"></span>
-                                              En retard
-                                            </span>
-                                          </SelectItem>
-                                          <SelectItem value="annule">
-                                            <span className="flex items-center gap-2">
-                                              <span className="h-2 w-2 rounded-full bg-gray-500"></span>
-                                              Annulé
-                                            </span>
-                                          </SelectItem>
-                                        </SelectContent>
-                                      </Select>
-                                    </TableCell>
-                                    <TableCell className="font-medium py-0">
-                                      {reglementTable.cheque?.numero || "—"}
-                                    </TableCell>
-                                    <TableCell className="font-medium py-0 text-center">
-                                      {reglement.factureAchatsId ||
-                                      reglement.factureAchats ? (
-                                        <span className="text-green-600 font-semibold">
-                                          {reglement.factureAchats?.numero ||
-                                            "—"}
-                                        </span>
-                                      ) : (
-                                        reglementTable.compte ===
-                                          "compte professionnel" && (
-                                          <X className="h-5 w-5 text-red-500" />
-                                        )
-                                      )}
-                                    </TableCell>
-                                    <TableCell className="font-medium py-0">
-                                      {reglementTable.motif || "—"}
-                                    </TableCell>
-                                    <TableCell className="text-right py-2">
-                                      <div className="flex justify-end gap-2">
-                                        <Button
-                                          onClick={() => {
-                                            setUpdateDialog(true);
-                                            setReglementForTable(
-                                              reglementTable
+                                              {prelevementChip.label}
+                                            </Badge>
+                                          )}
+                                        </div>
+                                      </TableCell>
+                                    )}
+                                    {visibleColumns.fournisseur && (
+                                      <TableCell className="font-medium py-0">
+                                        {reglement.fournisseur.nom || "—"}
+                                      </TableCell>
+                                    )}
+                                    {visibleColumns.montant && (
+                                      <TableCell className="font-medium py-0">
+                                        {formatCurrency(reglementTable.montant)}
+                                      </TableCell>
+                                    )}
+                                    {visibleColumns.methode && (
+                                      <TableCell className="font-medium py-0">
+                                        {methodePaiementLabel(reglementTable)}
+                                      </TableCell>
+                                    )}
+                                    {visibleColumns.compte && (
+                                      <TableCell className="font-medium py-0">
+                                        {reglementTable.compte}
+                                      </TableCell>
+                                    )}
+                                    {visibleColumns.statut && (
+                                      <TableCell className="font-medium py-0">
+                                        <Select
+                                          value={
+                                            statuts[reglement.id] ||
+                                            reglement.statut ||
+                                            "en_attente"
+                                          }
+                                          onValueChange={value =>
+                                            handleChangeStatut(
+                                              reglement.id,
+                                              value as
+                                                | "en_attente"
+                                                | "paye"
+                                                | "en_retard"
+                                                | "annule",
+                                              (statuts[reglement.id] ||
+                                                reglement.statut ||
+                                                "en_attente") as
+                                                | "en_attente"
+                                                | "paye"
+                                                | "en_retard"
+                                                | "annule",
+                                              reglement.fournisseur.nom
+                                            )
+                                          }
+                                        >
+                                          <SelectTrigger className="h-8 w-[130px] text-xs border-0 bg-transparent hover:bg-gray-50">
+                                            <SelectValue>
+                                              <span
+                                                className={`text-xs px-2 py-1 rounded-full ${getStatutColor(
+                                                  statuts[reglement.id] ||
+                                                    reglement.statut
+                                                )}`}
+                                              >
+                                                {getStatutLabel(
+                                                  statuts[reglement.id] ||
+                                                    reglement.statut
+                                                )}
+                                              </span>
+                                            </SelectValue>
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="en_attente">
+                                              <span className="flex items-center gap-2">
+                                                <span className="h-2 w-2 rounded-full bg-amber-500"></span>
+                                                En attente
+                                              </span>
+                                            </SelectItem>
+                                            <SelectItem value="paye">
+                                              <span className="flex items-center gap-2">
+                                                <span className="h-2 w-2 rounded-full bg-green-500"></span>
+                                                Payé
+                                              </span>
+                                            </SelectItem>
+                                            <SelectItem value="en_retard">
+                                              <span className="flex items-center gap-2">
+                                                <span className="h-2 w-2 rounded-full bg-red-500"></span>
+                                                En retard
+                                              </span>
+                                            </SelectItem>
+                                            <SelectItem value="annule">
+                                              <span className="flex items-center gap-2">
+                                                <span className="h-2 w-2 rounded-full bg-gray-500"></span>
+                                                Annulé
+                                              </span>
+                                            </SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </TableCell>
+                                    )}
+                                    {visibleColumns.numero && (
+                                      <TableCell className="font-medium py-0">
+                                        {reglementTable.cheque?.numero || "—"}
+                                      </TableCell>
+                                    )}
+                                    {visibleColumns.facture && (
+                                      <TableCell className="font-medium py-0 text-center">
+                                        {reglement.factureAchatsId ||
+                                        reglement.factureAchats ? (
+                                          <span className="text-green-600 font-semibold">
+                                            {reglement.factureAchats?.numero ||
+                                              "—"}
+                                          </span>
+                                        ) : (
+                                          reglementTable.compte ===
+                                            "compte professionnel" && (
+                                            <X className="h-5 w-5 text-red-500" />
+                                          )
+                                        )}
+                                      </TableCell>
+                                    )}
+                                    {visibleColumns.motif && (
+                                      <TableCell className="font-medium py-0">
+                                        {reglementTable.motif || "—"}
+                                      </TableCell>
+                                    )}
+                                    {visibleColumns.actions && (
+                                      <TableCell className="text-right py-2">
+                                        <DropdownMenu
+                                          open={openMenuId === reglement.id}
+                                          onOpenChange={open => {
+                                            setOpenMenuId(
+                                              open ? reglement.id : null
                                             );
                                           }}
-                                          variant="ghost"
-                                          size="icon"
-                                          className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
                                         >
-                                          <Pen className="h-4 w-4" />
-                                          <span className="sr-only">
-                                            modifier
-                                          </span>
-                                        </Button>
-                                        <Button
-                                          onClick={() => {
-                                            setDeleteDialog(true);
-                                            setReglementForTable(
-                                              reglementTable
-                                            );
-                                          }}
-                                          variant="ghost"
-                                          size="icon"
-                                          className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
-                                        >
-                                          <Trash2 className="h-4 w-4" />
-                                          <span className="sr-only">
-                                            Supprimer
-                                          </span>
-                                        </Button>
-                                        <Button
-                                          onClick={() => {
-                                            setReglementForFacture(reglement);
-                                            setFactureDialog(true);
-                                          }}
-                                          variant="ghost"
-                                          size="icon"
-                                          className="h-8 w-8 rounded-full hover:bg-blue-100 hover:text-blue-600"
-                                          title="Créer une facture"
-                                        >
-                                          <FileText className="h-4 w-4" />
-                                          <span className="sr-only">
-                                            Créer une facture
-                                          </span>
-                                        </Button>
-                                      </div>
-                                    </TableCell>
+                                          <DropdownMenuTrigger asChild>
+                                            <Button
+                                              variant="ghost"
+                                              size="icon"
+                                              className="h-8 w-8 rounded-full hover:bg-gray-200"
+                                            >
+                                              <MoreVertical className="h-4 w-4" />
+                                              <span className="sr-only">
+                                                Ouvrir le menu
+                                              </span>
+                                            </Button>
+                                          </DropdownMenuTrigger>
+                                          <DropdownMenuContent
+                                            align="end"
+                                            className="w-72 rounded-md"
+                                          >
+                                            <DropdownMenuItem
+                                              onClick={() => {
+                                                setUpdateDialog(true);
+                                                setReglementForTable(
+                                                  reglementTable
+                                                );
+                                                setOpenMenuId(null);
+                                              }}
+                                              className="flex items-center gap-2 cursor-pointer group hover:!bg-purple-100"
+                                            >
+                                              <Pen className="h-4 w-4 text-purple-600 group-hover:text-purple-600" />
+                                              <span className="transition-colors duration-200 group-hover:text-purple-600 group-hover:bg-purple-100">
+                                                Modifier
+                                              </span>
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                              onClick={() => {
+                                                setReglementForFacture(
+                                                  reglement
+                                                );
+                                                setFactureDialog(true);
+                                                setOpenMenuId(null);
+                                              }}
+                                              className="flex items-center gap-2 cursor-pointer group hover:!bg-emerald-100"
+                                            >
+                                              <FileText className="h-4 w-4 text-emerald-600" />
+                                              <span className="transition-colors duration-200 group-hover:text-emerald-600 group-hover:bg-emerald-100">
+                                                Créer une facture
+                                              </span>
+                                            </DropdownMenuItem>
+                                            {reglement.datePrelevement && (
+                                              <DropdownMenuItem
+                                                onClick={() => {
+                                                  setSelectedReglementForPrelevement(
+                                                    reglement
+                                                  );
+                                                  setPrelevementDialogOpen(
+                                                    true
+                                                  );
+                                                  setOpenMenuId(null);
+                                                }}
+                                                className="flex items-center gap-2 cursor-pointer group hover:!bg-amber-100"
+                                              >
+                                                <CalendarClock className="h-4 w-4 text-amber-600" />
+                                                <span className="transition-colors duration-200 group-hover:text-amber-600 group-hover:bg-amber-100">
+                                                  Gérer le prélèvement
+                                                </span>
+                                              </DropdownMenuItem>
+                                            )}
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem
+                                              onClick={() => {
+                                                setDeleteDialog(true);
+                                                setReglementForTable(
+                                                  reglementTable
+                                                );
+                                                setOpenMenuId(null);
+                                              }}
+                                              className="flex items-center gap-2 cursor-pointer group hover:!bg-red-100"
+                                            >
+                                              <Trash2 className="h-4 w-4 text-red-600" />
+                                              <span className="transition-colors duration-200 group-hover:text-red-600 group-hover:bg-red-100">
+                                                Supprimer
+                                              </span>
+                                            </DropdownMenuItem>
+                                          </DropdownMenuContent>
+                                        </DropdownMenu>
+                                      </TableCell>
+                                    )}
                                   </TableRow>
                                 );
                               }
                             )
                           ) : (
                             <TableRow>
-                              <TableCell colSpan={11} className="text-center">
+                              <TableCell
+                                colSpan={
+                                  Object.values(visibleColumns).filter(Boolean)
+                                    .length
+                                }
+                                className="text-center"
+                              >
                                 Aucun réglement trouvé
                               </TableCell>
                             </TableRow>
@@ -1045,6 +1500,30 @@ export default function Banques() {
         reglement={reglementForFacture}
         open={factureDialog}
         onOpenChange={setFactureDialog}
+      />
+      <PrelevementConfirmationDialog
+        isOpen={prelevementDialogOpen}
+        onClose={() => {
+          setPrelevementDialogOpen(false);
+          setSelectedReglementForPrelevement(null);
+        }}
+        reglement={
+          selectedReglementForPrelevement
+            ? {
+                id: selectedReglementForPrelevement.id,
+                montant: selectedReglementForPrelevement.montant,
+                fournisseur: {
+                  nom: selectedReglementForPrelevement.fournisseur.nom,
+                },
+                datePrelevement:
+                  selectedReglementForPrelevement.datePrelevement || null,
+              }
+            : null
+        }
+        onConfirm={() => {
+          queryClient.invalidateQueries({ queryKey: ["reglements"] });
+          queryClient.invalidateQueries({ queryKey: ["today-prelevements"] });
+        }}
       />
     </>
   );

@@ -2,13 +2,7 @@
 
 import Spinner from "@/components/customUi/Spinner";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChequeDetailsDialog } from "@/components/ui/cheque-details-dialog";
 import {
   Dialog,
@@ -38,11 +32,8 @@ import {
   Building2,
   Calendar,
   CreditCard,
-  MapPin,
   Package,
-  Phone,
   Receipt,
-  Smartphone,
   TrendingUp,
 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -146,233 +137,340 @@ export default function InfosFournisseurDialog({
     );
   }, [bonLivraisons]);
 
+  const getCompteColor = compte => {
+    if (!compte) return "bg-gray-50 text-gray-700 border-gray-200";
+
+    const compteLower = compte.toLowerCase();
+
+    // Couleurs différentes selon le type de compte
+    if (compteLower.includes("caisse")) {
+      return "bg-blue-50 text-blue-700 border-blue-200";
+    } else if (compteLower.includes("personnel")) {
+      return "bg-purple-50 text-purple-700 border-purple-200";
+    } else if (
+      compteLower.includes("professionel") ||
+      compteLower.includes("professionnel")
+    ) {
+      return "bg-emerald-50 text-emerald-700 border-emerald-200";
+    } else if (compteLower.includes("banque")) {
+      return "bg-orange-50 text-orange-700 border-orange-200";
+    } else {
+      // Couleur par défaut basée sur le hash du nom pour d'autres comptes
+      const colors = [
+        "bg-rose-50 text-rose-700 border-rose-200",
+        "bg-cyan-50 text-cyan-700 border-cyan-200",
+        "bg-indigo-50 text-indigo-700 border-indigo-200",
+        "bg-pink-50 text-pink-700 border-pink-200",
+        "bg-teal-50 text-teal-700 border-teal-200",
+        "bg-amber-50 text-amber-700 border-amber-200",
+      ];
+      // Utiliser le hash du nom pour une couleur cohérente
+      let hash = 0;
+      for (let i = 0; i < compte.length; i++) {
+        hash = compte.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      return colors[Math.abs(hash) % colors.length];
+    }
+  };
+
   return (
-    <div className="p-8">
-      <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-[90vw] max-h-[95vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Building2 className="h-5 w-5" />
-              Détails du Fournisseur
-            </DialogTitle>
-          </DialogHeader>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[95vw] max-h-[95vh] overflow-y-auto p-0">
+        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 sm:pb-6 bg-gradient-to-r from-purple-600 via-purple-500 to-violet-500 text-white rounded-t-lg">
+          <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
+            {/* Avatar/Icon */}
+            <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm flex-shrink-0 border-2 sm:border-4 border-white/30 mx-auto sm:mx-0">
+              <Building2 className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
+            </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-2 gap-6 h-full">
-            {/* Left Column - Informations Générales */}
-            <div className="space-y-4 grid grid-cols-1 justify-items-stretch">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">{fournisseur?.nom}</CardTitle>
-                  <CardDescription></CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 gap-4">
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <Building2 className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">ICE:</span>
-                        <span>{fournisseur?.ice}</span>
-                      </div>
+            {/* Informations principales */}
+            <div className="flex-1 w-full">
+              {/* Nom */}
+              <DialogTitle className="text-xl sm:text-2xl lg:text-3xl font-bold mb-3 sm:mb-2 text-white text-center sm:text-left">
+                {fournisseur?.nom?.toUpperCase()}
+              </DialogTitle>
 
-                      <div className="flex items-center gap-2">
-                        <Phone className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">Téléphone:</span>
-                        <span>{fournisseur?.telephone}</span>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <Smartphone className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">Mobile:</span>
-                        <span>{fournisseur?.telephoneSecondaire}</span>
-                      </div>
-
-                      <div className="flex items-start gap-2">
-                        <MapPin className="h-4 w-4 text-muted-foreground mt-1" />
-                        <div>
-                          <span className="font-medium">Adresse:</span>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {fournisseur?.adresse}
-                          </p>
-                        </div>
-                      </div>
+              {/* Informations organisées en colonnes */}
+              <div className="flex flex-col sm:flex-row flex-wrap gap-4 sm:gap-6 lg:gap-8">
+                {/* Colonne gauche - Informations principales */}
+                <div className="space-y-3 sm:space-y-4 w-full sm:min-w-[200px] sm:w-auto">
+                  {fournisseur?.ice && (
+                    <div>
+                      <p className="text-xs text-purple-200 mb-1">ICE:</p>
+                      <p className="text-sm sm:text-base font-semibold text-white">
+                        {fournisseur?.ice}
+                      </p>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  )}
+                  {fournisseur?.telephone && (
+                    <div>
+                      <p className="text-xs text-purple-200 mb-1">Téléphone:</p>
+                      <p className="text-sm sm:text-base font-semibold text-white">
+                        {fournisseur?.telephone}
+                      </p>
+                    </div>
+                  )}
+                  {fournisseur?.telephoneSecondaire && (
+                    <div>
+                      <p className="text-xs text-purple-200 mb-1">Mobile:</p>
+                      <p className="text-sm sm:text-base font-semibold text-white">
+                        {fournisseur?.telephoneSecondaire}
+                      </p>
+                    </div>
+                  )}
+                </div>
 
-              {/* Top 5 Products */}
-              <Card className="flex-1">
-                <CardHeader className="grid grid-cols-5 items-center">
-                  <CardTitle className="flex items-center gap-2 col-span-3">
-                    <Package className="h-5 w-5" />
-                    Top 5 des Produits Achetés
+                {/* Séparateur vertical - caché sur mobile */}
+                {fournisseur?.adresse && (
+                  <div className="hidden sm:block w-px bg-white/30"></div>
+                )}
+
+                {/* Colonne droite - Contact et autres */}
+                <div className="space-y-3 sm:space-y-4 w-full sm:min-w-[200px] sm:flex-1">
+                  {fournisseur?.adresse && (
+                    <div>
+                      <p className="text-xs text-purple-200 mb-1">Adresse:</p>
+                      <p className="text-sm sm:text-base font-semibold text-white">
+                        {fournisseur?.adresse}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogHeader>
+
+        <div className="px-4 sm:px-6 pb-4 sm:pb-6 space-y-4 sm:space-y-6">
+          {/* Statistiques en haut */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 mt-3 sm:mt-4">
+            <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-red-50 to-red-100 border-2 border-red-200 p-4 sm:p-5 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]">
+              <div className="absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 bg-red-200 rounded-full -mr-12 sm:-mr-16 -mt-12 sm:-mt-16 opacity-20"></div>
+              <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-red-500 flex items-center justify-center shadow-md flex-shrink-0">
+                    <CreditCard className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xs sm:text-sm font-medium text-red-700">
+                      Dette en cours
+                    </p>
+                    <p className="text-xs text-red-600 mt-0.5 hidden sm:block">
+                      Montant restant à payer
+                    </p>
+                  </div>
+                </div>
+                <Badge
+                  variant="destructive"
+                  className="text-base sm:text-lg px-3 sm:px-4 py-1.5 sm:py-2 font-bold shadow-md w-full sm:w-auto text-center"
+                >
+                  {formatCurrency(montantRestantBL)}
+                </Badge>
+              </div>
+            </div>
+
+            <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-emerald-50 to-emerald-100 border-2 border-emerald-200 p-4 sm:p-5 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]">
+              <div className="absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 bg-emerald-200 rounded-full -mr-12 sm:-mr-16 -mt-12 sm:-mt-16 opacity-20"></div>
+              <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-emerald-500 flex items-center justify-center shadow-md flex-shrink-0">
+                    <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xs sm:text-sm font-medium text-emerald-700">
+                      Chiffre d&apos;Affaires
+                    </p>
+                    <p className="text-xs text-emerald-600 mt-0.5 hidden sm:block">
+                      Total des achats
+                    </p>
+                  </div>
+                </div>
+                <Badge className="text-base sm:text-lg px-3 sm:px-4 py-1.5 sm:py-2 font-bold bg-emerald-600 text-white border-0 shadow-md hover:bg-emerald-700 w-full sm:w-auto text-center">
+                  {formatCurrency(chiffreAffaires)}
+                </Badge>
+              </div>
+            </div>
+          </div>
+
+          {/* Liste de produits et règlements */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            {/* Top 5 Products */}
+            <Card className="border-2 shadow-lg">
+              <CardHeader className="bg-gradient-to-r from-zinc-50 to-zinc-100 border-b">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-xl font-semibold flex items-center gap-2">
+                    <div className="h-8 w-8 rounded-lg bg-blue-500 flex items-center justify-center">
+                      <Package className="h-4 w-4 text-white" />
+                    </div>
+                    Top 5 Produits ({topProduits.length})
                   </CardTitle>
-                  <div className="flex items-center justify-end gap-3 col-span-2 w-full">
-                    <span className="font-medium">Trier par</span>
-
-                    <Select value={sortKey} onValueChange={setSortKey}>
-                      <SelectTrigger className="max-w-[120px] focus:ring-2 focus:ring-purple-500">
-                        <SelectValue placeholder="Trier par" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="montant">Montant</SelectItem>
-                        <SelectItem value="quantite">Quantité</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <Select value={sortKey} onValueChange={setSortKey}>
+                    <SelectTrigger className="max-w-[120px] focus:ring-2 focus:ring-purple-500">
+                      <SelectValue placeholder="Trier par" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="montant">Montant</SelectItem>
+                      <SelectItem value="quantite">Quantité</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                {data.isLoading ? (
+                  <div className="flex justify-center w-full py-12">
+                    <Spinner />
                   </div>
-                </CardHeader>
-                <CardContent>
-                  {data.isLoading ? (
-                    <div className="flex justify-center w-full">
-                      <Spinner />
-                    </div>
-                  ) : (
+                ) : topProduits.length > 0 ? (
+                  <div className="overflow-x-auto">
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead>Produit</TableHead>
-                          <TableHead className="text-center">Qté</TableHead>
-                          <TableHead className="text-right">Montant</TableHead>
+                        <TableRow className="bg-gradient-to-r from-zinc-50 to-zinc-100 border-b">
+                          <TableHead className="font-semibold">
+                            Produit
+                          </TableHead>
+                          <TableHead className="font-semibold text-center">
+                            Qté
+                          </TableHead>
+                          <TableHead className="font-semibold text-right">
+                            Montant
+                          </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {topProduits.map((produit, index) => (
-                          <TableRow key={index}>
+                          <TableRow
+                            key={index}
+                            className="hover:bg-purple-50 transition-colors"
+                          >
                             <TableCell className="font-medium text-sm">
                               {produit.designation}
                             </TableCell>
-                            <TableCell className="text-center">
+                            <TableCell className="text-center font-medium">
                               {produit.quantite}
                             </TableCell>
-                            <TableCell className="text-right font-medium">
+                            <TableCell className="text-right font-medium text-blue-600">
                               {formatCurrency(produit.montant)}
                             </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
                     </Table>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Right Column - Statistiques */}
-            <div className="space-y-4 grid grid-cols-1 justify-items-stretch">
-              {/* Statistics Cards */}
-
-              <div className="space-y-4 my-auto">
-                <div className="flex items-center justify-between p-4 bg-red-50 rounded-lg border border-red-200">
-                  <div className="flex items-center gap-2">
-                    <CreditCard className="h-5 w-5 text-red-600" />
-                    <span className="font-medium text-red-800">
-                      Dette en cours :
-                    </span>
                   </div>
-                  <Badge variant="destructive" className="text-lg px-3 py-1">
-                    {formatCurrency(montantRestantBL)}
-                  </Badge>
-                </div>
-
-                <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200">
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5 text-green-600" />
-                    <span className="font-medium text-green-800">
-                      Chiffre d&apos;Affaires :
-                    </span>
-                  </div>
-                  <Badge
-                    variant="outline"
-                    className="text-lg text-white bg-green-600 px-3 py-1"
-                  >
-                    {formatCurrency(chiffreAffaires)}
-                  </Badge>
-                </div>
-              </div>
-
-              {/* Recent Payments */}
-              <Card className="flex-1">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2">
-                      <Receipt className="h-5 w-5" />
-                      Derniers Règlements
-                    </CardTitle>
-                    <div className="flex items-end gap-2">
-                      <PrintReportButton
-                        variant="outline"
-                        size="sm"
-                        data={{
-                          fournisseur,
-                          transactions,
-                          bonLivraisons,
-                        }}
-                        localStorageKey="fournisseur-reglements-rapport"
-                        targetRoute="/fournisseurs/imprimer-reglements"
-                        className="flex items-center gap-2"
-                      >
-                        Imprimer
-                      </PrintReportButton>
+                ) : (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <div className="h-16 w-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+                      <Package className="h-8 w-8 text-gray-400" />
                     </div>
+                    <p className="font-medium">Aucun produit trouvé</p>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="max-h-[500px] overflow-y-auto">
-                    {data.isLoading ? (
-                      <div className="flex justify-center w-full">
-                        <Spinner />
-                      </div>
-                    ) : (
-                      <Table id="reglements-table">
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Date</TableHead>
-                            <TableHead className="text-left">Compte</TableHead>
-                            <TableHead className="text-center">
-                              M.Paiement
-                            </TableHead>
-                            <TableHead className="text-right">
-                              Montant
-                            </TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {transactions?.map((reglement, index) => (
-                            <TableRow key={index}>
-                              <TableCell className="text-sm">
-                                <div className="flex items-center gap-1">
-                                  <Calendar className="h-3 w-3 text-muted-foreground" />
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Règlements */}
+            <Card className="border-2 shadow-lg">
+              <CardHeader className="bg-gradient-to-r from-zinc-50 to-zinc-100 border-b">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-xl font-semibold flex items-center gap-2">
+                    <div className="h-8 w-8 rounded-lg bg-purple-500 flex items-center justify-center">
+                      <Receipt className="h-4 w-4 text-white" />
+                    </div>
+                    Règlements ({transactions.length})
+                  </CardTitle>
+                  <PrintReportButton
+                    variant="outline"
+                    size="sm"
+                    data={{
+                      fournisseur,
+                      transactions,
+                      bonLivraisons,
+                    }}
+                    localStorageKey="fournisseur-reglements-rapport"
+                    targetRoute="/fournisseurs/imprimer-reglements"
+                    className="flex items-center gap-2 bg-purple-500 hover:bg-purple-600 !text-white rounded-full"
+                  >
+                    Imprimer
+                  </PrintReportButton>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="max-h-[500px] overflow-y-auto">
+                  {data.isLoading ? (
+                    <div className="flex justify-center w-full py-12">
+                      <Spinner />
+                    </div>
+                  ) : transactions.length > 0 ? (
+                    <Table>
+                      <TableHeader className="sticky top-0 bg-gradient-to-r from-zinc-50 to-zinc-100 border-b z-10">
+                        <TableRow>
+                          <TableHead className="font-semibold">Date</TableHead>
+                          <TableHead className="font-semibold">
+                            Compte
+                          </TableHead>
+                          <TableHead className="font-semibold text-center">
+                            M.Paiement
+                          </TableHead>
+                          <TableHead className="font-semibold text-right">
+                            Montant
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {transactions?.map((reglement, index) => (
+                          <TableRow
+                            key={index}
+                            className="hover:bg-purple-50 transition-colors"
+                          >
+                            <TableCell className="text-sm">
+                              <div className="flex items-center gap-2">
+                                <Calendar className="h-4 w-4 text-muted-foreground" />
+                                <span className="font-medium">
                                   {formatDate(reglement.date)}
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-left font-medium text-sm">
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="font-medium text-sm">
+                              <Badge
+                                variant="outline"
+                                className={getCompteColor(reglement.compte)}
+                              >
                                 {reglement.compte?.replace("compte ", "")}
-                              </TableCell>
-                              <TableCell className="text-center">
-                                <ChequeDetailsDialog
-                                  methodePaiement={reglement.methodePaiement}
-                                  cheque={reglement.cheque}
-                                  montant={reglement.montant}
-                                  compte={reglement.compte}
-                                  date={reglement.date}
-                                  formatCurrency={formatCurrency}
-                                  formatDate={formatDate}
-                                />
-                              </TableCell>
-                              <TableCell className="text-right font-medium text-sm">
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <ChequeDetailsDialog
+                                methodePaiement={reglement.methodePaiement}
+                                cheque={reglement.cheque}
+                                montant={reglement.montant}
+                                compte={reglement.compte}
+                                date={reglement.date}
+                                formatCurrency={formatCurrency}
+                                formatDate={formatDate}
+                              />
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <span className="font-bold text-emerald-600 text-sm">
                                 {formatCurrency(reglement.montant)}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                              </span>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <div className="h-16 w-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+                        <Receipt className="h-8 w-8 text-gray-400" />
+                      </div>
+                      <p className="font-medium">Aucun règlement trouvé</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

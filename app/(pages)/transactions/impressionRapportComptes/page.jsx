@@ -154,16 +154,13 @@ export default function ImpressionRapport() {
                   <TableRow className="border-b">
                     <TableHead className="border-r border-b">Date</TableHead>
                     <TableHead className="w-[15rem] border-r border-b">
-                      Désignation (Recettes)
+                      Désignation
                     </TableHead>
                     <TableHead className="text-right border-r border-b">
-                      MNT
-                    </TableHead>
-                    <TableHead className="w-[15rem] border-r border-b">
-                      Désignation (Dépenses)
+                      MNT Recettes
                     </TableHead>
                     <TableHead className="text-right border-r border-b">
-                      MNT
+                      MNT Dépenses
                     </TableHead>
                     <TableHead className="text-right border-b">Solde</TableHead>
                   </TableRow>
@@ -174,11 +171,10 @@ export default function ImpressionRapport() {
                       {/* Solde initial */}
                       <TableRow className="bg-gray-700 text-white hover:!bg-gray-700 hover:!text-white border-b">
                         <TableCell className="px-1 py-2 font-semibold border-r">
-                          SOLDE DE CAISSE
+                          SOLDE INITIAL
                         </TableCell>
                         <TableCell className="px-1 py-2 w-[15rem] border-r"></TableCell>
                         <TableCell className="px-1 py-2 text-right pr-4 border-r"></TableCell>
-                        <TableCell className="px-1 py-2 w-[15rem] border-r"></TableCell>
                         <TableCell className="px-1 py-2 text-right pr-4 border-r"></TableCell>
                         <TableCell
                           className={`px-1 py-2 text-right pr-4 font-semibold`}
@@ -195,19 +191,11 @@ export default function ImpressionRapport() {
                                 formatDate(transaction.createdAt)}
                             </TableCell>
                             <TableCell className="px-1 py-2 border-r">
-                              {transaction.type === "recette"
-                                ? transaction.lable
-                                : ""}
+                              {transaction.lable}
                             </TableCell>
                             <TableCell className="px-1 py-2 text-right pr-4 border-r">
                               {transaction.type === "recette"
                                 ? formatCurrency(transaction.montant)
-                                : ""}
-                            </TableCell>
-                            <TableCell className="px-1 py-2 border-r">
-                              {transaction.type === "depense" ||
-                              transaction.type === "vider"
-                                ? transaction.lable
                                 : ""}
                             </TableCell>
                             <TableCell className="px-1 py-2 text-right pr-4 border-r">
@@ -229,13 +217,13 @@ export default function ImpressionRapport() {
                     </>
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center">
+                      <TableCell colSpan={5} className="text-center">
                         Aucune transaction trouvée
                       </TableCell>
                     </TableRow>
                   )}
                 </TableBody>
-                <TableFooter className="bg-gray-50">
+                <TableFooter className="bg-gray-50 table-footer-print">
                   <TableRow className="border-b">
                     <TableCell className="text-lg font-semibold p-2 border-r">
                       Total :
@@ -246,7 +234,6 @@ export default function ImpressionRapport() {
                         calculateTotals(data?.transactions).totalRecettes
                       )}
                     </TableCell>
-                    <TableCell className="p-2 border-r"></TableCell>
                     <TableCell className="text-right text-lg font-semibold p-2 text-red-600 border-r">
                       {formatCurrency(
                         calculateTotals(data?.transactions).totalDepenses
