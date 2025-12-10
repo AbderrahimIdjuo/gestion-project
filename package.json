@@ -7,7 +7,6 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "start:cron": "node cron.js",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "migrate:categories": "node scripts/migrateCategories.mjs",
