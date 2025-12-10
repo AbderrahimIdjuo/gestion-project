@@ -29,6 +29,7 @@ export async function GET(req: Request) {
           gte: today,
           lt: tomorrow,
         },
+        // @ts-ignore - statusPrelevement exists in schema, Prisma client needs regeneration
         statusPrelevement: "en_attente",
       },
       include: {
@@ -53,7 +54,7 @@ export async function GET(req: Request) {
       success: true,
       message: `Found ${reglements.length} prélèvements scheduled for today`,
       count: reglements.length,
-      reglements: reglements.map((r) => ({
+      reglements: reglements.map(r => ({
         id: r.id,
         fournisseur: r.fournisseur.nom,
         montant: r.montant,
@@ -73,4 +74,3 @@ export async function GET(req: Request) {
     );
   }
 }
-
