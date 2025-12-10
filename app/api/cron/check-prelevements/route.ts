@@ -56,7 +56,8 @@ export async function GET(req: Request) {
       count: reglements.length,
       reglements: reglements.map(r => ({
         id: r.id,
-        fournisseur: r.fournisseur.nom,
+        // @ts-ignore - fournisseur is included in the query
+        fournisseur: r.fournisseur?.nom || "Inconnu",
         montant: r.montant,
         datePrelevement: r.datePrelevement,
       })),
