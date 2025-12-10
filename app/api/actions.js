@@ -49,6 +49,18 @@ export async function deleteCategorieProduits(id) {
   return result;
 }
 
+export async function updateCategorieProduits(id, categorie) {
+  if (categorie !== "" && id) {
+    const result = await prisma.categoriesProduits.update({
+      where: { id },
+      data: {
+        categorie,
+      },
+    });
+    return result;
+  }
+}
+
 export async function addCompteBancaire(compte) {
   if (compte !== "") {
     const result = await prisma.comptesBancaires.create({

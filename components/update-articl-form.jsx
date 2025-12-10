@@ -29,7 +29,7 @@ export function UpdateArticlForm({ isOpen, onClose, onConfirm, articl }) {
   const articlSchema = z.object({
     id: z.string(),
     designation: z.string().min(1, "Champ obligatoire"),
-    categorie: z.string().optional().nullable(),
+    categorieId: z.string().optional().nullable(),
   });
   const {
     register,
@@ -41,7 +41,7 @@ export function UpdateArticlForm({ isOpen, onClose, onConfirm, articl }) {
     defaultValues: {
       id: articl?.id,
       designation: articl?.designation,
-      categorie: articl?.categorie,
+      categorieId: articl?.categorieId || articl?.categorieProduits?.id,
     },
     resolver: zodResolver(articlSchema),
   });
@@ -49,7 +49,7 @@ export function UpdateArticlForm({ isOpen, onClose, onConfirm, articl }) {
     if (articl) {
       setValue("id", articl.id);
       setValue("designation", articl.designation);
-      setValue("categorie", articl.categorie ?? null);
+      setValue("categorieId", articl.categorieId || articl.categorieProduits?.id || null);
     }
   }, [articl, setValue]);
   const queryClient = useQueryClient();
@@ -122,20 +122,20 @@ export function UpdateArticlForm({ isOpen, onClose, onConfirm, articl }) {
             )}
           </div>
           <div className="w-full grid grid-cols-1">
-            <Label htmlFor="categorie" className="text-left mb-2 mb-2">
+            <Label htmlFor="categorieId" className="text-left mb-2 mb-2">
               Catégorie
             </Label>
             <Select
-              name="categorie"
-              onValueChange={(value) => setValue("categorie", value)}
-              value={watch("categorie")}
+              name="categorieId"
+              onValueChange={(value) => setValue("categorieId", value)}
+              value={watch("categorieId")}
             >
               <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
                 <SelectValue placeholder="Sélectionner ..." />
               </SelectTrigger>
               <SelectContent>
                 {categories.data?.map((element) => (
-                  <SelectItem key={element.id} value={element.categorie}>
+                  <SelectItem key={element.id} value={element.id}>
                     {element.categorie}
                   </SelectItem>
                 ))}

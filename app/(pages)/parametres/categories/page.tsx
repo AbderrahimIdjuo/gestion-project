@@ -3,12 +3,21 @@
 import {
   addCategorieProduits,
   deleteCategorieProduits,
+  updateCategorieProduits,
 } from "@/app/api/actions";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import { Navbar } from "@/components/navbar";
 import { Sidebar } from "@/components/sidebar";
 import SittingsSideBar from "@/components/sittingsSideBar";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -20,7 +29,7 @@ import {
 } from "@/components/ui/table";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { Trash2 } from "lucide-react";
+import { Pen, Trash2 } from "lucide-react";
 import { ChangeEvent, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -33,6 +42,8 @@ export default function CategoriesProduits() {
   const [value, setValue] = useState<string>(""); //Inpute value
   const [categorie, setCategorie] = useState<Categorie | undefined>();
   const [deleteDialog, setDeleteDialog] = useState<boolean>(false);
+  const [editDialog, setEditDialog] = useState<boolean>(false);
+  const [editValue, setEditValue] = useState<string>("");
 
   const getCategories = async () => {
     const response = await axios.get("/api/categoriesProduits");
@@ -87,6 +98,29 @@ export default function CategoriesProduits() {
       }
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+    },
+  });
+
+  const updateCategorie = useMutation({
+    mutationFn: async (categorieData: { id: string; categorie: string }) => {
+      const loadingToast = toast.loading("Modification de la catégorie...");
+      try {
+        await updateCategorieProduits(
+          categorieData.id,
+          categorieData.categorie
+        );
+        toast.success("Catégorie modifiée avec succès");
+      } catch (error) {
+        toast.error("Échec de la modification de la catégorie");
+        throw error;
+      } finally {
+        toast.dismiss(loadingToast);
+      }
+    },
+    onSuccess: () => {
+      setEditValue("");
+      setEditDialog(false);
       queryClient.invalidateQueries({ queryKey: ["categories"] });
     },
   });
@@ -173,6 +207,19 @@ export default function CategoriesProduits() {
                                     <Button
                                       onClick={() => {
                                         setCategorie(categorie);
+                                        setEditValue(categorie.categorie);
+                                        setEditDialog(true);
+                                      }}
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
+                                    >
+                                      <Pen className="h-4 w-4" />
+                                      <span className="sr-only">Modifier</span>
+                                    </Button>
+                                    <Button
+                                      onClick={() => {
+                                        setCategorie(categorie);
                                         setDeleteDialog(true);
                                       }}
                                       variant="ghost"
@@ -214,6 +261,62 @@ export default function CategoriesProduits() {
           setDeleteDialog(false);
         }}
       />
+
+      <Dialog open={editDialog} onOpenChange={setEditDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Modifier la catégorie</DialogTitle>
+            <DialogDescription>
+              Modifiez le nom de la catégorie ci-dessous.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            onSubmit={e => {
+              e.preventDefault();
+              if (categorie && editValue.trim() !== "") {
+                updateCategorie.mutate({
+                  id: categorie.id,
+                  categorie: editValue.trim(),
+                });
+              }
+            }}
+          >
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Input
+                  id="categorie"
+                  placeholder="Catégorie ..."
+                  value={editValue}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                    setEditValue(e.target.value)
+                  }
+                  className="focus-visible:ring-emerald-500"
+                  spellCheck={false}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setEditDialog(false);
+                  setEditValue("");
+                }}
+              >
+                Annuler
+              </Button>
+              <Button
+                type="submit"
+                className="bg-emerald-400 hover:bg-emerald-500"
+                disabled={editValue.trim() === "" || updateCategorie.isLoading}
+              >
+                {updateCategorie.isLoading ? "Modification..." : "Modifier"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

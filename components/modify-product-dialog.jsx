@@ -35,7 +35,7 @@ export function ModifyProductDialog({ currProduct }) {
   const productSchema = z.object({
     id: z.string(),
     designation: z.string().min(1, "Champ obligatoire"),
-    categorie: z.string().optional().nullable(),
+    categorieId: z.string().optional().nullable(),
     prixAchat: z.preprocess((value) => {
       if (value === "" || value === undefined) return undefined; // Handle empty input
       return typeof value === "string" ? parseFloat(value) : value;
@@ -53,7 +53,7 @@ export function ModifyProductDialog({ currProduct }) {
     defaultValues: {
       id: currProduct?.id,
       designation: currProduct?.designation,
-      categorie: currProduct?.categorie,
+      categorieId: currProduct?.categorieId || currProduct?.categorieProduits?.id,
       prixAchat: currProduct?.prixAchat,
       unite: currProduct?.Unite,
       reference: currProduct?.reference,
@@ -149,13 +149,13 @@ export function ModifyProductDialog({ currProduct }) {
                 )}
               </div>
               <div className="w-full grid grid-cols-1">
-                <Label htmlFor="categorie" className="text-left mb-2 mb-2">
+                <Label htmlFor="categorieId" className="text-left mb-2 mb-2">
                   Catégorie
                 </Label>
                 <CategoriesSelectMenu
-                  categorie={watch("categorie")}
+                  categorie={watch("categorieId")}
                   setCategorie={(value) => {
-                    setValue("categorie", value);
+                    setValue("categorieId", value);
                   }}
                 />
               </div>

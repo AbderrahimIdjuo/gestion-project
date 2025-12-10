@@ -25,7 +25,7 @@ export function CategoriesSelectMenu({ categorie, setCategorie }) {
       </SelectTrigger>
       <SelectContent className="bg-white">
         {categories.data?.map((element) => (
-          <SelectItem key={element.id} value={element.categorie}>
+          <SelectItem key={element.id} value={element.id}>
             {element.categorie}
           </SelectItem>
         ))}

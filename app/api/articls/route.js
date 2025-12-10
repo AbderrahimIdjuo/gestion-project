@@ -5,11 +5,11 @@ export const dynamic = "force-dynamic";
 export async function POST(req) {
   try {
     const resopns = await req.json();
-    const { designation  , categorie} = resopns;
+    const { designation, categorieId } = resopns;
     const result = await prisma.items.create({
       data: {
         designation,
-        categorie
+        categorieId: categorieId || null,
       },
     });
 
@@ -26,13 +26,13 @@ export async function POST(req) {
 export async function PUT(req) {
   try {
     const resopns = await req.json();
-    const { id, designation , categorie } = resopns;
+    const { id, designation, categorieId } = resopns;
 
     const result = await prisma.items.update({
       where: { id },
       data: {
         designation,
-        categorie
+        categorieId: categorieId || null,
       },
     });
 
@@ -50,14 +50,25 @@ export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const page = parseInt(searchParams.get("page") || "1");
   const searchQuery = searchParams.get("query") || "";
+  const categorie = searchParams.get("categorie");
   const filters = {};
 
   const articlsPerPage = 10;
 
-  // Search filter by numero and client name
+  // Search filter by designation and category name
   filters.OR = [
     { designation: { contains: searchQuery, mode: "insensitive" } },
+    {
+      categorieProduits: {
+        categorie: { contains: searchQuery, mode: "insensitive" },
+      },
+    },
   ];
+
+  // Filtre par catégorie (utilise maintenant categorieId)
+  if (categorie && categorie !== "all") {
+    filters.categorieId = categorie;
+  }
 
   // Fetch filtered articls with pagination and related data
   const [articls, totalArticls] = await Promise.all([
@@ -67,6 +78,9 @@ export async function GET(req) {
       take: articlsPerPage,
       orderBy: {
         createdAt: "desc",
+      },
+      include: {
+        categorieProduits: true,
       },
     }),
 

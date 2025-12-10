@@ -34,7 +34,7 @@ export function ProductFormDialog() {
   const [open, setOpen] = useState(false);
   const productSchema = z.object({
     designation: z.string().min(1, "Champ obligatoire"),
-    categorie: z.string().optional(),
+    categorieId: z.string().optional().nullable(),
     prixAchat: z.preprocess((value) => {
       if (value === "" || value === undefined) return undefined; // Handle empty input
       return typeof value === "string" ? parseFloat(value) : value;
@@ -141,13 +141,13 @@ export function ProductFormDialog() {
               )}
             </div>
             <div className="w-full grid grid-cols-1">
-              <Label htmlFor="categorie" className="text-left mb-2 mb-2">
+              <Label htmlFor="categorieId" className="text-left mb-2 mb-2">
                 Catégorie
               </Label>
               <CategoriesSelectMenu
-                categorie={watch("categorie")}
+                categorie={watch("categorieId")}
                 setCategorie={(value) => {
-                  setValue("categorie", value);
+                  setValue("categorieId", value);
                 }}
               />
             </div>

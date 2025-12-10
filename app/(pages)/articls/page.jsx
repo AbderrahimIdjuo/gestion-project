@@ -10,6 +10,22 @@ import { Navbar } from "@/components/navbar";
 import { Sidebar } from "@/components/sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -22,7 +38,7 @@ import {
 import { UpdateArticlForm } from "@/components/update-articl-form";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { Pen, Plus, Search, Trash2, Upload } from "lucide-react";
+import { Filter, Pen, Plus, Search, Trash2, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -35,6 +51,9 @@ export default function ProduitsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [debouncedQuery, setDebouncedQuery] = useState();
   const [totalPages, setTotalPages] = useState();
+  const [filters, setFilters] = useState({
+    categorie: "all",
+  });
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -47,14 +66,20 @@ export default function ProduitsPage() {
     };
   }, [searchQuery]);
 
+  // Réinitialiser la page à 1 lorsque les filtres changent
+  useEffect(() => {
+    setPage(1);
+  }, [filters.categorie]);
+
   const queryClient = useQueryClient();
   const articls = useQuery({
-    queryKey: ["articls", debouncedQuery, page],
+    queryKey: ["articls", debouncedQuery, page, filters.categorie],
     queryFn: async () => {
       const response = await axios.get("/api/articls", {
         params: {
           query: debouncedQuery,
           page,
+          categorie: filters.categorie,
         },
       });
       setTotalPages(response.data.totalPages);
@@ -62,6 +87,14 @@ export default function ProduitsPage() {
     },
     keepPreviousData: true, // Keeps old data visible while fetching new page
     refetchOnWindowFocus: false,
+  });
+
+  const categories = useQuery({
+    queryKey: ["categories"],
+    queryFn: async () => {
+      const response = await axios.get("/api/categoriesProduits");
+      return response.data.categories;
+    },
   });
 
   const deleteArticl = async () => {
@@ -120,6 +153,61 @@ export default function ProduitsPage() {
                     </div>
                   </div>
                   <div className="flex space-x-2">
+                    <Sheet>
+                      <SheetTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="border-purple-500 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900 rounded-full"
+                        >
+                          <Filter className="mr-2 h-4 w-4" />
+                          Filtres
+                        </Button>
+                      </SheetTrigger>
+                      <SheetContent className="border-l-purple-200 bg-white">
+                        <SheetHeader>
+                          <SheetTitle className="text-black">
+                            Filtres
+                          </SheetTitle>
+                          <SheetDescription className="text-gray-600">
+                            Ajustez les filtres pour affiner votre recherche
+                            d&apos;articles.
+                          </SheetDescription>
+                        </SheetHeader>
+                        <div className="grid gap-4 py-4">
+                          <div className="grid grid-cols-4 grid-rows-2 items-center gap-0">
+                            <Label
+                              htmlFor="categorie"
+                              className="text-left text-black col-span-4"
+                            >
+                              Catégorie :
+                            </Label>
+                            <Select
+                              value={filters.categorie}
+                              onValueChange={value =>
+                                setFilters({ ...filters, categorie: value })
+                              }
+                            >
+                              <SelectTrigger className="col-span-4  bg-white focus:ring-purple-500">
+                                <SelectValue placeholder="Toutes les catégories" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-white">
+                                <SelectItem key="all" value="all">
+                                  Toutes les catégories
+                                </SelectItem>
+                                {categories.data?.map(element => (
+                                  <SelectItem
+                                    key={element.id}
+                                    value={element.id}
+                                  >
+                                    {element.categorie}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      </SheetContent>
+                    </Sheet>
                     <ImportArticls>
                       <Button
                         variant="outline"
@@ -188,7 +276,7 @@ export default function ProduitsPage() {
                                 {articl.designation}
                               </TableCell>
                               <TableCell className="font-medium !py-2">
-                                {articl.categorie}
+                                {articl.categorieProduits?.categorie || "-"}
                               </TableCell>
                               <TableCell className="text-right !py-2">
                                 <div className="flex justify-end gap-2">

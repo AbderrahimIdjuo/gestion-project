@@ -69,6 +69,11 @@ export default function ProduitsPage() {
     };
   }, [searchQuery]);
 
+  // Réinitialiser la page à 1 lorsque les filtres changent
+  useEffect(() => {
+    setPage(1);
+  }, [filters.categorie, filters.statut, filters.prixAchat]);
+
   const queryClient = useQueryClient();
   const produits = useQuery({
     queryKey: [
@@ -93,7 +98,7 @@ export default function ProduitsPage() {
       setMaxPrixAchat(response.data.maxPrixAchat);
       setMaxPrixVente(response.data.maxPrixVente);
 
-      //  console.log("### produits ###:", response.data.produits);
+      console.log("### produits ###:", response.data.produits);
 
       return response.data;
     },
@@ -193,12 +198,12 @@ export default function ProduitsPage() {
                           </SheetDescription>
                         </SheetHeader>
                         <div className="grid gap-4 py-4">
-                          <div className="grid grid-cols-4 items-center gap-4">
+                          <div className="grid grid-cols-4 grid-rows-2 items-center gap-0">
                             <Label
                               htmlFor="categorie"
-                              className="text-right text-black"
+                              className="text-left text-black col-span-4"
                             >
-                              Catégorie
+                              Catégorie :
                             </Label>
                             <Select
                               value={filters.categorie}
@@ -206,7 +211,7 @@ export default function ProduitsPage() {
                                 setFilters({ ...filters, categorie: value })
                               }
                             >
-                              <SelectTrigger className="col-span-3  bg-white focus:ring-purple-500">
+                              <SelectTrigger className="col-span-4  bg-white focus:ring-purple-500">
                                 <SelectValue placeholder="Toutes les catégories" />
                               </SelectTrigger>
                               <SelectContent className="bg-white">
@@ -216,7 +221,7 @@ export default function ProduitsPage() {
                                 {categories.data?.map(element => (
                                   <SelectItem
                                     key={element.id}
-                                    value={element.categorie}
+                                    value={element.id}
                                   >
                                     {element.categorie}
                                   </SelectItem>
@@ -227,11 +232,11 @@ export default function ProduitsPage() {
                           <div className="grid grid-cols-4 items-center gap-4 my-2">
                             <Label
                               htmlFor="montant"
-                              className="text-right text-black"
+                              className="text-left text-black col-span-4"
                             >
                               Prix:
                             </Label>
-                            <div className="col-span-3">
+                            <div className="col-span-4">
                               <PriceRangeSlider
                                 min={0}
                                 max={maxPrixAchat}
@@ -321,7 +326,7 @@ export default function ProduitsPage() {
                                 {product.designation}
                               </TableCell>
                               <TableCell className="!py-2">
-                                {product.categorie}
+                                {product.categorieProduits?.categorie || "-"}
                               </TableCell>
                               <TableCell className="!py-2">
                                 {product.prixAchat.toFixed(2)} DH

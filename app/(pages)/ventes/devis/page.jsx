@@ -86,6 +86,7 @@ const defaultVisibleColumns = {
   montantTotal: true,
   fournitures: true,
   marge: true,
+  margePercent: true,
   paye: true,
   reste: true,
   statut: true,
@@ -126,6 +127,7 @@ export default function DevisPage() {
     { key: "montantTotal", label: "Montant total" },
     { key: "fournitures", label: "Fournitures" },
     { key: "marge", label: "Marge" },
+    { key: "margePercent", label: "%" },
     { key: "paye", label: "Payé" },
     { key: "reste", label: "Reste" },
     { key: "statut", label: "Statut" },
@@ -217,6 +219,22 @@ export default function DevisPage() {
       clearTimeout(handler);
     };
   }, [searchQuery]);
+
+  // Réinitialiser la page à 1 lorsque les filtres changent
+  useEffect(() => {
+    setPage(1);
+  }, [
+    filters.statut,
+    filters.statutPaiement,
+    filters.commercant,
+    filters.montant,
+    startDate,
+    endDate,
+    dateStartFrom,
+    dateStartTo,
+    dateEndFrom,
+    dateEndTo,
+  ]);
   const devis = useQuery({
     queryKey: [
       "devis",
@@ -424,12 +442,57 @@ export default function DevisPage() {
   ];
 
   function calculateMarge(devis, totalFourniture) {
-    const diff = devis.total - totalFourniture;
-    if (totalFourniture === 0 || devis.statut === "En attente") {
+    if (
+      totalFourniture === null ||
+      totalFourniture === undefined ||
+      totalFourniture === 0 ||
+      devis.statut === "En attente"
+    ) {
       return "";
-    } else if (totalFourniture > 0) {
+    }
+    const diff = devis.total - totalFourniture;
+    if (totalFourniture > 0) {
       return formatCurrency(diff);
     }
+    return "";
+  }
+
+  function calculateMargePercent(devis, totalFourniture) {
+    if (
+      totalFourniture === null ||
+      totalFourniture === undefined ||
+      devis.total === 0 ||
+      devis.statut === "En attente" ||
+      totalFourniture === 0
+    ) {
+      return { percent: "", color: "" };
+    }
+    const marge = devis.total - totalFourniture;
+    const percent = (marge / devis.total) * 100;
+
+    // Diviser 100% en 5 ranges avec couleurs du vert au rouge
+    let colorClass = "";
+    if (percent >= 80) {
+      // 80-100% : Vert (excellent)
+      colorClass = "text-green-600 font-bold";
+    } else if (percent >= 60) {
+      // 60-79% : Vert clair (bon)
+      colorClass = "text-green-500 font-semibold";
+    } else if (percent >= 40) {
+      // 40-59% : Jaune/Orange (moyen)
+      colorClass = "text-yellow-500 font-semibold";
+    } else if (percent >= 20) {
+      // 20-39% : Orange (faible)
+      colorClass = "text-orange-500 font-semibold";
+    } else {
+      // 0-19% : Rouge (très faible)
+      colorClass = "text-red-500 font-bold";
+    }
+
+    return {
+      percent: percent.toFixed(2) + "%",
+      color: colorClass,
+    };
   }
   const employes = useQuery({
     queryKey: ["employes"],
@@ -784,6 +847,9 @@ export default function DevisPage() {
                         {visibleColumns.marge && (
                           <TableHead className="text-right">Marge</TableHead>
                         )}
+                        {visibleColumns.margePercent && (
+                          <TableHead className="text-right">%</TableHead>
+                        )}
                         {visibleColumns.paye && (
                           <TableHead className="text-right">Payé</TableHead>
                         )}
@@ -966,12 +1032,31 @@ export default function DevisPage() {
                                 )}
                                 {visibleColumns.marge && (
                                   <TableCell className="!py-2 text-right">
-                                    {formatCurrency(
-                                      devis.total -
+                                    {calculateMarge(
+                                      devis,
+                                      totalFourniture(
+                                        filteredOrders(devis.numero)
+                                      )
+                                    )}
+                                  </TableCell>
+                                )}
+                                {visibleColumns.margePercent && (
+                                  <TableCell className="!py-2 text-right">
+                                    {(() => {
+                                      const result = calculateMargePercent(
+                                        devis,
                                         totalFourniture(
                                           filteredOrders(devis.numero)
                                         )
-                                    )}
+                                      );
+                                      return result.percent ? (
+                                        <span className={result.color}>
+                                          {result.percent}
+                                        </span>
+                                      ) : (
+                                        ""
+                                      );
+                                    })()}
                                   </TableCell>
                                 )}
                                 {visibleColumns.paye && (
