@@ -43,7 +43,9 @@ model Employes {
 model Produits {
   id                 String              @id @default(uuid())
   designation        String
-  categorie          String?
+  //categorie          String?
+  categorieId        String?
+  categorieProduits  CategoriesProduits? @relation(fields: [categorieId], references: [id], onDelete: Cascade)
   reference          String?
   prixAchat          Float?
   Unite              String?
@@ -55,12 +57,15 @@ model Produits {
   groupProduits      ListProduits[]
 }
 
+// hada howa lmodel dyal les articls 
 model Items {
-  id          String   @id @default(uuid())
-  designation String
-  categorie   String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                String              @id @default(uuid())
+  designation       String
+  //categorie         String?
+  categorieId       String?
+  categorieProduits CategoriesProduits? @relation(fields: [categorieId], references: [id], onDelete: Cascade)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
 }
 
 model CommandesProduits {
@@ -186,7 +191,7 @@ model BlGroupsProduits {
   group     BLGroups @relation(fields: [groupId], references: [id], onDelete: Cascade)
   produit   Produits @relation(fields: [produitId], references: [id], onDelete: Cascade)
 }
-
+//had lmodel fih les articls dyal les devis 
 model Articls {
   id          String   @id @default(uuid())
   deviId      String
@@ -336,27 +341,30 @@ model Cheques {
 }
 
 model Reglement {
-  id              String          @id @default(uuid())
-  fournisseurId   String
-  compte          String
-  montant         Float
-  methodePaiement String // espece, cheque, versement, traite
-  dateReglement   DateTime // Date de réglement
-  datePrelevement DateTime? // Date de prélèvement
-  motif           String? // Motif du règlement
-  statut          String          @default("en_attente") // en_attente, paye, en_retard, annule
-  factureAchatsId String?
-  factureAchats   FacturesAchats? @relation(fields: [factureAchatsId], references: [id], onDelete: Cascade)
-  chequeId        String?         @unique
-  cheque          Cheques?        @relation(fields: [chequeId], references: [id], onDelete: Cascade)
-  fournisseur     Fournisseurs    @relation(fields: [fournisseurId], references: [id], onDelete: Cascade)
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  id                String          @id @default(uuid())
+  fournisseurId     String
+  compte            String
+  montant           Float
+  methodePaiement   String // espece, cheque, versement, traite
+  dateReglement     DateTime // Date de réglement
+  datePrelevement   DateTime? // Date de prélèvement
+  statusPrelevement String          @default("en_attente") // en_attente, confirme, echoue, reporte, refuse
+  motif             String? // Motif du règlement
+  statut            String          @default("en_attente") // en_attente, paye, en_retard, annule
+  factureAchatsId   String?
+  factureAchats     FacturesAchats? @relation(fields: [factureAchatsId], references: [id], onDelete: Cascade)
+  chequeId          String?         @unique
+  cheque            Cheques?        @relation(fields: [chequeId], references: [id], onDelete: Cascade)
+  fournisseur       Fournisseurs    @relation(fields: [fournisseurId], references: [id], onDelete: Cascade)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
 
   @@index([fournisseurId])
   @@index([dateReglement])
   @@index([statut])
   @@index([factureAchatsId])
+  @@index([datePrelevement])
+  @@index([statusPrelevement])
 }
 
 model TachesEmployes {
@@ -370,8 +378,10 @@ model Charges {
 }
 
 model CategoriesProduits {
-  id        String @id @default(uuid())
+  id        String     @id @default(uuid())
   categorie String
+  items     Items[]
+  produits  Produits[]
 }
 
 model ComptesBancaires {
