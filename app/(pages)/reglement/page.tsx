@@ -81,7 +81,7 @@ import {
   X,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 
 type Reglement = {
@@ -271,7 +271,7 @@ const getPrelevementChip = (reglement: Reglement) => {
     className: "bg-red-100 text-red-700",
   };
 };
-export default function Banques() {
+function ReglementContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
@@ -1527,5 +1527,22 @@ export default function Banques() {
         }}
       />
     </>
+  );
+}
+
+export default function Banques() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <LoadingDots />
+            <p className="mt-4 text-muted-foreground">Chargement...</p>
+          </div>
+        </div>
+      }
+    >
+      <ReglementContent />
+    </Suspense>
   );
 }
