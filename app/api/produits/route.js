@@ -5,11 +5,11 @@ export const dynamic = "force-dynamic";
 export async function POST(req) {
   try {
     const resopns = await req.json();
-    const { designation, categorie, prixAchat, unite, reference } = resopns;
+    const { designation, categorieId, prixAchat, unite, reference } = resopns;
     const result = await prisma.produits.create({
       data: {
         designation,
-        categorie,
+        categorieId: categorieId || null,
         prixAchat,
         Unite: unite || "U",
         reference,
@@ -29,14 +29,14 @@ export async function POST(req) {
 export async function PUT(req) {
   try {
     const resopns = await req.json();
-    const { id, designation, categorie, prixAchat, unite, reference } =
+    const { id, designation, categorieId, prixAchat, unite, reference } =
       resopns;
 
     const result = await prisma.produits.update({
       where: { id },
       data: {
         designation,
-        categorie,
+        categorieId: categorieId || null,
         prixAchat: parseFloat(prixAchat),
         Unite: unite,
         reference,
@@ -65,16 +65,20 @@ export async function GET(req) {
 
   const produitsPerPage = 10;
 
-  // Search filter by numero and client name
+  // Search filter by designation, reference, and category name
   filters.OR = [
     { designation: { contains: searchQuery, mode: "insensitive" } },
-    { categorie: { contains: searchQuery, mode: "insensitive" } },
     { reference: { contains: searchQuery, mode: "insensitive" } },
+    {
+      categorieProduits: {
+        categorie: { contains: searchQuery, mode: "insensitive" },
+      },
+    },
   ];
 
-  // Filtre par catégorie
-  if (categorie !== "all") {
-    filters.categorie = { equals: categorie, mode: "insensitive" };
+  // Filtre par catégorie (utilise maintenant categorieId)
+  if (categorie && categorie !== "all") {
+    filters.categorieId = categorie;
   }
   // prixAchat range filter
   if (minPrixAchats && maxPrixAchats) {
@@ -91,6 +95,9 @@ export async function GET(req) {
       skip: (page - 1) * produitsPerPage,
       take: produitsPerPage,
       orderBy: { createdAt: "desc" },
+      include: {
+        categorieProduits: true,
+      },
     }),
 
     prisma.produits.count({ where: filters }),
