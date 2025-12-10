@@ -1,8 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Plus, Trash2, X, CalendarIcon } from "lucide-react";
+import ComboBoxDevis from "@/components/comboBox-devis";
+import ComboBoxFournisseur from "@/components/comboBox-fournisseurs";
+import { AddButton } from "@/components/customUi/styledButton";
+import { ProduitsSelection } from "@/components/produits-selection-CMDF";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Dialog,
@@ -11,6 +14,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Table,
   TableBody,
@@ -19,24 +28,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { AddButton } from "@/components/customUi/styledButton";
-import { Label } from "@/components/ui/label";
-import ComboBoxFournisseur from "@/components/comboBox-fournisseurs";
-import ComboBoxDevis from "@/components/comboBox-devis";
-import { ProduitsSelection } from "@/components/produits-selection-CMDF";
-import axios from "axios";
-import { useQueryClient, useMutation } from "@tanstack/react-query";
-import toast from "react-hot-toast";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { Calendar } from "@/components/ui/calendar";
-import { fr } from "date-fns/locale";
-import { useForm, Controller } from "react-hook-form";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
 import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import { CalendarIcon, Plus, Trash2, X } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import toast from "react-hot-toast";
 
 export default function AddCommandeFournisseur({ lastCommande }) {
   const [open, setOpen] = useState(false);
@@ -52,9 +52,11 @@ export default function AddCommandeFournisseur({ lastCommande }) {
   const selectedDate = watch("date");
 
   const generateCommandeNumber = () => {
-    console.log("lastCommande", lastCommande?.numero);
+    if (!lastCommande?.numero) {
+      return "CMDF-1";
+    }
 
-    const numero = Number(lastCommande?.numero.replace("CMDF-", "")) || 0;
+    const numero = Number(lastCommande.numero.replace("CMDF-", "")) || 0;
     return `CMDF-${numero + 1}`;
   };
 
@@ -67,14 +69,14 @@ export default function AddCommandeFournisseur({ lastCommande }) {
       clientName: null,
       clientId: null,
     };
-    setOrderGroups((prev) => [...prev, newGroup]);
+    setOrderGroups(prev => [...prev, newGroup]);
   }, []);
 
   // modifier le numero de commande d'un groupe
   const updateDevisNumberOfGroup = useCallback(
     (groupId, devisNumber, clientName, clientId, numero, totalDevi) => {
-      setOrderGroups((prevGroups) =>
-        prevGroups.map((group) =>
+      setOrderGroups(prevGroups =>
+        prevGroups.map(group =>
           group.id === groupId
             ? {
                 ...group,
@@ -91,9 +93,9 @@ export default function AddCommandeFournisseur({ lastCommande }) {
     []
   );
   // Suppression d'un groupe
-  const removeOrderGroup = useCallback((groupId) => {
-    setOrderGroups((prev) => prev.filter((group) => group.id !== groupId));
-    setSelectedDevis((prev) => {
+  const removeOrderGroup = useCallback(groupId => {
+    setOrderGroups(prev => prev.filter(group => group.id !== groupId));
+    setSelectedDevis(prev => {
       const newState = { ...prev };
       delete newState[groupId];
       return newState;
@@ -102,19 +104,19 @@ export default function AddCommandeFournisseur({ lastCommande }) {
 
   // Gestion des articles
   const handleAddArticles = useCallback((groupId, newArticles) => {
-    setOrderGroups((prev) =>
-      prev.map((group) => {
+    setOrderGroups(prev =>
+      prev.map(group => {
         if (group.id === groupId) {
-          const existingIds = new Set(group.items.map((item) => item.id));
+          const existingIds = new Set(group.items.map(item => item.id));
           const filteredArticles = newArticles.filter(
-            (article) => !existingIds.has(article.id)
+            article => !existingIds.has(article.id)
           );
 
           return {
             ...group,
             items: [
               ...group.items,
-              ...filteredArticles.map((article) => ({
+              ...filteredArticles.map(article => ({
                 ...article,
                 uniqueKey: `${article.id}-${crypto.randomUUID()}`, // Clé vraiment unique
               })),
@@ -128,12 +130,12 @@ export default function AddCommandeFournisseur({ lastCommande }) {
 
   // Suppression d'un article
   const removeItem = useCallback((groupId, itemId) => {
-    setOrderGroups((prev) =>
-      prev.map((group) => {
+    setOrderGroups(prev =>
+      prev.map(group => {
         if (group.id === groupId) {
           return {
             ...group,
-            items: group.items.filter((item) => item.uniqueKey !== itemId),
+            items: group.items.filter(item => item.uniqueKey !== itemId),
           };
         }
         return group;
@@ -143,12 +145,12 @@ export default function AddCommandeFournisseur({ lastCommande }) {
 
   // Mise à jour d'un article
   const handleItemChange = useCallback((groupId, itemId, field, value) => {
-    setOrderGroups((prev) =>
-      prev.map((group) => {
+    setOrderGroups(prev =>
+      prev.map(group => {
         if (group.id === groupId) {
           return {
             ...group,
-            items: group.items.map((item) =>
+            items: group.items.map(item =>
               item.uniqueKey === itemId
                 ? { ...item, [field]: Number(value) || 0 }
                 : item
@@ -162,7 +164,7 @@ export default function AddCommandeFournisseur({ lastCommande }) {
 
   // Mise à jour de la commande sélectionnée
   const handleDevisSelect = useCallback((groupId, devis) => {
-    setSelectedDevis((prev) => ({
+    setSelectedDevis(prev => ({
       ...prev,
       [groupId]: devis,
     }));
@@ -178,7 +180,7 @@ export default function AddCommandeFournisseur({ lastCommande }) {
   }, [open, setValue]);
   const queryClient = useQueryClient();
   const ajouterCommande = useMutation({
-    mutationFn: async (data) => {
+    mutationFn: async data => {
       console.log("data to submit:", data);
 
       const loadingToast = toast.loading("Ajout de la commande...");
@@ -248,7 +250,7 @@ export default function AddCommandeFournisseur({ lastCommande }) {
                       <Calendar
                         mode="single"
                         selected={field.value}
-                        onSelect={(date) => {
+                        onSelect={date => {
                           if (date) {
                             // Set to midnight UTC
                             const utcMidnight = new Date(
@@ -281,13 +283,12 @@ export default function AddCommandeFournisseur({ lastCommande }) {
           </div>
 
           <div className="space-y-4">
-            {orderGroups.map((group) => (
+            {orderGroups.map(group => (
               <Card key={group.id}>
                 <CardHeader className="p-4 pb-2">
                   <div className="flex justify-between items-center">
                     <h3 className="text-lg font-semibold">
-                      Groupe{" "}
-                      {orderGroups.findIndex((g) => g.id === group.id) + 1}
+                      Groupe {orderGroups.findIndex(g => g.id === group.id) + 1}
                     </h3>
                     <Button
                       variant="ghost"
@@ -301,7 +302,7 @@ export default function AddCommandeFournisseur({ lastCommande }) {
                   <div className="flex justify-between items-center mt-2">
                     <div className="w-1/2 pr-2">
                       <ComboBoxDevis
-                        onSelect={(devis) => {
+                        onSelect={devis => {
                           handleDevisSelect(group.id, devis);
                           updateDevisNumberOfGroup(
                             group.id,
@@ -312,8 +313,8 @@ export default function AddCommandeFournisseur({ lastCommande }) {
                             devis.total
                           );
                         }}
-                        setSelectedDevis={(devis) =>
-                          setSelectedDevis((prev) => ({
+                        setSelectedDevis={devis =>
+                          setSelectedDevis(prev => ({
                             ...prev,
                             [group.id]: devis,
                           }))
@@ -334,7 +335,7 @@ export default function AddCommandeFournisseur({ lastCommande }) {
                 <CardContent className="p-4 pt-2">
                   <div className="flex justify-end items-center gap-3 mb-4">
                     <ProduitsSelection
-                      onArticlesAdd={(articles) =>
+                      onArticlesAdd={articles =>
                         handleAddArticles(group.id, articles)
                       }
                     />
@@ -352,7 +353,7 @@ export default function AddCommandeFournisseur({ lastCommande }) {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {group.items.map((item) => (
+                          {group.items.map(item => (
                             <TableRow key={item.uniqueKey}>
                               <TableCell>
                                 <span className="text-md">
@@ -362,7 +363,7 @@ export default function AddCommandeFournisseur({ lastCommande }) {
                               <TableCell>
                                 <Input
                                   value={item.quantite}
-                                  onChange={(e) =>
+                                  onChange={e =>
                                     handleItemChange(
                                       group.id,
                                       item.uniqueKey,
@@ -378,7 +379,7 @@ export default function AddCommandeFournisseur({ lastCommande }) {
                               <TableCell>
                                 <Input
                                   value={item.prixUnite}
-                                  onChange={(e) =>
+                                  onChange={e =>
                                     handleItemChange(
                                       group.id,
                                       item.uniqueKey,

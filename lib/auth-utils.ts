@@ -143,7 +143,7 @@ export async function userExistsInClerk(userId: string): Promise<boolean> {
     const client = await clerkClient();
     await client.users.getUser(userId);
     return true;
-  } catch (error) {
+  } catch {
     return false;
   }
 }

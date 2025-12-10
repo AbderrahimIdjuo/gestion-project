@@ -89,13 +89,10 @@ export function PrelevementConfirmationDialog({
     const loadingToast = toast.loading("Mise à jour en cours...");
 
     try {
-      const response = await axios.post(
-        `/api/reglements/${reglement.id}/confirm`,
-        {
-          status: selectedStatus,
-          newDate: newDate ? newDate.toISOString() : undefined,
-        }
-      );
+      await axios.post(`/api/reglements/${reglement.id}/confirm`, {
+        status: selectedStatus,
+        newDate: newDate ? newDate.toISOString() : undefined,
+      });
 
       toast.success("Statut de prélèvement mis à jour avec succès!", {
         id: loadingToast,
@@ -165,7 +162,7 @@ export function PrelevementConfirmationDialog({
             Confirmation de prélèvement
           </DialogTitle>
           <DialogDescription className="text-base pt-2">
-            Le prélèvement prévu pour aujourd'hui a-t-il été effectué ?
+            Le prélèvement prévu pour aujourd&apos;hui a-t-il été effectué ?
           </DialogDescription>
         </DialogHeader>
 
