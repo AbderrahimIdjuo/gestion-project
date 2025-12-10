@@ -3,6 +3,16 @@ import prisma from "../../../../lib/prisma";
 
 export const dynamic = "force-dynamic";
 
+interface ReglementWithFournisseur {
+  id: string;
+  montant: number;
+  datePrelevement: Date | null;
+  fournisseur: {
+    id: string;
+    nom: string;
+  };
+}
+
 export async function GET(req: Request) {
   try {
     // Verify cron secret (optional - set CRON_SECRET in environment variables)
@@ -23,15 +33,15 @@ export async function GET(req: Request) {
     tomorrow.setDate(tomorrow.getDate() + 1);
 
     // Fetch all règlements where datePrelevement = today AND statusPrelevement = "en_attente"
-    const reglements = await prisma.reglement.findMany({
+    // Using type assertion to handle Prisma client type mismatch until Prisma client is regenerated
+    const reglements = (await prisma.reglement.findMany({
       where: {
         datePrelevement: {
           gte: today,
           lt: tomorrow,
         },
-        // @ts-ignore - statusPrelevement exists in schema, Prisma client needs regeneration
         statusPrelevement: "en_attente",
-      },
+      } as any,
       include: {
         fournisseur: {
           select: {
@@ -40,7 +50,7 @@ export async function GET(req: Request) {
           },
         },
       },
-    });
+    })) as ReglementWithFournisseur[];
 
     // Log the results (in production, you might want to send notifications)
     console.log(
@@ -56,8 +66,7 @@ export async function GET(req: Request) {
       count: reglements.length,
       reglements: reglements.map(r => ({
         id: r.id,
-        // @ts-ignore - fournisseur is included in the query
-        fournisseur: r.fournisseur?.nom || "Inconnu",
+        fournisseur: r.fournisseur.nom,
         montant: r.montant,
         datePrelevement: r.datePrelevement,
       })),
