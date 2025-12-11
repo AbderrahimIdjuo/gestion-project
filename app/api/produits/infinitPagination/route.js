@@ -12,19 +12,21 @@ export async function GET(req) {
     const filters = {};
 
     if (searchQuery) {
-      // filters.designation = {
-      //   contains: searchQuery,
-      //   mode: "insensitive",
-      // };
       filters.OR = [
         { designation: { contains: searchQuery, mode: "insensitive" } },
-        { categorie: { contains: searchQuery, mode: "insensitive" } },
         { reference: { contains: searchQuery, mode: "insensitive" } },
+        {
+          categorieProduits: {
+            categorie: { contains: searchQuery, mode: "insensitive" },
+          },
+        },
       ];
     }
-    // Filtre par catégorie
-    if (categorie !== "all") {
-      filters.categorie = { equals: categorie }; // Utilisez "equals" pour une correspondance exacte
+    // Filtre par catégorie (utilise la relation categorieProduits)
+    if (categorie && categorie !== "all") {
+      filters.categorieProduits = {
+        categorie: { equals: categorie },
+      };
     }
     const produits = await prisma.produits.findMany({
       where: filters,
@@ -32,6 +34,9 @@ export async function GET(req) {
       take: limit,
       skip: cursor ? 1 : 0,
       cursor: cursor ? { id: cursor } : undefined,
+      include: {
+        categorieProduits: true,
+      },
     });
 
     const lastProduit = produits[produits.length - 1];

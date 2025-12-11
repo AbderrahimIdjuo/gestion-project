@@ -1,25 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { AddButton } from "@/components/customUi/styledButton";
+import { LoadingDots } from "@/components/loading-dots";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Search, Check, Plus, Minus } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import axios from "axios";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { LoadingDots } from "@/components/loading-dots";
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { useInView } from "react-intersection-observer";
-import { AddButton } from "@/components/customUi/styledButton";
 import {
   Select,
   SelectContent,
@@ -27,6 +21,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import axios from "axios";
+import { Check, Minus, Plus, Search } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useInView } from "react-intersection-observer";
 export function ProduitsSelection({ onArticlesAdd }) {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -36,8 +36,8 @@ export function ProduitsSelection({ onArticlesAdd }) {
   const [filters, setFilters] = useState({
     categorie: "all",
   });
-  const handleToggleArticle = (article) => {
-    setSelectedArticles((prev) => {
+  const handleToggleArticle = article => {
+    setSelectedArticles(prev => {
       const newSelected = { ...prev };
       if (newSelected[article.id]) {
         delete newSelected[article.id];
@@ -45,6 +45,7 @@ export function ProduitsSelection({ onArticlesAdd }) {
         newSelected[article.id] = {
           ...article,
           quantite: 1,
+          categorie: article.categorieProduits?.categorie || article.categorie,
         };
       }
       return newSelected;
@@ -52,7 +53,7 @@ export function ProduitsSelection({ onArticlesAdd }) {
   };
 
   const handleQuantityChange = (articleId, delta) => {
-    setSelectedArticles((prev) => {
+    setSelectedArticles(prev => {
       const currentQty = prev[articleId]?.quantite || 0;
       const newQty = Math.max(0, currentQty + delta);
 
@@ -72,7 +73,7 @@ export function ProduitsSelection({ onArticlesAdd }) {
   };
   const handleInputChange = (e, articleId) => {
     const value = e.target.value.replace(",", ".");
-    setSelectedArticles((prev) => {
+    setSelectedArticles(prev => {
       return {
         ...prev,
         [articleId]: {
@@ -84,7 +85,7 @@ export function ProduitsSelection({ onArticlesAdd }) {
   };
   const handleAddItems = () => {
     const articlesToAdd = Object.values(selectedArticles)
-      .filter((article) => article.quantite > 0)
+      .filter(article => article.quantite > 0)
       .map(
         ({
           id,
@@ -141,11 +142,11 @@ export function ProduitsSelection({ onArticlesAdd }) {
         });
         return response.data;
       },
-      getNextPageParam: (lastPage) => lastPage.nextCursor || null,
+      getNextPageParam: lastPage => lastPage.nextCursor || null,
       keepPreviousData: true,
     });
 
-  const produits = data?.pages.flatMap((page) => page.produits) || [];
+  const produits = data?.pages.flatMap(page => page.produits) || [];
 
   useEffect(() => {
     if (inView && hasNextPage) {
@@ -185,7 +186,7 @@ export function ProduitsSelection({ onArticlesAdd }) {
                 >
                   <Select
                     value={filters.categorie}
-                    onValueChange={(value) =>
+                    onValueChange={value =>
                       setFilters({ ...filters, categorie: value })
                     }
                   >
@@ -196,7 +197,7 @@ export function ProduitsSelection({ onArticlesAdd }) {
                       <SelectItem key="all" value="all">
                         Toutes les catégories
                       </SelectItem>
-                      {categories.data?.map((element) => (
+                      {categories.data?.map(element => (
                         <SelectItem key={element.id} value={element.categorie}>
                           {element.categorie}
                         </SelectItem>
@@ -209,7 +210,7 @@ export function ProduitsSelection({ onArticlesAdd }) {
                   <Input
                     placeholder="Chercher un produit..."
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={e => setSearchQuery(e.target.value)}
                     className="pl-9 w-full text-left rounded-lg focus:!ring-purple-500"
                   />
                   <div className="absolute mt-1 right-10 top-1/3 h-4 w-4 -translate-y-1/2 text-muted-foreground">
@@ -218,59 +219,72 @@ export function ProduitsSelection({ onArticlesAdd }) {
                 </div>
                 <div className="h-[500px] space-y-2">
                   <ScrollArea className="h-[100%] w-full">
-                    {produits?.length > 0 ? (
-                      produits?.map((article) => (
-                        <div
-                          key={article.id}
-                          className={cn(
-                            "flex items-center justify-between p-3 my-1 rounded-lg cursor-pointer transition-colors w-full",
-                            selectedArticles[article.id]
-                              ? "bg-purple-50 text-violet-700"
-                              : "hover:bg-gray-50"
-                          )}
-                          onClick={() => handleToggleArticle(article)}
-                        >
-                          <div className="space-y-1 w-[90%]">
-                            <p className="text-md font-medium">
-                              {article.designation}
-                            </p>
-                            <div className="flex justify-between w-full">
-                              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                Prix d&apos;unité :{" "}
-                                {article.prixAchat.toFixed(2) || "0"} MAD
-                              </p>
-                              
-                            {article.reference && (
-                              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                Réf : {article.reference}
-                              </p>
-                            )}
-                            </div>
-                          </div>
-                          <div
-                            className={cn(
-                              "h-5 w-5 rounded-full hover:bg-green-500 border flex items-center justify-center transition-colors",
-                              selectedArticles[article.id]
-                                ? "bg-green-500 "
-                                : "hover:bg-gray-50"
-                            )}
-                          >
-                            {selectedArticles[article.id] && (
-                              <Check className="h-3 w-3  text-purple-100" />
-                            )}
-                          </div>
-                        </div>
-                      ))
-                    ) : (
+                    {isLoading ? (
                       <div className="flex justify-center mt-5">
                         <LoadingDots size={8} />
                       </div>
+                    ) : produits?.length > 0 ? (
+                      <>
+                        {produits?.map(article => (
+                          <div
+                            key={article.id}
+                            className={cn(
+                              "flex items-center justify-between p-3 my-1 rounded-lg cursor-pointer transition-colors w-full",
+                              selectedArticles[article.id]
+                                ? "bg-purple-50 text-violet-700"
+                                : "hover:bg-gray-50"
+                            )}
+                            onClick={() => handleToggleArticle(article)}
+                          >
+                            <div className="space-y-1 w-[90%]">
+                              <p className="text-md font-medium">
+                                {article.designation}
+                              </p>
+                              <div className="flex justify-between w-full">
+                                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                  Prix d&apos;unité :{" "}
+                                  {article.prixAchat.toFixed(2) || "0"} MAD
+                                </p>
+
+                                {article.reference && (
+                                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                    Réf : {article.reference}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <div
+                              className={cn(
+                                "h-5 w-5 rounded-full hover:bg-green-500 border flex items-center justify-center transition-colors",
+                                selectedArticles[article.id]
+                                  ? "bg-green-500 "
+                                  : "hover:bg-gray-50"
+                              )}
+                            >
+                              {selectedArticles[article.id] && (
+                                <Check className="h-3 w-3  text-purple-100" />
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                        <div
+                          key="observer"
+                          ref={ref}
+                          className="flex justify-center p-2"
+                        ></div>
+                      </>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center mt-20 text-center">
+                        <p className="text-muted-foreground text-sm">
+                          Aucun produit trouvé
+                        </p>
+                        {(debouncedQuery || filters.categorie !== "all") && (
+                          <p className="text-xs text-muted-foreground mt-2">
+                            Essayez de modifier vos critères de recherche
+                          </p>
+                        )}
+                      </div>
                     )}
-                    <div
-                      key="observer"
-                      ref={ref}
-                      className="flex justify-center p-2"
-                    ></div>
                   </ScrollArea>
                 </div>
               </div>
@@ -288,7 +302,7 @@ export function ProduitsSelection({ onArticlesAdd }) {
                   </div>
                   <ScrollArea className="h-[100%] w-full mt-3">
                     <div className="space-y-3 ">
-                      {Object.values(selectedArticles).map((article) => (
+                      {Object.values(selectedArticles).map(article => (
                         <div
                           key={article.id}
                           className="flex items-center justify-between p-3 border rounded-lg w-full"
@@ -311,7 +325,7 @@ export function ProduitsSelection({ onArticlesAdd }) {
                               id="quantite"
                               name="quantite"
                               value={article.quantite}
-                              onChange={(e) => handleInputChange(e, article.id)}
+                              onChange={e => handleInputChange(e, article.id)}
                               className="w-20 text-center focus:!ring-purple-500"
                             />
                             {/* <span className="w-8 text-center">{article.quantity}</span> */}
