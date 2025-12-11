@@ -407,7 +407,11 @@ export async function GET(req) {
                     select: {
                       designation: true,
                       prixAchat: true,
-                      categorie: true,
+                      categorieProduits: {
+                        select: {
+                          categorie: true,
+                        },
+                      },
                     },
                   },
                 },

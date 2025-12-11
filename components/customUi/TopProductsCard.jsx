@@ -84,6 +84,7 @@ export default function TopProductsCard({ from, to }) {
           sortBy: sortBy,
         },
       });
+      console.log(response.data.produitsPlusAchetes);
       return response.data.produitsPlusAchetes;
     },
     refetchOnWindowFocus: false,

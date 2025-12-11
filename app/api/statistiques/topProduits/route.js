@@ -34,7 +34,11 @@ export async function GET(req) {
                   select: {
                     id: true,
                     designation: true,
-                    categorie: true,
+                    categorieProduits: {
+                      select: {
+                        categorie: true,
+                      },
+                    },
                   },
                 },
               },
@@ -55,7 +59,7 @@ export async function GET(req) {
               stats[produitId] = {
                 id: produitId,
                 designation: p.produit.designation,
-                categorie: p.produit.categorie,
+                categorie: p.produit.categorieProduits?.categorie || "-",
                 totalQuantite: 0,
                 totalMontant: 0,
               };

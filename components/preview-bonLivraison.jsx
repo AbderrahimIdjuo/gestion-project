@@ -38,7 +38,7 @@ export default function PreviewBonLivraisonDialog({
     if (!produits || produits.length === 0) return [];
 
     const grouped = produits.reduce((acc, product) => {
-      const category = product.produit.categorie || "Sans catégorie";
+      const category = product.produit.categorieProduits?.categorie || "Sans catégorie";
       if (!acc[category]) {
         acc[category] = [];
       }
