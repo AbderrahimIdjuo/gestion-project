@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../../lib/prisma";
+export const dynamic = "force-dynamic";
 
 export async function POST(req) {
   try {
@@ -44,7 +45,6 @@ export async function POST(req) {
           },
         });
       }
-
       // creation de la transaction
       await prisma.transactions.create({
         data: {
@@ -71,13 +71,6 @@ export async function POST(req) {
             solde: { decrement: montant },
           },
         });
-        // mise à jour de la dette du fournisseur
-        // await prisma.fournisseurs.update({
-        //   where: { id: fournisseurId },
-        //   data: {
-        //     dette: { decrement: montant },
-        //   },
-        // });
     });
 
     return NextResponse.json({ result });

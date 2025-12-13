@@ -191,7 +191,7 @@ export default function ImpressionRapport() {
                                 formatDate(transaction.createdAt)}
                             </TableCell>
                             <TableCell className="px-1 py-2 border-r">
-                              {transaction.lable}
+                              {transaction.description}
                             </TableCell>
                             <TableCell className="px-1 py-2 text-right pr-4 border-r">
                               {transaction.type === "recette"

@@ -422,18 +422,23 @@ export default function DevisPage() {
     return trans;
   };
 
-  const statutPaiement = (devisTotalPaye, devisTotal) => {
-    if (
-      devisTotal > 0 &&
-      (devisTotalPaye === devisTotal || devisTotalPaye > devisTotal)
-    ) {
-      return { lable: "Payé", color: "bg-green-100 text-green-600" };
-    } else if (devisTotalPaye > 0 && devisTotalPaye < devisTotal) {
-      return { lable: "En partie", color: "bg-orange-100 text-orange-500" };
-    } else if (devisTotalPaye === 0) {
+  const statutPaiement = devis => {
+    if (!devis || !devis.statutPaiement) {
       return { lable: "Impayé", color: "bg-slate-100 text-slate-600" };
     }
+
+    switch (devis.statutPaiement) {
+      case "paye":
+        return { lable: "Payé", color: "bg-green-100 text-green-600" };
+      case "enPartie":
+        return { lable: "En partie", color: "bg-orange-100 text-orange-500" };
+      case "impaye":
+        return { lable: "Impayé", color: "bg-slate-100 text-slate-600" };
+      default:
+        return { lable: "Impayé", color: "bg-slate-100 text-slate-600" };
+    }
   };
+
   const statutPaiements = [
     { lable: "Tous", value: "all", color: "" },
     { lable: "Payé", value: "paye", color: "green" },
@@ -939,18 +944,10 @@ export default function DevisPage() {
                                       <span>{devis.numero}</span>
                                       <span
                                         className={`px-2 py-1 rounded-full text-xs font-semibold uppercase ${
-                                          statutPaiement(
-                                            devis.totalPaye,
-                                            devis.total
-                                          )?.color
+                                          statutPaiement(devis)?.color
                                         }`}
                                       >
-                                        {
-                                          statutPaiement(
-                                            devis.totalPaye,
-                                            devis.total
-                                          )?.lable
-                                        }
+                                        {statutPaiement(devis)?.lable}
                                       </span>
                                       {(() => {
                                         const fourniture = totalFourniture(
@@ -977,10 +974,8 @@ export default function DevisPage() {
                                         ) : null;
                                       })()}
                                       {(() => {
-                                        const paiementStatut = statutPaiement(
-                                          devis.totalPaye,
-                                          devis.total
-                                        );
+                                        const paiementStatut =
+                                          statutPaiement(devis);
                                         const shouldShowWarning =
                                           devis.statut === "Terminer" &&
                                           (paiementStatut?.lable ===

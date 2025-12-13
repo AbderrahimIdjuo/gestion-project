@@ -17,7 +17,10 @@ export async function POST(req) {
       compte,
       fournisseurNom,
     } = response;
-
+    const montant =
+      statutPaiement === "paye"
+        ? parseFloat(total)
+        : parseFloat(montantPaye) || 0;
     const result = await prisma.$transaction(
       async prisma => {
         const bonLivraison = await prisma.bonLivraison.create({
@@ -28,10 +31,7 @@ export async function POST(req) {
             reference,
             type,
             statutPaiement: statutPaiement || "impaye",
-            totalPaye:
-              statutPaiement === "paye"
-                ? parseFloat(total)
-                : parseFloat(montantPaye) || 0,
+            totalPaye: montant,
             fournisseur: {
               connect: { id: fournisseurId },
             },
@@ -72,15 +72,14 @@ export async function POST(req) {
               date: date || new Date(),
             },
           });
-          if (montantPaye && compte) {
-            // Mise à jour d'un compte bancaire
-            await prisma.comptesBancaires.updateMany({
-              where: { compte: compte },
-              data: {
-                solde: { decrement: montantPaye },
-              },
-            });
-          }
+
+          // Mise à jour d'un compte bancaire
+          await prisma.comptesBancaires.updateMany({
+            where: { compte: compte },
+            data: {
+              solde: { decrement: montant },
+            },
+          });
         }
 
         // Mettre à jour la dette du fournisseur

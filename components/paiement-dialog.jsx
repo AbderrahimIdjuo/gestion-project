@@ -1,5 +1,4 @@
 "use client";
-import { addtransaction } from "@/app/api/actions";
 import { CustomDatePicker } from "@/components/customUi/customDatePicker";
 import { Button } from "@/components/ui/button";
 import {
@@ -74,13 +73,18 @@ export function PaiementDialog({ isOpen, onClose, devis }) {
       }
     }
   };
-  const createTransaction = useMutation({
+  const paiementDevis = useMutation({
     mutationFn: async data => {
       console.log("transData : ", data);
       const loadingToast = toast.loading("Paiement en cours...");
       try {
-        await addtransaction(data);
-        toast.success("Paiement éffectué avec succès");
+        const response = await axios.post("/api/devis/paiementDevis", data);
+        if (response.status === 200) {
+          toast.success("Paiement éffectué avec succès");
+        } else {
+          toast.error("Échec de l'opération!");
+          throw new Error("Unexpected response status");
+        }
       } catch (error) {
         toast.error("Échec de l'opération!");
         throw error;
@@ -107,7 +111,7 @@ export function PaiementDialog({ isOpen, onClose, devis }) {
       date: date || new Date(),
       clientId: devis.client.id,
     };
-    createTransaction.mutate(Data);
+    paiementDevis.mutate(Data);
     onClose();
     reset();
     setDate(null);
@@ -323,7 +327,7 @@ export function PaiementDialog({ isOpen, onClose, devis }) {
               className="bg-[#00e701] hover:bg-[#00e701] shadow-lg hover:scale-105 text-white text-md rounded-full font-bold transition-all duration-300 transform"
               onClick={() => {
                 onClose();
-                createTransaction.mutate();
+                paiementDevis.mutate();
                 reset();
                 setDate(null);
               }}
