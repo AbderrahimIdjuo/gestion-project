@@ -54,7 +54,7 @@ export async function GET(req) {
         // "en_retard" est un état calculé : datePrelevement < today ET statusPrelevement = "en_attente"
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        
+
         filters.statusPrelevement = "en_attente";
         filters.datePrelevement = {
           not: null,
@@ -184,31 +184,145 @@ export async function GET(req) {
 export async function PATCH(req) {
   try {
     const body = await req.json();
-    const { id, statut } = body;
+    const { id, statut, statusPrelevement } = body;
 
-    if (!id || !statut) {
-      return NextResponse.json(
-        { error: "ID et statut sont requis" },
-        { status: 400 }
-      );
+    if (!id) {
+      return NextResponse.json({ error: "ID est requis" }, { status: 400 });
     }
 
-    // Vérifier que le statut est valide
-    const statutsValides = ["en_attente", "paye", "en_retard", "annule"];
-    if (!statutsValides.includes(statut)) {
-      return NextResponse.json({ error: "Statut invalide" }, { status: 400 });
+    // Si statusPrelevement est fourni, mettre à jour statusPrelevement
+    if (statusPrelevement !== undefined) {
+      // Vérifier que le statusPrelevement est valide
+      const statusPrelevementsValides = [
+        "en_attente",
+        "confirme",
+        "echoue",
+        "reporte",
+        "refuse",
+      ];
+      if (!statusPrelevementsValides.includes(statusPrelevement)) {
+        return NextResponse.json(
+          { error: "Statut de prélèvement invalide" },
+          { status: 400 }
+        );
+      }
+
+      // Utiliser une transaction pour garantir la cohérence
+      const result = await prisma.$transaction(async tx => {
+        // Récupérer le règlement existant pour connaître l'ancien statut et les infos du compte
+        const reglementExistant = await tx.reglement.findUnique({
+          where: { id },
+        });
+
+        if (!reglementExistant) {
+          throw new Error("Règlement non trouvé");
+        }
+
+        const ancienStatusPrelevement = reglementExistant.statusPrelevement;
+        const nouveauStatusPrelevement = statusPrelevement;
+
+        // Gestion de la mise à jour du solde du compte bancaire et des transactions selon le changement de statut
+        // Cas 1: Passage à "confirme" (déduction du montant du compte + création de transaction)
+        if (
+          nouveauStatusPrelevement === "confirme" &&
+          ancienStatusPrelevement !== "confirme"
+        ) {
+          // Déduire le montant du compte bancaire car le prélèvement est confirmé
+          await tx.comptesBancaires.updateMany({
+            where: { compte: reglementExistant.compte },
+            data: {
+              solde: { decrement: reglementExistant.montant },
+            },
+          });
+          const fournisseur = await tx.fournisseurs.findUnique({
+            where: { id: reglementExistant.fournisseurId },
+            select: { nom: true },
+          });
+          // Créer une transaction pour enregistrer le prélèvement confirmé
+          await tx.transactions.create({
+            data: {
+              reference: reglementExistant.id,
+              type: "depense",
+              montant: reglementExistant.montant,
+              compte: reglementExistant.compte,
+              fournisseurId: reglementExistant.fournisseurId,
+              lable: "paiement fournisseur",
+              description: "bénéficiaire :" + fournisseur.nom,
+              methodePaiement: reglementExistant.methodePaiement,
+              date: new Date(),
+              motif: reglementExistant.motif || null,
+              cheque: reglementExistant.chequeId
+                ? {
+                    connect: {
+                      id: reglementExistant.chequeId,
+                    },
+                  }
+                : undefined,
+            },
+          });
+        }
+        // Cas 2: Passage de "confirme" à un autre statut (remboursement dans le compte + suppression de transaction)
+        else if (
+          ancienStatusPrelevement === "confirme" &&
+          nouveauStatusPrelevement !== "confirme"
+        ) {
+          // Remettre le montant dans le compte bancaire car le prélèvement n'est plus confirmé
+          // Le compte doit augmenter de la valeur du règlement
+          await tx.comptesBancaires.updateMany({
+            where: { compte: reglementExistant.compte },
+            data: {
+              solde: { increment: reglementExistant.montant },
+            },
+          });
+
+          // Supprimer la transaction associée au règlement confirmé
+          await tx.transactions.deleteMany({
+            where: {
+              reference: reglementExistant.id,
+              type: "depense",
+            },
+          });
+        }
+
+        // Mettre à jour le statusPrelevement du règlement
+        const reglement = await tx.reglement.update({
+          where: { id },
+          data: { statusPrelevement },
+        });
+
+        return reglement;
+      });
+
+      return NextResponse.json({
+        reglement: result,
+        message: "Statut de prélèvement mis à jour avec succès",
+      });
     }
 
-    // Mettre à jour le statut du règlement
-    const reglement = await prisma.reglement.update({
-      where: { id },
-      data: { statut },
-    });
+    // Sinon, si statut est fourni, mettre à jour statut (pour rétrocompatibilité)
+    if (statut !== undefined) {
+      // Vérifier que le statut est valide
+      const statutsValides = ["en_attente", "paye", "en_retard", "annule"];
+      if (!statutsValides.includes(statut)) {
+        return NextResponse.json({ error: "Statut invalide" }, { status: 400 });
+      }
 
-    return NextResponse.json({
-      reglement,
-      message: "Statut mis à jour avec succès",
-    });
+      // Mettre à jour le statut du règlement
+      const reglement = await prisma.reglement.update({
+        where: { id },
+        data: { statut },
+      });
+
+      return NextResponse.json({
+        reglement,
+        message: "Statut mis à jour avec succès",
+      });
+    }
+
+    return NextResponse.json(
+      { error: "statut ou statusPrelevement est requis" },
+      { status: 400 }
+    );
   } catch (error) {
     console.error("Erreur lors de la mise à jour du statut:", error);
     return NextResponse.json(
@@ -242,7 +356,7 @@ export async function PUT(req) {
     // Récupérer le règlement existant
     const reglementExistant = await prisma.reglement.findUnique({
       where: { id },
-      include: { cheque: true },
+      include: { cheque: true, fournisseur: true },
     });
 
     if (!reglementExistant) {

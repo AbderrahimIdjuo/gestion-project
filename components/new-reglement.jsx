@@ -109,6 +109,8 @@ export default function NewReglementDialog() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["reglements"]);
+      // Invalider aussi les notifications de prélèvements
+      queryClient.invalidateQueries(["today-prelevements"]);
     },
   });
   const onSubmit = async data => {

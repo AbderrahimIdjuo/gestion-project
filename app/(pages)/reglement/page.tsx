@@ -200,6 +200,85 @@ const getPrelevementDate = (reglement: Reglement) => {
   return reglement.datePrelevement || reglement.cheque?.dateReglement;
 };
 
+// Fonction pour convertir un nombre en lettres (pour le montant du chèque)
+const nombreEnLettres = (n: number): string => {
+  const unites = [
+    "",
+    "un",
+    "deux",
+    "trois",
+    "quatre",
+    "cinq",
+    "six",
+    "sept",
+    "huit",
+    "neuf",
+  ];
+  const dizaines = [
+    "",
+    "dix",
+    "vingt",
+    "trente",
+    "quarante",
+    "cinquante",
+    "soixante",
+  ];
+  const dizainesSpeciales = [
+    "dix",
+    "onze",
+    "douze",
+    "treize",
+    "quatorze",
+    "quinze",
+    "seize",
+  ];
+
+  function convertMoinsDeCent(n: number): string {
+    if (n < 10) return unites[n];
+    if (n < 17) return dizainesSpeciales[n - 10];
+    if (n < 20) return "dix-" + unites[n - 10];
+    if (n < 70) {
+      const dizaine = Math.floor(n / 10);
+      const unite = n % 10;
+      return (
+        dizaines[dizaine] +
+        (unite === 1 ? "-et-un" : unite > 0 ? "-" + unites[unite] : "")
+      );
+    }
+    if (n < 80) return "soixante-" + convertMoinsDeCent(n - 60);
+    if (n < 100)
+      return (
+        "quatre-vingt" + (n === 80 ? "s" : "-" + convertMoinsDeCent(n - 80))
+      );
+    return "";
+  }
+
+  function convertMoinsDeMille(n: number): string {
+    if (n < 100) return convertMoinsDeCent(n);
+    const centaine = Math.floor(n / 100);
+    const reste = n % 100;
+    return (
+      (centaine === 1
+        ? "cent"
+        : unites[centaine] + " cent" + (reste === 0 ? "s" : "")) +
+      (reste > 0 ? " " + convertMoinsDeCent(reste) : "")
+    );
+  }
+
+  function convertir(n: number): string {
+    if (n === 0) return "zéro";
+    if (n < 1000) return convertMoinsDeMille(n);
+    const mille = Math.floor(n / 1000);
+    const reste = n % 1000;
+    return (
+      (mille === 1 ? "mille" : convertMoinsDeMille(mille) + " mille") +
+      (reste > 0 ? " " + convertMoinsDeMille(reste) : "")
+    );
+  }
+
+  return convertir(Math.floor(n)).trim();
+};
+
 const getPrelevementChip = (reglement: Reglement) => {
   // Afficher le badge uniquement si la date de prélèvement existe
   if (!reglement.datePrelevement) return null;
@@ -234,8 +313,11 @@ const getPrelevementChip = (reglement: Reglement) => {
       };
     }
     // Date passée pour un reporté
+    const joursRetard = Math.abs(diffDays);
     return {
-      label: "Reporté - En retard",
+      label: `Reporté - ${joursRetard} jour${
+        joursRetard > 1 ? "s" : ""
+      } de retard`,
       className: "bg-red-100 text-red-700",
     };
   }
@@ -266,8 +348,9 @@ const getPrelevementChip = (reglement: Reglement) => {
   }
 
   // En retard (date passée et toujours en_attente)
+  const joursRetard = Math.abs(diffDays);
   return {
-    label: "En retard",
+    label: `${joursRetard} jour${joursRetard > 1 ? "s" : ""} de retard`,
     className: "bg-red-100 text-red-700",
   };
 };
@@ -300,20 +383,23 @@ function ReglementContent() {
     statusPrelevement: "all",
     montant: [0, 0] as [number, number],
   });
-  const [statuts, setStatuts] = useState<
-    Record<string, "en_attente" | "paye" | "en_retard" | "annule">
+  const [statusPrelevements, setStatusPrelevements] = useState<
+    Record<string, "en_attente" | "confirme" | "echoue" | "reporte" | "refuse">
   >({});
   const [statutChangeDialog, setStatutChangeDialog] = useState(false);
   const [pendingStatutChange, setPendingStatutChange] = useState<{
     id: string;
     currentStatut: string;
-    newStatut: "en_attente" | "paye" | "en_retard" | "annule";
+    newStatut: "en_attente" | "confirme" | "echoue" | "reporte" | "refuse";
     fournisseurNom?: string;
   } | null>(null);
   const [prelevementDialogOpen, setPrelevementDialogOpen] = useState(false);
   const [selectedReglementForPrelevement, setSelectedReglementForPrelevement] =
     useState<Reglement | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [chequeDialogOpen, setChequeDialogOpen] = useState(false);
+  const [selectedReglementForCheque, setSelectedReglementForCheque] =
+    useState<Reglement | null>(null);
   const queryClient = useQueryClient();
 
   // État pour la visibilité des colonnes
@@ -533,25 +619,34 @@ function ReglementContent() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["reglements"] });
       queryClient.invalidateQueries({ queryKey: ["bonLivraison"] });
+      // Invalider aussi les notifications de prélèvements
+      queryClient.invalidateQueries({ queryKey: ["today-prelevements"] });
     },
   });
 
-  const updateStatut = useMutation({
+  const updateStatusPrelevement = useMutation({
     mutationFn: async ({
       id,
-      statut,
+      statusPrelevement,
     }: {
       id: string;
-      statut: "en_attente" | "paye" | "en_retard" | "annule";
+      statusPrelevement:
+        | "en_attente"
+        | "confirme"
+        | "echoue"
+        | "reporte"
+        | "refuse";
     }) => {
       const response = await axios.patch("/api/reglement", {
         id,
-        statut,
+        statusPrelevement,
       });
       return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["reglements"] });
+      // Invalider aussi les notifications de prélèvements
+      queryClient.invalidateQueries({ queryKey: ["today-prelevements"] });
     },
   });
 
@@ -616,17 +711,63 @@ function ReglementContent() {
     }
   };
 
-  const handleChangeStatut = (
+  const getStatusPrelevementLabel = (statusPrelevement?: string | null) => {
+    switch (statusPrelevement) {
+      case "en_attente":
+        return "En attente";
+      case "confirme":
+        return "Confirmé";
+      case "echoue":
+        return "Échoué";
+      case "reporte":
+        return "Reporté";
+      case "refuse":
+        return "Refusé";
+      default:
+        return "—";
+    }
+  };
+
+  const getStatusPrelevementColor = (statusPrelevement?: string | null) => {
+    switch (statusPrelevement) {
+      case "en_attente":
+        return "bg-amber-100 text-amber-700";
+      case "confirme":
+        return "bg-green-100 text-green-700";
+      case "echoue":
+        return "bg-red-100 text-red-700";
+      case "reporte":
+        return "bg-amber-100 text-amber-700";
+      case "refuse":
+        return "bg-gray-100 text-gray-700";
+      default:
+        return "bg-gray-100 text-gray-700";
+    }
+  };
+
+  const handleChangeStatusPrelevement = (
     reglementId: string,
-    newStatut: "en_attente" | "paye" | "en_retard" | "annule",
-    currentStatut: "en_attente" | "paye" | "en_retard" | "annule",
+    newStatusPrelevement:
+      | "en_attente"
+      | "confirme"
+      | "echoue"
+      | "reporte"
+      | "refuse",
+    currentStatusPrelevement:
+      | "en_attente"
+      | "confirme"
+      | "echoue"
+      | "reporte"
+      | "refuse"
+      | null
+      | undefined,
     fournisseurNom?: string
   ) => {
     // Stocker le changement en attente et ouvrir le dialog
     setPendingStatutChange({
       id: reglementId,
-      currentStatut: getStatutLabel(currentStatut),
-      newStatut: newStatut,
+      currentStatut: getStatusPrelevementLabel(currentStatusPrelevement),
+      newStatut: newStatusPrelevement,
       fournisseurNom: fournisseurNom,
     });
     setStatutChangeDialog(true);
@@ -636,18 +777,21 @@ function ReglementContent() {
     if (!pendingStatutChange) return;
 
     // Mettre à jour l'état local immédiatement pour un feedback visuel instantané
-    setStatuts(prev => ({
+    setStatusPrelevements(prev => ({
       ...prev,
       [pendingStatutChange.id]: pendingStatutChange.newStatut,
     }));
 
     // Appeler la mutation pour persister le changement en base de données
-    updateStatut.mutate(
-      { id: pendingStatutChange.id, statut: pendingStatutChange.newStatut },
+    updateStatusPrelevement.mutate(
+      {
+        id: pendingStatutChange.id,
+        statusPrelevement: pendingStatutChange.newStatut,
+      },
       {
         onSuccess: () => {
           toast.success(
-            `Statut changé en "${getStatutLabel(
+            `Statut changé en "${getStatusPrelevementLabel(
               pendingStatutChange.newStatut
             )}" avec succès`
           );
@@ -656,7 +800,7 @@ function ReglementContent() {
         },
         onError: (error: any) => {
           // En cas d'erreur, restaurer l'état précédent
-          setStatuts(prev => {
+          setStatusPrelevements(prev => {
             const updated = { ...prev };
             delete updated[pendingStatutChange.id];
             return updated;
@@ -1205,7 +1349,28 @@ function ReglementContent() {
                                       </TableCell>
                                     )}
                                     {visibleColumns.methode && (
-                                      <TableCell className="font-medium py-0">
+                                      <TableCell
+                                        className={`font-medium py-0 ${
+                                          (reglement.methodePaiement ===
+                                            "cheque" ||
+                                            reglement.methodePaiement ===
+                                              "traite") &&
+                                          "cursor-pointer hover:text-purple-600"
+                                        }`}
+                                        onClick={() => {
+                                          if (
+                                            reglement.methodePaiement ===
+                                              "cheque" ||
+                                            reglement.methodePaiement ===
+                                              "traite"
+                                          ) {
+                                            setSelectedReglementForCheque(
+                                              reglement
+                                            );
+                                            setChequeDialogOpen(true);
+                                          }
+                                        }}
+                                      >
                                         {methodePaiementLabel(reglementTable)}
                                       </TableCell>
                                     )}
@@ -1216,73 +1381,97 @@ function ReglementContent() {
                                     )}
                                     {visibleColumns.statut && (
                                       <TableCell className="font-medium py-0">
-                                        <Select
-                                          value={
-                                            statuts[reglement.id] ||
-                                            reglement.statut ||
-                                            "en_attente"
-                                          }
-                                          onValueChange={value =>
-                                            handleChangeStatut(
-                                              reglement.id,
-                                              value as
-                                                | "en_attente"
-                                                | "paye"
-                                                | "en_retard"
-                                                | "annule",
-                                              (statuts[reglement.id] ||
-                                                reglement.statut ||
-                                                "en_attente") as
-                                                | "en_attente"
-                                                | "paye"
-                                                | "en_retard"
-                                                | "annule",
-                                              reglement.fournisseur.nom
-                                            )
-                                          }
-                                        >
-                                          <SelectTrigger className="h-8 w-[130px] text-xs border-0 bg-transparent hover:bg-gray-50">
-                                            <SelectValue>
-                                              <span
-                                                className={`text-xs px-2 py-1 rounded-full ${getStatutColor(
-                                                  statuts[reglement.id] ||
-                                                    reglement.statut
-                                                )}`}
-                                              >
-                                                {getStatutLabel(
-                                                  statuts[reglement.id] ||
-                                                    reglement.statut
-                                                )}
-                                              </span>
-                                            </SelectValue>
-                                          </SelectTrigger>
-                                          <SelectContent>
-                                            <SelectItem value="en_attente">
-                                              <span className="flex items-center gap-2">
-                                                <span className="h-2 w-2 rounded-full bg-amber-500"></span>
-                                                En attente
-                                              </span>
-                                            </SelectItem>
-                                            <SelectItem value="paye">
-                                              <span className="flex items-center gap-2">
-                                                <span className="h-2 w-2 rounded-full bg-green-500"></span>
-                                                Payé
-                                              </span>
-                                            </SelectItem>
-                                            <SelectItem value="en_retard">
-                                              <span className="flex items-center gap-2">
-                                                <span className="h-2 w-2 rounded-full bg-red-500"></span>
-                                                En retard
-                                              </span>
-                                            </SelectItem>
-                                            <SelectItem value="annule">
-                                              <span className="flex items-center gap-2">
-                                                <span className="h-2 w-2 rounded-full bg-gray-500"></span>
-                                                Annulé
-                                              </span>
-                                            </SelectItem>
-                                          </SelectContent>
-                                        </Select>
+                                        {reglement.statusPrelevement ? (
+                                          <Select
+                                            value={
+                                              statusPrelevements[
+                                                reglement.id
+                                              ] ||
+                                              reglement.statusPrelevement ||
+                                              "en_attente"
+                                            }
+                                            onValueChange={value =>
+                                              handleChangeStatusPrelevement(
+                                                reglement.id,
+                                                value as
+                                                  | "en_attente"
+                                                  | "confirme"
+                                                  | "echoue"
+                                                  | "reporte"
+                                                  | "refuse",
+                                                (statusPrelevements[
+                                                  reglement.id
+                                                ] ||
+                                                  reglement.statusPrelevement ||
+                                                  "en_attente") as
+                                                  | "en_attente"
+                                                  | "confirme"
+                                                  | "echoue"
+                                                  | "reporte"
+                                                  | "refuse"
+                                                  | null
+                                                  | undefined,
+                                                reglement.fournisseur.nom
+                                              )
+                                            }
+                                          >
+                                            <SelectTrigger className="h-8 w-[130px] text-xs border-0 bg-transparent hover:bg-gray-50">
+                                              <SelectValue>
+                                                <span
+                                                  className={`text-xs px-2 py-1 rounded-full ${getStatusPrelevementColor(
+                                                    statusPrelevements[
+                                                      reglement.id
+                                                    ] ||
+                                                      reglement.statusPrelevement
+                                                  )}`}
+                                                >
+                                                  {getStatusPrelevementLabel(
+                                                    statusPrelevements[
+                                                      reglement.id
+                                                    ] ||
+                                                      reglement.statusPrelevement
+                                                  )}
+                                                </span>
+                                              </SelectValue>
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              <SelectItem value="en_attente">
+                                                <span className="flex items-center gap-2">
+                                                  <span className="h-2 w-2 rounded-full bg-amber-500"></span>
+                                                  En attente
+                                                </span>
+                                              </SelectItem>
+                                              <SelectItem value="confirme">
+                                                <span className="flex items-center gap-2">
+                                                  <span className="h-2 w-2 rounded-full bg-green-500"></span>
+                                                  Confirmé
+                                                </span>
+                                              </SelectItem>
+                                              <SelectItem value="echoue">
+                                                <span className="flex items-center gap-2">
+                                                  <span className="h-2 w-2 rounded-full bg-red-500"></span>
+                                                  Échoué
+                                                </span>
+                                              </SelectItem>
+                                              <SelectItem value="reporte">
+                                                <span className="flex items-center gap-2">
+                                                  <span className="h-2 w-2 rounded-full bg-amber-500"></span>
+                                                  Reporté
+                                                </span>
+                                              </SelectItem>
+                                              <SelectItem value="refuse">
+                                                <span className="flex items-center gap-2">
+                                                  <span className="h-2 w-2 rounded-full bg-gray-500"></span>
+                                                  Refusé
+                                                </span>
+                                              </SelectItem>
+                                            </SelectContent>
+                                          </Select>
+                                        ) : (
+                                          <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700">
+                                            —
+                                          </span>
+                                        )}
                                       </TableCell>
                                     )}
                                     {visibleColumns.numero && (
@@ -1467,14 +1656,16 @@ function ReglementContent() {
           <DialogHeader>
             <DialogTitle>Confirmer le changement de statut</DialogTitle>
             <DialogDescription>
-              Êtes-vous sûr de vouloir changer le statut du règlement{" "}
+              Êtes-vous sûr de vouloir changer le statut de prélèvement du
+              règlement{" "}
               {pendingStatutChange?.fournisseurNom && (
                 <>
                   pour <b>{pendingStatutChange.fournisseurNom.toUpperCase()}</b>{" "}
                 </>
               )}
               de <b>{pendingStatutChange?.currentStatut}</b> à{" "}
-              <b>{getStatutLabel(pendingStatutChange?.newStatut)}</b> ?
+              <b>{getStatusPrelevementLabel(pendingStatutChange?.newStatut)}</b>{" "}
+              ?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">
@@ -1525,6 +1716,159 @@ function ReglementContent() {
           queryClient.invalidateQueries({ queryKey: ["reglements"] });
         }}
       />
+      <Dialog open={chequeDialogOpen} onOpenChange={setChequeDialogOpen}>
+        <DialogContent className="sm:max-w-5xl max-h-[95vh] overflow-y-auto p-0">
+          {selectedReglementForCheque && (
+            <div className="space-y-4 p-6">
+              <DialogHeader className="text-center pb-4">
+                <DialogTitle className="text-2xl font-bold">
+                  {selectedReglementForCheque.methodePaiement === "cheque"
+                    ? "CHÈQUE BANCAIRE"
+                    : "TRAITE"}
+                </DialogTitle>
+              </DialogHeader>
+
+              {/* Simulation d'un vrai chèque en format horizontal inspiré du design européen */}
+              <div className="border-2 border-gray-800 bg-white p-8 shadow-2xl relative overflow-hidden min-h-[280px]">
+                {/* Bordures décoratives avec points */}
+                <div className="absolute top-0 left-0 right-0 h-1 border-b border-dotted border-gray-400"></div>
+                <div className="absolute bottom-0 left-0 right-0 h-1 border-t border-dotted border-gray-400"></div>
+                <div className="absolute left-0 top-0 bottom-0 w-1 border-r border-dotted border-gray-400"></div>
+                <div className="absolute right-0 top-0 bottom-0 w-1 border-l border-dotted border-gray-400"></div>
+
+                {/* Lignes de sécurité en arrière-plan */}
+                <div
+                  className="absolute inset-0 opacity-[0.02] pointer-events-none"
+                  style={{
+                    backgroundImage:
+                      "repeating-linear-gradient(45deg, transparent, transparent 10px, #000 10px, #000 11px)",
+                  }}
+                ></div>
+
+                <div className="relative z-10 h-full flex flex-col">
+                  {/* En-tête - Top section */}
+                  <div className="flex justify-between items-start mb-6">
+                    {/* Top Left - Compte bancaire */}
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center border-2 border-gray-400">
+                        <span className="text-xs font-bold">🏦</span>
+                      </div>
+                      <div className="text-xs text-gray-700">
+                        <div className="font-bold text-sm mb-0.5 text-gray-900 uppercase">
+                          {selectedReglementForCheque.compte}
+                        </div>
+                        <div className="text-[10px] text-gray-600">
+                          Compte bancaire
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Top Right - Numéro et Date */}
+                    <div className="text-right">
+                      <div className="text-lg font-bold text-gray-900 mb-2">
+                        {selectedReglementForCheque.cheque?.numero || "—"}
+                      </div>
+                      <div className="text-[10px] text-gray-600 mb-1 font-medium uppercase">
+                        DATE
+                      </div>
+                      <div className="text-base font-bold border-b-2 border-gray-900 pb-1 min-w-[120px]">
+                        {selectedReglementForCheque.cheque?.dateReglement
+                          ? formatDate(
+                              selectedReglementForCheque.cheque.dateReglement
+                            )
+                          : formatDate(
+                              selectedReglementForCheque.dateReglement
+                            ) || formatDate(new Date().toISOString())}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Middle section - Bénéficiaire et Montant */}
+                  <div className="flex justify-between items-start mb-6 gap-8">
+                    {/* Left - Pay to the order of */}
+                    <div className="flex-1">
+                      <div className="text-[10px] text-gray-600 mb-1 font-medium uppercase tracking-wide">
+                        PAYEZ À L'ORDRE DE
+                      </div>
+                      <div className="text-xl font-extrabold border-b-2 border-gray-900 pb-2 uppercase tracking-wide min-h-[2.5rem] flex items-end">
+                        {selectedReglementForCheque.fournisseur.nom}
+                      </div>
+                    </div>
+
+                    {/* Right - Montant numérique */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl font-bold text-gray-900">
+                        DH
+                      </span>
+                      <div className="border-2 border-gray-900 px-4 py-2 min-w-[150px]">
+                        <div className="text-2xl font-extrabold text-gray-900 text-right">
+                          {selectedReglementForCheque.montant.toFixed(2)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Montant en lettres */}
+                  <div className="mb-6">
+                    <div className="text-base font-bold border-b-2 border-gray-900 pb-2 min-h-[2rem] flex items-end tracking-wide">
+                      {nombreEnLettres(selectedReglementForCheque.montant)}{" "}
+                      <span className="ml-2">dirhams</span>
+                    </div>
+                  </div>
+
+                  {/* Bottom section */}
+                  <div className="flex justify-between items-end mt-auto pt-4">
+                    {/* Bottom Left - FOR/Motif */}
+                    <div className="flex-1">
+                      <div className="text-[10px] text-gray-600 mb-1 font-medium uppercase">
+                        POUR
+                      </div>
+                      <div className="text-sm font-semibold border-b border-gray-400 pb-1 text-gray-800 min-h-[1.5rem]">
+                        {selectedReglementForCheque.motif || "—"}
+                      </div>
+                    </div>
+
+                    {/* Bottom Right - Devise avec icône */}
+                    <div className="flex items-center gap-2">
+                      <div className="text-sm font-bold text-gray-900 uppercase">
+                        DIRHAMS
+                      </div>
+                      <div className="w-4 h-4 flex items-center justify-center">
+                        <span className="text-xs">🔒</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Ligne MICR en bas */}
+                  <div className="mt-4 pt-3 border-t border-dashed border-gray-400">
+                    <div className="text-[11px] text-gray-600 font-mono tracking-widest text-center">
+                      ⑆{" "}
+                      {selectedReglementForCheque.cheque?.numero || "000000000"}{" "}
+                      ⑆{" "}
+                      {selectedReglementForCheque.cheque?.numero?.slice(-6) ||
+                        "467890"}{" "}
+                      - {selectedReglementForCheque.cheque?.numero || "5890"} ⑆
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <DialogFooter className="pt-4">
+                <Button
+                  className="rounded-full"
+                  variant="outline"
+                  onClick={() => {
+                    setChequeDialogOpen(false);
+                    setSelectedReglementForCheque(null);
+                  }}
+                >
+                  Fermer
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

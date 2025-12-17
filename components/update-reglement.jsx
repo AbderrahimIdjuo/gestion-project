@@ -116,6 +116,8 @@ export default function UpdateReglementDialog({
       onClose();
       queryClient.invalidateQueries({ queryKey: ["reglements"] });
       queryClient.invalidateQueries({ queryKey: ["bonLivraison"] });
+      // Invalider aussi les notifications de prélèvements
+      queryClient.invalidateQueries({ queryKey: ["today-prelevements"] });
     },
   });
 

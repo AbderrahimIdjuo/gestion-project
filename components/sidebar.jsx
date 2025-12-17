@@ -71,16 +71,16 @@ const menuItems = [
     label: "Transactions",
     href: "/transactions",
   },
-  // {
-  //   icon: ReceiptText,
-  //   label: "Règlement",
-  //   href: "/reglement",
-  // },
-  // {
-  //   icon: FileText,
-  //   label: "Factures Achats",
-  //   href: "/facturesAchats",
-  // },
+  {
+    icon: ReceiptText,
+    label: "Règlement",
+    href: "/reglement",
+  },
+  {
+    icon: FileText,
+    label: "Factures Achats",
+    href: "/facturesAchats",
+  },
   {
     icon: Ruler,
     label: "Débitage",

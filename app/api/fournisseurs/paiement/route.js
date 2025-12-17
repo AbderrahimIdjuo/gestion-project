@@ -47,32 +47,38 @@ export async function POST(req) {
             datePrelevement: datePrelevement ? new Date(datePrelevement) : null,
             motif: motif || null,
             statut: "en_attente",
+            statusPrelevement:
+              methodePaiement === "espece" || methodePaiement === "versement"
+                ? "confirme"
+                : null,
             chequeId: cheque ? cheque.id : null,
             // factureAchatsId est optionnel et sera null par défaut
           },
         });
 
-        // creation de la transaction
-        await prisma.transactions.create({
-          data: {
-            reference: fournisseurId ? fournisseurId : null,
-            type,
-            montant,
-            compte,
-            fournisseurId: fournisseurId,
-            lable,
-            description,
-            motif,
-            datePrelevement,
-            methodePaiement,
-            date: dateReglement || new Date(),
-            cheque: cheque
-              ? {
-                  connect: { id: cheque.id }, // ✅ association one-to-one
-                }
-              : undefined,
-          },
-        }),
+        // creation de la transaction uniquement si méthode de paiement est "espece" ou "versement"
+        if (methodePaiement === "espece" || methodePaiement === "versement") {
+          await prisma.transactions.create({
+            data: {
+              reference: fournisseurId ? fournisseurId : null,
+              type,
+              montant,
+              compte,
+              fournisseurId: fournisseurId,
+              lable,
+              description,
+              motif,
+              datePrelevement,
+              methodePaiement,
+              date: dateReglement || new Date(),
+              cheque: cheque
+                ? {
+                    connect: { id: cheque.id }, // ✅ association one-to-one
+                  }
+                : undefined,
+            },
+          });
+
           // mise à jour du solde du compte bancaire
           await prisma.comptesBancaires.updateMany({
             where: { compte: compte },
@@ -81,13 +87,14 @@ export async function POST(req) {
             },
           });
 
-        // mise à jour de la dette du fournisseur
-        await prisma.fournisseurs.update({
-          where: { id: fournisseurId },
-          data: {
-            dette: { decrement: montant },
-          },
-        });
+          // mise à jour de la dette du fournisseur
+          await prisma.fournisseurs.update({
+            where: { id: fournisseurId },
+            data: {
+              dette: { decrement: montant },
+            },
+          });
+        }
 
         // Paye les BL du fournisseur
         const montantDisponible = montant; // par exemple
