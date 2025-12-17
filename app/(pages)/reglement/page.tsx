@@ -499,7 +499,7 @@ function ReglementContent() {
     if (maxMontant > 0 && filters.montant[1] === 0) {
       setFilters(prev => ({ ...prev, montant: [0, maxMontant] }));
     }
-  }, [maxMontant]);
+  }, [maxMontant, filters.montant]);
 
   // Charger les préférences de colonnes depuis localStorage
   useEffect(() => {
@@ -660,7 +660,7 @@ function ReglementContent() {
     },
   });
 
-  const handleTypeLableColor = (t: String) => {
+  const _handleTypeLableColor = (t: String) => {
     if (t === "recette") {
       return {
         lable: "Recette",
@@ -681,7 +681,7 @@ function ReglementContent() {
     }
   };
 
-  const getStatutLabel = (statut?: string) => {
+  const _getStatutLabel = (statut?: string) => {
     switch (statut) {
       case "en_attente":
         return "En attente";
@@ -696,7 +696,7 @@ function ReglementContent() {
     }
   };
 
-  const getStatutColor = (statut?: string) => {
+  const _getStatutColor = (statut?: string) => {
     switch (statut) {
       case "en_attente":
         return "bg-amber-100 text-amber-700";
@@ -815,7 +815,7 @@ function ReglementContent() {
     );
   };
 
-  const formatNumeroReglement = (numero?: string) => {
+  const _formatNumeroReglement = (numero?: string) => {
     if (!numero) return "—";
     if (numero.length <= 12) return numero;
     // Afficher les 8 premiers et 4 derniers chiffres
@@ -1310,7 +1310,7 @@ function ReglementContent() {
                                   mapReglementForTable(reglement);
                                 const prelevementChip =
                                   getPrelevementChip(reglement);
-                                const prelevementDate =
+                                const _prelevementDate =
                                   getPrelevementDate(reglement);
                                 return (
                                   <TableRow key={reglement.id}>
@@ -1788,7 +1788,7 @@ function ReglementContent() {
                     {/* Left - Pay to the order of */}
                     <div className="flex-1">
                       <div className="text-[10px] text-gray-600 mb-1 font-medium uppercase tracking-wide">
-                        PAYEZ À L'ORDRE DE
+                        PAYEZ À L&apos;ORDRE DE
                       </div>
                       <div className="text-xl font-extrabold border-b-2 border-gray-900 pb-2 uppercase tracking-wide min-h-[2.5rem] flex items-end">
                         {selectedReglementForCheque.fournisseur.nom}
