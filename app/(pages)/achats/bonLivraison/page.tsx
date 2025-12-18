@@ -11,9 +11,16 @@ import { Navbar } from "@/components/navbar";
 import PaiementBLDialog from "@/components/paiement-BL";
 import PreviewBonLivraisonDialog from "@/components/preview-bonLivraison";
 import { Sidebar } from "@/components/sidebar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -34,7 +41,7 @@ import UpdateBonLivraison from "@/components/update-bonLivraison";
 import { useDeleteBonLivraison } from "@/hooks/useDeleteBonLivraison";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { Filter, Search } from "lucide-react";
+import { ChevronDown, Filter, Search, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Toaster } from "react-hot-toast";
 import { BonLivraisonT, useBonLivraisonColumns } from "./columns";
@@ -119,10 +126,28 @@ export default function BonLivraison() {
 
   const [filters, setFilters] = useState({
     type: "",
-    statutPaiement: "",
+    statutPaiement: [] as string[],
     montant: [0, typeof maxMontant === "number" ? maxMontant : 0],
   });
   const deleteBonLivraison = useDeleteBonLivraison();
+
+  // Fonctions pour gérer les statuts multiples
+  const handleStatutPaiementChange = (statut: string, checked: boolean) => {
+    setFilters(prev => ({
+      ...prev,
+      statutPaiement: checked
+        ? [...prev.statutPaiement, statut]
+        : prev.statutPaiement.filter(s => s !== statut),
+    }));
+  };
+
+  const removeStatutPaiement = (statut: string) => {
+    setFilters(prev => ({
+      ...prev,
+      statutPaiement: prev.statutPaiement.filter(s => s !== statut),
+    }));
+  };
+
   useEffect(() => {
     setFilters(prev => ({
       ...prev,
@@ -176,7 +201,10 @@ export default function BonLivraison() {
           to: endDate,
           minTotal: filters.montant[0],
           maxTotal: filters.montant[1],
-          statutPaiement: filters.statutPaiement,
+          statutPaiement:
+            filters.statutPaiement.length > 0
+              ? filters.statutPaiement.join("-")
+              : "all",
         },
       });
       setMaxMontant(response.data.maxMontant);
@@ -313,47 +341,120 @@ export default function BonLivraison() {
                               Statut :
                             </Label>
                             <div className="col-span-3">
-                              <Select
-                                value={filters.statutPaiement}
-                                onValueChange={value =>
-                                  setFilters({
-                                    ...filters,
-                                    statutPaiement: value,
-                                  })
-                                }
-                              >
-                                <SelectTrigger className="w-full col-span-3 bg-white focus:ring-purple-500">
-                                  <SelectValue placeholder="Séléctionnez ..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectGroup>
-                                    <SelectItem value="paye">
-                                      <div className="flex items-center gap-2">
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    className="w-full justify-between text-left font-normal focus:ring-2 focus:ring-purple-500 bg-white"
+                                  >
+                                    <div className="flex flex-wrap gap-1">
+                                      {filters.statutPaiement.length === 0 ? (
+                                        <span className="text-muted-foreground">
+                                          Sélectionner les statuts
+                                        </span>
+                                      ) : (
+                                        filters.statutPaiement.map(statut => (
+                                          <Badge
+                                            key={statut}
+                                            variant="secondary"
+                                            className={`text-xs ${
+                                              statut === "paye"
+                                                ? "bg-green-100 text-green-800 hover:bg-green-200"
+                                                : statut === "impaye"
+                                                ? "bg-slate-100 text-slate-800 hover:bg-slate-200"
+                                                : "bg-amber-100 text-amber-800 hover:bg-amber-200"
+                                            }`}
+                                          >
+                                            {statut === "paye"
+                                              ? "Payé"
+                                              : statut === "impaye"
+                                              ? "Impayé"
+                                              : "En partie"}
+                                            <X
+                                              className="ml-1 h-3 w-3 cursor-pointer hover:text-purple-600"
+                                              onClick={e => {
+                                                e.stopPropagation();
+                                                removeStatutPaiement(statut);
+                                              }}
+                                            />
+                                          </Badge>
+                                        ))
+                                      )}
+                                    </div>
+                                    <ChevronDown className="h-4 w-4 opacity-50" />
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent
+                                  className="w-full p-3"
+                                  align="start"
+                                >
+                                  <div className="space-y-3">
+                                    <div className="flex items-center space-x-2">
+                                      <Checkbox
+                                        id="paye"
+                                        checked={filters.statutPaiement.includes(
+                                          "paye"
+                                        )}
+                                        onCheckedChange={checked =>
+                                          handleStatutPaiementChange(
+                                            "paye",
+                                            checked as boolean
+                                          )
+                                        }
+                                      />
+                                      <Label
+                                        htmlFor="paye"
+                                        className="text-sm font-medium cursor-pointer flex items-center gap-2"
+                                      >
                                         <span className="h-2 w-2 rounded-full bg-green-500" />
                                         Payé
-                                      </div>
-                                    </SelectItem>
-                                    <SelectItem value="impaye">
-                                      <div className="flex items-center gap-2">
+                                      </Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                      <Checkbox
+                                        id="impaye"
+                                        checked={filters.statutPaiement.includes(
+                                          "impaye"
+                                        )}
+                                        onCheckedChange={checked =>
+                                          handleStatutPaiementChange(
+                                            "impaye",
+                                            checked as boolean
+                                          )
+                                        }
+                                      />
+                                      <Label
+                                        htmlFor="impaye"
+                                        className="text-sm font-medium cursor-pointer flex items-center gap-2"
+                                      >
                                         <span className="h-2 w-2 rounded-full bg-red-500" />
                                         Impayé
-                                      </div>
-                                    </SelectItem>
-                                    <SelectItem value="enPartie">
-                                      <div className="flex items-center gap-2">
+                                      </Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                      <Checkbox
+                                        id="enPartie"
+                                        checked={filters.statutPaiement.includes(
+                                          "enPartie"
+                                        )}
+                                        onCheckedChange={checked =>
+                                          handleStatutPaiementChange(
+                                            "enPartie",
+                                            checked as boolean
+                                          )
+                                        }
+                                      />
+                                      <Label
+                                        htmlFor="enPartie"
+                                        className="text-sm font-medium cursor-pointer flex items-center gap-2"
+                                      >
                                         <span className="h-2 w-2 rounded-full bg-amber-500" />
                                         En partie
-                                      </div>
-                                    </SelectItem>
-                                    <SelectItem value="all">
-                                      <div className="flex items-center gap-2">
-                                        <span className="h-2 w-2 rounded-full bg-slate-500" />
-                                        Tout
-                                      </div>
-                                    </SelectItem>
-                                  </SelectGroup>
-                                </SelectContent>
-                              </Select>
+                                      </Label>
+                                    </div>
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
                             </div>
                           </div>
                           <div className="grid grid-cols-4 items-center gap-4 my-2">

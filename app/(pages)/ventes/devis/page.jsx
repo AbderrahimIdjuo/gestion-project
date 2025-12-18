@@ -9,6 +9,7 @@ import { DevisActions } from "@/components/devis-actions";
 import { LoadingDots } from "@/components/loading-dots";
 import { Navbar } from "@/components/navbar";
 import { Sidebar } from "@/components/sidebar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -61,6 +62,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import {
   CalendarDays,
+  ChevronDown,
   CircleDollarSign,
   CreditCard,
   Filter,
@@ -70,6 +72,7 @@ import {
   Printer,
   Search,
   Trash2,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { Fragment, useEffect, useState } from "react";
@@ -108,7 +111,6 @@ export default function DevisPage() {
   const [dateEndTo, setDateEndTo] = useState();
   const [transactions, setTransactions] = useState();
   const [BlGroups, setBlGroups] = useState();
-  // const [lastDevi, setLastDevi] = useState();
   const [expandedDevis, setExpandedDevis] = useState(null);
   const [info, setInfo] = useState(false);
   const [deleteTransDialog, setDeleteTransDialog] = useState(false);
@@ -204,8 +206,8 @@ export default function DevisPage() {
     dateStart: "",
     dateEnd: "",
     montant: [0, maxMontant],
-    statut: "all",
-    statutPaiement: "all",
+    statut: [],
+    statutPaiement: [],
     commercant: "all",
   });
   const queryClient = useQueryClient();
@@ -219,6 +221,39 @@ export default function DevisPage() {
       clearTimeout(handler);
     };
   }, [searchQuery]);
+
+  // Fonctions pour gérer les statuts multiples
+  const handleStatutChange = (statut, checked) => {
+    setFilters(prev => ({
+      ...prev,
+      statut: checked
+        ? [...prev.statut, statut]
+        : prev.statut.filter(s => s !== statut),
+    }));
+  };
+
+  const removeStatut = statut => {
+    setFilters(prev => ({
+      ...prev,
+      statut: prev.statut.filter(s => s !== statut),
+    }));
+  };
+
+  const handleStatutPaiementChange = (statut, checked) => {
+    setFilters(prev => ({
+      ...prev,
+      statutPaiement: checked
+        ? [...prev.statutPaiement, statut]
+        : prev.statutPaiement.filter(s => s !== statut),
+    }));
+  };
+
+  const removeStatutPaiement = statut => {
+    setFilters(prev => ({
+      ...prev,
+      statutPaiement: prev.statutPaiement.filter(s => s !== statut),
+    }));
+  };
 
   // Réinitialiser la page à 1 lorsque les filtres changent
   useEffect(() => {
@@ -256,7 +291,7 @@ export default function DevisPage() {
         params: {
           query: debouncedQuery,
           page,
-          statut: filters.statut,
+          statut: filters.statut.length > 0 ? filters.statut.join("-") : "all",
           from: startDate,
           to: endDate,
           dateStartFrom: dateStartFrom,
@@ -265,7 +300,10 @@ export default function DevisPage() {
           dateEndTo: dateEndTo,
           minTotal: filters.montant[0],
           maxTotal: filters.montant[1],
-          statutPaiement: filters.statutPaiement,
+          statutPaiement:
+            filters.statutPaiement.length > 0
+              ? filters.statutPaiement.join("-")
+              : "all",
           commercant: filters.commercant,
         },
       });
@@ -304,20 +342,6 @@ export default function DevisPage() {
     }));
   };
 
-  const getStatusColor = status => {
-    switch (status) {
-      case "En attente":
-        return "bg-amber-500";
-      case "Accepté":
-        return "bg-emerald-500";
-      case "Annulé":
-        return "bg-red-500";
-      case "Terminer":
-        return "bg-purple-500";
-      default:
-        return "bg-gray-500";
-    }
-  };
 
   const getStatutColor = statut => {
     switch (statut) {
@@ -424,12 +448,12 @@ export default function DevisPage() {
 
   const statutPaiement = devis => {
     if (!devis || !devis.statutPaiement) {
-      return { lable: "Impayé", color: "bg-slate-100 text-slate-600" };
+      return { lable: "Impayé", color: "bg-slate-100 text-slate-600"};
     }
 
     switch (devis.statutPaiement) {
       case "paye":
-        return { lable: "Payé", color: "bg-green-100 text-green-600" };
+        return { lable: "Payé", color: "bg-green-100 text-green-600"};
       case "enPartie":
         return { lable: "En partie", color: "bg-orange-100 text-orange-500" };
       case "impaye":
@@ -580,63 +604,174 @@ export default function DevisPage() {
                             >
                               Statut :
                             </Label>
-                            <Select
-                              value={filters.statut}
-                              name="statut"
-                              onValueChange={value =>
-                                setFilters({ ...filters, statut: value })
-                              }
-                            >
-                              <SelectTrigger className="col-span-4  bg-white focus:ring-purple-500">
-                                <SelectValue placeholder="Séléctionner un statut" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {status.map((statut, index) => (
-                                  <SelectItem key={index} value={statut.value}>
-                                    <div className="flex items-center gap-2">
-                                      <span
-                                        className={`h-2 w-2 rounded-full bg-${statut.color}`}
-                                      />
-                                      {statut.lable}
-                                    </div>
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  className="col-span-4 justify-between text-left font-normal focus:ring-2 focus:ring-purple-500 bg-white"
+                                >
+                                  <div className="flex flex-wrap gap-1">
+                                    {filters.statut.length === 0 ? (
+                                      <span className="text-muted-foreground">
+                                        Sélectionner les statuts
+                                      </span>
+                                    ) : (
+                                      filters.statut.map(statut => (
+                                        <Badge
+                                          key={statut}
+                                          variant="secondary"
+                                          className={`text-xs ${
+                                            statut === "En attente"
+                                              ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
+                                              : statut === "Accepté"
+                                              ? "bg-green-100 text-green-800 hover:bg-green-200"
+                                              : statut === "Annulé"
+                                              ? "bg-red-100 text-red-800 hover:bg-red-200"
+                                              : "bg-purple-100 text-purple-800 hover:bg-purple-200"
+                                          }`}
+                                        >
+                                          {statut}
+                                          <X
+                                            className="ml-1 h-3 w-3 cursor-pointer hover:text-purple-600"
+                                            onClick={e => {
+                                              e.stopPropagation();
+                                              removeStatut(statut);
+                                            }}
+                                          />
+                                        </Badge>
+                                      ))
+                                    )}
+                                  </div>
+                                  <ChevronDown className="h-4 w-4 opacity-50" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent
+                                className="w-full p-3"
+                                align="start"
+                              >
+                                <div className="space-y-3">
+                                  {status
+                                    .filter(s => s.value !== "all")
+                                    .map((statut, index) => (
+                                      <div
+                                        key={index}
+                                        className="flex items-center space-x-2"
+                                      >
+                                        <Checkbox
+                                          id={`statut-${statut.value}`}
+                                          checked={filters.statut.includes(
+                                            statut.value
+                                          )}
+                                          onCheckedChange={checked =>
+                                            handleStatutChange(
+                                              statut.value,
+                                              checked
+                                            )
+                                          }
+                                        />
+                                        <Label
+                                          htmlFor={`statut-${statut.value}`}
+                                          className="text-sm font-medium cursor-pointer flex items-center gap-2"
+                                        >
+                                          <span
+                                            className={`h-2 w-2 rounded-full bg-${statut.color}`}
+                                          />
+                                          {statut.lable}
+                                        </Label>
+                                      </div>
+                                    ))}
+                                </div>
+                              </PopoverContent>
+                            </Popover>
                           </div>
                           <div className="grid grid-cols-4 grid-rows-2 items-center ">
                             <Label
-                              htmlFor="statut"
+                              htmlFor="statutPaiement"
                               className="text-left text-black col-span-4"
                             >
                               Statut de Paiement :
                             </Label>
-                            <Select
-                              value={filters.statutPaiement}
-                              name="statutPaiement"
-                              onValueChange={value =>
-                                setFilters({
-                                  ...filters,
-                                  statutPaiement: value,
-                                })
-                              }
-                            >
-                              <SelectTrigger className="col-span-4 bg-white focus:ring-purple-500">
-                                <SelectValue placeholder="Sélectionner un statut" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {statutPaiements.map((statut, index) => (
-                                  <SelectItem key={index} value={statut.value}>
-                                    <div className={`flex items-center gap-2`}>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  className="col-span-4 justify-between text-left font-normal focus:ring-2 focus:ring-purple-500 bg-white"
+                                >
+                                  <div className="flex flex-wrap gap-1">
+                                    {filters.statutPaiement.length === 0 ? (
+                                      <span className="text-muted-foreground">
+                                        Sélectionner les statuts
+                                      </span>
+                                    ) : (
+                                      filters.statutPaiement.map(statut => (
+                                        <Badge
+                                          key={statut}
+                                          variant="secondary"
+                                          className={`text-xs ${
+                                            statut === "paye"
+                                              ? "bg-green-100 text-green-800 hover:bg-green-200"
+                                              : statut === "impaye"
+                                              ? "bg-slate-100 text-slate-800 hover:bg-slate-200"
+                                              : "bg-amber-100 text-amber-800 hover:bg-amber-200"
+                                          }`}
+                                        >
+                                          {statut === "paye"
+                                            ? "Payé"
+                                            : statut === "impaye"
+                                            ? "Impayé"
+                                            : "En partie"}
+                                          <X
+                                            className="ml-1 h-3 w-3 cursor-pointer hover:text-purple-600"
+                                            onClick={e => {
+                                              e.stopPropagation();
+                                              removeStatutPaiement(statut);
+                                            }}
+                                          />
+                                        </Badge>
+                                      ))
+                                    )}
+                                  </div>
+                                  <ChevronDown className="h-4 w-4 opacity-50" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent
+                                className="w-full p-3"
+                                align="start"
+                              >
+                                <div className="space-y-3">
+                                  {statutPaiements
+                                    .filter(s => s.value !== "all")
+                                    .map((statut, index) => (
                                       <div
-                                        className={`w-2 h-2 rounded-full bg-${statut.color}-500`}
-                                      ></div>
-                                      {statut.lable}
-                                    </div>
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                                        key={index}
+                                        className="flex items-center space-x-2"
+                                      >
+                                        <Checkbox
+                                          id={`statutPaiement-${statut.value}`}
+                                          checked={filters.statutPaiement.includes(
+                                            statut.value
+                                          )}
+                                          onCheckedChange={checked =>
+                                            handleStatutPaiementChange(
+                                              statut.value,
+                                              checked
+                                            )
+                                          }
+                                        />
+                                        <Label
+                                          htmlFor={`statutPaiement-${statut.value}`}
+                                          className="text-sm font-medium cursor-pointer flex items-center gap-2"
+                                        >
+                                          <div
+                                            className={`w-2 h-2 rounded-full bg-${statut.color}-500`}
+                                          ></div>
+                                          {statut.lable}
+                                        </Label>
+                                      </div>
+                                    ))}
+                                </div>
+                              </PopoverContent>
+                            </Popover>
                           </div>
                           <div className="grid grid-rows-2 grid-cols-4 items-center">
                             <Label
@@ -753,8 +888,14 @@ export default function DevisPage() {
                       onClick={() => {
                         const params = {
                           query: debouncedQuery,
-                          statut: filters.statut,
-                          statutPaiement: filters.statutPaiement,
+                          statut:
+                            filters.statut.length > 0
+                              ? filters.statut.join("-")
+                              : "all",
+                          statutPaiement:
+                            filters.statutPaiement.length > 0
+                              ? filters.statutPaiement.join("-")
+                              : "all",
                           from: startDate,
                           to: endDate,
                           dateStartFrom: dateStartFrom,

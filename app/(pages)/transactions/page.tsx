@@ -8,16 +8,16 @@ import { LoadingDots } from "@/components/loading-dots";
 import { Navbar } from "@/components/navbar";
 import TransactionDialog from "@/components/new-transaction";
 import { Sidebar } from "@/components/sidebar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Sheet,
   SheetContent,
@@ -43,7 +43,15 @@ import {
 } from "@/lib/functions";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { Filter, Pen, Printer, Search, Trash2 } from "lucide-react";
+import {
+  ChevronDown,
+  Filter,
+  Pen,
+  Printer,
+  Search,
+  Trash2,
+  X,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -93,12 +101,59 @@ export default function Banques() {
     useState<Fournisseur | null>();
   const [updateDialog, setUpdateDialog] = useState(false);
   const [filters, setFilters] = useState({
-    compte: "all",
-    type: "all",
-    methodePaiement: "all",
+    compte: [] as string[],
+    type: [] as string[],
+    methodePaiement: [] as string[],
     typeDepense: "all",
   });
   const queryClient = useQueryClient();
+
+  // Fonctions pour gérer les filtres multiples
+  const handleTypeChange = (type: string, checked: boolean) => {
+    setFilters(prev => ({
+      ...prev,
+      type: checked ? [...prev.type, type] : prev.type.filter(t => t !== type),
+    }));
+  };
+
+  const removeType = (type: string) => {
+    setFilters(prev => ({
+      ...prev,
+      type: prev.type.filter(t => t !== type),
+    }));
+  };
+
+  const handleMethodePaiementChange = (methode: string, checked: boolean) => {
+    setFilters(prev => ({
+      ...prev,
+      methodePaiement: checked
+        ? [...prev.methodePaiement, methode]
+        : prev.methodePaiement.filter(m => m !== methode),
+    }));
+  };
+
+  const removeMethodePaiement = (methode: string) => {
+    setFilters(prev => ({
+      ...prev,
+      methodePaiement: prev.methodePaiement.filter(m => m !== methode),
+    }));
+  };
+
+  const handleCompteChange = (compte: string, checked: boolean) => {
+    setFilters(prev => ({
+      ...prev,
+      compte: checked
+        ? [...prev.compte, compte]
+        : prev.compte.filter(c => c !== compte),
+    }));
+  };
+
+  const removeCompte = (compte: string) => {
+    setFilters(prev => ({
+      ...prev,
+      compte: prev.compte.filter(c => c !== compte),
+    }));
+  };
 
   // Debounce input (waits 500ms after the last keystroke)
   useEffect(() => {
@@ -143,13 +198,16 @@ export default function Banques() {
         params: {
           page,
           query: debouncedQuery,
-          type: filters.type,
-          compte: filters.compte,
+          type: filters.type.length > 0 ? filters.type.join("-") : "all",
+          compte: filters.compte.length > 0 ? filters.compte.join("-") : "all",
           typeDepense: filters.typeDepense,
           from: startDate,
           to: endDate,
           fournisseurId: selectedFournisseur?.id,
-          methodePaiement: filters.methodePaiement,
+          methodePaiement:
+            filters.methodePaiement.length > 0
+              ? filters.methodePaiement.join("-")
+              : "all",
         },
       });
       console.log("transactions:  ", response.data.transactions);
@@ -341,73 +399,251 @@ export default function Banques() {
                             >
                               Type :
                             </Label>
-                            <Select
-                              value={filters.type}
-                              name="type"
-                              onValueChange={value =>
-                                setFilters({ ...filters, type: value })
-                              }
-                            >
-                              <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
-                                <SelectValue placeholder="Séléctionner un statut" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="all">
-                                  Tous les types
-                                </SelectItem>
-                                <SelectItem value="recette">
-                                  <div className="flex items-center gap-2">
-                                    <span
-                                      className={`h-2 w-2 shadow-md rounded-full bg-green-500`}
-                                    />
-                                    Recette
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  className="w-full justify-between text-left font-normal focus:ring-2 focus:ring-purple-500 bg-white"
+                                >
+                                  <div className="flex flex-wrap gap-1">
+                                    {filters.type.length === 0 ? (
+                                      <span className="text-muted-foreground">
+                                        Sélectionner les types
+                                      </span>
+                                    ) : (
+                                      filters.type.map(type => (
+                                        <Badge
+                                          key={type}
+                                          variant="secondary"
+                                          className={`text-xs ${
+                                            type === "recette"
+                                              ? "bg-green-100 text-green-800 hover:bg-green-200"
+                                              : type === "depense"
+                                              ? "bg-red-100 text-red-800 hover:bg-red-200"
+                                              : "bg-blue-100 text-blue-800 hover:bg-blue-200"
+                                          }`}
+                                        >
+                                          {type === "recette"
+                                            ? "Recette"
+                                            : type === "depense"
+                                            ? "Dépense"
+                                            : "Vider la caisse"}
+                                          <X
+                                            className="ml-1 h-3 w-3 cursor-pointer hover:text-purple-600"
+                                            onClick={e => {
+                                              e.stopPropagation();
+                                              removeType(type);
+                                            }}
+                                          />
+                                        </Badge>
+                                      ))
+                                    )}
                                   </div>
-                                </SelectItem>
-                                <SelectItem value="depense">
-                                  <div className="flex items-center gap-2">
-                                    <span
-                                      className={`h-2 w-2 rounded-full bg-red-500`}
+                                  <ChevronDown className="h-4 w-4 opacity-50" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent
+                                className="w-full p-3"
+                                align="start"
+                              >
+                                <div className="space-y-3">
+                                  <div className="flex items-center space-x-2">
+                                    <Checkbox
+                                      id="recette"
+                                      checked={filters.type.includes("recette")}
+                                      onCheckedChange={checked =>
+                                        handleTypeChange(
+                                          "recette",
+                                          checked as boolean
+                                        )
+                                      }
                                     />
-                                    Dépense
+                                    <Label
+                                      htmlFor="recette"
+                                      className="text-sm font-medium cursor-pointer flex items-center gap-2"
+                                    >
+                                      <span className="h-2 w-2 shadow-md rounded-full bg-green-500" />
+                                      Recette
+                                    </Label>
                                   </div>
-                                </SelectItem>
-                                <SelectItem value="vider">
-                                  <div className="flex items-center gap-2">
-                                    <span
-                                      className={`h-2 w-2 rounded-full bg-blue-500`}
+                                  <div className="flex items-center space-x-2">
+                                    <Checkbox
+                                      id="depense"
+                                      checked={filters.type.includes("depense")}
+                                      onCheckedChange={checked =>
+                                        handleTypeChange(
+                                          "depense",
+                                          checked as boolean
+                                        )
+                                      }
                                     />
-                                    Vider la caisse
+                                    <Label
+                                      htmlFor="depense"
+                                      className="text-sm font-medium cursor-pointer flex items-center gap-2"
+                                    >
+                                      <span className="h-2 w-2 rounded-full bg-red-500" />
+                                      Dépense
+                                    </Label>
                                   </div>
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
+                                  <div className="flex items-center space-x-2">
+                                    <Checkbox
+                                      id="vider"
+                                      checked={filters.type.includes("vider")}
+                                      onCheckedChange={checked =>
+                                        handleTypeChange(
+                                          "vider",
+                                          checked as boolean
+                                        )
+                                      }
+                                    />
+                                    <Label
+                                      htmlFor="vider"
+                                      className="text-sm font-medium cursor-pointer flex items-center gap-2"
+                                    >
+                                      <span className="h-2 w-2 rounded-full bg-blue-500" />
+                                      Vider la caisse
+                                    </Label>
+                                  </div>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
                           </div>
                           <div className="grid items-center gap-3 my-2">
                             <Label
-                              htmlFor="type"
+                              htmlFor="methodePaiement"
                               className="text-left text-black"
                             >
                               Méthode de paiement :
                             </Label>
-                            <Select
-                              value={filters.methodePaiement}
-                              name="methodePaiement"
-                              onValueChange={value =>
-                                setFilters({
-                                  ...filters,
-                                  methodePaiement: value,
-                                })
-                              }
-                            >
-                              <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
-                                <SelectValue placeholder="Séléctionner un statut" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="all">Tous</SelectItem>
-                                <SelectItem value="espece">Éspece</SelectItem>
-                                <SelectItem value="cheque">Chèque</SelectItem>
-                              </SelectContent>
-                            </Select>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  className="w-full justify-between text-left font-normal focus:ring-2 focus:ring-purple-500 bg-white"
+                                >
+                                  <div className="flex flex-wrap gap-1">
+                                    {filters.methodePaiement.length === 0 ? (
+                                      <span className="text-muted-foreground">
+                                        Sélectionner les méthodes
+                                      </span>
+                                    ) : (
+                                      filters.methodePaiement.map(methode => (
+                                        <Badge
+                                          key={methode}
+                                          variant="secondary"
+                                          className="text-xs bg-purple-100 text-purple-800 hover:bg-purple-200"
+                                        >
+                                          {methode === "espece"
+                                            ? "Espèce"
+                                            : methode === "cheque"
+                                            ? "Chèque"
+                                            : methode === "versement"
+                                            ? "Versement"
+                                            : methode === "traite"
+                                            ? "Traite"
+                                            : methode}
+                                          <X
+                                            className="ml-1 h-3 w-3 cursor-pointer hover:text-purple-600"
+                                            onClick={e => {
+                                              e.stopPropagation();
+                                              removeMethodePaiement(methode);
+                                            }}
+                                          />
+                                        </Badge>
+                                      ))
+                                    )}
+                                  </div>
+                                  <ChevronDown className="h-4 w-4 opacity-50" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent
+                                className="w-full p-3"
+                                align="start"
+                              >
+                                <div className="space-y-3">
+                                  <div className="flex items-center space-x-2">
+                                    <Checkbox
+                                      id="espece"
+                                      checked={filters.methodePaiement.includes(
+                                        "espece"
+                                      )}
+                                      onCheckedChange={checked =>
+                                        handleMethodePaiementChange(
+                                          "espece",
+                                          checked as boolean
+                                        )
+                                      }
+                                    />
+                                    <Label
+                                      htmlFor="espece"
+                                      className="text-sm font-medium cursor-pointer"
+                                    >
+                                      Espèce
+                                    </Label>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <Checkbox
+                                      id="cheque"
+                                      checked={filters.methodePaiement.includes(
+                                        "cheque"
+                                      )}
+                                      onCheckedChange={checked =>
+                                        handleMethodePaiementChange(
+                                          "cheque",
+                                          checked as boolean
+                                        )
+                                      }
+                                    />
+                                    <Label
+                                      htmlFor="cheque"
+                                      className="text-sm font-medium cursor-pointer"
+                                    >
+                                      Chèque
+                                    </Label>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <Checkbox
+                                      id="versement"
+                                      checked={filters.methodePaiement.includes(
+                                        "versement"
+                                      )}
+                                      onCheckedChange={checked =>
+                                        handleMethodePaiementChange(
+                                          "versement",
+                                          checked as boolean
+                                        )
+                                      }
+                                    />
+                                    <Label
+                                      htmlFor="versement"
+                                      className="text-sm font-medium cursor-pointer"
+                                    >
+                                      Versement
+                                    </Label>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <Checkbox
+                                      id="traite"
+                                      checked={filters.methodePaiement.includes(
+                                        "traite"
+                                      )}
+                                      onCheckedChange={checked =>
+                                        handleMethodePaiementChange(
+                                          "traite",
+                                          checked as boolean
+                                        )
+                                      }
+                                    />
+                                    <Label
+                                      htmlFor="traite"
+                                      className="text-sm font-medium cursor-pointer"
+                                    >
+                                      Traite
+                                    </Label>
+                                  </div>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
                           </div>
                           <div className="grid items-center gap-3 my-2">
                             <Label
@@ -416,32 +652,74 @@ export default function Banques() {
                             >
                               Compte :
                             </Label>
-                            <Select
-                              value={filters.compte}
-                              name="compte"
-                              onValueChange={value =>
-                                setFilters({ ...filters, compte: value })
-                              }
-                            >
-                              <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
-                                <SelectValue placeholder="Séléctionner un statut" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="all">
-                                  Tous les comptes
-                                </SelectItem>
-                                {comptes.data?.map(
-                                  (element: Compte, index: number) => (
-                                    <SelectItem
-                                      key={index}
-                                      value={element.compte}
-                                    >
-                                      {element.compte}
-                                    </SelectItem>
-                                  )
-                                )}
-                              </SelectContent>
-                            </Select>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  className="w-full justify-between text-left font-normal focus:ring-2 focus:ring-purple-500 bg-white"
+                                >
+                                  <div className="flex flex-wrap gap-1">
+                                    {filters.compte.length === 0 ? (
+                                      <span className="text-muted-foreground">
+                                        Sélectionner les comptes
+                                      </span>
+                                    ) : (
+                                      filters.compte.map(compte => (
+                                        <Badge
+                                          key={compte}
+                                          variant="secondary"
+                                          className="text-xs bg-slate-100 text-slate-800 hover:bg-slate-200"
+                                        >
+                                          {compte}
+                                          <X
+                                            className="ml-1 h-3 w-3 cursor-pointer hover:text-purple-600"
+                                            onClick={e => {
+                                              e.stopPropagation();
+                                              removeCompte(compte);
+                                            }}
+                                          />
+                                        </Badge>
+                                      ))
+                                    )}
+                                  </div>
+                                  <ChevronDown className="h-4 w-4 opacity-50" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent
+                                className="w-full p-3 max-h-[300px] overflow-y-auto"
+                                align="start"
+                              >
+                                <div className="space-y-3">
+                                  {comptes.data?.map(
+                                    (element: Compte, index: number) => (
+                                      <div
+                                        key={index}
+                                        className="flex items-center space-x-2"
+                                      >
+                                        <Checkbox
+                                          id={`compte-${index}`}
+                                          checked={filters.compte.includes(
+                                            element.compte
+                                          )}
+                                          onCheckedChange={checked =>
+                                            handleCompteChange(
+                                              element.compte,
+                                              checked as boolean
+                                            )
+                                          }
+                                        />
+                                        <Label
+                                          htmlFor={`compte-${index}`}
+                                          className="text-sm font-medium cursor-pointer"
+                                        >
+                                          {element.compte}
+                                        </Label>
+                                      </div>
+                                    )
+                                  )}
+                                </div>
+                              </PopoverContent>
+                            </Popover>
                           </div>
                           <div className="grid gap-2">
                             <Label
@@ -470,9 +748,18 @@ export default function Banques() {
                       variant="outline"
                       onClick={() => {
                         const params = {
-                          type: filters.type,
-                          compte: filters.compte,
-                          methodePaiement: filters.methodePaiement,
+                          type:
+                            filters.type.length > 0
+                              ? filters.type.join("-")
+                              : "all",
+                          compte:
+                            filters.compte.length > 0
+                              ? filters.compte.join("-")
+                              : "all",
+                          methodePaiement:
+                            filters.methodePaiement.length > 0
+                              ? filters.methodePaiement.join("-")
+                              : "all",
                           from: startDate,
                           to: endDate,
                           fournisseurId: selectedFournisseur?.id,

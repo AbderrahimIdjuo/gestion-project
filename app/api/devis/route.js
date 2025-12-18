@@ -22,9 +22,18 @@ export async function POST(req) {
     } = response;
 
     // Validation des données requises
-    if (!numero || !clientId || !articls || !Array.isArray(articls) || articls.length === 0) {
+    if (
+      !numero ||
+      !clientId ||
+      !articls ||
+      !Array.isArray(articls) ||
+      articls.length === 0
+    ) {
       return NextResponse.json(
-        { error: "Données manquantes ou invalides. Le devis doit contenir au moins un article." },
+        {
+          error:
+            "Données manquantes ou invalides. Le devis doit contenir au moins un article.",
+        },
         { status: 400 }
       );
     }
@@ -57,7 +66,9 @@ export async function POST(req) {
                 designation: articl.designation || "",
                 quantite: parseFloat(articl.quantite) || 0,
                 prixUnite: parseFloat(articl.prixUnite) || 0,
-                montant: (parseFloat(articl.quantite) || 0) * (parseFloat(articl.prixUnite) || 0),
+                montant:
+                  (parseFloat(articl.quantite) || 0) *
+                  (parseFloat(articl.prixUnite) || 0),
               })),
             },
           },
@@ -84,9 +95,9 @@ export async function POST(req) {
   } catch (error) {
     console.error("Error creating devis:", error);
     return NextResponse.json(
-      { 
+      {
         error: "Une erreur est survenue lors de la création du devis.",
-        details: error.message || "Erreur inconnue"
+        details: error.message || "Erreur inconnue",
       },
       { status: 500 }
     );
@@ -275,14 +286,20 @@ export async function GET(req) {
     ];
   }
 
-  // Statut filter
-  if (statut !== "all") {
-    filters.statut = statut;
+  // Statut filter (supports multiple values separated by "-")
+  if (statut && statut !== "all") {
+    const statutArray = statut.split("-");
+    if (statutArray.length > 0) {
+      filters.statut = { in: statutArray };
+    }
   }
 
-  // StatutPaiement filter
-  if (statutPaiement !== "all") {
-    filters.statutPaiement = statutPaiement;
+  // StatutPaiement filter (supports multiple values separated by "-")
+  if (statutPaiement && statutPaiement !== "all") {
+    const statutPaiementArray = statutPaiement.split("-");
+    if (statutPaiementArray.length > 0) {
+      filters.statutPaiement = { in: statutPaiementArray };
+    }
   }
 
   // Commercant filter

@@ -347,9 +347,12 @@ export async function GET(req) {
     { reference: { contains: searchQuery, mode: "insensitive" } },
   ];
 
-  // ✅ Filtres multi-statuts
+  // ✅ Filtres multi-statuts (supports multiple values separated by "-")
   if (statutPaiement && statutPaiement !== "all") {
-    filters.statutPaiement = statutPaiement;
+    const statutPaiementArray = statutPaiement.split("-");
+    if (statutPaiementArray.length > 0) {
+      filters.statutPaiement = { in: statutPaiementArray };
+    }
   }
 
   // ✅ Filtrer par type

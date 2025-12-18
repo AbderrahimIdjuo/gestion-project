@@ -21,19 +21,28 @@ export async function GET(req) {
     { description: { contains: searchQuery, mode: "insensitive" } },
     { lable: { contains: searchQuery, mode: "insensitive" } },
   ];
-  // Type filter
-  if (type !== "all") {
-    filters.type = type;
+  // Type filter (supports multiple values separated by "-")
+  if (type && type !== "all") {
+    const typeArray = type.split("-");
+    if (typeArray.length > 0) {
+      filters.type = { in: typeArray };
+    }
   }
 
-  // Compt filter
-  if (compte !== "all") {
-    filters.compte = compte;
+  // Compte filter (supports multiple values separated by "-")
+  if (compte && compte !== "all") {
+    const compteArray = compte.split("-");
+    if (compteArray.length > 0) {
+      filters.compte = { in: compteArray };
+    }
   }
 
-  // methode de paiement filter
-  if (methodePaiement !== "all") {
-    filters.methodePaiement = methodePaiement;
+  // Methode de paiement filter (supports multiple values separated by "-")
+  if (methodePaiement && methodePaiement !== "all") {
+    const methodePaiementArray = methodePaiement.split("-");
+    if (methodePaiementArray.length > 0) {
+      filters.methodePaiement = { in: methodePaiementArray };
+    }
   }
 
   // type de depense filter
