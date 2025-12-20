@@ -57,6 +57,21 @@ export default function DevisPDFPage() {
       return acc + produit.quantite * produit.prixUnite;
     }, 0);
   };
+
+  const calculateMargePercent = (devis, totalFourniture) => {
+    if (
+      totalFourniture === null ||
+      totalFourniture === undefined ||
+      devis?.total === 0 ||
+      totalFourniture === 0
+    ) {
+      return 0;
+    }
+    const marge = devis?.total - totalFourniture;
+    const percent = (marge / devis?.total) * 100;
+    return percent;
+  };
+
   return (
     <>
       {devis && (
@@ -133,14 +148,20 @@ export default function DevisPDFPage() {
                         <span className="font-normal text-gray-600 mb-2">
                           {formatCurrency(
                             devis?.total - totalFourniture(bLGroups)
-                          )}
+                          )}{" "}
+                          (
+                          {calculateMargePercent(
+                            devis,
+                            totalFourniture(bLGroups)
+                          ).toFixed(2)}
+                          %)
                         </span>
                       </h3>
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-flow-col auto-cols-max justify-between">
+                <div className="grid grid-cols-3 auto-cols-max justify-between">
                   <div id="1st-col">
                     <h3 className="font-semibold text-gray-900 mb-1">
                       Client:
@@ -185,16 +206,22 @@ export default function DevisPDFPage() {
                         </span>
                       </h3>
                     </div>
-                  </div>
-                  <div id="4th-col">
-                    <h3 className="font-semibold text-gray-900 mb-2">
-                      Marge :
-                      <span className="font-normal text-gray-600 mb-2">
-                        {formatCurrency(
-                          devis?.total - totalFourniture(bLGroups)
-                        )}
-                      </span>
-                    </h3>
+                    <div>
+                      <h3 className="font-semibold text-gray-900 mb-2">
+                        Marge :
+                        <span className="font-normal text-gray-600 mb-2">
+                          {formatCurrency(
+                            devis?.total - totalFourniture(bLGroups)
+                          )}{" "}
+                          (
+                          {calculateMargePercent(
+                            devis,
+                            totalFourniture(bLGroups)
+                          ).toFixed(2)}
+                          %)
+                        </span>
+                      </h3>
+                    </div>
                   </div>
                 </div>
               )}
