@@ -146,7 +146,7 @@ export default function PaiementFournisseurDialog({
           <form onSubmit={handleSubmit(onSubmit)}>
             <DialogHeader>
               <DialogTitle>
-                Paiement en faveur de {fournisseur?.nom}
+                #### Paiement en faveur de {fournisseur?.nom}
               </DialogTitle>
               <DialogDescription>
                 Sélectionnez le type de paiement et remplissez les détails
@@ -160,6 +160,8 @@ export default function PaiementFournisseurDialog({
                   reset();
                   handleTypePaiementChange(value);
                   setDate(null);
+                  setDatePrelevement(null);
+                  setValue("montant", null);
                 }}
                 className="flex flex-wrap gap-3 justify-between sm:justify-evenly"
               >

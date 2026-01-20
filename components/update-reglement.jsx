@@ -19,21 +19,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
-import { Textarea } from "@/components/ui/textarea";
 
 import z from "zod";
 
-export default function UpdateReglementDialog({
-  reglement,
-  isOpen,
-  onClose,
-}) {
+export default function UpdateReglementDialog({ reglement, isOpen, onClose }) {
   const [dateReglement, setDateReglement] = useState(null);
   const [datePrelevement, setDatePrelevement] = useState(null);
 
@@ -48,12 +44,16 @@ export default function UpdateReglementDialog({
       numeroCheque: z.string().optional(),
     })
     .superRefine((data, ctx) => {
-      if (data.methodePaiement === "cheque" || data.methodePaiement === "traite") {
+      if (
+        data.methodePaiement === "cheque" ||
+        data.methodePaiement === "traite"
+      ) {
         if (!data.numeroCheque || data.numeroCheque.trim() === "") {
           ctx.addIssue({
             path: ["numeroCheque"],
             code: z.ZodIssueCode.custom,
-            message: "Le numéro de chèque est requis pour un paiement par chèque.",
+            message:
+              "Le numéro de chèque est requis pour un paiement par chèque.",
           });
         }
       }
@@ -98,7 +98,7 @@ export default function UpdateReglementDialog({
   }, [reglement, reset]);
 
   const handleUpdateReglement = useMutation({
-    mutationFn: async (data) => {
+    mutationFn: async data => {
       const loadingToast = toast.loading("Opération en cours ...");
       try {
         await axios.put("/api/reglement", data);
@@ -121,15 +121,14 @@ export default function UpdateReglementDialog({
     },
   });
 
-  const onSubmit = async (data) => {
+  const onSubmit = async data => {
     const submitData = {
       ...data,
       id: reglement.id,
       dateReglement: dateReglement,
       datePrelevement: datePrelevement,
       numeroCheque:
-        data.methodePaiement !== "cheque" &&
-        data.methodePaiement !== "traite"
+        data.methodePaiement !== "cheque" && data.methodePaiement !== "traite"
           ? null
           : data.numeroCheque,
     };
@@ -145,6 +144,21 @@ export default function UpdateReglementDialog({
     },
   });
 
+  // Fonction pour obtenir le label de la méthode de paiement
+  const getMethodePaiementLabel = methode => {
+    const labels = {
+      espece: "Espèce",
+      cheque: "Chèque",
+      versement: "Versement",
+      traite: "Traite",
+    };
+    return labels[methode] || methode;
+  };
+
+  const methodePaiement = watch("methodePaiement");
+  const shouldShowDatePrelevement =
+    methodePaiement !== "espece" && methodePaiement !== "versement";
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
@@ -159,7 +173,8 @@ export default function UpdateReglementDialog({
             <div className="grid w-full items-center gap-1.5">
               <Label htmlFor="lable">Fournisseur</Label>
               <div className="w-full h-10 px-3 py-2 bg-purple-50 rounded-md flex items-center text-sm">
-                {reglement?.lable?.replace("Règlement ", "") || "Aucun fournisseur"}
+                {reglement?.lable?.replace("Règlement ", "") ||
+                  "Aucun fournisseur"}
               </div>
             </div>
 
@@ -171,13 +186,17 @@ export default function UpdateReglementDialog({
               />
             </div>
 
-            <div className="w-full">
-              <Label htmlFor="datePrelevement">Date de prélèvement (optionnel) : </Label>
-              <CustomDatePicker
-                date={datePrelevement}
-                onDateChange={setDatePrelevement}
-              />
-            </div>
+            {shouldShowDatePrelevement && (
+              <div className="w-full">
+                <Label htmlFor="datePrelevement">
+                  Date de prélèvement (optionnel) :{" "}
+                </Label>
+                <CustomDatePicker
+                  date={datePrelevement}
+                  onDateChange={setDatePrelevement}
+                />
+              </div>
+            )}
 
             <div className="grid w-full items-center gap-1.5">
               <Label htmlFor="montant">Montant</Label>
@@ -199,15 +218,17 @@ export default function UpdateReglementDialog({
               <Select
                 value={watch("compte")}
                 name="compte"
-                onValueChange={(value) => setValue("compte", value)}
+                onValueChange={value => setValue("compte", value)}
               >
                 <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
                   <SelectValue placeholder="Sélectionner..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {comptes.data?.map((element) => (
+                  {comptes.data?.map(element => (
                     <SelectItem key={element.id} value={element.compte}>
-                      <div className="flex items-center gap-2">{element.compte}</div>
+                      <div className="flex items-center gap-2">
+                        {element.compte}
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -219,26 +240,9 @@ export default function UpdateReglementDialog({
 
             <div className="grid w-full items-center gap-1.5">
               <Label htmlFor="methodePaiement">Méthode de paiement</Label>
-              <Select
-                value={watch("methodePaiement")}
-                name="methodePaiement"
-                onValueChange={(value) => setValue("methodePaiement", value)}
-              >
-                <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
-                  <SelectValue placeholder="Sélectionner..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="espece">Espèce</SelectItem>
-                  <SelectItem value="cheque">Chèque</SelectItem>
-                  <SelectItem value="versement">Versement</SelectItem>
-                  <SelectItem value="traite">Traite</SelectItem>
-                </SelectContent>
-              </Select>
-              {errors.methodePaiement && (
-                <p className="text-red-500 text-sm">
-                  {errors.methodePaiement.message}
-                </p>
-              )}
+              <div className="w-full h-10 px-3 py-2 bg-gray-50 rounded-md flex items-center text-sm border border-gray-200">
+                {getMethodePaiementLabel(methodePaiement) || "Aucune méthode"}
+              </div>
             </div>
 
             {(watch("methodePaiement") === "cheque" ||
@@ -292,4 +296,3 @@ export default function UpdateReglementDialog({
     </Dialog>
   );
 }
-

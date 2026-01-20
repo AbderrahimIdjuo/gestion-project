@@ -44,12 +44,31 @@ export async function POST(
     // Check if règlement exists
     const reglementExistant = await prisma.reglement.findUnique({
       where: { id },
+      include: {
+        fournisseur: {
+          select: {
+            id: true,
+            nom: true,
+          },
+        },
+      },
     });
 
     if (!reglementExistant) {
       return NextResponse.json(
         { error: "Règlement non trouvé" },
         { status: 404 }
+      );
+    }
+
+    // Vérifier que le règlement a une date de prélèvement
+    if (!reglementExistant.datePrelevement) {
+      return NextResponse.json(
+        {
+          error:
+            "Impossible de changer le statut : le règlement n'a pas de date de prélèvement",
+        },
+        { status: 400 }
       );
     }
 
@@ -93,8 +112,8 @@ export async function POST(
             montant: reglementExistant.montant,
             compte: reglementExistant.compte,
             fournisseurId: reglementExistant.fournisseurId,
-            lable: `Règlement prélèvement confirmé`,
-            description: `Prélèvement confirmé pour le règlement ${reglementExistant.id}`,
+            lable: "paiement fournisseur",
+            description: "bénéficiaire :" + reglementExistant.fournisseur.nom,
             methodePaiement: reglementExistant.methodePaiement,
             date:
               reglementExistant.datePrelevement ||
@@ -102,7 +121,11 @@ export async function POST(
               new Date(),
             datePrelevement: reglementExistant.datePrelevement || null,
             motif: reglementExistant.motif || null,
-            chequeId: reglementExistant.chequeId || null,
+            cheque: reglementExistant.chequeId
+              ? {
+                  connect: { id: reglementExistant.chequeId },
+                }
+              : undefined,
           },
         });
       }

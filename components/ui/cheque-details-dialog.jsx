@@ -58,7 +58,7 @@ export function ChequeDetailsDialog({
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Info className="h-4 w-4 text-blue-600" />
-                Détails du Chèque
+               Détails du Chèque
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-3">

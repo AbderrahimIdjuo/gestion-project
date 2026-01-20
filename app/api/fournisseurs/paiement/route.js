@@ -39,7 +39,9 @@ export async function POST(req) {
         // Création d'un nouveau règlement
         await prisma.reglement.create({
           data: {
-            fournisseurId: fournisseurId,
+            fournisseur: {
+              connect: { id: fournisseurId },
+            },
             compte: compte,
             montant: montant,
             methodePaiement: methodePaiement,
@@ -50,9 +52,12 @@ export async function POST(req) {
             statusPrelevement:
               methodePaiement === "espece" || methodePaiement === "versement"
                 ? "confirme"
-                : null,
-            chequeId: cheque ? cheque.id : null,
-            // factureAchatsId est optionnel et sera null par défaut
+                : "en_attente",
+            cheque: cheque
+              ? {
+                  connect: { id: cheque.id },
+                }
+              : undefined,
           },
         });
 

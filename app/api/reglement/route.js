@@ -218,6 +218,13 @@ export async function PATCH(req) {
           throw new Error("Règlement non trouvé");
         }
 
+        // Vérifier que le règlement a une date de prélèvement
+        if (!reglementExistant.datePrelevement) {
+          throw new Error(
+            "Impossible de changer le statut : le règlement n'a pas de date de prélèvement"
+          );
+        }
+
         const ancienStatusPrelevement = reglementExistant.statusPrelevement;
         const nouveauStatusPrelevement = statusPrelevement;
 
@@ -451,9 +458,7 @@ export async function PUT(req) {
           dateReglement: dateReglement
             ? new Date(dateReglement)
             : reglementExistant.dateReglement,
-          datePrelevement: datePrelevement
-            ? new Date(datePrelevement)
-            : reglementExistant.datePrelevement,
+          datePrelevement: datePrelevement || reglementExistant.datePrelevement,
           motif: motif !== undefined ? motif : reglementExistant.motif,
           chequeId: chequeId,
         },
@@ -478,6 +483,117 @@ export async function PUT(req) {
           },
         },
       });
+
+      // Mettre à jour la transaction associée si elle existe (si le statut est "confirme")
+      if (reglementExistant.statusPrelevement === "confirme") {
+        // Calculer les nouvelles valeurs
+        const nouveauMontant = montant || reglementExistant.montant;
+        const nouveauCompte = compte || reglementExistant.compte;
+        const nouvelleDateReglement = dateReglement
+          ? new Date(dateReglement)
+          : reglementExistant.dateReglement;
+        const nouvelleDatePrelevement = datePrelevement
+          ? new Date(datePrelevement)
+          : reglementExistant.datePrelevement;
+        const nouveauMotif =
+          motif !== undefined ? motif : reglementExistant.motif;
+
+        // Chercher la transaction associée au règlement par reference
+        const transactionExistante = await tx.transactions.findFirst({
+          where: {
+            reference: id,
+            type: "depense",
+          },
+        });
+
+        if (transactionExistante) {
+          // Mettre à jour la transaction existante
+          await tx.transactions.update({
+            where: { id: transactionExistante.id },
+            data: {
+              montant: nouveauMontant,
+              compte: nouveauCompte,
+              date:
+                nouvelleDatePrelevement || nouvelleDateReglement || new Date(),
+              datePrelevement: nouvelleDatePrelevement || null,
+              motif: nouveauMotif || null,
+              description: "bénéficiaire :" + reglementExistant.fournisseur.nom,
+              cheque: chequeId
+                ? {
+                    connect: { id: chequeId },
+                  }
+                : transactionExistante.chequeId
+                ? {
+                    disconnect: true,
+                  }
+                : undefined,
+            },
+          });
+        } else {
+          // Si la transaction n'existe pas, la créer
+          await tx.transactions.create({
+            data: {
+              reference: id,
+              type: "depense",
+              montant: nouveauMontant,
+              compte: nouveauCompte,
+              fournisseurId: reglementExistant.fournisseurId,
+              lable: "paiement fournisseur",
+              description: "bénéficiaire :" + reglementExistant.fournisseur.nom,
+              methodePaiement: reglementExistant.methodePaiement,
+              date:
+                nouvelleDatePrelevement || nouvelleDateReglement || new Date(),
+              datePrelevement: nouvelleDatePrelevement || null,
+              motif: nouveauMotif || null,
+              cheque: chequeId
+                ? {
+                    connect: { id: chequeId },
+                  }
+                : undefined,
+            },
+          });
+        }
+      }
+
+      // Si le règlement a une référence (BL), mettre à jour le BL
+      if (reglementExistant.reference) {
+        // Calculer les nouvelles valeurs
+        const ancienMontant = reglementExistant.montant;
+        const nouveauMontant = montant || reglementExistant.montant;
+        const differenceMontant = nouveauMontant - ancienMontant;
+
+        // Récupérer le BL pour connaître son total et totalPaye actuel
+        const bonLivraison = await tx.bonLivraison.findUnique({
+          where: { id: reglementExistant.reference },
+        });
+
+        if (bonLivraison) {
+          // Mettre à jour le montant payé (ajouter ou soustraire la différence)
+          const nouveauTotalPaye = Math.max(
+            0,
+            bonLivraison.totalPaye + differenceMontant
+          );
+
+          // Calculer le nouveau statut de paiement
+          let nouveauStatutPaiement = bonLivraison.statutPaiement;
+          if (nouveauTotalPaye <= 0) {
+            nouveauStatutPaiement = "impaye";
+          } else if (nouveauTotalPaye < bonLivraison.total) {
+            nouveauStatutPaiement = "enPartie";
+          } else if (nouveauTotalPaye >= bonLivraison.total) {
+            nouveauStatutPaiement = "paye";
+          }
+
+          // Mettre à jour le BL
+          await tx.bonLivraison.update({
+            where: { id: reglementExistant.reference },
+            data: {
+              totalPaye: nouveauTotalPaye,
+              statutPaiement: nouveauStatutPaiement,
+            },
+          });
+        }
+      }
 
       return {
         success: true,
@@ -529,6 +645,48 @@ export async function DELETE(req) {
           solde: { increment: reglement.montant },
         },
       });
+
+      // Supprimer la transaction associée si elle existe (l'id du règlement est stocké dans reference)
+      await tx.transactions.deleteMany({
+        where: {
+          reference: id,
+        },
+      });
+
+      // Si le règlement a une référence (BL), mettre à jour le BL
+      if (reglement.reference) {
+        // Récupérer le BL pour connaître son total et totalPaye actuel
+        const bonLivraison = await tx.bonLivraison.findUnique({
+          where: { id: reglement.reference },
+        });
+
+        if (bonLivraison) {
+          // Diminuer le montant payé
+          const nouveauTotalPaye = Math.max(
+            0,
+            bonLivraison.totalPaye - reglement.montant
+          );
+
+          // Calculer le nouveau statut de paiement
+          let nouveauStatutPaiement = bonLivraison.statutPaiement;
+          if (nouveauTotalPaye <= 0) {
+            nouveauStatutPaiement = "impaye";
+          } else if (nouveauTotalPaye < bonLivraison.total) {
+            nouveauStatutPaiement = "enPartie";
+          } else if (nouveauTotalPaye >= bonLivraison.total) {
+            nouveauStatutPaiement = "paye";
+          }
+
+          // Mettre à jour le BL
+          await tx.bonLivraison.update({
+            where: { id: reglement.reference },
+            data: {
+              totalPaye: nouveauTotalPaye,
+              statutPaiement: nouveauStatutPaiement,
+            },
+          });
+        }
+      }
 
       // Supprimer le règlement (le chèque sera supprimé automatiquement grâce au cascade)
       await tx.reglement.delete({

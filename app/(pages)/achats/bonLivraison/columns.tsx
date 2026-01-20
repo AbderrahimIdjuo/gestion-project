@@ -31,6 +31,7 @@ export type BonLivraisonT = {
   total: number;
   totalPaye: number;
   reference: string;
+  statutPaiement?: string | null;
   transactions: {
     date: string;
     montant: number;
@@ -281,20 +282,22 @@ export function useBonLivraisonColumns({
                     Aperçu
                   </span>
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => {
-                    console.log("bonLivraison", bonLivraison);
-                    setCurrentBL(bonLivraison);
-                    setPaiementDialogOpen(true);
-                  }}
-                  className="flex items-center gap-2 cursor-pointer group hover:!bg-green-100"
-                >
-                  <CircleDollarSign className="h-4 w-4 text-green-600" />
+                {bonLivraison.statutPaiement !== "paye" && (
+                  <DropdownMenuItem
+                    onClick={() => {
+                      console.log("bonLivraison", bonLivraison);
+                      setCurrentBL(bonLivraison);
+                      setPaiementDialogOpen(true);
+                    }}
+                    className="flex items-center gap-2 cursor-pointer group hover:!bg-green-100"
+                  >
+                    <CircleDollarSign className="h-4 w-4 text-green-600" />
 
-                  <span className="transition-colors duration-200 group-hover:text-green-600 group-hover:bg-green-100">
-                    paiement
-                  </span>
-                </DropdownMenuItem>
+                    <span className="transition-colors duration-200 group-hover:text-green-600 group-hover:bg-green-100">
+                      paiement
+                    </span>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem
                   onClick={() => {
                     window.open(`/achats/bonLivraison/imprimer`, "_blank");

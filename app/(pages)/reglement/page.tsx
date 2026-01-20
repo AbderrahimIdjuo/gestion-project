@@ -73,6 +73,7 @@ import {
   Columns,
   FileText,
   Filter,
+  LandmarkIcon,
   MoreVertical,
   Pen,
   Printer,
@@ -281,9 +282,9 @@ const nombreEnLettres = (n: number): string => {
 
 const getPrelevementChip = (reglement: Reglement) => {
   // Afficher le badge uniquement si la date de prélèvement existe
-  if (!reglement.datePrelevement) return null;
+  if (!reglement.datePrelevement || reglement.statusPrelevement === "confirme")
+    return null;
 
-  const statusPrelevement = reglement.statusPrelevement || "en_attente";
   const targetDate = reglement.datePrelevement;
   if (!targetDate) return null;
 
@@ -298,44 +299,10 @@ const getPrelevementChip = (reglement: Reglement) => {
 
   if (isNaN(diffDays)) return null;
 
-  // Si le statut est "reporte", afficher le compte à rebours avec un style différent
-  if (statusPrelevement === "reporte") {
-    if (diffDays > 0) {
-      return {
-        label: `Reporté - J-${diffDays}`,
-        className: "bg-amber-100 text-amber-700",
-      };
-    }
-    if (diffDays === 0) {
-      return {
-        label: "Reporté - Aujourd'hui",
-        className: "bg-amber-100 text-amber-700",
-      };
-    }
-    // Date passée pour un reporté
-    const joursRetard = Math.abs(diffDays);
-    return {
-      label: `Reporté - ${joursRetard} jour${
-        joursRetard > 1 ? "s" : ""
-      } de retard`,
-      className: "bg-red-100 text-red-700",
-    };
-  }
-
-  // Pour les autres statuts (confirme, echoue, refuse), afficher juste le statut
-  if (statusPrelevement !== "en_attente") {
-    const statusLabels: Record<string, { label: string; className: string }> = {
-      confirme: { label: "Confirmé", className: "bg-green-100 text-green-700" },
-      echoue: { label: "Échoué", className: "bg-red-100 text-red-700" },
-      refuse: { label: "Refusé", className: "bg-gray-100 text-gray-700" },
-    };
-    return statusLabels[statusPrelevement] || null;
-  }
-
-  // Pour "en_attente", afficher le compte à rebours normal
+  // Afficher uniquement la différence en jours
   if (diffDays > 0) {
     return {
-      label: `J-${diffDays}`,
+      label: `+${diffDays} J`,
       className: "bg-emerald-100 text-emerald-700",
     };
   }
@@ -347,10 +314,10 @@ const getPrelevementChip = (reglement: Reglement) => {
     };
   }
 
-  // En retard (date passée et toujours en_attente)
+  // En retard (date passée)
   const joursRetard = Math.abs(diffDays);
   return {
-    label: `${joursRetard} jour${joursRetard > 1 ? "s" : ""} de retard`,
+    label: `${diffDays} J`,
     className: "bg-red-100 text-red-700",
   };
 };
@@ -761,8 +728,17 @@ function ReglementContent() {
       | "refuse"
       | null
       | undefined,
-    fournisseurNom?: string
+    fournisseurNom?: string,
+    datePrelevement?: string | null
   ) => {
+    // Vérifier que le règlement a une date de prélèvement
+    if (!datePrelevement) {
+      toast.error(
+        "Impossible de changer le statut : le règlement n'a pas de date de prélèvement"
+      );
+      return;
+    }
+
     // Stocker le changement en attente et ouvrir le dialog
     setPendingStatutChange({
       id: reglementId,
@@ -1382,91 +1358,109 @@ function ReglementContent() {
                                     {visibleColumns.statut && (
                                       <TableCell className="font-medium py-0">
                                         {reglement.statusPrelevement ? (
-                                          <Select
-                                            value={
-                                              statusPrelevements[
-                                                reglement.id
-                                              ] ||
-                                              reglement.statusPrelevement ||
-                                              "en_attente"
-                                            }
-                                            onValueChange={value =>
-                                              handleChangeStatusPrelevement(
-                                                reglement.id,
-                                                value as
-                                                  | "en_attente"
-                                                  | "confirme"
-                                                  | "echoue"
-                                                  | "reporte"
-                                                  | "refuse",
-                                                (statusPrelevements[
+                                          reglement.datePrelevement ? (
+                                            <Select
+                                              value={
+                                                statusPrelevements[
                                                   reglement.id
                                                 ] ||
-                                                  reglement.statusPrelevement ||
-                                                  "en_attente") as
-                                                  | "en_attente"
-                                                  | "confirme"
-                                                  | "echoue"
-                                                  | "reporte"
-                                                  | "refuse"
-                                                  | null
-                                                  | undefined,
-                                                reglement.fournisseur.nom
-                                              )
-                                            }
-                                          >
-                                            <SelectTrigger className="h-8 w-[130px] text-xs border-0 bg-transparent hover:bg-gray-50">
-                                              <SelectValue>
-                                                <span
-                                                  className={`text-xs px-2 py-1 rounded-full ${getStatusPrelevementColor(
-                                                    statusPrelevements[
-                                                      reglement.id
-                                                    ] ||
-                                                      reglement.statusPrelevement
-                                                  )}`}
-                                                >
-                                                  {getStatusPrelevementLabel(
-                                                    statusPrelevements[
-                                                      reglement.id
-                                                    ] ||
-                                                      reglement.statusPrelevement
-                                                  )}
-                                                </span>
-                                              </SelectValue>
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                              <SelectItem value="en_attente">
-                                                <span className="flex items-center gap-2">
-                                                  <span className="h-2 w-2 rounded-full bg-amber-500"></span>
-                                                  En attente
-                                                </span>
-                                              </SelectItem>
-                                              <SelectItem value="confirme">
-                                                <span className="flex items-center gap-2">
-                                                  <span className="h-2 w-2 rounded-full bg-green-500"></span>
-                                                  Confirmé
-                                                </span>
-                                              </SelectItem>
-                                              <SelectItem value="echoue">
-                                                <span className="flex items-center gap-2">
-                                                  <span className="h-2 w-2 rounded-full bg-red-500"></span>
-                                                  Échoué
-                                                </span>
-                                              </SelectItem>
-                                              <SelectItem value="reporte">
-                                                <span className="flex items-center gap-2">
-                                                  <span className="h-2 w-2 rounded-full bg-amber-500"></span>
-                                                  Reporté
-                                                </span>
-                                              </SelectItem>
-                                              <SelectItem value="refuse">
-                                                <span className="flex items-center gap-2">
-                                                  <span className="h-2 w-2 rounded-full bg-gray-500"></span>
-                                                  Refusé
-                                                </span>
-                                              </SelectItem>
-                                            </SelectContent>
-                                          </Select>
+                                                reglement.statusPrelevement ||
+                                                "en_attente"
+                                              }
+                                              onValueChange={value =>
+                                                handleChangeStatusPrelevement(
+                                                  reglement.id,
+                                                  value as
+                                                    | "en_attente"
+                                                    | "confirme"
+                                                    | "echoue"
+                                                    | "reporte"
+                                                    | "refuse",
+                                                  (statusPrelevements[
+                                                    reglement.id
+                                                  ] ||
+                                                    reglement.statusPrelevement ||
+                                                    "en_attente") as
+                                                    | "en_attente"
+                                                    | "confirme"
+                                                    | "echoue"
+                                                    | "reporte"
+                                                    | "refuse"
+                                                    | null
+                                                    | undefined,
+                                                  reglement.fournisseur.nom,
+                                                  reglement.datePrelevement
+                                                )
+                                              }
+                                            >
+                                              <SelectTrigger className="h-8 w-[130px] text-xs border-0 bg-transparent hover:bg-gray-50">
+                                                <SelectValue>
+                                                  <span
+                                                    className={`text-xs px-2 py-1 rounded-full ${getStatusPrelevementColor(
+                                                      statusPrelevements[
+                                                        reglement.id
+                                                      ] ||
+                                                        reglement.statusPrelevement
+                                                    )}`}
+                                                  >
+                                                    {getStatusPrelevementLabel(
+                                                      statusPrelevements[
+                                                        reglement.id
+                                                      ] ||
+                                                        reglement.statusPrelevement
+                                                    )}
+                                                  </span>
+                                                </SelectValue>
+                                              </SelectTrigger>
+                                              <SelectContent>
+                                                <SelectItem value="en_attente">
+                                                  <span className="flex items-center gap-2">
+                                                    <span className="h-2 w-2 rounded-full bg-amber-500"></span>
+                                                    En attente
+                                                  </span>
+                                                </SelectItem>
+                                                <SelectItem value="confirme">
+                                                  <span className="flex items-center gap-2">
+                                                    <span className="h-2 w-2 rounded-full bg-green-500"></span>
+                                                    Confirmé
+                                                  </span>
+                                                </SelectItem>
+                                                <SelectItem value="echoue">
+                                                  <span className="flex items-center gap-2">
+                                                    <span className="h-2 w-2 rounded-full bg-red-500"></span>
+                                                    Échoué
+                                                  </span>
+                                                </SelectItem>
+                                                <SelectItem value="reporte">
+                                                  <span className="flex items-center gap-2">
+                                                    <span className="h-2 w-2 rounded-full bg-amber-500"></span>
+                                                    Reporté
+                                                  </span>
+                                                </SelectItem>
+                                                <SelectItem value="refuse">
+                                                  <span className="flex items-center gap-2">
+                                                    <span className="h-2 w-2 rounded-full bg-gray-500"></span>
+                                                    Refusé
+                                                  </span>
+                                                </SelectItem>
+                                              </SelectContent>
+                                            </Select>
+                                          ) : (
+                                            // Afficher le statut en lecture seule si pas de datePrelevement
+                                            <span
+                                              className={`text-xs px-2 py-1 rounded-full ${getStatusPrelevementColor(
+                                                statusPrelevements[
+                                                  reglement.id
+                                                ] || reglement.statusPrelevement
+                                              )}`}
+                                            >
+                                              {getStatusPrelevementLabel(
+                                                statusPrelevements[
+                                                  reglement.id
+                                                ] || reglement.statusPrelevement
+                                              )}
+                                            </span>
+                                          )
                                         ) : (
                                           <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700">
                                             —
@@ -1751,34 +1745,33 @@ function ReglementContent() {
                     {/* Top Left - Compte bancaire */}
                     <div className="flex items-start gap-3">
                       <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center border-2 border-gray-400">
-                        <span className="text-xs font-bold">🏦</span>
+                        <LandmarkIcon className="h-4 w-4 text-gray-600" />
                       </div>
                       <div className="text-xs text-gray-700">
-                        <div className="font-bold text-sm mb-0.5 text-gray-900 uppercase">
-                          {selectedReglementForCheque.compte}
-                        </div>
                         <div className="text-[10px] text-gray-600">
                           Compte bancaire
+                        </div>
+                        <div className="font-bold text-sm mb-0.5 text-gray-900 uppercase">
+                          {selectedReglementForCheque.compte}
                         </div>
                       </div>
                     </div>
 
                     {/* Top Right - Numéro et Date */}
-                    <div className="text-right">
-                      <div className="text-lg font-bold text-gray-900 mb-2">
-                        {selectedReglementForCheque.cheque?.numero || "—"}
+                    <div className="text-left flex gap-4">
+                      <div className="text-[10px] text-gray-600 mb-1 font-medium uppercase">
+                        Date de création: <br />
+                        <span className="font-bold text-sm text-gray-900">
+                          {formatDate(selectedReglementForCheque.dateReglement)}
+                        </span>
                       </div>
                       <div className="text-[10px] text-gray-600 mb-1 font-medium uppercase">
-                        DATE
-                      </div>
-                      <div className="text-base font-bold border-b-2 border-gray-900 pb-1 min-w-[120px]">
-                        {selectedReglementForCheque.cheque?.dateReglement
-                          ? formatDate(
-                              selectedReglementForCheque.cheque.dateReglement
-                            )
-                          : formatDate(
-                              selectedReglementForCheque.dateReglement
-                            ) || formatDate(new Date().toISOString())}
+                        Date de prélèvement: <br />
+                        <span className="font-bold text-sm text-gray-900">
+                          {formatDate(
+                            selectedReglementForCheque.datePrelevement
+                          )}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -1797,12 +1790,9 @@ function ReglementContent() {
 
                     {/* Right - Montant numérique */}
                     <div className="flex items-center gap-2">
-                      <span className="text-2xl font-bold text-gray-900">
-                        DH
-                      </span>
                       <div className="border-2 border-gray-900 px-4 py-2 min-w-[150px]">
                         <div className="text-2xl font-extrabold text-gray-900 text-right">
-                          {selectedReglementForCheque.montant.toFixed(2)}
+                          {selectedReglementForCheque.montant.toFixed(2)} DH
                         </div>
                       </div>
                     </div>
@@ -1821,33 +1811,18 @@ function ReglementContent() {
                     {/* Bottom Left - FOR/Motif */}
                     <div className="flex-1">
                       <div className="text-[10px] text-gray-600 mb-1 font-medium uppercase">
-                        POUR
+                        Motif :
                       </div>
-                      <div className="text-sm font-semibold border-b border-gray-400 pb-1 text-gray-800 min-h-[1.5rem]">
+                      <div className="text-sm font-semibold pb-1 text-gray-800 min-h-[1.5rem]">
                         {selectedReglementForCheque.motif || "—"}
-                      </div>
-                    </div>
-
-                    {/* Bottom Right - Devise avec icône */}
-                    <div className="flex items-center gap-2">
-                      <div className="text-sm font-bold text-gray-900 uppercase">
-                        DIRHAMS
-                      </div>
-                      <div className="w-4 h-4 flex items-center justify-center">
-                        <span className="text-xs">🔒</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Ligne MICR en bas */}
                   <div className="mt-4 pt-3 border-t border-dashed border-gray-400">
-                    <div className="text-[11px] text-gray-600 font-mono tracking-widest text-center">
-                      ⑆{" "}
-                      {selectedReglementForCheque.cheque?.numero || "000000000"}{" "}
-                      ⑆{" "}
-                      {selectedReglementForCheque.cheque?.numero?.slice(-6) ||
-                        "467890"}{" "}
-                      - {selectedReglementForCheque.cheque?.numero || "5890"} ⑆
+                    <div className="text-[30px] text-gray-600 font-mono tracking-widest text-center">
+                      ⑆ {selectedReglementForCheque.cheque?.numero} ⑆
                     </div>
                   </div>
                 </div>
