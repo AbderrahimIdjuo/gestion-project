@@ -42,14 +42,33 @@ export async function POST(
     }
 
     // Check if règlement exists
-    const reglement = await prisma.reglement.findUnique({
+    const reglementExistant = await prisma.reglement.findUnique({
       where: { id },
+      include: {
+        fournisseur: {
+          select: {
+            id: true,
+            nom: true,
+          },
+        },
+      },
     });
 
-    if (!reglement) {
+    if (!reglementExistant) {
       return NextResponse.json(
         { error: "Règlement non trouvé" },
         { status: 404 }
+      );
+    }
+
+    // Vérifier que le règlement a une date de prélèvement
+    if (!reglementExistant.datePrelevement) {
+      return NextResponse.json(
+        {
+          error:
+            "Impossible de changer le statut : le règlement n'a pas de date de prélèvement",
+        },
+        { status: 400 }
       );
     }
 
@@ -66,36 +85,104 @@ export async function POST(
       updateData.datePrelevement = new Date(newDate);
     }
 
-    // Update the règlement
-    const updatedReglement = await prisma.reglement.update({
-      where: { id },
-      data: updateData,
-      include: {
-        fournisseur: {
-          select: {
-            id: true,
-            nom: true,
-            email: true,
-            telephone: true,
-            adresse: true,
-            ice: true,
+    // Utiliser une transaction pour garantir la cohérence
+    const updatedReglement = await prisma.$transaction(async tx => {
+      const ancienStatusPrelevement = reglementExistant.statusPrelevement;
+      const nouveauStatusPrelevement = status;
+
+      // Gestion de la mise à jour du solde du compte bancaire et des transactions selon le changement de statut
+      // Cas 1: Passage à "confirme" (déduction du montant du compte + création de transaction)
+      if (
+        nouveauStatusPrelevement === "confirme" &&
+        ancienStatusPrelevement !== "confirme"
+      ) {
+        // Déduire le montant du compte bancaire car le prélèvement est confirmé
+        await tx.comptesBancaires.updateMany({
+          where: { compte: reglementExistant.compte },
+          data: {
+            solde: { decrement: reglementExistant.montant },
+          },
+        });
+
+        // Créer une transaction pour enregistrer le prélèvement confirmé
+        await tx.transactions.create({
+          data: {
+            reference: reglementExistant.id,
+            type: "depense",
+            montant: reglementExistant.montant,
+            compte: reglementExistant.compte,
+            fournisseurId: reglementExistant.fournisseurId,
+            lable: "paiement fournisseur",
+            description: "bénéficiaire :" + reglementExistant.fournisseur.nom,
+            methodePaiement: reglementExistant.methodePaiement,
+            date:
+              reglementExistant.datePrelevement ||
+              reglementExistant.dateReglement ||
+              new Date(),
+            datePrelevement: reglementExistant.datePrelevement || null,
+            motif: reglementExistant.motif || null,
+            cheque: reglementExistant.chequeId
+              ? {
+                  connect: { id: reglementExistant.chequeId },
+                }
+              : undefined,
+          },
+        });
+      }
+      // Cas 2: Passage de "confirme" à un autre statut (remboursement dans le compte + suppression de transaction)
+      else if (
+        ancienStatusPrelevement === "confirme" &&
+        nouveauStatusPrelevement !== "confirme"
+      ) {
+        // Remettre le montant dans le compte bancaire car le prélèvement n'est plus confirmé
+        // Le compte doit augmenter de la valeur du règlement
+        await tx.comptesBancaires.updateMany({
+          where: { compte: reglementExistant.compte },
+          data: {
+            solde: { increment: reglementExistant.montant },
+          },
+        });
+
+        // Supprimer la transaction associée au règlement confirmé
+        await tx.transactions.deleteMany({
+          where: {
+            reference: reglementExistant.id,
+            type: "depense",
+          },
+        });
+      }
+
+      // Update the règlement
+      return await tx.reglement.update({
+        where: { id },
+        data: updateData,
+        include: {
+          fournisseur: {
+            select: {
+              id: true,
+              nom: true,
+              email: true,
+              telephone: true,
+              adresse: true,
+              ice: true,
+            },
+          },
+          cheque: {
+            select: {
+              id: true,
+              numero: true,
+              dateReglement: true,
+              datePrelevement: true,
+            },
+          },
+          factureAchats: {
+            select: {
+              id: true,
+              numero: true,
+            },
           },
         },
-        cheque: {
-          select: {
-            id: true,
-            numero: true,
-            dateReglement: true,
-            datePrelevement: true,
-          },
-        },
-        factureAchats: {
-          select: {
-            id: true,
-            numero: true,
-          },
-        },
-      },
+      });
     });
 
     return NextResponse.json({

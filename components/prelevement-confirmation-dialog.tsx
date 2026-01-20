@@ -98,6 +98,10 @@ export function PrelevementConfirmationDialog({
         id: loadingToast,
       });
 
+      // Invalider les queries pour mettre à jour les notifications
+      queryClient.invalidateQueries({ queryKey: ["today-prelevements"] });
+      queryClient.invalidateQueries({ queryKey: ["reglements"] });
+
       // Reset state
       setSelectedStatus(null);
       setNewDate(undefined);

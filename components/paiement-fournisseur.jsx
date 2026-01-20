@@ -62,7 +62,7 @@ export default function PaiementFournisseurDialog({
   };
   const queryClient = useQueryClient();
 
-  const createTransaction = useMutation({
+  const paiementFournisseur = useMutation({
     mutationFn: async data => {
       const { compte, montant, typePaiement, numero, motif } = data;
       const transData = {
@@ -101,7 +101,7 @@ export default function PaiementFournisseurDialog({
     },
   });
   const onSubmit = async data => {
-    createTransaction.mutate(data);
+    paiementFournisseur.mutate(data);
     console.log("data:", data);
     onClose();
     reset();
@@ -146,7 +146,7 @@ export default function PaiementFournisseurDialog({
           <form onSubmit={handleSubmit(onSubmit)}>
             <DialogHeader>
               <DialogTitle>
-                Paiement en faveur de {fournisseur?.nom}
+                #### Paiement en faveur de {fournisseur?.nom}
               </DialogTitle>
               <DialogDescription>
                 Sélectionnez le type de paiement et remplissez les détails
@@ -160,6 +160,8 @@ export default function PaiementFournisseurDialog({
                   reset();
                   handleTypePaiementChange(value);
                   setDate(null);
+                  setDatePrelevement(null);
+                  setValue("montant", null);
                 }}
                 className="flex flex-wrap gap-3 justify-between sm:justify-evenly"
               >

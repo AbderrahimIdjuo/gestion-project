@@ -54,7 +54,7 @@ export async function GET(req) {
         // "en_retard" est un état calculé : datePrelevement < today ET statusPrelevement = "en_attente"
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        
+
         filters.statusPrelevement = "en_attente";
         filters.datePrelevement = {
           not: null,
@@ -184,31 +184,152 @@ export async function GET(req) {
 export async function PATCH(req) {
   try {
     const body = await req.json();
-    const { id, statut } = body;
+    const { id, statut, statusPrelevement } = body;
 
-    if (!id || !statut) {
-      return NextResponse.json(
-        { error: "ID et statut sont requis" },
-        { status: 400 }
-      );
+    if (!id) {
+      return NextResponse.json({ error: "ID est requis" }, { status: 400 });
     }
 
-    // Vérifier que le statut est valide
-    const statutsValides = ["en_attente", "paye", "en_retard", "annule"];
-    if (!statutsValides.includes(statut)) {
-      return NextResponse.json({ error: "Statut invalide" }, { status: 400 });
+    // Si statusPrelevement est fourni, mettre à jour statusPrelevement
+    if (statusPrelevement !== undefined) {
+      // Vérifier que le statusPrelevement est valide
+      const statusPrelevementsValides = [
+        "en_attente",
+        "confirme",
+        "echoue",
+        "reporte",
+        "refuse",
+      ];
+      if (!statusPrelevementsValides.includes(statusPrelevement)) {
+        return NextResponse.json(
+          { error: "Statut de prélèvement invalide" },
+          { status: 400 }
+        );
+      }
+
+      // Utiliser une transaction pour garantir la cohérence
+      const result = await prisma.$transaction(async tx => {
+        // Récupérer le règlement existant pour connaître l'ancien statut et les infos du compte
+        const reglementExistant = await tx.reglement.findUnique({
+          where: { id },
+        });
+
+        if (!reglementExistant) {
+          throw new Error("Règlement non trouvé");
+        }
+
+        // Vérifier que le règlement a une date de prélèvement
+        if (!reglementExistant.datePrelevement) {
+          throw new Error(
+            "Impossible de changer le statut : le règlement n'a pas de date de prélèvement"
+          );
+        }
+
+        const ancienStatusPrelevement = reglementExistant.statusPrelevement;
+        const nouveauStatusPrelevement = statusPrelevement;
+
+        // Gestion de la mise à jour du solde du compte bancaire et des transactions selon le changement de statut
+        // Cas 1: Passage à "confirme" (déduction du montant du compte + création de transaction)
+        if (
+          nouveauStatusPrelevement === "confirme" &&
+          ancienStatusPrelevement !== "confirme"
+        ) {
+          // Déduire le montant du compte bancaire car le prélèvement est confirmé
+          await tx.comptesBancaires.updateMany({
+            where: { compte: reglementExistant.compte },
+            data: {
+              solde: { decrement: reglementExistant.montant },
+            },
+          });
+          const fournisseur = await tx.fournisseurs.findUnique({
+            where: { id: reglementExistant.fournisseurId },
+            select: { nom: true },
+          });
+          // Créer une transaction pour enregistrer le prélèvement confirmé
+          await tx.transactions.create({
+            data: {
+              reference: reglementExistant.id,
+              type: "depense",
+              montant: reglementExistant.montant,
+              compte: reglementExistant.compte,
+              fournisseurId: reglementExistant.fournisseurId,
+              lable: "paiement fournisseur",
+              description: "bénéficiaire :" + fournisseur.nom,
+              methodePaiement: reglementExistant.methodePaiement,
+              date: new Date(),
+              motif: reglementExistant.motif || null,
+              cheque: reglementExistant.chequeId
+                ? {
+                    connect: {
+                      id: reglementExistant.chequeId,
+                    },
+                  }
+                : undefined,
+            },
+          });
+        }
+        // Cas 2: Passage de "confirme" à un autre statut (remboursement dans le compte + suppression de transaction)
+        else if (
+          ancienStatusPrelevement === "confirme" &&
+          nouveauStatusPrelevement !== "confirme"
+        ) {
+          // Remettre le montant dans le compte bancaire car le prélèvement n'est plus confirmé
+          // Le compte doit augmenter de la valeur du règlement
+          await tx.comptesBancaires.updateMany({
+            where: { compte: reglementExistant.compte },
+            data: {
+              solde: { increment: reglementExistant.montant },
+            },
+          });
+
+          // Supprimer la transaction associée au règlement confirmé
+          await tx.transactions.deleteMany({
+            where: {
+              reference: reglementExistant.id,
+              type: "depense",
+            },
+          });
+        }
+
+        // Mettre à jour le statusPrelevement du règlement
+        const reglement = await tx.reglement.update({
+          where: { id },
+          data: { statusPrelevement },
+        });
+
+        return reglement;
+      });
+
+      return NextResponse.json({
+        reglement: result,
+        message: "Statut de prélèvement mis à jour avec succès",
+      });
     }
 
-    // Mettre à jour le statut du règlement
-    const reglement = await prisma.reglement.update({
-      where: { id },
-      data: { statut },
-    });
+    // Sinon, si statut est fourni, mettre à jour statut (pour rétrocompatibilité)
+    if (statut !== undefined) {
+      // Vérifier que le statut est valide
+      const statutsValides = ["en_attente", "paye", "en_retard", "annule"];
+      if (!statutsValides.includes(statut)) {
+        return NextResponse.json({ error: "Statut invalide" }, { status: 400 });
+      }
 
-    return NextResponse.json({
-      reglement,
-      message: "Statut mis à jour avec succès",
-    });
+      // Mettre à jour le statut du règlement
+      const reglement = await prisma.reglement.update({
+        where: { id },
+        data: { statut },
+      });
+
+      return NextResponse.json({
+        reglement,
+        message: "Statut mis à jour avec succès",
+      });
+    }
+
+    return NextResponse.json(
+      { error: "statut ou statusPrelevement est requis" },
+      { status: 400 }
+    );
   } catch (error) {
     console.error("Erreur lors de la mise à jour du statut:", error);
     return NextResponse.json(
@@ -242,7 +363,7 @@ export async function PUT(req) {
     // Récupérer le règlement existant
     const reglementExistant = await prisma.reglement.findUnique({
       where: { id },
-      include: { cheque: true },
+      include: { cheque: true, fournisseur: true },
     });
 
     if (!reglementExistant) {
@@ -337,9 +458,7 @@ export async function PUT(req) {
           dateReglement: dateReglement
             ? new Date(dateReglement)
             : reglementExistant.dateReglement,
-          datePrelevement: datePrelevement
-            ? new Date(datePrelevement)
-            : reglementExistant.datePrelevement,
+          datePrelevement: datePrelevement || reglementExistant.datePrelevement,
           motif: motif !== undefined ? motif : reglementExistant.motif,
           chequeId: chequeId,
         },
@@ -364,6 +483,117 @@ export async function PUT(req) {
           },
         },
       });
+
+      // Mettre à jour la transaction associée si elle existe (si le statut est "confirme")
+      if (reglementExistant.statusPrelevement === "confirme") {
+        // Calculer les nouvelles valeurs
+        const nouveauMontant = montant || reglementExistant.montant;
+        const nouveauCompte = compte || reglementExistant.compte;
+        const nouvelleDateReglement = dateReglement
+          ? new Date(dateReglement)
+          : reglementExistant.dateReglement;
+        const nouvelleDatePrelevement = datePrelevement
+          ? new Date(datePrelevement)
+          : reglementExistant.datePrelevement;
+        const nouveauMotif =
+          motif !== undefined ? motif : reglementExistant.motif;
+
+        // Chercher la transaction associée au règlement par reference
+        const transactionExistante = await tx.transactions.findFirst({
+          where: {
+            reference: id,
+            type: "depense",
+          },
+        });
+
+        if (transactionExistante) {
+          // Mettre à jour la transaction existante
+          await tx.transactions.update({
+            where: { id: transactionExistante.id },
+            data: {
+              montant: nouveauMontant,
+              compte: nouveauCompte,
+              date:
+                nouvelleDatePrelevement || nouvelleDateReglement || new Date(),
+              datePrelevement: nouvelleDatePrelevement || null,
+              motif: nouveauMotif || null,
+              description: "bénéficiaire :" + reglementExistant.fournisseur.nom,
+              cheque: chequeId
+                ? {
+                    connect: { id: chequeId },
+                  }
+                : transactionExistante.chequeId
+                ? {
+                    disconnect: true,
+                  }
+                : undefined,
+            },
+          });
+        } else {
+          // Si la transaction n'existe pas, la créer
+          await tx.transactions.create({
+            data: {
+              reference: id,
+              type: "depense",
+              montant: nouveauMontant,
+              compte: nouveauCompte,
+              fournisseurId: reglementExistant.fournisseurId,
+              lable: "paiement fournisseur",
+              description: "bénéficiaire :" + reglementExistant.fournisseur.nom,
+              methodePaiement: reglementExistant.methodePaiement,
+              date:
+                nouvelleDatePrelevement || nouvelleDateReglement || new Date(),
+              datePrelevement: nouvelleDatePrelevement || null,
+              motif: nouveauMotif || null,
+              cheque: chequeId
+                ? {
+                    connect: { id: chequeId },
+                  }
+                : undefined,
+            },
+          });
+        }
+      }
+
+      // Si le règlement a une référence (BL), mettre à jour le BL
+      if (reglementExistant.reference) {
+        // Calculer les nouvelles valeurs
+        const ancienMontant = reglementExistant.montant;
+        const nouveauMontant = montant || reglementExistant.montant;
+        const differenceMontant = nouveauMontant - ancienMontant;
+
+        // Récupérer le BL pour connaître son total et totalPaye actuel
+        const bonLivraison = await tx.bonLivraison.findUnique({
+          where: { id: reglementExistant.reference },
+        });
+
+        if (bonLivraison) {
+          // Mettre à jour le montant payé (ajouter ou soustraire la différence)
+          const nouveauTotalPaye = Math.max(
+            0,
+            bonLivraison.totalPaye + differenceMontant
+          );
+
+          // Calculer le nouveau statut de paiement
+          let nouveauStatutPaiement = bonLivraison.statutPaiement;
+          if (nouveauTotalPaye <= 0) {
+            nouveauStatutPaiement = "impaye";
+          } else if (nouveauTotalPaye < bonLivraison.total) {
+            nouveauStatutPaiement = "enPartie";
+          } else if (nouveauTotalPaye >= bonLivraison.total) {
+            nouveauStatutPaiement = "paye";
+          }
+
+          // Mettre à jour le BL
+          await tx.bonLivraison.update({
+            where: { id: reglementExistant.reference },
+            data: {
+              totalPaye: nouveauTotalPaye,
+              statutPaiement: nouveauStatutPaiement,
+            },
+          });
+        }
+      }
 
       return {
         success: true,
@@ -415,6 +645,48 @@ export async function DELETE(req) {
           solde: { increment: reglement.montant },
         },
       });
+
+      // Supprimer la transaction associée si elle existe (l'id du règlement est stocké dans reference)
+      await tx.transactions.deleteMany({
+        where: {
+          reference: id,
+        },
+      });
+
+      // Si le règlement a une référence (BL), mettre à jour le BL
+      if (reglement.reference) {
+        // Récupérer le BL pour connaître son total et totalPaye actuel
+        const bonLivraison = await tx.bonLivraison.findUnique({
+          where: { id: reglement.reference },
+        });
+
+        if (bonLivraison) {
+          // Diminuer le montant payé
+          const nouveauTotalPaye = Math.max(
+            0,
+            bonLivraison.totalPaye - reglement.montant
+          );
+
+          // Calculer le nouveau statut de paiement
+          let nouveauStatutPaiement = bonLivraison.statutPaiement;
+          if (nouveauTotalPaye <= 0) {
+            nouveauStatutPaiement = "impaye";
+          } else if (nouveauTotalPaye < bonLivraison.total) {
+            nouveauStatutPaiement = "enPartie";
+          } else if (nouveauTotalPaye >= bonLivraison.total) {
+            nouveauStatutPaiement = "paye";
+          }
+
+          // Mettre à jour le BL
+          await tx.bonLivraison.update({
+            where: { id: reglement.reference },
+            data: {
+              totalPaye: nouveauTotalPaye,
+              statutPaiement: nouveauStatutPaiement,
+            },
+          });
+        }
+      }
 
       // Supprimer le règlement (le chèque sera supprimé automatiquement grâce au cascade)
       await tx.reglement.delete({

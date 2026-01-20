@@ -82,6 +82,8 @@ export default function CreatefactureAchatsDialog({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["reglements"] });
       queryClient.invalidateQueries({ queryKey: ["FacturesAchats"] });
+      // Invalider aussi les notifications de prélèvements
+      queryClient.invalidateQueries({ queryKey: ["today-prelevements"] });
       onOpenChange(false);
       resetDialog();
     },

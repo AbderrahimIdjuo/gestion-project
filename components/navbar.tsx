@@ -1,4 +1,5 @@
 "use client";
+import { NavbarNotifications } from "@/components/NavbarNotifications";
 import { UserButton, useUser } from "@clerk/nextjs";
 import Image from "next/image";
 import Link from "next/link";
@@ -49,6 +50,7 @@ export function Navbar() {
               <span className="text-sm text-gray-700 hidden md:block">
                 {user?.firstName}
               </span>
+              <NavbarNotifications />
               <UserButton
                 appearance={{
                   elements: {

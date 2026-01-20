@@ -17,10 +17,12 @@ export async function POST(req) {
       numeroCheque,
       date,
       statutPaiement,
-      reference
+      motif,
+      datePrelevement,
+      dateReglement,
     } = response;
 
-    const result = await prisma.$transaction(async (prisma) => {
+    const result = await prisma.$transaction(async prisma => {
       //Update the BL
       await prisma.bonLivraison.update({
         where: { id: bonLivraisonId },
@@ -45,25 +47,56 @@ export async function POST(req) {
           },
         });
       }
-      // creation de la transaction
-      await prisma.transactions.create({
+
+      // Création d'un nouveau règlement
+      const reglement = await prisma.reglement.create({
         data: {
-          reference,
-          fournisseurId: fournisseurId || null,
-          type,
-          montant,
-          compte,
-          lable,
-          description,
-          methodePaiement,
-          date: date || new Date(),
+          fournisseur: {
+            connect: { id: fournisseurId },
+          },
+          compte: compte,
+          montant: montant,
+          reference: bonLivraisonId,
+          methodePaiement: methodePaiement,
+          dateReglement: dateReglement ? new Date(dateReglement) : new Date(),
+          datePrelevement: datePrelevement ? new Date(datePrelevement) : null,
+          motif: motif || null,
+          statut: "en_attente",
+          statusPrelevement:
+            methodePaiement === "espece" || methodePaiement === "versement"
+              ? "confirme"
+              : "en_attente",
           cheque: cheque
             ? {
-                connect: { id: cheque.id }, // ✅ association one-to-one
+                connect: { id: cheque.id },
               }
             : undefined,
         },
-      }),
+      });
+
+      // creation de la transaction uniquement si méthode de paiement est "espece" ou "versement"
+      if (methodePaiement === "espece" || methodePaiement === "versement") {
+        await prisma.transactions.create({
+          data: {
+            reference: reglement ? reglement.id : null,
+            type,
+            montant,
+            compte,
+            fournisseurId: fournisseurId,
+            lable,
+            description,
+            motif,
+            datePrelevement,
+            methodePaiement,
+            date: dateReglement || new Date(),
+            cheque: cheque
+              ? {
+                  connect: { id: cheque.id }, // ✅ association one-to-one
+                }
+              : undefined,
+          },
+        });
+
         // mise à jour du solde du compte bancaire
         await prisma.comptesBancaires.updateMany({
           where: { compte: compte },
@@ -71,6 +104,41 @@ export async function POST(req) {
             solde: { decrement: montant },
           },
         });
+
+        // mise à jour de la dette du fournisseur
+        await prisma.fournisseurs.update({
+          where: { id: fournisseurId },
+          data: {
+            dette: { decrement: montant },
+          },
+        });
+      }
+      // creation de la transaction
+      // await prisma.transactions.create({
+      //   data: {
+      //     reference,
+      //     fournisseurId: fournisseurId || null,
+      //     type,
+      //     montant,
+      //     compte,
+      //     lable,
+      //     description,
+      //     methodePaiement,
+      //     date: date || new Date(),
+      //     cheque: cheque
+      //       ? {
+      //           connect: { id: cheque.id }, // ✅ association one-to-one
+      //         }
+      //       : undefined,
+      //   },
+      // }),
+      // mise à jour du solde du compte bancaire
+      // await prisma.comptesBancaires.updateMany({
+      //   where: { compte: compte },
+      //   data: {
+      //     solde: { decrement: montant },
+      //   },
+      // });
     });
 
     return NextResponse.json({ result });
