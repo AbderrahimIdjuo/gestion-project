@@ -11,30 +11,34 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatCurrency, formatDate } from "@/lib/functions";
+import { formatCurrency } from "@/lib/functions";
 import { useEffect, useState } from "react";
 
-export default function ImprimerReglements() {
+export default function ImprimerProduits() {
   const [fournisseur, setFournisseur] = useState(null);
-  const [reglements, setReglements] = useState([]);
-  const [bonLivraisons, setBonLivraisons] = useState([]);
+  const [produits, setProduits] = useState([]);
   const [periode, setPeriode] = useState("");
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
+  const [sortKey, setSortKey] = useState("montant");
 
   useEffect(() => {
-    const storedData = localStorage.getItem("fournisseur-reglements-rapport");
+    const storedData = localStorage.getItem("fournisseur-produits-rapport");
     if (storedData) {
       const data = JSON.parse(storedData);
       setFournisseur(data.fournisseur);
-      setReglements(data.reglements || data.transactions || []);
-      setBonLivraisons(data.bonLivraisons);
+      setProduits(data.produits || []);
       setPeriode(data.periode || "");
       setStartDate(data.startDate || null);
       setEndDate(data.endDate || null);
-      console.log("Données fournisseur chargées depuis localStorage:", data);
+      setSortKey(data.sortKey || "montant");
+      console.log("Données produits chargées depuis localStorage:", data);
     }
   }, []);
+
+  // Calcul du total des quantités et montants
+  const totalQuantite = produits?.reduce((sum, p) => sum + (p.quantite || 0), 0) || 0;
+  const totalMontant = produits?.reduce((sum, p) => sum + (p.montant || 0), 0) || 0;
 
   // Fonction pour formater la période
   const formatPeriode = () => {
@@ -58,24 +62,18 @@ export default function ImprimerReglements() {
     return periodeLabels[periode] || periode;
   };
 
-  // Suppression de la fonction handlePrint qui n'est plus nécessaire
-
-  // Calcul du total des règlements pour le tableau
-  const totalReglements =
-    reglements?.reduce((sum, r) => sum + (r.montant || 0), 0) || 0;
-
   return (
     <>
-      <div className="container mx-auto max-w-4xl bg-white min-h-screen print:p-0 print:max-w-none mb-10  p-6">
+      <div className="container mx-auto max-w-4xl bg-white min-h-screen print:p-0 print:max-w-none mb-10 p-6">
         {/* Document Content */}
-        <div id="print-area" className="space-y-4 ">
+        <div id="print-area" className="space-y-4">
           {/* Header */}
           <EnteteDevis />
 
           <div className="space-y-3">
             <div className="space-y-2">
               <h3 className="font-semibold text-lg text-gray-900 mb-3">
-                Règlements du Fournisseur
+                Liste des Produits Achetés
               </h3>
 
               {/* Informations du fournisseur */}
@@ -104,61 +102,49 @@ export default function ImprimerReglements() {
                     <p className="text-sm text-gray-600">{formatPeriode()}</p>
                   </div>
                 )}
+                <div className="flex gap-2 items-center">
+                  <h4 className="font-semibold text-gray-900">Tri par :</h4>
+                  <p className="text-sm text-gray-600">
+                    {sortKey === "montant" ? "Montant" : "Quantité"}
+                  </p>
+                </div>
               </div>
-
-              {/* Section des cartes d'information financière supprimée */}
             </div>
 
-            {/* Tableau des règlements */}
+            {/* Tableau des produits */}
             <div className="rounded-xl border shadow-sm overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>#</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Compte</TableHead>
-                    <TableHead>Méthode de Paiement</TableHead>
+                    <TableHead>Produit</TableHead>
+                    <TableHead className="text-center">Quantité</TableHead>
                     <TableHead className="text-right">Montant</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {reglements?.length > 0 ? (
-                    reglements.map((reglement, index) => (
-                      <TableRow key={reglement.id || index}>
+                  {produits?.length > 0 ? (
+                    produits.map((produit, index) => (
+                      <TableRow key={produit.produitId || index}>
                         <TableCell>{index + 1}</TableCell>
-                        <TableCell>
-                          {formatDate(reglement.dateReglement || reglement.date)}
+                        <TableCell className="font-medium">
+                          {produit.designation}
                         </TableCell>
-                        <TableCell>
-                          {reglement.compte?.replace("compte ", "")}
-                        </TableCell>
-                        <TableCell>
-                          <span
-                            className={`inline-block px-2 py-1 rounded text-xs font-medium`}
-                          >
-                            {reglement.methodePaiement === "espece"
-                              ? "Espèce"
-                              : reglement.methodePaiement === "cheque"
-                              ? "Chèque"
-                              : reglement.methodePaiement === "versement"
-                              ? "Versement"
-                              : reglement.methodePaiement === "traite"
-                              ? "Traite"
-                              : reglement.methodePaiement}
-                          </span>
+                        <TableCell className="text-center">
+                          {produit.quantite || 0}
                         </TableCell>
                         <TableCell className="text-right">
-                          {formatCurrency(reglement.montant || 0)}
+                          {formatCurrency(produit.montant || 0)}
                         </TableCell>
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
                       <TableCell
-                        colSpan={5}
+                        colSpan={4}
                         className="text-center py-6 text-gray-500"
                       >
-                        Aucun règlement trouvé
+                        Aucun produit trouvé
                       </TableCell>
                     </TableRow>
                   )}
@@ -166,13 +152,16 @@ export default function ImprimerReglements() {
                 <TableFooter className="bg-none">
                   <TableRow>
                     <TableCell
-                      colSpan={4}
+                      colSpan={2}
                       className="text-right text-lg font-semibold p-2"
                     >
-                      Total des Règlements :
+                      Total :
                     </TableCell>
-                    <TableCell className="text-left text-lg font-semibold p-2">
-                      {formatCurrency(totalReglements)}
+                    <TableCell className="text-center text-lg font-semibold p-2">
+                      {totalQuantite}
+                    </TableCell>
+                    <TableCell className="text-right text-lg font-semibold p-2">
+                      {formatCurrency(totalMontant)}
                     </TableCell>
                   </TableRow>
                 </TableFooter>
@@ -183,7 +172,7 @@ export default function ImprimerReglements() {
 
         {/* Bouton d'impression (caché à l'impression) */}
         <div className="flex items-center justify-end print:hidden mt-4">
-          <DirectPrintButton className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full">
+          <DirectPrintButton className="bg-blue-500 hover:bg-blue-600 !text-white rounded-full">
             Imprimer
           </DirectPrintButton>
         </div>
@@ -191,3 +180,4 @@ export default function ImprimerReglements() {
     </>
   );
 }
+

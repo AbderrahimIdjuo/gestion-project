@@ -70,6 +70,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import {
   CalendarClock,
+  ChevronDown,
   Columns,
   FileText,
   Filter,
@@ -79,6 +80,7 @@ import {
   Printer,
   Search,
   Trash2,
+  Wallet,
   X,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -344,10 +346,10 @@ function ReglementContent() {
   const [reglementForFacture, setReglementForFacture] =
     useState<Reglement | null>(null);
   const [filters, setFilters] = useState({
-    compte: "all",
+    compte: [] as string[],
     statut: "all",
-    methodePaiement: "all",
-    statusPrelevement: "all",
+    methodePaiement: [] as string[],
+    statusPrelevement: [] as string[],
     montant: [0, 0] as [number, number],
   });
   const [statusPrelevements, setStatusPrelevements] = useState<
@@ -367,6 +369,10 @@ function ReglementContent() {
   const [chequeDialogOpen, setChequeDialogOpen] = useState(false);
   const [selectedReglementForCheque, setSelectedReglementForCheque] =
     useState<Reglement | null>(null);
+  const [balanceDialogOpen, setBalanceDialogOpen] = useState(false);
+  const [balanceStartDate, setBalanceStartDate] = useState<string | undefined>();
+  const [balanceEndDate, setBalanceEndDate] = useState<string | undefined>();
+  const [balanceStep, setBalanceStep] = useState<"period" | "results">("period");
   const queryClient = useQueryClient();
 
   // État pour la visibilité des colonnes
@@ -424,14 +430,17 @@ function ReglementContent() {
           query: debouncedQuery,
           statut: filters.statut === "all" ? undefined : filters.statut,
           methodePaiement:
-            filters.methodePaiement === "all"
-              ? undefined
-              : filters.methodePaiement,
-          compte: filters.compte === "all" ? undefined : filters.compte,
+            filters.methodePaiement.length > 0
+              ? filters.methodePaiement.join(",")
+              : undefined,
+          compte:
+            filters.compte.length > 0
+              ? filters.compte.join(",")
+              : undefined,
           statusPrelevement:
-            filters.statusPrelevement === "all"
-              ? undefined
-              : filters.statusPrelevement,
+            filters.statusPrelevement.length > 0
+              ? filters.statusPrelevement.join(",")
+              : undefined,
           from: startDate,
           to: endDate,
           fromPrelevement: startDatePrelevement,
@@ -627,6 +636,22 @@ function ReglementContent() {
     },
   });
 
+  // Query pour la balance
+  const balanceQuery = useQuery({
+    queryKey: ["balance", balanceStartDate, balanceEndDate],
+    queryFn: async () => {
+      if (!balanceStartDate || !balanceEndDate) return null;
+      const response = await axios.get("/api/reglement/balance", {
+        params: {
+          fromPrelevement: balanceStartDate,
+          toPrelevement: balanceEndDate,
+        },
+      });
+      return response.data;
+    },
+    enabled: balanceStep === "results" && !!balanceStartDate && !!balanceEndDate,
+  });
+
   const _handleTypeLableColor = (t: String) => {
     if (t === "recette") {
       return {
@@ -710,6 +735,84 @@ function ReglementContent() {
       default:
         return "bg-gray-100 text-gray-700";
     }
+  };
+
+  // Statuts disponibles pour le filtre
+  const statusPrelevementOptions = [
+    { value: "en_attente", label: "En attente", color: "amber-500" },
+    { value: "confirme", label: "Confirmé", color: "green-500" },
+    { value: "echoue", label: "Échoué", color: "red-500" },
+    { value: "reporte", label: "Reporté", color: "amber-500" },
+    { value: "refuse", label: "Refusé", color: "gray-500" },
+  ];
+
+  // Fonctions pour gérer les statuts de prélèvement multiples
+  const handleStatusPrelevementChange = (
+    statusPrelevement: string,
+    checked: boolean
+  ) => {
+    setFilters(prev => ({
+      ...prev,
+      statusPrelevement: checked
+        ? [...prev.statusPrelevement, statusPrelevement]
+        : prev.statusPrelevement.filter(s => s !== statusPrelevement),
+    }));
+  };
+
+  const removeStatusPrelevement = (statusPrelevement: string) => {
+    setFilters(prev => ({
+      ...prev,
+      statusPrelevement: prev.statusPrelevement.filter(
+        s => s !== statusPrelevement
+      ),
+    }));
+  };
+
+  // Options pour méthode de paiement
+  const methodePaiementOptions = [
+    { value: "espece", label: "Espèce" },
+    { value: "versement", label: "Versement" },
+    { value: "cheque", label: "Chèque" },
+    { value: "traite", label: "Traite" },
+  ];
+
+  // Fonctions pour gérer les méthodes de paiement multiples
+  const handleMethodePaiementChange = (
+    methodePaiement: string,
+    checked: boolean
+  ) => {
+    setFilters(prev => ({
+      ...prev,
+      methodePaiement: checked
+        ? [...prev.methodePaiement, methodePaiement]
+        : prev.methodePaiement.filter(m => m !== methodePaiement),
+    }));
+  };
+
+  const removeMethodePaiement = (methodePaiement: string) => {
+    setFilters(prev => ({
+      ...prev,
+      methodePaiement: prev.methodePaiement.filter(
+        m => m !== methodePaiement
+      ),
+    }));
+  };
+
+  // Fonctions pour gérer les comptes multiples
+  const handleCompteChange = (compte: string, checked: boolean) => {
+    setFilters(prev => ({
+      ...prev,
+      compte: checked
+        ? [...prev.compte, compte]
+        : prev.compte.filter(c => c !== compte),
+    }));
+  };
+
+  const removeCompte = (compte: string) => {
+    setFilters(prev => ({
+      ...prev,
+      compte: prev.compte.filter(c => c !== compte),
+    }));
   };
 
   const handleChangeStatusPrelevement = (
@@ -834,6 +937,19 @@ function ReglementContent() {
                     </div>
                   </div>
                   <div className="flex gap-2 items-center">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setBalanceDialogOpen(true);
+                        setBalanceStep("period");
+                        setBalanceStartDate(undefined);
+                        setBalanceEndDate(undefined);
+                      }}
+                      className="border-purple-500 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900 rounded-full"
+                    >
+                      <Wallet className="mr-2 h-4 w-4" />
+                      Balance
+                    </Button>
                     <Sheet>
                       <SheetTrigger asChild>
                         <Button
@@ -855,7 +971,7 @@ function ReglementContent() {
                           </SheetDescription>
                         </SheetHeader>
                         <div className="grid gap-4 py-4">
-                          <div className="grid items-center gap-3 my-2">
+                          {/* <div className="grid items-center gap-3 my-2">
                             <Label
                               htmlFor="statut"
                               className="text-left text-black"
@@ -910,71 +1026,255 @@ function ReglementContent() {
                                 </SelectItem>
                               </SelectContent>
                             </Select>
-                          </div>
-                          <div className="grid items-center gap-3 my-2">
+                          </div> */}
+                            <div className="grid grid-rows-2 grid-cols-4 items-center my-2">
                             <Label
-                              htmlFor="type"
-                              className="text-left text-black"
+                              htmlFor="statusPrelevement"
+                              className="text-left text-black col-span-4"
+                            >
+                              Statut de prélèvement :
+                            </Label>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  className="col-span-4 justify-between text-left font-normal focus:ring-2 focus:ring-purple-500 bg-white"
+                                >
+                                  <div className="flex flex-wrap gap-1">
+                                    {filters.statusPrelevement.length === 0 ? (
+                                      <span className="text-muted-foreground">
+                                        Sélectionner les statuts
+                                      </span>
+                                    ) : (
+                                      filters.statusPrelevement.map(statut => {
+                                        const option = statusPrelevementOptions.find(
+                                          opt => opt.value === statut
+                                        );
+                                        return (
+                                          <Badge
+                                            key={statut}
+                                            variant="secondary"
+                                            className={`text-xs ${
+                                              statut === "en_attente"
+                                                ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
+                                                : statut === "confirme"
+                                                ? "bg-green-100 text-green-800 hover:bg-green-200"
+                                                : statut === "echoue"
+                                                ? "bg-red-100 text-red-800 hover:bg-red-200"
+                                                : statut === "reporte"
+                                                ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
+                                                : "bg-gray-100 text-gray-800 hover:bg-gray-200"
+                                            }`}
+                                          >
+                                            {option?.label || statut}
+                                            <X
+                                              className="ml-1 h-3 w-3 cursor-pointer hover:text-purple-600"
+                                              onClick={e => {
+                                                e.stopPropagation();
+                                                removeStatusPrelevement(statut);
+                                              }}
+                                            />
+                                          </Badge>
+                                        );
+                                      })
+                                    )}
+                                  </div>
+                                  <ChevronDown className="h-4 w-4 opacity-50" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent
+                                className="w-full p-3"
+                                align="start"
+                              >
+                                <div className="space-y-3">
+                                  {statusPrelevementOptions.map(
+                                    (statut, index) => (
+                                      <div
+                                        key={index}
+                                        className="flex items-center space-x-2"
+                                      >
+                                        <Checkbox
+                                          id={`statusPrelevement-${statut.value}`}
+                                          checked={filters.statusPrelevement.includes(
+                                            statut.value
+                                          )}
+                                          onCheckedChange={checked =>
+                                            handleStatusPrelevementChange(
+                                              statut.value,
+                                              checked as boolean
+                                            )
+                                          }
+                                        />
+                                        <Label
+                                          htmlFor={`statusPrelevement-${statut.value}`}
+                                          className="text-sm font-medium cursor-pointer flex items-center gap-2"
+                                        >
+                                          <span
+                                            className={`h-2 w-2 rounded-full bg-${statut.color}`}
+                                          />
+                                          {statut.label}
+                                        </Label>
+                                      </div>
+                                    )
+                                  )}
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                          </div>
+                          <div className="grid grid-rows-2 grid-cols-4 items-center my-2">
+                            <Label
+                              htmlFor="methodePaiement"
+                              className="text-left text-black col-span-4"
                             >
                               Méthode de paiement :
                             </Label>
-                            <Select
-                              value={filters.methodePaiement}
-                              name="methodePaiement"
-                              onValueChange={value =>
-                                setFilters({
-                                  ...filters,
-                                  methodePaiement: value,
-                                })
-                              }
-                            >
-                              <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
-                                <SelectValue placeholder="Séléctionner un statut" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="all">Tous</SelectItem>
-                                <SelectItem value="espece">Espèce</SelectItem>
-                                <SelectItem value="versement">
-                                  Versement
-                                </SelectItem>
-                                <SelectItem value="cheque">Chèque</SelectItem>
-                                <SelectItem value="traite">Traite</SelectItem>
-                              </SelectContent>
-                            </Select>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  className="col-span-4 justify-between text-left font-normal focus:ring-2 focus:ring-purple-500 bg-white"
+                                >
+                                  <div className="flex flex-wrap gap-1">
+                                    {filters.methodePaiement.length === 0 ? (
+                                      <span className="text-muted-foreground">
+                                        Sélectionner les méthodes
+                                      </span>
+                                    ) : (
+                                      filters.methodePaiement.map(methode => {
+                                        const option = methodePaiementOptions.find(
+                                          opt => opt.value === methode
+                                        );
+                                        return (
+                                          <Badge
+                                            key={methode}
+                                            variant="secondary"
+                                            className="text-xs bg-purple-100 text-purple-800 hover:bg-purple-200"
+                                          >
+                                            {option?.label || methode}
+                                            <X
+                                              className="ml-1 h-3 w-3 cursor-pointer hover:text-purple-600"
+                                              onClick={e => {
+                                                e.stopPropagation();
+                                                removeMethodePaiement(methode);
+                                              }}
+                                            />
+                                          </Badge>
+                                        );
+                                      })
+                                    )}
+                                  </div>
+                                  <ChevronDown className="h-4 w-4 opacity-50" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent
+                                className="w-full p-3"
+                                align="start"
+                              >
+                                <div className="space-y-3">
+                                  {methodePaiementOptions.map((methode, index) => (
+                                    <div
+                                      key={index}
+                                      className="flex items-center space-x-2"
+                                    >
+                                      <Checkbox
+                                        id={`methodePaiement-${methode.value}`}
+                                        checked={filters.methodePaiement.includes(
+                                          methode.value
+                                        )}
+                                        onCheckedChange={checked =>
+                                          handleMethodePaiementChange(
+                                            methode.value,
+                                            checked as boolean
+                                          )
+                                        }
+                                      />
+                                      <Label
+                                        htmlFor={`methodePaiement-${methode.value}`}
+                                        className="text-sm font-medium cursor-pointer"
+                                      >
+                                        {methode.label}
+                                      </Label>
+                                    </div>
+                                  ))}
+                                </div>
+                              </PopoverContent>
+                            </Popover>
                           </div>
-                          <div className="grid items-center gap-3 my-2">
+                          <div className="grid grid-rows-2 grid-cols-4 items-center my-2">
                             <Label
                               htmlFor="compte"
-                              className="text-left text-black"
+                              className="text-left text-black col-span-4"
                             >
                               Compte :
                             </Label>
-                            <Select
-                              value={filters.compte}
-                              name="compte"
-                              onValueChange={value =>
-                                setFilters({ ...filters, compte: value })
-                              }
-                            >
-                              <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
-                                <SelectValue placeholder="Séléctionner un statut" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="all">
-                                  Tous les comptes
-                                </SelectItem>
-                                {comptes.data?.map(
-                                  (element: Compte, index: number) => (
-                                    <SelectItem
-                                      key={index}
-                                      value={element.compte}
-                                    >
-                                      {element.compte}
-                                    </SelectItem>
-                                  )
-                                )}
-                              </SelectContent>
-                            </Select>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  className="col-span-4 justify-between text-left font-normal focus:ring-2 focus:ring-purple-500 bg-white"
+                                >
+                                  <div className="flex flex-wrap gap-1">
+                                    {filters.compte.length === 0 ? (
+                                      <span className="text-muted-foreground">
+                                        Sélectionner les comptes
+                                      </span>
+                                    ) : (
+                                      filters.compte.map(compte => (
+                                        <Badge
+                                          key={compte}
+                                          variant="secondary"
+                                          className="text-xs bg-blue-100 text-blue-800 hover:bg-blue-200"
+                                        >
+                                          {compte}
+                                          <X
+                                            className="ml-1 h-3 w-3 cursor-pointer hover:text-purple-600"
+                                            onClick={e => {
+                                              e.stopPropagation();
+                                              removeCompte(compte);
+                                            }}
+                                          />
+                                        </Badge>
+                                      ))
+                                    )}
+                                  </div>
+                                  <ChevronDown className="h-4 w-4 opacity-50" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent
+                                className="w-full p-3"
+                                align="start"
+                              >
+                                <div className="space-y-3">
+                                  {comptes.data?.map(
+                                    (element: Compte, index: number) => (
+                                      <div
+                                        key={index}
+                                        className="flex items-center space-x-2"
+                                      >
+                                        <Checkbox
+                                          id={`compte-${element.compte}`}
+                                          checked={filters.compte.includes(
+                                            element.compte
+                                          )}
+                                          onCheckedChange={checked =>
+                                            handleCompteChange(
+                                              element.compte,
+                                              checked as boolean
+                                            )
+                                          }
+                                        />
+                                        <Label
+                                          htmlFor={`compte-${element.compte}`}
+                                          className="text-sm font-medium cursor-pointer"
+                                        >
+                                          {element.compte}
+                                        </Label>
+                                      </div>
+                                    )
+                                  )}
+                                </div>
+                              </PopoverContent>
+                            </Popover>
                           </div>
                           <div className="grid gap-2">
                             <Label
@@ -1004,63 +1304,7 @@ function ReglementContent() {
                               setEndDate={setEndDatePrelevement}
                             />
                           </div>
-                          <div className="grid items-center gap-3 my-2">
-                            <Label
-                              htmlFor="statusPrelevement"
-                              className="text-left text-black"
-                            >
-                              Statut de prélèvement :
-                            </Label>
-                            <Select
-                              value={filters.statusPrelevement}
-                              name="statusPrelevement"
-                              onValueChange={value =>
-                                setFilters({
-                                  ...filters,
-                                  statusPrelevement: value,
-                                })
-                              }
-                            >
-                              <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
-                                <SelectValue placeholder="Sélectionner un statut" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="all">
-                                  Tous les statuts
-                                </SelectItem>
-                                <SelectItem value="en_attente">
-                                  <div className="flex items-center gap-2">
-                                    <span className="h-2 w-2 shadow-md rounded-full bg-amber-500" />
-                                    En attente
-                                  </div>
-                                </SelectItem>
-                                <SelectItem value="confirme">
-                                  <div className="flex items-center gap-2">
-                                    <span className="h-2 w-2 rounded-full bg-green-500" />
-                                    Confirmé
-                                  </div>
-                                </SelectItem>
-                                <SelectItem value="refuse">
-                                  <div className="flex items-center gap-2">
-                                    <span className="h-2 w-2 rounded-full bg-gray-500" />
-                                    Refusé
-                                  </div>
-                                </SelectItem>
-                                <SelectItem value="reporte">
-                                  <div className="flex items-center gap-2">
-                                    <span className="h-2 w-2 rounded-full bg-amber-500" />
-                                    Reporté
-                                  </div>
-                                </SelectItem>
-                                <SelectItem value="en_retard">
-                                  <div className="flex items-center gap-2">
-                                    <span className="h-2 w-2 rounded-full bg-red-500" />
-                                    En retard
-                                  </div>
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
+                        
                           <div className="grid grid-cols-4 grid-rows-2 items-start">
                             <Label
                               htmlFor="montant"
@@ -1110,9 +1354,18 @@ function ReglementContent() {
                         const params = {
                           query: debouncedQuery || undefined,
                           statut: filters.statut,
-                          compte: filters.compte,
-                          methodePaiement: filters.methodePaiement,
-                          statusPrelevement: filters.statusPrelevement,
+                          compte:
+                            filters.compte.length > 0
+                              ? filters.compte.join(",")
+                              : undefined,
+                          methodePaiement:
+                            filters.methodePaiement.length > 0
+                              ? filters.methodePaiement.join(",")
+                              : undefined,
+                          statusPrelevement:
+                            filters.statusPrelevement.length > 0
+                              ? filters.statusPrelevement.join(",")
+                              : undefined,
                           from: startDate,
                           to: endDate,
                           fromPrelevement: startDatePrelevement,
@@ -1842,6 +2095,168 @@ function ReglementContent() {
               </DialogFooter>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={balanceDialogOpen}
+        onOpenChange={(open) => {
+          setBalanceDialogOpen(open);
+          if (!open) {
+            setBalanceStep("period");
+            setBalanceStartDate(undefined);
+            setBalanceEndDate(undefined);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold">Balance du compte professionnel</DialogTitle>
+            <DialogDescription>
+              {balanceStep === "period"
+                ? "Sélectionnez une période pour calculer la balance"
+                : "Résultats de la balance pour la période sélectionnée"}
+            </DialogDescription>
+          </DialogHeader>
+
+          {balanceStep === "period" ? (
+            <div className="space-y-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="balanceDate" className="text-left text-black">
+                  Période de prélèvement :
+                </Label>
+                <CustomDateRangePicker
+                  startDate={balanceStartDate}
+                  setStartDate={setBalanceStartDate}
+                  endDate={balanceEndDate}
+                  setEndDate={setBalanceEndDate}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4 py-4">
+              {balanceQuery.isLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <LoadingDots />
+                </div>
+              ) : balanceQuery.data ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 rounded-lg border bg-gray-50">
+                      <div className="text-sm text-gray-600 mb-1">
+                        Solde du compte professionnel
+                      </div>
+                      <div className="text-2xl font-bold text-gray-900">
+                        {formatCurrency(balanceQuery.data.solde)}
+                      </div>
+                    </div>
+                    <div className="p-4 rounded-lg border bg-gray-50">
+                      <div className="text-sm text-gray-600 mb-1">
+                        Somme des règlements prévus
+                      </div>
+                      <div className="text-2xl font-bold text-red-600">
+                        {formatCurrency(balanceQuery.data.sommeReglements)}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {balanceQuery.data.nombreReglements} règlement
+                        {balanceQuery.data.nombreReglements > 1 ? "s" : ""}
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className={`p-4 rounded-lg border ${
+                      balanceQuery.data.difference >= 0
+                        ? "bg-green-50 border-green-200"
+                        : "bg-red-50 border-red-200"
+                    }`}
+                  >
+                    <div className="text-sm text-gray-600 mb-1">
+                      Solde restant après prélèvements
+                    </div>
+                    <div
+                      className={`text-3xl font-bold ${
+                        balanceQuery.data.difference >= 0
+                          ? "text-green-700"
+                          : "text-red-700"
+                      }`}
+                    >
+                      {formatCurrency(balanceQuery.data.difference)}
+                    </div>
+                    {balanceQuery.data.difference < 0 && (
+                      <div className="text-sm text-red-600 mt-2 font-medium">
+                        ⚠️ Le solde ne peut pas supporter les règlements prévus
+                      </div>
+                    )}
+                    {balanceQuery.data.difference >= 0 && (
+                      <div className="text-sm text-green-600 mt-2 font-medium">
+                        ✓ Le solde peut supporter les règlements prévus
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  Aucune donnée disponible
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            {balanceStep === "period" ? (
+              <>
+                <Button
+                  className="rounded-full"
+                  variant="outline"
+                  onClick={() => {
+                    setBalanceDialogOpen(false);
+                    setBalanceStartDate(undefined);
+                    setBalanceEndDate(undefined);
+                  }}
+                >
+                  Annuler
+                </Button>
+                <Button
+                  className="rounded-full bg-purple-500 hover:bg-purple-600 text-white"
+                  onClick={() => {
+                    if (balanceStartDate && balanceEndDate) {
+                      setBalanceStep("results");
+                    } else {
+                      toast.error("Veuillez sélectionner une période");
+                    }
+                  }}
+                  disabled={!balanceStartDate || !balanceEndDate}
+                >
+                  Suivant
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  className="rounded-full"
+                  variant="outline"
+                  onClick={() => {
+                    setBalanceStep("period");
+                    setBalanceStartDate(undefined);
+                    setBalanceEndDate(undefined);
+                  }}
+                >
+                  Retour
+                </Button>
+                <Button
+                  className="rounded-full"
+                  variant="outline"
+                  onClick={() => {
+                    setBalanceDialogOpen(false);
+                    setBalanceStep("period");
+                    setBalanceStartDate(undefined);
+                    setBalanceEndDate(undefined);
+                  }}
+                >
+                  Fermer
+                </Button>
+              </>
+            )}
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

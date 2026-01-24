@@ -144,6 +144,20 @@
   /* Ajuster l'espacement des grilles pour l'orientation horizontale */
   .grid {
     gap: 8px !important;
+    align-items: center !important;
+  }
+
+  /* Centrer verticalement les éléments Fournisseur et Période à l'impression */
+  .grid > div {
+    display: flex !important;
+    align-items: center !important;
+    vertical-align: middle !important;
+  }
+
+  .grid > div > h3,
+  .grid > div > p {
+    margin: 0 !important;
+    vertical-align: middle !important;
   }
 
   /* Optimiser l'affichage des tableaux en mode paysage */

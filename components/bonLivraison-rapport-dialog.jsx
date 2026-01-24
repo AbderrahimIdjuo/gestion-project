@@ -172,6 +172,8 @@ export default function BonLivraisonRapportDialog() {
   };
 
   const { from, to } = getDateRangeFromPeriode(formData.periode);
+  
+  // Query pour récupérer les BL et règlements
   const bonLivraisons = useQuery({
     queryKey: [
       "bonLivraisons-rapport",
@@ -198,6 +200,56 @@ export default function BonLivraisonRapportDialog() {
     },
     enabled: currentStep === 2,
   });
+
+  // Query pour récupérer les règlements dans la période
+  const reglements = useQuery({
+    queryKey: [
+      "reglements-rapport",
+      selectedFournisseur?.id,
+      from?.toISOString(),
+      to?.toISOString(),
+    ],
+    queryFn: async () => {
+      const response = await axios.get("/api/reglement", {
+        params: {
+          fournisseurId: selectedFournisseur?.id || undefined,
+          from: from?.toISOString() ?? null,
+          to: to?.toISOString() ?? null,
+          limit: 10000, // Récupérer tous les règlements
+        },
+      });
+      return response.data.reglements || [];
+    },
+    enabled: currentStep === 2,
+  });
+
+  // Fonction pour calculer la dette initiale
+  // Formule: dette initiale = dette finale + les règlements + les retours - les fournitures
+  function calculerDetteInitiale() {
+    const bls = bonLivraisons?.data || [];
+    const regs = reglements?.data || [];
+    
+    // Calculer la dette finale (somme des montants restants des BL impayés et enPartie)
+    const detteFinale = calculerDetteFinale();
+    
+    // Calculer la somme des règlements dans la période
+    const totalReglements = regs.reduce((acc, reg) => acc + (reg.montant || 0), 0);
+    
+    // Calculer la somme des retours dans la période
+    const totalRetours = bls
+      .filter(bl => bl.type === "retour")
+      .reduce((acc, bl) => acc + (bl.total || 0), 0);
+    
+    // Calculer la somme des fournitures (achats) dans la période
+    const totalFournitures = bls
+      .filter(bl => bl.type === "achats")
+      .reduce((acc, bl) => acc + (bl.total || 0), 0);
+    
+    // Formule: dette initiale = dette finale + règlements + retours - fournitures
+    const detteInit = detteFinale + totalReglements + totalRetours - totalFournitures;
+    
+    return detteInit;
+  }
   function total() {
     return bonLivraisons?.data
       .reduce((acc, bon) => {
@@ -220,11 +272,89 @@ export default function BonLivraisonRapportDialog() {
   function rest() {
     return (total() - totalPaye()).toFixed(2);
   }
+
+  // Fonction pour calculer la dette finale : somme des montants restants des BL impayés et enPartie
+  function calculerDetteFinale() {
+    const bls = bonLivraisons?.data || [];
+    let dette = 0;
+
+    bls.forEach(bl => {
+      // Vérifier si le BL est impayé ou enPartie
+      const reste = bl.total - (bl.totalPaye || 0);
+      
+      // Si le BL est impayé (totalPaye = 0 ou null), prendre le montant total
+      // Si le BL est enPartie (totalPaye > 0 mais < total), prendre le reste
+      if (reste > 0) {
+        dette += reste;
+      }
+    });
+
+    return dette;
+  }
+
   useEffect(() => {
     if (!open) {
       reset();
     }
   }, [open]);
+
+  // Fonction pour fusionner et trier les BL et règlements par date
+  const mergeAndSortTransactions = () => {
+    const bls = bonLivraisons?.data || [];
+    const regs = reglements?.data || [];
+    // Calculer la dette initiale (même sans fournisseur sélectionné)
+    const detteInit = calculerDetteInitiale();
+
+    // Transformer les BL en objets de transaction
+    const blTransactions = bls.map(bl => ({
+      id: bl.id,
+      type: "bonLivraison",
+      blType: bl.type, // "achats" ou "retour"
+      date: new Date(bl.date),
+      fournisseur: bl.fournisseur?.nom || "Inconnu",
+      montant: bl.total, // Montant total (toujours positif)
+      reference: bl.numero || bl.reference,
+      total: bl.total,
+      totalPaye: bl.totalPaye,
+    }));
+
+    // Transformer les règlements en objets de transaction
+    const regTransactions = regs.map(reg => ({
+      id: reg.id,
+      type: "reglement",
+      date: new Date(reg.dateReglement),
+      fournisseur: reg.fournisseur?.nom || "Inconnu",
+      montant: reg.montant,
+      reference: reg.id.substring(0, 8),
+    }));
+
+    // Fusionner et trier par date
+    const allTransactions = [...blTransactions, ...regTransactions].sort(
+      (a, b) => a.date - b.date
+    );
+
+    // Calculer la dette au fur et à mesure (même sans fournisseur sélectionné)
+    let runningDette = detteInit;
+    return allTransactions.map(transaction => {
+      // Calculer la dette pour toutes les transactions
+      if (transaction.type === "bonLivraison") {
+        // Pour un BL de type "achats", on augmente la dette
+        // Pour un BL de type "retour", on diminue la dette
+        if (transaction.blType === "achats") {
+          runningDette += transaction.montant;
+        } else if (transaction.blType === "retour") {
+          runningDette -= transaction.montant;
+        }
+      } else if (transaction.type === "reglement") {
+        // Pour un règlement, on diminue la dette
+        runningDette -= transaction.montant;
+      }
+      return {
+        ...transaction,
+        runningDette: runningDette,
+      };
+    });
+  };
 
   function regrouperBLParFournisseur(bonLivraisons) {
     // if (!Array.isArray(bonLivraisons)) {
@@ -285,7 +415,7 @@ export default function BonLivraisonRapportDialog() {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl font-bold bg-gradient-to-r from-fuchsia-600 to-violet-600 bg-clip-text text-transparent">
             <FileText className="h-5 w-5 text-purple-600" />
-            Achats impayés
+            Rapport des achats
           </DialogTitle>
           <DialogDescription>
             {currentStep === 1
@@ -531,76 +661,104 @@ export default function BonLivraisonRapportDialog() {
           </form>
         )}
 
-        {currentStep === 2 &&
-          (selectedFournisseur !== null ? (
-            // Rapport pour un fournisseur spécifique
+        {currentStep === 2 && (
+            // Rapport (avec ou sans fournisseur spécifique)
             <div>
               <div className="rounded-xl border shadow-sm overflow-x-auto">
-                {bonLivraisons.data?.length > 0 ? (
+                {bonLivraisons.isLoading || reglements.isLoading ? (
+                  <div className="text-center py-10 text-muted-foreground">
+                    <p>Chargement des données...</p>
+                  </div>
+                ) : mergeAndSortTransactions().length > 0 ? (
                   <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead>Date</TableHead>
-                        <TableHead>Référence</TableHead>
                         <TableHead>Fournisseur</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Montant</TableHead>
-                        <TableHead>Montant Payé</TableHead>
+                        <TableHead className="text-right">Fourniture</TableHead>
+                        <TableHead className="text-right">Retour</TableHead>
+                        <TableHead className="text-right">Règlement</TableHead>
+                        <TableHead className="text-right">Dette</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {bonLivraisons.data?.map(bon => (
-                        <TableRow key={bon.id}>
-                          <TableCell>{formatDate(bon.date)}</TableCell>
-                          <TableCell>{bon.reference}</TableCell>
-                          <TableCell>{bon.fournisseur?.nom ?? "-"}</TableCell>
-                          <TableCell>{bon.type}</TableCell>
-                          <TableCell>{formatCurrency(bon.total)} </TableCell>
-                          <TableCell>{formatCurrency(bon.totalPaye)}</TableCell>
+                      {/* Ligne de dette initiale */}
+                      <TableRow className="bg-gray-700 text-white hover:!bg-gray-700 hover:!text-white border-b">
+                        <TableCell className="px-1 py-2 font-semibold">
+                          DETTE INITIALE
+                        </TableCell>
+                        <TableCell className="px-1 py-2"></TableCell>
+                        <TableCell className="px-1 py-2 text-right"></TableCell>
+                        <TableCell className="px-1 py-2 text-right"></TableCell>
+                        <TableCell className="px-1 py-2 text-right"></TableCell>
+                        <TableCell className="px-1 py-2 text-right pr-4 font-semibold">
+                          {formatCurrency(calculerDetteInitiale())}
+                        </TableCell>
+                      </TableRow>
+                      {/* Transactions */}
+                      {mergeAndSortTransactions().map((transaction, index) => (
+                        <TableRow key={`${transaction.type}-${transaction.id}-${index}`} className="border-b">
+                          <TableCell className="px-1 py-2">
+                            {formatDate(transaction.date.toISOString())}
+                          </TableCell>
+                          <TableCell className="px-1 py-2">
+                            {transaction.fournisseur}
+                          </TableCell>
+                          <TableCell className="px-1 py-2 text-right pr-4">
+                            {transaction.type === "bonLivraison" && transaction.blType === "achats" ? (
+                              <span className="text-green-600">
+                                {formatCurrency(transaction.montant)}
+                              </span>
+                            ) : (
+                              ""
+                            )}
+                          </TableCell>
+                          <TableCell className="px-1 py-2 text-right pr-4">
+                            {transaction.type === "bonLivraison" && transaction.blType === "retour" ? (
+                              <span className="text-red-600">
+                                {formatCurrency(transaction.montant)}
+                              </span>
+                            ) : (
+                              ""
+                            )}
+                          </TableCell>
+                          <TableCell className="px-1 py-2 text-right pr-4">
+                            {transaction.type === "reglement" ? (
+                              <span className="text-blue-600">
+                                {formatCurrency(transaction.montant)}
+                              </span>
+                            ) : (
+                              ""
+                            )}
+                          </TableCell>
+                          <TableCell
+                            className={`px-1 py-2 text-right pr-4 font-semibold ${
+                              transaction.runningDette >= 0
+                                ? "text-green-600"
+                                : "text-red-600"
+                            }`}
+                          >
+                            {formatCurrency(transaction.runningDette)}
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
-                    <TableFooter className="bg-white">
-                      <TableRow>
+                    <TableFooter className="bg-gray-50">
+                      <TableRow className="border-b">
                         <TableCell
-                          colSpan={4}
+                          colSpan={5}
                           className="text-right text-lg font-semibold p-2"
                         >
-                          Total :
+                          Dette finale :
                         </TableCell>
                         <TableCell
-                          colSpan={2}
-                          className="text-left text-lg font-semibold p-2"
+                          className={`text-right text-lg font-semibold p-2 ${
+                            calculerDetteFinale() >= 0
+                              ? "text-green-600"
+                              : "text-red-600"
+                          }`}
                         >
-                          {formatCurrency(total())}
-                        </TableCell>
-                      </TableRow>
-                      <TableRow className="border-t border-gray-200">
-                        <TableCell
-                          colSpan={4}
-                          className="text-right text-lg font-semibold p-2"
-                        >
-                          Total Payé :
-                        </TableCell>
-                        <TableCell
-                          colSpan={2}
-                          className="text-left text-lg font-semibold p-2"
-                        >
-                          {formatCurrency(totalPaye())}
-                        </TableCell>
-                      </TableRow>
-                      <TableRow className="border-t border-gray-200">
-                        <TableCell
-                          colSpan={4}
-                          className="text-right text-lg font-semibold p-2"
-                        >
-                          Dette :
-                        </TableCell>
-                        <TableCell
-                          colSpan={2}
-                          className="text-left text-lg font-semibold p-2"
-                        >
-                          {formatCurrency(rest())}
+                          {formatCurrency(calculerDetteFinale())}
                         </TableCell>
                       </TableRow>
                     </TableFooter>
@@ -621,7 +779,7 @@ export default function BonLivraisonRapportDialog() {
                         d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m5.231 13.481L15 17.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v16.5c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Zm3.75 11.625a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"
                       />
                     </svg>
-                    <p>Aucun bon trouvé</p>
+                    <p>Aucune transaction trouvée</p>
                   </div>
                 )}
               </div>
@@ -633,180 +791,38 @@ export default function BonLivraisonRapportDialog() {
                 >
                   Retour
                 </Button>
-                {bonLivraisons.data?.length > 0 && (
+                {mergeAndSortTransactions().length > 0 && (
                   <Button
                     className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full"
                     variant="outline"
                     onClick={() => {
-                      const data = {
-                        from: from?.toISOString(),
-                        to: to?.toISOString(),
-                        bons: bonLivraisons.data,
-                        total: total(),
-                        totalPaye: totalPaye(),
-                        rest: rest(),
-                        fournisseurNom: selectedFournisseur?.nom,
-                      };
-                      window.open(
-                        `/achats/bonLivraison/imprimer-rapport`,
-                        "_blank"
-                      );
-                      localStorage.setItem(
-                        "bonLivraison-rapport",
-                        JSON.stringify(data)
-                      );
-                    }}
-                  >
-                    <Printer className="mr-2 h-4 w-4" /> Imprimer
-                  </Button>
-                )}
-              </div>
-            </div>
-          ) : (
-            // Tous les fournisseurs
-            <div>
-              <div className="rounded-xl border shadow-sm overflow-x-auto">
-                {regrouperBLParFournisseur(bonLivraisons?.data).length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>#</TableHead>
-                        <TableHead>fourniseur</TableHead>
-                        <TableHead>Nbr BL</TableHead>
-                        <TableHead>Nbr Achats</TableHead>
-                        <TableHead>Nbr Retour</TableHead>
-                        <TableHead className="text-right">Achats</TableHead>
-                        <TableHead className="text-right">Retour</TableHead>
-                        <TableHead className="text-right">M.Payé</TableHead>
-                        <TableHead className="text-right">Montant</TableHead>
-                        <TableHead className="text-right">Reste</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {regrouperBLParFournisseur(bonLivraisons?.data).map(
-                        (element, index) => (
-                          <TableRow key={index}>
-                            <TableCell>{index + 1}</TableCell>
-                            <TableCell>{element.fournisseur}</TableCell>
-                            <TableCell>{element.NbrBL}</TableCell>
-                            <TableCell>{element.NbrBLAchats} </TableCell>
-                            <TableCell>{element.NbrBLRetour}</TableCell>
-                            <TableCell className="text-right">
-                              {formatCurrency(element.montantAchats)}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              {formatCurrency(element.montantRetour)}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              {formatCurrency(element.montantPaye)}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              {formatCurrency(element.total)}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              {formatCurrency(
-                                element.total - element.montantPaye
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        )
-                      )}
-                    </TableBody>
-                    <TableFooter className="bg-white">
-                      <TableRow>
-                        <TableCell
-                          colSpan={8}
-                          className="text-right text-lg font-semibold p-2"
-                        >
-                          Total :
-                        </TableCell>
-                        <TableCell
-                          colSpan={2}
-                          className="text-left text-lg font-semibold p-2"
-                        >
-                          {formatCurrency(total())}
-                        </TableCell>
-                      </TableRow>
-                      <TableRow className="border-t border-gray-200">
-                        <TableCell
-                          colSpan={8}
-                          className="text-right text-lg font-semibold p-2"
-                        >
-                          Total Payé :
-                        </TableCell>
-                        <TableCell
-                          colSpan={2}
-                          className="text-left text-lg font-semibold p-2"
-                        >
-                          {formatCurrency(totalPaye())}
-                        </TableCell>
-                      </TableRow>
-                      <TableRow className="border-t border-gray-200">
-                        <TableCell
-                          colSpan={8}
-                          className="text-right text-lg font-semibold p-2"
-                        >
-                          Dette :
-                        </TableCell>
+                      // Sérialiser les transactions en convertissant les dates en chaînes
+                      const transactions = mergeAndSortTransactions().map(transaction => ({
+                        ...transaction,
+                        date: transaction.date instanceof Date 
+                          ? transaction.date.toISOString() 
+                          : transaction.date,
+                      }));
 
-                        <TableCell
-                          colSpan={2}
-                          className="text-left text-lg font-semibold p-2"
-                        >
-                          {formatCurrency(rest())}
-                        </TableCell>
-                      </TableRow>
-                    </TableFooter>
-                  </Table>
-                ) : (
-                  <div className="text-center py-10 text-muted-foreground">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                      className="size-14 mx-auto mb-4 opacity-50"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m5.231 13.481L15 17.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v16.5c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Zm3.75 11.625a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"
-                      />
-                    </svg>
-                    <p>Aucun bon trouvé</p>
-                  </div>
-                )}
-              </div>
-              <div className="flex justify-end gap-3 mt-6 print:hidden">
-                <Button
-                  className="rounded-full"
-                  variant="outline"
-                  onClick={() => setCurrentStep(1)}
-                >
-                  Retour
-                </Button>
-                {bonLivraisons.data?.length > 0 && (
-                  <Button
-                    className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full"
-                    variant="outline"
-                    onClick={() => {
                       const data = {
                         from: from?.toISOString(),
                         to: to?.toISOString(),
-                        bons: regrouperBLParFournisseur(bonLivraisons?.data),
-                        total: total(),
-                        totalPaye: totalPaye(),
-                        rest: rest(),
-                        fournisseurNom: selectedFournisseur?.nom,
+                        transactions: transactions,
+                        detteInitiale: calculerDetteInitiale(),
+                        detteFinale: calculerDetteFinale(),
+                        fournisseurNom: selectedFournisseur?.nom || null,
                       };
-                      window.open(
-                        `/achats/bonLivraison/imprimer-rapport`,
-                        "_blank"
-                      );
+
+                      // Stocker les données AVANT d'ouvrir la fenêtre
                       localStorage.setItem(
                         "bonLivraison-rapport",
                         JSON.stringify(data)
+                      );
+
+                      // Ouvrir la fenêtre après avoir stocké les données
+                      window.open(
+                        `/achats/bonLivraison/imprimer-rapport`,
+                        "_blank"
                       );
                     }}
                   >
@@ -815,7 +831,7 @@ export default function BonLivraisonRapportDialog() {
                 )}
               </div>
             </div>
-          ))}
+          )}
       </DialogContent>
     </Dialog>
   );

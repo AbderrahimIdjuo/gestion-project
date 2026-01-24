@@ -13,6 +13,7 @@ export function PrintButton({
   localStorageKey,
   targetRoute,
   onClick,
+  openInNewTab = false,
   ...props
 }) {
   const router = useRouter();
@@ -23,9 +24,15 @@ export function PrintButton({
       localStorage.setItem(localStorageKey, JSON.stringify(data));
     }
 
-    // Si une route cible est spécifiée, rediriger vers cette page
+    // Si une route cible est spécifiée
     if (targetRoute) {
-      router.push(targetRoute);
+      if (openInNewTab) {
+        // Ouvrir dans un nouvel onglet
+        window.open(targetRoute, "_blank");
+      } else {
+        // Rediriger dans le même onglet
+        router.push(targetRoute);
+      }
       return;
     }
 
@@ -55,6 +62,7 @@ export function PrintReportButton({
   localStorageKey,
   targetRoute,
   children = "Imprimer",
+  openInNewTab = false,
   ...props
 }) {
   return (
@@ -62,6 +70,7 @@ export function PrintReportButton({
       data={data}
       localStorageKey={localStorageKey}
       targetRoute={targetRoute}
+      openInNewTab={openInNewTab}
       {...props}
     >
       {children}

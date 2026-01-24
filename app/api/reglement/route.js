@@ -25,6 +25,20 @@ export async function GET(req) {
     if (searchQuery) {
       filters.OR = [
         { motif: { contains: searchQuery, mode: "insensitive" } },
+                // Permettre la recherche directe de montants (ex: "1000" trouve tous les règlements de 1000 DH)
+                // On ajoute une clause OR pour match le champ montant si la requête searchQuery est numérique
+                ...(Number.isFinite(Number(searchQuery)) && searchQuery.trim() !== ""
+                  ? [
+                      {
+                        montant: Number(searchQuery),
+                      },
+                    ]
+                  : []),
+                {
+          cheque : {
+            numero: { contains: searchQuery, mode: "insensitive" },
+          },
+        },
         {
           fournisseur: {
             nom: { contains: searchQuery, mode: "insensitive" },
@@ -33,9 +47,16 @@ export async function GET(req) {
       ];
     }
 
-    // Compte filter
-    if (compte !== "all") {
-      filters.compte = compte;
+    // Compte filter (peut être multiple, séparé par des virgules)
+    if (compte && compte !== "all") {
+      const compteArray = compte.split(",").map(c => c.trim());
+      if (compteArray.length === 1) {
+        filters.compte = compteArray[0];
+      } else {
+        filters.compte = {
+          in: compteArray,
+        };
+      }
     }
 
     // Statut filter
@@ -43,31 +64,112 @@ export async function GET(req) {
       filters.statut = statut;
     }
 
-    // Méthode de paiement filter
-    if (methodePaiement !== "all") {
-      filters.methodePaiement = methodePaiement;
+    // Méthode de paiement filter (peut être multiple, séparé par des virgules)
+    if (methodePaiement && methodePaiement !== "all") {
+      const methodePaiementArray = methodePaiement.split(",").map(m => m.trim());
+      if (methodePaiementArray.length === 1) {
+        filters.methodePaiement = methodePaiementArray[0];
+      } else {
+        filters.methodePaiement = {
+          in: methodePaiementArray,
+        };
+      }
     }
 
-    // Statut de prélèvement filter
-    if (statusPrelevement !== "all") {
-      if (statusPrelevement === "en_retard") {
-        // "en_retard" est un état calculé : datePrelevement < today ET statusPrelevement = "en_attente"
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        filters.statusPrelevement = "en_attente";
-        filters.datePrelevement = {
-          not: null,
-          lt: today, // Date de prélèvement est dans le passé
-        };
-      } else {
-        filters.statusPrelevement = statusPrelevement;
-        // Si on filtre par "en_attente" et qu'il n'y a pas de filtre de date,
-        // exclure les règlements sans date de prélèvement
-        if (statusPrelevement === "en_attente") {
+    // Statut de prélèvement filter (peut être multiple, séparé par des virgules)
+    if (statusPrelevement && statusPrelevement !== "all") {
+      const statusArray = statusPrelevement.split(",").map(s => s.trim());
+      
+      if (statusArray.length === 1) {
+        // Un seul statut
+        const singleStatus = statusArray[0];
+        if (singleStatus === "en_retard") {
+          // "en_retard" est un état calculé : datePrelevement < today ET statusPrelevement = "en_attente"
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          
+          filters.statusPrelevement = "en_attente";
           filters.datePrelevement = {
             not: null,
+            lt: today,
           };
+        } else {
+          filters.statusPrelevement = singleStatus;
+          // Si on filtre par "en_attente", exclure les règlements sans date de prélèvement
+          if (singleStatus === "en_attente") {
+            filters.datePrelevement = {
+              not: null,
+            };
+          }
+        }
+      } else {
+        // Plusieurs statuts
+        // Vérifier si "en_retard" est dans la liste
+        const hasEnRetard = statusArray.includes("en_retard");
+        const statusWithoutEnRetard = statusArray.filter(s => s !== "en_retard");
+        
+        const orConditions = [];
+        
+        // Ajouter la condition pour "en_retard" si présent
+        if (hasEnRetard) {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          orConditions.push({
+            statusPrelevement: "en_attente",
+            datePrelevement: {
+              not: null,
+              lt: today,
+            },
+          });
+        }
+        
+        // Ajouter les autres statuts
+        if (statusWithoutEnRetard.length > 0) {
+          const hasEnAttente = statusWithoutEnRetard.includes("en_attente");
+          const otherStatuses = statusWithoutEnRetard.filter(s => s !== "en_attente");
+          
+          if (hasEnAttente && otherStatuses.length > 0) {
+            // Cas mixte : en_attente + autres statuts
+            orConditions.push({
+              statusPrelevement: "en_attente",
+              datePrelevement: { not: null },
+            });
+            orConditions.push({
+              statusPrelevement: { in: otherStatuses },
+            });
+          } else if (hasEnAttente) {
+            // Seulement en_attente
+            orConditions.push({
+              statusPrelevement: "en_attente",
+              datePrelevement: { not: null },
+            });
+          } else {
+            // Autres statuts seulement
+            orConditions.push({
+              statusPrelevement: { in: statusWithoutEnRetard },
+            });
+          }
+        }
+        
+        // Combiner avec filters.OR existant pour la recherche si présent
+        if (orConditions.length > 0) {
+          if (filters.OR && Array.isArray(filters.OR)) {
+            // Si filters.OR existe déjà (pour la recherche), on doit combiner avec AND
+            // On crée une structure AND qui combine la recherche OR et les statuts OR
+            const searchOR = filters.OR;
+            delete filters.OR;
+            filters.AND = [
+              { OR: searchOR },
+              { OR: orConditions },
+            ];
+          } else {
+            // Pas de conflit, on peut utiliser OR directement
+            if (orConditions.length === 1) {
+              Object.assign(filters, orConditions[0]);
+            } else {
+              filters.OR = orConditions;
+            }
+          }
         }
       }
     }
@@ -87,7 +189,7 @@ export async function GET(req) {
     }
 
     // Date range filter (sur datePrelevement)
-    // Note: Si statusPrelevement = "en_retard", on a déjà défini datePrelevement
+    // Note: Si statusPrelevement contient "en_retard", on a peut-être déjà défini datePrelevement
     if (fromPrelevement && toPrelevement) {
       const startDatePrelevement = new Date(fromPrelevement);
       startDatePrelevement.setHours(0, 0, 0, 0);
@@ -96,7 +198,12 @@ export async function GET(req) {
       endDatePrelevement.setHours(23, 59, 59, 999);
 
       // Si on a déjà un filtre datePrelevement (pour en_retard), on doit combiner
-      if (filters.datePrelevement && statusPrelevement === "en_retard") {
+      const statusArray = statusPrelevement && statusPrelevement !== "all" 
+        ? statusPrelevement.split(",").map(s => s.trim())
+        : [];
+      const hasEnRetard = statusArray.includes("en_retard");
+      
+      if (filters.datePrelevement && hasEnRetard) {
         // Combiner les filtres : datePrelevement < today ET dans la plage sélectionnée
         filters.datePrelevement = {
           ...filters.datePrelevement,
