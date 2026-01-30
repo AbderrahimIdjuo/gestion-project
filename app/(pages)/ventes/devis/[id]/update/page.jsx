@@ -6,7 +6,6 @@ import ComboBoxClients from "@/components/comboBox-clients";
 import ComboBoxEmployes from "@/components/comboBox-employes";
 import { CustomDatePicker } from "@/components/customUi/customDatePicker";
 import { AddButton } from "@/components/customUi/styledButton";
-import { LoadingDots } from "@/components/loading-dots";
 import { Navbar } from "@/components/navbar";
 import { Sidebar } from "@/components/sidebar";
 import { Button } from "@/components/ui/button";
@@ -20,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import {
   Table,
@@ -202,17 +202,103 @@ export default function UpdateDevisPage({ params }) {
           <Sidebar />
 
           {/* Main content area */}
-          <form
-            className="flex justify-center w-full"
-            onSubmit={handleSubmit(onSubmit)}
-          >
-            <div className="container mb-10 mx-auto py-6 space-y-6 w-full">
+          <div className="flex-1 flex flex-col overflow-auto">
+            {LoadingDevis ? (
+              <div className="w-full space-y-6 p-6 mb-[5rem]">
+                {/* Skeleton header */}
+                <div className="flex justify-between items-center">
+                  <Skeleton className="h-9 w-[320px]" />
+                </div>
+                <Card className="w-full">
+                  <CardContent className="p-6 space-y-6">
+                    {/* Header section skeleton */}
+                    <div className="grid grid-cols-6 gap-6">
+                      <div className="col-span-3 space-y-2">
+                        <Skeleton className="h-4 w-20" />
+                        <Skeleton className="h-10 w-full" />
+                      </div>
+                      <div className="col-span-3 space-y-2">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-10 w-full" />
+                      </div>
+                      <div className="col-span-2 space-y-2">
+                        <Skeleton className="h-4 w-12" />
+                        <Skeleton className="h-10 w-full" />
+                      </div>
+                      <div className="col-span-2 space-y-2">
+                        <Skeleton className="h-4 w-20" />
+                        <Skeleton className="h-10 w-full" />
+                      </div>
+                      <div className="col-span-2 space-y-2">
+                        <Skeleton className="h-4 w-14" />
+                        <Skeleton className="h-10 w-full" />
+                      </div>
+                    </div>
+                    {/* Table skeleton */}
+                    <div className="space-y-4">
+                      <div className="flex gap-2 mb-4">
+                        <Skeleton className="h-4 w-[30%]" />
+                        <Skeleton className="h-4 w-[10%]" />
+                        <Skeleton className="h-4 w-[10%]" />
+                        <Skeleton className="h-4 w-[10%]" />
+                        <Skeleton className="h-4 w-[10%]" />
+                        <Skeleton className="h-4 w-[8%]" />
+                        <Skeleton className="h-4 w-[8%]" />
+                        <Skeleton className="h-4 w-[8%]" />
+                      </div>
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="flex gap-2 items-center">
+                          <Skeleton className="h-10 flex-1" />
+                          <Skeleton className="h-10 w-24" />
+                          <Skeleton className="h-10 w-24" />
+                          <Skeleton className="h-10 w-24" />
+                          <Skeleton className="h-10 w-16" />
+                          <Skeleton className="h-10 w-20" />
+                          <Skeleton className="h-10 w-24" />
+                          <Skeleton className="h-10 w-24" />
+                          <Skeleton className="h-9 w-9 rounded-md" />
+                        </div>
+                      ))}
+                    </div>
+                    {/* Note skeleton */}
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-16" />
+                      <Skeleton className="h-24 w-full" />
+                    </div>
+                    {/* Totals skeleton */}
+                    <div className="space-y-4 bg-muted/50 p-4 rounded-lg">
+                      <div className="flex justify-between py-2 border-b border-border">
+                        <Skeleton className="h-4 w-20" />
+                        <Skeleton className="h-4 w-24" />
+                      </div>
+                      <div className="flex justify-between py-2">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-4 w-20" />
+                      </div>
+                      <div className="flex justify-between py-2 border-t border-border font-semibold">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-4 w-28" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                {/* Buttons skeleton */}
+                <div className="flex justify-end items-center gap-2">
+                  <Skeleton className="h-10 w-24 rounded-full" />
+                  <Skeleton className="h-10 w-32 rounded-full" />
+                </div>
+              </div>
+            ) : (
+            <form
+              className="w-full flex flex-col flex-1"
+              onSubmit={handleSubmit(onSubmit)}
+            >
+              <div className="w-full space-y-6 p-6 mb-[5rem]">
               <div className="flex justify-between items-center">
                 <div className="flex gap-3 items-center">
                   <h1 className="text-3xl font-bold">
                     Modifier le devis : {watch("numero")}{" "}
                   </h1>
-                  {LoadingDevis && <LoadingDots size={7} />}
                 </div>
               </div>
               <Card className="w-full">
@@ -698,7 +784,9 @@ export default function UpdateDevisPage({ params }) {
                 </div>
               </div>
             </div>
-          </form>
+            </form>
+            )}
+          </div>
         </div>
       </div>
     </>

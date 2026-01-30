@@ -1,6 +1,7 @@
 "use client";
 
 import CreateFactureDialog from "@/components/create-facture-dialog";
+import CreateFactureFromMultipleVersementsDialog from "@/components/create-facture-from-multiple-versements-dialog";
 import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
 import CustomPagination from "@/components/customUi/customPagination";
 import { PriceRangeSlider } from "@/components/customUi/customSlider";
@@ -32,9 +33,10 @@ import {
 import UpdateFactureDialog from "@/components/update-facture-dialog";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { Filter, Pen, Printer, Search, Trash2 } from "lucide-react";
+import { Filter, Pen, Plus, Printer, Search, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
+import { useUser } from "@clerk/nextjs";
 
 function formatDate(dateString) {
   return dateString?.split("T")[0].split("-").reverse().join("-");
@@ -50,7 +52,10 @@ export default function Factures() {
   const [endDate, setEndDate] = useState();
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState();
+  const [multipleVersementsDialogOpen, setMultipleVersementsDialogOpen] = useState(false);
   const queryClient = useQueryClient();
+  const { user } = useUser();
+  const isAdmin = user?.publicMetadata?.role === "admin";
 
   const [filters, setFilters] = useState({
     categorie: "all",
@@ -115,6 +120,10 @@ export default function Factures() {
 
   const deleteFacture = useMutation({
     mutationFn: async () => {
+      if (!isAdmin) {
+        toast.error("Accès refusé: seul l'admin peut supprimer une facture.");
+        return;
+      }
       const loadingToast = toast.loading("Suppression...");
       try {
         await axios.delete(`/api/factures/${currFacture.id}`);
@@ -158,7 +167,7 @@ export default function Factures() {
             <div className="flex-1 overflow-auto">
               <div className="space-y-6 caret-transparent p-6">
                 <div className="flex justify-between items-center">
-                  <h1 className="text-3xl font-bold">Factures</h1>
+                  <h1 className="text-3xl font-bold">Factures Ventes</h1>
                 </div>
 
                 <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-6 ">
@@ -241,7 +250,15 @@ export default function Factures() {
                         </div>
                       </SheetContent>
                     </Sheet>
-                    <CreateFactureDialog />
+                    <Button
+                      onClick={() => {
+                        setMultipleVersementsDialogOpen(true);
+                      }}
+                      className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 rounded-full whitespace-nowrap text-white hover:text-white"
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Ajouter une facture
+                    </Button>
                   </div>
                 </div>
 
@@ -336,21 +353,23 @@ export default function Factures() {
                                       <span className="sr-only">Imprimer</span>
                                     </Button>
                                   </CustomTooltip>
-                                  <CustomTooltip message="Supprimer">
-                                    <Button
-                                      name="delete btn"
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
-                                      onClick={() => {
-                                        setIsDialogOpen(true);
-                                        setCurrFacture(facture);
-                                      }}
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                      <span className="sr-only">Supprimer</span>
-                                    </Button>
-                                  </CustomTooltip>
+                                  {isAdmin && (
+                                    <CustomTooltip message="Supprimer">
+                                      <Button
+                                        name="delete btn"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
+                                        onClick={() => {
+                                          setIsDialogOpen(true);
+                                          setCurrFacture(facture);
+                                        }}
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                        <span className="sr-only">Supprimer</span>
+                                      </Button>
+                                    </CustomTooltip>
+                                  )}
                                   <CustomTooltip message="Modifier">
                                     <Button
                                       name="update btn"
@@ -425,6 +444,10 @@ export default function Factures() {
         facture={currFacture}
         isOpen={isUpdateDialogOpen}
         onClose={() => setIsUpdateDialogOpen(false)}
+      />
+      <CreateFactureFromMultipleVersementsDialog
+        open={multipleVersementsDialogOpen}
+        onOpenChange={setMultipleVersementsDialogOpen}
       />
     </>
   );

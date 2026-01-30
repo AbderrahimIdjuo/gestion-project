@@ -191,6 +191,7 @@ model BlGroupsProduits {
   group     BLGroups @relation(fields: [groupId], references: [id], onDelete: Cascade)
   produit   Produits @relation(fields: [produitId], references: [id], onDelete: Cascade)
 }
+
 //had lmodel fih les articls dyal les devis 
 model Articls {
   id          String   @id @default(uuid())
@@ -248,16 +249,17 @@ model FacturesAchats {
 }
 
 model Factures {
-  id          String            @id @default(uuid())
-  date        DateTime?
-  numero      String?
-  devisNumero String?
-  total       Float?
-  clientId    String
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-  client      Clients           @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  articls     FacturesArticls[]
+  id                    String                 @id @default(uuid())
+  date                  DateTime?
+  numero                String?
+  devisNumero           String?
+  total                 Float?
+  clientId              String
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  client                Clients                @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  articls               FacturesArticls[]
+  affectationsVersement AffectationVersement[]
 }
 
 model FacturesArticls {
@@ -386,9 +388,43 @@ model CategoriesProduits {
 }
 
 model ComptesBancaires {
-  id     String @id @default(uuid())
-  compte String
-  solde  Float  @default(0)
+  id               String      @id @default(uuid())
+  compte           String
+  solde            Float       @default(0)
+  versementsSource Versement[] @relation("VersementSource")
+  versementsPro    Versement[] @relation("VersementPro")
+}
+
+model Versement {
+  id                    String                 @id @default(uuid())
+  montant               Float
+  date                  DateTime               @default(now())
+  sourceCompteId        String?
+  compteProId           String
+  reference             String?
+  note                  String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  sourceCompte          ComptesBancaires?      @relation("VersementSource", fields: [sourceCompteId], references: [id], onDelete: Restrict)
+  comptePro             ComptesBancaires       @relation("VersementPro", fields: [compteProId], references: [id], onDelete: Restrict)
+  affectationsVersement AffectationVersement[]
+
+  @@index([sourceCompteId])
+  @@index([compteProId])
+  @@index([date])
+  @@index([createdAt])
+}
+
+model AffectationVersement {
+  id          String    @id @default(uuid())
+  versementId String
+  factureId   String
+  montant     Float
+  versement   Versement @relation(fields: [versementId], references: [id], onDelete: Cascade)
+  facture     Factures  @relation(fields: [factureId], references: [id], onDelete: Cascade)
+
+  @@index([factureId])
+  @@index([versementId])
 }
 
 model ModesPaiement {

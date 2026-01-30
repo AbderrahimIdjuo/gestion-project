@@ -4,6 +4,13 @@ import ComptesRapportDialog from "@/components/comptes-rapport-dialog";
 import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
 import CustomPagination from "@/components/customUi/customPagination";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { LoadingDots } from "@/components/loading-dots";
 import { Navbar } from "@/components/navbar";
 import TransactionDialog from "@/components/new-transaction";
@@ -46,6 +53,7 @@ import axios from "axios";
 import {
   ChevronDown,
   Filter,
+  Landmark,
   Pen,
   Printer,
   Search,
@@ -54,6 +62,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
+import { useUser } from "@clerk/nextjs";
 
 type Transaction = {
   id: string;
@@ -88,6 +97,41 @@ type Fournisseur = {
 type Compte = {
   compte: string;
 };
+
+// Montant en lettres pour l'affichage chèque/traite
+function nombreEnLettres(n: number): string {
+  const unites = ["", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf"];
+  const dizaines = ["", "dix", "vingt", "trente", "quarante", "cinquante", "soixante"];
+  const dizainesSpeciales = ["dix", "onze", "douze", "treize", "quatorze", "quinze", "seize"];
+  function convertMoinsDeCent(n: number): string {
+    if (n < 10) return unites[n];
+    if (n < 17) return dizainesSpeciales[n - 10];
+    if (n < 20) return "dix-" + unites[n - 10];
+    if (n < 70) {
+      const d = Math.floor(n / 10);
+      const u = n % 10;
+      return dizaines[d] + (u === 1 ? "-et-un" : u > 0 ? "-" + unites[u] : "");
+    }
+    if (n < 80) return "soixante-" + convertMoinsDeCent(n - 60);
+    if (n < 100) return "quatre-vingt" + (n === 80 ? "s" : "-" + convertMoinsDeCent(n - 80));
+    return "";
+  }
+  function convertMoinsDeMille(n: number): string {
+    if (n < 100) return convertMoinsDeCent(n);
+    const c = Math.floor(n / 100);
+    const r = n % 100;
+    return (c === 1 ? "cent" : unites[c] + " cent" + (r === 0 ? "s" : "")) + (r > 0 ? " " + convertMoinsDeCent(r) : "");
+  }
+  function convertir(n: number): string {
+    if (n === 0) return "zéro";
+    if (n < 1000) return convertMoinsDeMille(n);
+    const m = Math.floor(n / 1000);
+    const r = n % 1000;
+    return (m === 1 ? "mille" : convertMoinsDeMille(m) + " mille") + (r > 0 ? " " + convertMoinsDeMille(r) : "");
+  }
+  return convertir(Math.floor(n)).trim();
+}
+
 export default function Banques() {
   const [searchQuery, setSearchQuery] = useState("");
   const [transaction, setTransaction] = useState<Transaction | undefined>();
@@ -100,6 +144,9 @@ export default function Banques() {
   const [selectedFournisseur, setSelectedFournisseur] =
     useState<Fournisseur | null>();
   const [updateDialog, setUpdateDialog] = useState(false);
+  const [chequeTraiteDialogOpen, setChequeTraiteDialogOpen] = useState(false);
+  const [selectedTransactionForCheque, setSelectedTransactionForCheque] =
+    useState<Transaction | null>(null);
   const [filters, setFilters] = useState({
     compte: [] as string[],
     type: [] as string[],
@@ -107,6 +154,8 @@ export default function Banques() {
     typeDepense: "all",
   });
   const queryClient = useQueryClient();
+  const { user } = useUser();
+  const isAdmin = user?.publicMetadata?.role === "admin";
 
   // Fonctions pour gérer les filtres multiples
   const handleTypeChange = (type: string, checked: boolean) => {
@@ -219,6 +268,10 @@ export default function Banques() {
 
   const deleteTrans = useMutation({
     mutationFn: async () => {
+      if (!isAdmin) {
+        toast.error("Accès refusé: seul l'admin peut supprimer une transaction.");
+        return;
+      }
       const loadingToast = toast.loading("Suppression...");
       try {
         await axios.delete("/api/tresorie", {
@@ -281,57 +334,8 @@ export default function Banques() {
       transaction.methodePaiement === "cheque" ||
       transaction.methodePaiement === "traite"
     ) {
-      let beneficiaire = "Inconnu";
-      if (transaction.description.includes("bénéficiaire")) {
-        beneficiaire = transaction.description
-          ?.replace(/bénéficiaire\s*:/i, "") // plus flexible
-          .trim();
-      } else if (transaction.description.includes("DEV")) {
-        beneficiaire = "ste.OUDAOUDOX ";
-      }
-
-      const numeroCheque = transaction.cheque?.numero || "Inconnu";
-      const montant = transaction.montant || "Inconnu";
-      const dateRegelemen = transaction.cheque.dateReglement || "Inconnu";
-      const compte = transaction.compte || "Inconnu";
-
-      toast(
-        t => (
-          <div className="flex flex-col gap-4 justify-start items-center ">
-            <div className="flex flex-col  text-sm w-full">
-              <span>
-                Bénéficiaire: <b>{beneficiaire}</b>
-              </span>
-              <span>
-                Montant: <b>{montant}</b>
-              </span>
-              <span>
-                Date de réglement: <b>{formatDate(dateRegelemen)}</b>
-              </span>
-              <span>
-                Compte: <b>{compte}</b>
-              </span>
-              <span>
-                Numéro de chèque: <b>{numeroCheque}</b>
-              </span>
-            </div>
-
-            <button
-              onClick={() => toast.dismiss(t.id)}
-              className="ml-auto text-white bg-purple-500 px-3 py-1 rounded hover:bg-purple-600 text-sm"
-            >
-              Fermer
-            </button>
-          </div>
-        ),
-        {
-          style: {
-            padding: "12px",
-            backgroundColor: "#f9f9f9",
-          },
-          duration: 50000,
-        }
-      );
+      setSelectedTransactionForCheque(transaction);
+      setChequeTraiteDialogOpen(true);
     }
   };
 
@@ -838,18 +842,18 @@ export default function Banques() {
                           ) : transactions.data?.length > 0 ? (
                             transactions.data?.map(
                               (transaction: Transaction) => (
-                                <TableRow key={transaction.id}>
-                                  <TableCell className="font-medium py-1">
+                                <TableRow key={transaction.id} >
+                                  <TableCell className="font-medium py-2">
                                     {formatDate(transaction.date) ||
                                       formatDate(transaction.createdAt)}
                                   </TableCell>
-                                  <TableCell className="font-medium py-0">
+                                  <TableCell className="font-medium py-2">
                                     {transaction.lable}
                                   </TableCell>
-                                  <TableCell className="font-medium py-0">
+                                  <TableCell className="font-medium py-2">
                                     {formatCurrency(transaction.montant)}
                                   </TableCell>
-                                  <TableCell className="font-medium py-0">
+                                  <TableCell className="font-medium py-2">
                                     <span
                                       className={`text-sm p-[1px] px-3 rounded-full  ${
                                         handleTypeLableColor(transaction.type)
@@ -867,7 +871,7 @@ export default function Banques() {
                                     onClick={() =>
                                       handleChequeClick(transaction)
                                     }
-                                    className={`font-medium py-0 ${
+                                    className={`font-medium py-2 ${
                                       (transaction.methodePaiement ===
                                         "cheque" ||
                                         transaction.methodePaiement ===
@@ -878,43 +882,47 @@ export default function Banques() {
                                     {methodePaiementLabel(transaction)}
                                   </TableCell>
 
-                                  <TableCell className="font-medium py-0">
+                                  <TableCell className="font-medium py-2">
                                     {transaction.compte}
                                   </TableCell>
-                                  <TableCell className="font-medium py-0">
+                                  <TableCell className="font-medium py-2">
                                     {transaction.description}
                                   </TableCell>
 
                                   <TableCell className="text-right py-2">
                                     <div className="flex justify-end gap-2">
-                                      <Button
-                                        onClick={() => {
-                                          setUpdateDialog(true);
-                                          setTransaction(transaction);
-                                        }}
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
-                                      >
-                                        <Pen className="h-4 w-4" />
-                                        <span className="sr-only">
-                                          modifier
-                                        </span>
-                                      </Button>
-                                      <Button
-                                        onClick={() => {
-                                          setDeleteDialog(true);
-                                          setTransaction(transaction);
-                                        }}
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
-                                      >
-                                        <Trash2 className="h-4 w-4" />
-                                        <span className="sr-only">
-                                          Supprimer
-                                        </span>
-                                      </Button>
+                                      {isAdmin && (
+                                        <>
+                                          <Button
+                                            onClick={() => {
+                                              setUpdateDialog(true);
+                                              setTransaction(transaction);
+                                            }}
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
+                                          >
+                                            <Pen className="h-4 w-4" />
+                                            <span className="sr-only">
+                                              modifier
+                                            </span>
+                                          </Button>
+                                          <Button
+                                            onClick={() => {
+                                              setDeleteDialog(true);
+                                              setTransaction(transaction);
+                                            }}
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
+                                          >
+                                            <Trash2 className="h-4 w-4" />
+                                            <span className="sr-only">
+                                              Supprimer
+                                            </span>
+                                          </Button>
+                                        </>
+                                      )}
                                     </div>
                                   </TableCell>
                                 </TableRow>
@@ -958,13 +966,149 @@ export default function Banques() {
         }}
       />
 
-      <UpdateTransactionDialog
-        isOpen={updateDialog}
-        onClose={() => {
-          setUpdateDialog(false);
+      <Dialog
+        open={chequeTraiteDialogOpen}
+        onOpenChange={open => {
+          setChequeTraiteDialogOpen(open);
+          if (!open) setSelectedTransactionForCheque(null);
         }}
-        transaction={transaction}
-      />
+      >
+        <DialogContent className="sm:max-w-5xl max-h-[95vh] overflow-y-auto p-0">
+          {selectedTransactionForCheque && (
+            <div className="space-y-4 p-6">
+              <DialogHeader className="text-center pb-4">
+                <DialogTitle className="text-2xl font-bold">
+                  {selectedTransactionForCheque.methodePaiement === "cheque"
+                    ? "CHÈQUE BANCAIRE"
+                    : "TRAITE"}
+                </DialogTitle>
+              </DialogHeader>
+
+              <div className="border-2 border-gray-800 bg-white p-8 shadow-2xl relative overflow-hidden min-h-[280px]">
+                <div className="absolute top-0 left-0 right-0 h-1 border-b border-dotted border-gray-400" />
+                <div className="absolute bottom-0 left-0 right-0 h-1 border-t border-dotted border-gray-400" />
+                <div className="absolute left-0 top-0 bottom-0 w-1 border-r border-dotted border-gray-400" />
+                <div className="absolute right-0 top-0 bottom-0 w-1 border-l border-dotted border-gray-400" />
+                <div
+                  className="absolute inset-0 opacity-[0.02] pointer-events-none"
+                  style={{
+                    backgroundImage:
+                      "repeating-linear-gradient(45deg, transparent, transparent 10px, #000 10px, #000 11px)",
+                  }}
+                />
+
+                <div className="relative z-10 h-full flex flex-col">
+                  <div className="flex justify-between items-start mb-6">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center border-2 border-gray-400">
+                        <Landmark className="h-4 w-4 text-gray-600" />
+                      </div>
+                      <div className="text-xs text-gray-700">
+                        <div className="text-[10px] text-gray-600">
+                          Compte bancaire
+                        </div>
+                        <div className="font-bold text-sm mb-0.5 text-gray-900 uppercase">
+                          {selectedTransactionForCheque.compte}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-left flex gap-4">
+                      <div className="text-[10px] text-gray-600 mb-1 font-medium uppercase">
+                        Date de règlement: <br />
+                        <span className="font-bold text-sm text-gray-900">
+                          {formatDate(
+                            selectedTransactionForCheque.cheque?.dateReglement
+                          ) || "—"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-start mb-6 gap-8">
+                    <div className="flex-1">
+                      <div className="text-[10px] text-gray-600 mb-1 font-medium uppercase tracking-wide">
+                        PAYEZ À L&apos;ORDRE DE
+                      </div>
+                      <div className="text-xl font-extrabold border-b-2 border-gray-900 pb-2 uppercase tracking-wide min-h-[2.5rem] flex items-end">
+                        {selectedTransactionForCheque.description?.includes(
+                          "bénéficiaire"
+                        )
+                          ? selectedTransactionForCheque.description
+                              .replace(/bénéficiaire\s*:/i, "")
+                              .trim()
+                          : selectedTransactionForCheque.description?.includes(
+                                "DEV"
+                              )
+                            ? "ste.OUDAOUDOX"
+                            : selectedTransactionForCheque.description || "—"}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="border-2 border-gray-900 px-4 py-2 min-w-[150px]">
+                        <div className="text-2xl font-extrabold text-gray-900 text-right">
+                          {Number(
+                            selectedTransactionForCheque.montant
+                          ).toFixed(2)}{" "}
+                          DH
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mb-6">
+                    <div className="text-base font-bold border-b-2 border-gray-900 pb-2 min-h-[2rem] flex items-end tracking-wide">
+                      {nombreEnLettres(
+                        Number(selectedTransactionForCheque.montant)
+                      )}{" "}
+                      <span className="ml-2">dirhams</span>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-end mt-auto pt-4">
+                    <div className="flex-1">
+                      <div className="text-[10px] text-gray-600 mb-1 font-medium uppercase">
+                        Motif :
+                      </div>
+                      <div className="text-sm font-semibold pb-1 text-gray-800 min-h-[1.5rem]">
+                        {selectedTransactionForCheque.lable || "—"}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 pt-3 border-t border-dashed border-gray-400">
+                    <div className="text-[30px] text-gray-600 font-mono tracking-widest text-center">
+                      ⑆ {selectedTransactionForCheque.cheque?.numero || "—"} ⑆
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <DialogFooter className="pt-4">
+                <Button
+                  className="rounded-full"
+                  variant="outline"
+                  onClick={() => {
+                    setChequeTraiteDialogOpen(false);
+                    setSelectedTransactionForCheque(null);
+                  }}
+                >
+                  Fermer
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {isAdmin && (
+        <UpdateTransactionDialog
+          isOpen={updateDialog}
+          onClose={() => {
+            setUpdateDialog(false);
+          }}
+          transaction={transaction}
+        />
+      )}
     </>
   );
 }

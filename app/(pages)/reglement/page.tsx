@@ -66,14 +66,17 @@ import {
   formatDate,
   methodePaiementLabel,
 } from "@/lib/functions";
+import { useUser } from "@clerk/nextjs";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import {
+  ArrowUp,
   CalendarClock,
   ChevronDown,
   Columns,
   FileText,
   Filter,
+  History,
   LandmarkIcon,
   MoreVertical,
   Pen,
@@ -326,6 +329,8 @@ const getPrelevementChip = (reglement: Reglement) => {
 function ReglementContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { user } = useUser();
+  const isAdmin = user?.publicMetadata?.role === "admin";
   const [searchQuery, setSearchQuery] = useState("");
   const [reglementForTable, setReglementForTable] = useState<
     Transaction | undefined
@@ -373,6 +378,12 @@ function ReglementContent() {
   const [balanceStartDate, setBalanceStartDate] = useState<string | undefined>();
   const [balanceEndDate, setBalanceEndDate] = useState<string | undefined>();
   const [balanceStep, setBalanceStep] = useState<"period" | "results">("period");
+  const [versementDialogOpen, setVersementDialogOpen] = useState(false);
+  const [versementMontant, setVersementMontant] = useState<string>("");
+  const [versementSourceCompteId, setVersementSourceCompteId] = useState<string>("");
+  const [versementReference, setVersementReference] = useState<string>("");
+  const [versementNote, setVersementNote] = useState<string>("");
+  const [versementHistoryPage, setVersementHistoryPage] = useState(1);
   const queryClient = useQueryClient();
 
   // État pour la visibilité des colonnes
@@ -526,6 +537,11 @@ function ReglementContent() {
   useEffect(() => {
     const prelevementId = searchParams.get("prelevement");
     if (prelevementId && reglements.data?.reglements) {
+      // Seul l'admin peut ouvrir le dialog de prélèvement via URL
+      if (!isAdmin) {
+        router.replace("/reglement", { scroll: false });
+        return;
+      }
       const reglement = reglements.data.reglements.find(
         (r: Reglement) => r.id === prelevementId
       );
@@ -536,7 +552,7 @@ function ReglementContent() {
         router.replace("/reglement", { scroll: false });
       }
     }
-  }, [searchParams, reglements.data, router]);
+  }, [searchParams, reglements.data, router, isAdmin]);
 
   // Fonction pour mapper Reglement vers format tableau
   const mapReglementForTable = (reglement: Reglement): Transaction => {
@@ -575,6 +591,10 @@ function ReglementContent() {
 
   const deleteReglement = useMutation({
     mutationFn: async () => {
+      if (!isAdmin) {
+        toast.error("Accès refusé: seul l'admin peut supprimer un règlement.");
+        return;
+      }
       const loadingToast = toast.loading("Suppression...");
       try {
         await axios.delete("/api/reglement", {
@@ -613,6 +633,9 @@ function ReglementContent() {
         | "reporte"
         | "refuse";
     }) => {
+      if (!isAdmin) {
+        throw new Error("Access denied. Admin role required.");
+      }
       const response = await axios.patch("/api/reglement", {
         id,
         statusPrelevement,
@@ -650,6 +673,65 @@ function ReglementContent() {
       return response.data;
     },
     enabled: balanceStep === "results" && !!balanceStartDate && !!balanceEndDate,
+  });
+
+  // Query pour récupérer le compte professionnel
+  const compteProQuery = useQuery({
+    queryKey: ["comptePro"],
+    queryFn: async () => {
+      const response = await axios.get("/api/comptesBancaires");
+      const comptes = response.data.comptes;
+      const comptePro = comptes.find(
+        (c: { compte: string }) => c.compte.toLowerCase() === "compte professionnel"
+      );
+      return comptePro;
+    },
+  });
+
+  // Query pour l'historique des versements
+  const versementsHistoryQuery = useQuery({
+    queryKey: ["versements", versementHistoryPage],
+    queryFn: async () => {
+      const response = await axios.get("/api/versements", {
+        params: {
+          page: versementHistoryPage,
+          limit: 10,
+        },
+      });
+      return response.data;
+    },
+    enabled: versementDialogOpen,
+  });
+
+  // Mutation pour créer un versement
+  const createVersementMutation = useMutation({
+    mutationFn: async (data: {
+      montant: number;
+      sourceCompteId: string;
+      compteProId: string;
+      reference?: string;
+      note?: string;
+    }) => {
+      const response = await axios.post("/api/versements", data);
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success("Versement effectué avec succès");
+      setVersementDialogOpen(false);
+      setVersementMontant("");
+      setVersementSourceCompteId("");
+      setVersementReference("");
+      setVersementNote("");
+      queryClient.invalidateQueries({ queryKey: ["versements"] });
+      queryClient.invalidateQueries({ queryKey: ["comptes"] });
+      queryClient.invalidateQueries({ queryKey: ["comptePro"] });
+      queryClient.invalidateQueries({ queryKey: ["statistiques"] });
+    },
+    onError: (error: any) => {
+      toast.error(
+        error.response?.data?.error || "Erreur lors du versement"
+      );
+    },
   });
 
   const _handleTypeLableColor = (t: String) => {
@@ -937,6 +1019,16 @@ function ReglementContent() {
                     </div>
                   </div>
                   <div className="flex gap-2 items-center">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setVersementDialogOpen(true);
+                      }}
+                      className="border-green-500 bg-green-100 text-green-700 hover:bg-green-200 hover:text-green-900 rounded-full"
+                    >
+                      <ArrowUp className="mr-2 h-4 w-4" />
+                      Versement vers compte pro
+                    </Button>
                     <Button
                       variant="outline"
                       onClick={() => {
@@ -1773,36 +1865,43 @@ function ReglementContent() {
                                             align="end"
                                             className="w-72 rounded-md"
                                           >
-                                            <DropdownMenuItem
-                                              onClick={() => {
-                                                setUpdateDialog(true);
-                                                setReglementForTable(
-                                                  reglementTable
-                                                );
-                                                setOpenMenuId(null);
-                                              }}
-                                              className="flex items-center gap-2 cursor-pointer group hover:!bg-purple-100"
-                                            >
-                                              <Pen className="h-4 w-4 text-purple-600 group-hover:text-purple-600" />
-                                              <span className="transition-colors duration-200 group-hover:text-purple-600 group-hover:bg-purple-100">
-                                                Modifier
-                                              </span>
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem
-                                              onClick={() => {
-                                                setReglementForFacture(
-                                                  reglement
-                                                );
-                                                setFactureDialog(true);
-                                                setOpenMenuId(null);
-                                              }}
-                                              className="flex items-center gap-2 cursor-pointer group hover:!bg-emerald-100"
-                                            >
-                                              <FileText className="h-4 w-4 text-emerald-600" />
-                                              <span className="transition-colors duration-200 group-hover:text-emerald-600 group-hover:bg-emerald-100">
-                                                Créer une facture
-                                              </span>
-                                            </DropdownMenuItem>
+                                            {isAdmin && (
+                                              <DropdownMenuItem
+                                                onClick={() => {
+                                                  setUpdateDialog(true);
+                                                  setReglementForTable(
+                                                    reglementTable
+                                                  );
+                                                  setOpenMenuId(null);
+                                                }}
+                                                className="flex items-center gap-2 cursor-pointer group hover:!bg-purple-100"
+                                              >
+                                                <Pen className="h-4 w-4 text-purple-600 group-hover:text-purple-600" />
+                                                <span className="transition-colors duration-200 group-hover:text-purple-600 group-hover:bg-purple-100">
+                                                  Modifier
+                                                </span>
+                                              </DropdownMenuItem>
+                                            )}
+                                            {!reglement.factureAchatsId &&
+                                              !reglement.factureAchats &&
+                                              reglementTable.compte?.toLowerCase() ===
+                                                "compte professionnel" && (
+                                              <DropdownMenuItem
+                                                onClick={() => {
+                                                  setReglementForFacture(
+                                                    reglement
+                                                  );
+                                                  setFactureDialog(true);
+                                                  setOpenMenuId(null);
+                                                }}
+                                                className="flex items-center gap-2 cursor-pointer group hover:!bg-emerald-100"
+                                              >
+                                                <FileText className="h-4 w-4 text-emerald-600" />
+                                                <span className="transition-colors duration-200 group-hover:text-emerald-600 group-hover:bg-emerald-100">
+                                                  Créer une facture
+                                                </span>
+                                              </DropdownMenuItem>
+                                            )}
                                             {reglement.datePrelevement && (
                                               <DropdownMenuItem
                                                 onClick={() => {
@@ -1822,22 +1921,28 @@ function ReglementContent() {
                                                 </span>
                                               </DropdownMenuItem>
                                             )}
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem
-                                              onClick={() => {
-                                                setDeleteDialog(true);
-                                                setReglementForTable(
-                                                  reglementTable
-                                                );
-                                                setOpenMenuId(null);
-                                              }}
-                                              className="flex items-center gap-2 cursor-pointer group hover:!bg-red-100"
-                                            >
-                                              <Trash2 className="h-4 w-4 text-red-600" />
-                                              <span className="transition-colors duration-200 group-hover:text-red-600 group-hover:bg-red-100">
-                                                Supprimer
-                                              </span>
-                                            </DropdownMenuItem>
+                                            
+                                            {isAdmin && (
+                                              <>
+                                              <DropdownMenuSeparator />
+                                              <DropdownMenuItem
+                                                onClick={() => {
+                                                  setDeleteDialog(true);
+                                                  setReglementForTable(
+                                                    reglementTable
+                                                  );
+                                                  setOpenMenuId(null);
+                                                }}
+                                                className="flex items-center gap-2 cursor-pointer group hover:!bg-red-100"
+                                              >
+                                                <Trash2 className="h-4 w-4 text-red-600" />
+                                                <span className="transition-colors duration-200 group-hover:text-red-600 group-hover:bg-red-100">
+                                                  Supprimer
+                                                </span>
+                                              </DropdownMenuItem>
+                                              </>
+                                              
+                                            )}
                                           </DropdownMenuContent>
                                         </DropdownMenu>
                                       </TableCell>
@@ -2256,6 +2361,255 @@ function ReglementContent() {
                 </Button>
               </>
             )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* Dialog Versement vers compte pro */}
+      <Dialog
+        open={versementDialogOpen}
+        onOpenChange={(open) => {
+          setVersementDialogOpen(open);
+          if (!open) {
+            setVersementMontant("");
+            setVersementSourceCompteId("");
+            setVersementReference("");
+            setVersementNote("");
+            setVersementHistoryPage(1);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold">
+              Versement vers compte professionnel
+            </DialogTitle>
+            <DialogDescription>
+              Effectuer un versement depuis un compte vers le compte professionnel
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 py-4">
+            {/* Formulaire de versement */}
+            <div className="space-y-4 border-b pb-4">
+              <h3 className="text-lg font-semibold">Nouveau versement</h3>
+              
+              <div className="grid gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="versement-montant" className="text-left text-black">
+                    Montant (DH) *
+                  </Label>
+                  <Input
+                    id="versement-montant"
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    placeholder="0.00"
+                    value={versementMontant}
+                    onChange={(e) => setVersementMontant(e.target.value)}
+                    className="bg-white"
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="versement-source" className="text-left text-black">
+                    Compte source *
+                  </Label>
+                  <Select
+                    value={versementSourceCompteId}
+                    onValueChange={setVersementSourceCompteId}
+                  >
+                    <SelectTrigger className="bg-white">
+                      <SelectValue placeholder="Sélectionner un compte" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {comptes.data
+                        ?.filter(
+                          (c: { id: string; compte: string }) =>
+                            c.compte.toLowerCase() !== "compte professionnel"
+                        )
+                        .map((compte: { id: string; compte: string; solde: number }) => (
+                          <SelectItem key={compte.id} value={compte.id}>
+                            <div className="flex items-center justify-between w-full">
+                              <span>{compte.compte}</span>
+                              <span className="ml-4 text-sm text-gray-500">
+                                {formatCurrency(compte.solde)}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="versement-reference" className="text-left text-black">
+                    Référence (optionnel)
+                  </Label>
+                  <Input
+                    id="versement-reference"
+                    placeholder="Référence du versement"
+                    value={versementReference}
+                    onChange={(e) => setVersementReference(e.target.value)}
+                    className="bg-white"
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="versement-note" className="text-left text-black">
+                    Note (optionnel)
+                  </Label>
+                  <Input
+                    id="versement-note"
+                    placeholder="Note ou description"
+                    value={versementNote}
+                    onChange={(e) => setVersementNote(e.target.value)}
+                    className="bg-white"
+                  />
+                </div>
+              </div>
+
+              <Button
+                className="rounded-full bg-green-600 hover:bg-green-700 text-white w-full"
+                onClick={() => {
+                  const montant = parseFloat(versementMontant);
+                  if (!montant || montant <= 0) {
+                    toast.error("Veuillez saisir un montant valide");
+                    return;
+                  }
+                  if (!versementSourceCompteId) {
+                    toast.error("Veuillez sélectionner un compte source");
+                    return;
+                  }
+                  if (!compteProQuery.data?.id) {
+                    toast.error("Compte professionnel introuvable");
+                    return;
+                  }
+
+                  // Vérifier le solde
+                  const sourceCompte = comptes.data?.find(
+                    (c: { id: string }) => c.id === versementSourceCompteId
+                  );
+                  if (sourceCompte && sourceCompte.solde < montant) {
+                    toast.error(
+                      `Solde insuffisant. Solde disponible: ${formatCurrency(sourceCompte.solde)}`
+                    );
+                    return;
+                  }
+
+                  createVersementMutation.mutate({
+                    montant,
+                    sourceCompteId: versementSourceCompteId,
+                    compteProId: compteProQuery.data.id,
+                    reference: versementReference || undefined,
+                    note: versementNote || undefined,
+                  });
+                }}
+                disabled={
+                  createVersementMutation.isLoading ||
+                  !versementMontant ||
+                  !versementSourceCompteId ||
+                  !compteProQuery.data
+                }
+              >
+                {createVersementMutation.isLoading ? (
+                  <>
+                    <LoadingDots />
+                    <span className="ml-2">Traitement...</span>
+                  </>
+                ) : (
+                  "Valider le versement"
+                )}
+              </Button>
+            </div>
+
+            {/* Historique des versements */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <History className="h-5 w-5" />
+                  Historique des versements
+                </h3>
+              </div>
+
+              {versementsHistoryQuery.isLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <LoadingDots />
+                </div>
+              ) : versementsHistoryQuery.data?.versements?.length > 0 ? (
+                <>
+                  <div className="border rounded-lg overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Montant</TableHead>
+                          <TableHead>Compte source</TableHead>
+                          <TableHead>Compte pro</TableHead>
+                          <TableHead>Référence</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {versementsHistoryQuery.data.versements.map(
+                          (versement: {
+                            id: string;
+                            date: string;
+                            montant: number;
+                            sourceCompte: { compte: string };
+                            comptePro: { compte: string };
+                            reference: string | null;
+                          }) => (
+                            <TableRow key={versement.id}>
+                              <TableCell>
+                                {formatDate(versement.date)}
+                              </TableCell>
+                              <TableCell className="font-semibold">
+                                {formatCurrency(versement.montant)}
+                              </TableCell>
+                              <TableCell>{versement.sourceCompte.compte}</TableCell>
+                              <TableCell>{versement.comptePro.compte}</TableCell>
+                              <TableCell>
+                                {versement.reference || "—"}
+                              </TableCell>
+                            </TableRow>
+                          )
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  {versementsHistoryQuery.data.pagination.totalPages > 1 && (
+                    <div className="flex justify-center">
+                      <CustomPagination
+                        currentPage={versementHistoryPage}
+                        totalPages={versementsHistoryQuery.data.pagination.totalPages}
+                        setCurrentPage={setVersementHistoryPage}
+                      />
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-8 text-gray-500 border rounded-lg">
+                  Aucun versement enregistré
+                </div>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              className="rounded-full"
+              variant="outline"
+              onClick={() => {
+                setVersementDialogOpen(false);
+                setVersementMontant("");
+                setVersementSourceCompteId("");
+                setVersementReference("");
+                setVersementNote("");
+                setVersementHistoryPage(1);
+              }}
+            >
+              Fermer
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

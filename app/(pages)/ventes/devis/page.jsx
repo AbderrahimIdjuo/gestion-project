@@ -77,6 +77,7 @@ import {
 import Link from "next/link";
 import { Fragment, useEffect, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
+import { useUser } from "@clerk/nextjs";
 
 // Valeurs par défaut pour la visibilité des colonnes (toutes visibles par défaut)
 const defaultVisibleColumns = {
@@ -117,6 +118,9 @@ export default function DevisPage() {
   const [deletedTrans, setDeletedTrans] = useState();
   const [statutChangeDialog, setStatutChangeDialog] = useState(false);
   const [pendingStatutChange, setPendingStatutChange] = useState(null);
+
+  const { user } = useUser();
+  const isAdmin = user?.publicMetadata?.role === "admin";
 
   // Configuration des colonnes avec leurs labels
   const columnDefinitions = [
@@ -177,6 +181,10 @@ export default function DevisPage() {
   });
   const deleteTrans = useMutation({
     mutationFn: async id => {
+      if (!isAdmin) {
+        toast.error("Accès refusé: seul l'admin peut supprimer un paiement.");
+        return;
+      }
       const loadingToast = toast.loading("Suppression...");
       try {
         await axios.delete("/api/tresorie", {
@@ -942,24 +950,34 @@ export default function DevisPage() {
                           Colonnes visibles
                         </h4>
                         <div className="space-y-2">
-                          {columnDefinitions.map(column => (
-                            <div
-                              key={column.key}
-                              className="flex items-center space-x-2"
-                            >
-                              <Checkbox
-                                id={column.key}
-                                checked={visibleColumns[column.key]}
-                                onCheckedChange={() => toggleColumn(column.key)}
-                              />
-                              <Label
-                                htmlFor={column.key}
-                                className="text-sm font-normal cursor-pointer"
+                          {columnDefinitions
+                            .filter(
+                              col =>
+                                isAdmin ||
+                                !["fournitures", "marge", "margePercent"].includes(
+                                  col.key
+                                )
+                            )
+                            .map(column => (
+                              <div
+                                key={column.key}
+                                className="flex items-center space-x-2"
                               >
-                                {column.label}
-                              </Label>
-                            </div>
-                          ))}
+                                <Checkbox
+                                  id={column.key}
+                                  checked={visibleColumns[column.key]}
+                                  onCheckedChange={() =>
+                                    toggleColumn(column.key)
+                                  }
+                                />
+                                <Label
+                                  htmlFor={column.key}
+                                  className="text-sm font-normal cursor-pointer"
+                                >
+                                  {column.label}
+                                </Label>
+                              </div>
+                            ))}
                         </div>
                       </div>
                     </PopoverContent>
@@ -970,6 +988,7 @@ export default function DevisPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead className="w-12"></TableHead>
                         {visibleColumns.date && <TableHead>Date</TableHead>}
                         {visibleColumns.dateStart && (
                           <TableHead>Début</TableHead>
@@ -985,15 +1004,15 @@ export default function DevisPage() {
                             Montant total
                           </TableHead>
                         )}
-                        {visibleColumns.fournitures && (
+                        {visibleColumns.fournitures && isAdmin && (
                           <TableHead className="text-right">
                             Fournitures
                           </TableHead>
                         )}
-                        {visibleColumns.marge && (
+                        {visibleColumns.marge && isAdmin && (
                           <TableHead className="text-right">Marge</TableHead>
                         )}
-                        {visibleColumns.margePercent && (
+                        {visibleColumns.margePercent && isAdmin && (
                           <TableHead className="text-right">%</TableHead>
                         )}
                         {visibleColumns.paye && (
@@ -1015,6 +1034,9 @@ export default function DevisPage() {
                             tabIndex={-1}
                             key={index}
                           >
+                            <TableCell className="!py-2 w-12">
+                              <Skeleton className="h-4 w-4" />
+                            </TableCell>
                             {Object.values(visibleColumns)
                               .filter(Boolean)
                               .map((_, cellIndex) => (
@@ -1038,6 +1060,35 @@ export default function DevisPage() {
                           <>
                             <Fragment key={devis.id}>
                               <TableRow>
+                                <TableCell>
+                                  {(() => {
+                                    const paiementsDevis = transactionsDevis(devis.numero);
+                                    const hasPaiements = paiementsDevis && paiementsDevis.length > 0;
+                                    const isExpanded = expandedDevis === devis.id && info;
+                                    return hasPaiements ? (
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-6 w-6"
+                                        onClick={() => {
+                                          toggleExpand(devis.id);
+                                          if (devis.totalPaye !== 0) {
+                                            if (currentDevi?.id === devis.id) {
+                                              setInfo(!info);
+                                            } else {
+                                              setInfo(true);
+                                            }
+                                            setCurrentDevi(devis);
+                                          }
+                                        }}
+                                      >
+                                        <ChevronDown
+                                          className={`h-4 w-4 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                                        />
+                                      </Button>
+                                    ) : null;
+                                  })()}
+                                </TableCell>
                                 {visibleColumns.date && (
                                   <TableCell className="!py-2">
                                     {formatDate(devis.date)}
@@ -1157,7 +1208,7 @@ export default function DevisPage() {
                                     {formatCurrency(devis.total)}
                                   </TableCell>
                                 )}
-                                {visibleColumns.fournitures && (
+                                {visibleColumns.fournitures && isAdmin && (
                                   <TableCell className="!py-2 text-right">
                                     {formatCurrency(
                                       totalFourniture(
@@ -1166,7 +1217,7 @@ export default function DevisPage() {
                                     )}
                                   </TableCell>
                                 )}
-                                {visibleColumns.marge && (
+                                {visibleColumns.marge && isAdmin && (
                                   <TableCell className="!py-2 text-right">
                                     {calculateMarge(
                                       devis,
@@ -1176,7 +1227,7 @@ export default function DevisPage() {
                                     )}
                                   </TableCell>
                                 )}
-                                {visibleColumns.margePercent && (
+                                {visibleColumns.margePercent && isAdmin && (
                                   <TableCell className="!py-2 text-right">
                                     {(() => {
                                       const result = calculateMargePercent(
@@ -1261,6 +1312,7 @@ export default function DevisPage() {
                                     setDeleteDialogOpen={setDeleteDialogOpen}
                                     setCurrentDevi={setCurrentDevi}
                                     bLGroups={filteredOrders(devis.numero)}
+                                    isAdmin={isAdmin}
                                   />
                                 </TableCell>
                               </TableRow>
@@ -1270,7 +1322,7 @@ export default function DevisPage() {
                                     colSpan={
                                       Object.values(visibleColumns).filter(
                                         Boolean
-                                      ).length + 1
+                                      ).length + 2
                                     }
                                     className="p-0"
                                   >
@@ -1368,19 +1420,21 @@ export default function DevisPage() {
                                                     </div>
                                                   </TableCell>
                                                   <TableCell className="text-right">
-                                                    <Button
-                                                      variant="ghost"
-                                                      size="sm"
-                                                      className="h-8 w-8 p-0 rounded-full hover:bg-red-100 hover:text-red-600"
-                                                      onClick={() => {
-                                                        setDeleteTransDialog(
-                                                          true
-                                                        );
-                                                        setDeletedTrans(trans);
-                                                      }}
-                                                    >
-                                                      <Trash2 className="h-4 w-4" />
-                                                    </Button>
+                                                    {isAdmin && (
+                                                      <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-8 w-8 p-0 rounded-full hover:bg-red-100 hover:text-red-600"
+                                                        onClick={() => {
+                                                          setDeleteTransDialog(
+                                                            true
+                                                          );
+                                                          setDeletedTrans(trans);
+                                                        }}
+                                                      >
+                                                        <Trash2 className="h-4 w-4" />
+                                                      </Button>
+                                                    )}
                                                   </TableCell>
                                                 </TableRow>
                                               ))}
@@ -1400,7 +1454,7 @@ export default function DevisPage() {
                           <TableCell
                             colSpan={
                               Object.values(visibleColumns).filter(Boolean)
-                                .length + 1
+                                .length + 2
                             }
                             align="center"
                           >

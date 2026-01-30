@@ -107,6 +107,12 @@ export default function DevisPDFPage() {
     console.log("devi", JSON.parse(storedData));
   }, []);
 
+  const hasHeight =
+    !!devi?.articls && devi.articls.some(a => {
+      const h = a?.height;
+      return h !== undefined && h !== null && String(h).trim() !== "" && Number(h) !== 0;
+    });
+
   const handlePrint = () => {
     window.print();
   };
@@ -232,7 +238,7 @@ export default function DevisPDFPage() {
                           Désignation
                         </TableHead>
                         <TableHead
-                          colSpan="3"
+                          colSpan={hasHeight ? 3 : 2}
                           className="text-black font-bold border-l border-b border-black text-center p-1"
                         >
                           Dimension
@@ -263,9 +269,11 @@ export default function DevisPDFPage() {
                         </TableHead>
                       </TableRow>
                       <TableRow>
-                        <TableHead className="text-black font-semibold text-center border-b border-l border-black p-1">
-                          Hauteur
-                        </TableHead>
+                        {hasHeight && (
+                          <TableHead className="text-black font-semibold text-center border-b border-l border-black p-1">
+                            Hauteur
+                          </TableHead>
+                        )}
                         <TableHead className="text-black font-semibold text-center border-b border-l border-black p-1">
                           Longueur
                         </TableHead>
@@ -280,9 +288,11 @@ export default function DevisPDFPage() {
                           <TableCell className=" p-1 text-left border-b border-black text-md font-semibold">
                             {articl.designation}{" "}
                           </TableCell>
-                          <TableCell className="border-l border-b border-black p-1 text-center">
-                            {!articl.height ? "-" : articl.height}
-                          </TableCell>
+                          {hasHeight && (
+                            <TableCell className="border-l border-b border-black p-1 text-center">
+                              {!articl.height ? "-" : articl.height}
+                            </TableCell>
+                          )}
                           <TableCell className="border-l border-b border-black p-1 text-center">
                             {!articl.length ? "-" : articl.length}
                           </TableCell>
@@ -307,7 +317,7 @@ export default function DevisPDFPage() {
                     <TableFooter className="font-medium border-black ">
                       <TableRow>
                         <TableCell
-                          colSpan={6}
+                          colSpan={hasHeight ? 6 : 5}
                           className="border-black p-2 text-right font-bold"
                         >
                           Total H.T :
@@ -322,7 +332,7 @@ export default function DevisPDFPage() {
                       {devi?.reduction > 0 ? (
                         <TableRow>
                           <TableCell
-                            colSpan={6}
+                            colSpan={hasHeight ? 6 : 5}
                             className=" border-t border-black p-2 text-right font-bold"
                           >
                             Réduction :
@@ -341,7 +351,7 @@ export default function DevisPDFPage() {
                         <>
                           <TableRow>
                             <TableCell
-                              colSpan={6}
+                              colSpan={hasHeight ? 6 : 5}
                               className="border-t border-black p-2 text-right font-bold"
                             >
                               TVA :
@@ -355,7 +365,7 @@ export default function DevisPDFPage() {
                           </TableRow>
                           <TableRow>
                             <TableCell
-                              colSpan={6}
+                              colSpan={hasHeight ? 6 : 5}
                               className="text-lg border-t border-black text-gray-900 p-2 text-right font-extrabold"
                             >
                               Total TTC :

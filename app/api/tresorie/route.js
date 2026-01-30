@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../lib/prisma";
+import { requireAdmin } from "@/lib/auth-utils";
 
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
@@ -110,6 +111,9 @@ export async function DELETE(req) {
   }
 
   try {
+    // Seul admin peut supprimer
+    await requireAdmin();
+
     // Récupérer la transaction à supprimer
     const deletedTransaction = await prisma.transactions.findUnique({
       where: { id },
@@ -168,6 +172,21 @@ export async function DELETE(req) {
     return NextResponse.json(result);
   } catch (error) {
     console.error("Erreur lors de la suppression de la transaction:", error);
+
+    if (error?.message?.includes("Access denied")) {
+      return NextResponse.json(
+        { error: "Accès refusé. Rôle admin requis." },
+        { status: 403 }
+      );
+    }
+
+    if (error?.message?.includes("Authentication required")) {
+      return NextResponse.json(
+        { error: "Authentification requise" },
+        { status: 401 }
+      );
+    }
+
     return NextResponse.json(
       { error: "Erreur lors de la suppression de la transaction" },
       { status: 500 }
@@ -177,7 +196,7 @@ export async function DELETE(req) {
 
 // Fonction helper pour gérer les labels spéciaux
 async function handleSpecialLabels(tx, transaction) {
-  const { lable, reference, montant } = transaction;
+  const { lable, reference, montant, date, compte } = transaction;
 
   // Paiement de bon de livraison
   if (lable.includes("paiement de :BL")) {
@@ -211,6 +230,13 @@ async function handleSpecialLabels(tx, transaction) {
   if (lable.includes("paiement devis")) {
     const devis = await tx.devis.findUnique({
       where: { numero: reference },
+      include: {
+        client: {
+          select: {
+            nom: true,
+          },
+        },
+      },
     });
 
     if (devis) {
@@ -232,6 +258,55 @@ async function handleSpecialLabels(tx, transaction) {
           statutPaiement,
         },
       });
+
+      // Supprimer le versement associé si un versement existe pour ce paiement
+      // Le versement a été créé avec note: "paiement devis" et reference: nom du client
+      if (devis.client) {
+        // Chercher le versement associé avec plusieurs critères pour être plus flexible
+        const versement = await tx.versement.findFirst({
+          where: {
+            note: "paiement devis",
+            reference: devis.client.nom,
+            montant: montant,
+            date: {
+              gte: new Date(new Date(date).getTime() - 7 * 24 * 60 * 60 * 1000), // 7 jours avant
+              lte: new Date(new Date(date).getTime() + 7 * 24 * 60 * 60 * 1000), // 7 jours après
+            },
+          },
+          orderBy: {
+            date: "desc", // Prendre le plus récent si plusieurs correspondances
+          },
+        });
+
+        if (versement) {
+          // Restaurer les soldes des comptes seulement si le compte source existe
+          if (versement.sourceCompteId) {
+            await tx.comptesBancaires.update({
+              where: { id: versement.sourceCompteId },
+              data: {
+                solde: {
+                  increment: versement.montant,
+                },
+              },
+            });
+          }
+
+          // Restaurer le solde du compte pro
+          await tx.comptesBancaires.update({
+            where: { id: versement.compteProId },
+            data: {
+              solde: {
+                decrement: versement.montant,
+              },
+            },
+          });
+
+          // Supprimer le versement
+          await tx.versement.delete({
+            where: { id: versement.id },
+          });
+        }
+      }
     }
   }
 

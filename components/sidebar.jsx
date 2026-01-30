@@ -3,21 +3,22 @@
 import { cn } from "@/lib/utils";
 import { useUser } from "@clerk/nextjs";
 import {
-  ChevronDown,
-  ChevronRight,
-  ContactRound,
-  FileText,
-  Files,
-  Grid2X2,
-  Landmark,
-  LayoutDashboard,
-  Package,
-  ReceiptText,
-  Ruler,
-  ScrollText,
-  Settings,
-  Truck,
-  Users,
+    ArrowUp,
+    ChevronDown,
+    ChevronRight,
+    ContactRound,
+    FileText,
+    Files,
+    Grid2X2,
+    Landmark,
+    LayoutDashboard,
+    Package,
+    ReceiptText,
+    Ruler,
+    ScrollText,
+    Settings,
+    Truck,
+    Users,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -75,6 +76,11 @@ const menuItems = [
     icon: ReceiptText,
     label: "Règlement",
     href: "/reglement",
+  },
+  {
+    icon: ArrowUp,
+    label: "Versements compte pro",
+    href: "/versements",
   },
   {
     icon: FileText,
@@ -149,13 +155,27 @@ export function Sidebar() {
 
   // Filtrer les éléments du menu en fonction du rôle de l'utilisateur
   const getFilteredMenuItems = () => {
-    return menuItems.map(item => {
+    // Masquer toute la section Paramètres pour les non-admins
+    const role = user?.publicMetadata?.role;
+    const isAdmin = role === "admin";
+
+    return menuItems
+      .filter(item => {
+        if (item.href === "/parametres") {
+          return isAdmin;
+        }
+        if (item.href === "/Employes") {
+          return isAdmin;
+        }
+        return true;
+      })
+      .map(item => {
       if (item.subItems) {
         // Filtrer les sous-éléments pour les paramètres
         const filteredSubItems = item.subItems.filter(subItem => {
           // Masquer "Utilisateurs" si l'utilisateur n'est pas admin
           if (subItem.href === "/parametres/users-management") {
-            return user?.publicMetadata?.role === "admin";
+            return isAdmin;
           }
           return true;
         });

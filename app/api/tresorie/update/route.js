@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../../lib/prisma";
+import { requireAdmin } from "@/lib/auth-utils";
 
 export async function PUT(req) {
   try {
+    // Seul admin peut modifier
+    await requireAdmin();
+
     const response = await req.json();
     const {
       id,
@@ -423,6 +427,21 @@ export async function PUT(req) {
     });
   } catch (error) {
     console.error("Error updating transaction:", error);
+
+    if (error?.message?.includes("Access denied")) {
+      return NextResponse.json(
+        { message: "Accès refusé. Rôle admin requis." },
+        { status: 403 }
+      );
+    }
+
+    if (error?.message?.includes("Authentication required")) {
+      return NextResponse.json(
+        { message: "Authentification requise" },
+        { status: 401 }
+      );
+    }
+
     return NextResponse.json(
       { message: "Une erreur inattendue s'est produite." },
       { status: 500 }

@@ -271,11 +271,12 @@ export default function NouveauDevisPage() {
           <Sidebar />
 
           {/* Main content area */}
-          <form
-            onSubmit={handleSubmit(onSubmit, onError)}
-            className="flex justify-center w-full"
-          >
-            <div className="container mt-5 mb-[5rem] !mx-auto space-y-6 w-full max-w-7xl">
+          <div className="flex-1 flex flex-col overflow-auto">
+            <form
+              onSubmit={handleSubmit(onSubmit, onError)}
+              className="w-full flex flex-col flex-1"
+            >
+              <div className="w-full space-y-6 p-6 mb-[5rem]">
               <div className="flex gap-3 items-center">
                 <h1 className="text-3xl font-bold">Nouveau devis</h1>
               </div>
@@ -406,16 +407,16 @@ export default function NouveauDevisPage() {
                                 <TableHead className="w-[30%]">
                                   Articls
                                 </TableHead>
-                                <TableHead className="w-[10%] text-center">
+                                <TableHead className="w-[10%] text-left">
                                   Hauteur
                                 </TableHead>
-                                <TableHead className="w-[10%] text-center">
+                                <TableHead className="w-[10%] text-left">
                                   Longueur
                                 </TableHead>
-                                <TableHead className="w-[10%] text-center">
+                                <TableHead className="w-[10%] text-left">
                                   Largeur
                                 </TableHead>
-                                <TableHead className="w-[10%] text-center">
+                                <TableHead className="w-[10%] text-left">
                                   Unité
                                 </TableHead>
                                 <TableHead>Quantité</TableHead>
@@ -779,7 +780,8 @@ export default function NouveauDevisPage() {
                 </div>
               </div>
             </div>
-          </form>
+            </form>
+          </div>
         </div>
       </div>
     </>

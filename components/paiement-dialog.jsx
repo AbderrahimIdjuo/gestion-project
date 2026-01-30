@@ -86,7 +86,8 @@ export function PaiementDialog({ isOpen, onClose, devis }) {
           throw new Error("Unexpected response status");
         }
       } catch (error) {
-        toast.error("Échec de l'opération!");
+        const errorMessage = error.response?.data?.details || error.response?.data?.error || error.message || "Échec de l'opération!";
+        toast.error(errorMessage);
         throw error;
       } finally {
         toast.dismiss(loadingToast);
@@ -95,10 +96,25 @@ export function PaiementDialog({ isOpen, onClose, devis }) {
     onSuccess: () => {
       queryClient.invalidateQueries(["transactions"]);
       queryClient.invalidateQueries(["devis"]);
+      onClose();
+      reset();
+      setDate(null);
     },
   });
   const onSubmit = async data => {
     const { methodePaiement, compte, montant, numero } = data;
+    
+    // Calculer le reste à payer
+    const resteAPayer = devis.total - (devis.totalPaye || 0);
+    
+    // Vérifier que le montant ne dépasse pas le reste à payer
+    if (montant > resteAPayer) {
+      toast.error(
+        `Le montant de paiement (${montant} DH) ne peut pas dépasser le reste à payer (${resteAPayer} DH)`
+      );
+      return;
+    }
+    
     const Data = {
       methodePaiement,
       compte,
@@ -112,9 +128,6 @@ export function PaiementDialog({ isOpen, onClose, devis }) {
       clientId: devis.client.id,
     };
     paiementDevis.mutate(Data);
-    onClose();
-    reset();
-    setDate(null);
   };
   return (
     <>
@@ -127,6 +140,21 @@ export function PaiementDialog({ isOpen, onClose, devis }) {
                 Sélectionnez le type de paiement et remplissez les détails
                 nécessaires.
               </DialogDescription>
+              {(() => {
+                const resteAPayer = devis.total - (devis.totalPaye || 0);
+                return (
+                  <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium text-blue-900">
+                        Reste à payer :
+                      </span>
+                      <span className="text-lg font-bold text-blue-700">
+                        {resteAPayer.toFixed(2)} DH
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
             </DialogHeader>
             <div className="py-4 space-y-4">
               <RadioGroup
@@ -312,13 +340,28 @@ export function PaiementDialog({ isOpen, onClose, devis }) {
               )}
             </div>
             <DialogFooter>
-              <Button
-                className="bg-[#00e701] hover:bg-[#00e701] shadow-lg hover:scale-105 text-white text-md rounded-full font-bold transition-all duration-300 transform"
-                type="submit"
-                disabled={isSubmiting}
-              >
-                {isSubmiting ? "En cours..." : "Confirmer"}
-              </Button>
+              {(() => {
+                const montant = watch("montant");
+                const resteAPayer = devis.total - (devis.totalPaye || 0);
+                const montantInvalide = montant && montant > resteAPayer;
+                
+                return (
+                  <>
+                    {montantInvalide && (
+                      <p className="text-red-500 text-sm mr-auto">
+                        ⚠️ Le montant dépasse le reste à payer ({resteAPayer.toFixed(2)} DH)
+                      </p>
+                    )}
+                    <Button
+                      className="bg-[#00e701] hover:bg-[#00e701] shadow-lg hover:scale-105 text-white text-md rounded-full font-bold transition-all duration-300 transform disabled:opacity-50 disabled:cursor-not-allowed"
+                      type="submit"
+                      disabled={isSubmiting || montantInvalide || !montant || !watch("compte")}
+                    >
+                      {isSubmiting ? "En cours..." : "Confirmer"}
+                    </Button>
+                  </>
+                );
+              })()}
             </DialogFooter>
           </form>
 

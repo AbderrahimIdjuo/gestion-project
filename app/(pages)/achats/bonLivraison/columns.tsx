@@ -58,12 +58,14 @@ export function useBonLivraisonColumns({
   setDeleteDialogOpen,
   setUpdateDialogOpen,
   setPaiementDialogOpen,
+  isAdmin = false,
 }: {
   setCurrentBL: (bl: BonLivraisonT) => void;
   setPreviewDialogOpen: (val: boolean) => void;
   setDeleteDialogOpen: (val: boolean) => void;
   setUpdateDialogOpen: (val: boolean) => void;
   setPaiementDialogOpen: (val: boolean) => void;
+  isAdmin?: boolean;
 }) {
   const columns: ColumnDef<BonLivraisonT>[] = [
     {
@@ -139,7 +141,7 @@ export function useBonLivraisonColumns({
     },
     {
       accessorKey: "total",
-      header: "Montant",
+      header: () => <div className="text-right">Montant</div>,
       cell: ({ row }) => {
         const amount = parseFloat(row.getValue("total"));
         return (
@@ -149,7 +151,7 @@ export function useBonLivraisonColumns({
     },
     {
       accessorKey: "totalPaye",
-      header: "Montant payé",
+      header: () => <div className="text-right">Montant payé</div>,
       cell: ({ row }) => {
         const bonLivraison = row.original;
         const amount = parseFloat(row.getValue("totalPaye"));
@@ -257,16 +259,18 @@ export function useBonLivraisonColumns({
                   <Pen className="h-4 w-4 text-purple-600" />
                   <span>Modifier</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => {
-                    setCurrentBL(bonLivraison);
-                    setDeleteDialogOpen(true);
-                  }}
-                  className="flex items-center gap-2 cursor-pointer group hover:!bg-red-100"
-                >
-                  <Trash2 className="h-4 w-4 text-red-600" />
-                  <span>Supprimer</span>
-                </DropdownMenuItem>
+                {isAdmin && (
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setCurrentBL(bonLivraison);
+                      setDeleteDialogOpen(true);
+                    }}
+                    className="flex items-center gap-2 cursor-pointer group hover:!bg-red-100"
+                  >
+                    <Trash2 className="h-4 w-4 text-red-600" />
+                    <span>Supprimer</span>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem
                   onClick={() => {
                     console.log("bonLivraison", bonLivraison);

@@ -66,8 +66,15 @@ export default clerkMiddleware(async (auth, request) => {
         return NextResponse.redirect(new URL("/no-access", request.url));
       }
 
-      // Vérification spécifique pour la page de gestion des utilisateurs
-      if (pathname.startsWith("/parametres/users-management")) {
+      // Paramètres: accès réservé aux admins uniquement
+      if (pathname.startsWith("/parametres")) {
+        if (role !== "admin") {
+          return NextResponse.redirect(new URL("/no-access", request.url));
+        }
+      }
+
+      // Employés: accès réservé aux admins uniquement
+      if (pathname.startsWith("/Employes")) {
         if (role !== "admin") {
           return NextResponse.redirect(new URL("/no-access", request.url));
         }

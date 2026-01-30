@@ -1,5 +1,6 @@
 import { createClerkClient } from "@clerk/backend";
 import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/auth-utils";
 
 // Create Clerk client instance
 const clerkClient = createClerkClient({
@@ -9,6 +10,7 @@ const clerkClient = createClerkClient({
 // GET - Récupérer tous les utilisateurs
 export async function GET() {
   try {
+    await requireAdmin();
     const { data: users } = await clerkClient.users.getUserList({ limit: 100 });
 
     const mappedUsers = users
@@ -31,6 +33,18 @@ export async function GET() {
     return NextResponse.json(mappedUsers);
   } catch (error) {
     console.error("Erreur lors de la récupération des utilisateurs:", error);
+
+    if (error?.message?.includes("Access denied")) {
+      return NextResponse.json(
+        { error: "Accès refusé. Rôle admin requis." },
+        { status: 403 }
+      );
+    }
+
+    if (error?.message?.includes("Authentication required")) {
+      return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
+    }
+
     return NextResponse.json(
       { error: "Erreur lors de la récupération des utilisateurs" },
       { status: 500 }
@@ -41,6 +55,7 @@ export async function GET() {
 // POST - Créer un nouvel utilisateur
 export async function POST(req) {
   try {
+    await requireAdmin();
     const { nom, email, role } = await req.json();
 
     console.log("POST request received", nom, email, role);
@@ -88,6 +103,17 @@ export async function POST(req) {
       JSON.stringify(error, null, 2)
     );
 
+    if (error?.message?.includes("Access denied")) {
+      return NextResponse.json(
+        { error: "Accès refusé. Rôle admin requis." },
+        { status: 403 }
+      );
+    }
+
+    if (error?.message?.includes("Authentication required")) {
+      return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
+    }
+
     // Handle specific Clerk errors
     if (error.clerkError && error.errors && error.errors.length > 0) {
       const clerkError = error.errors[0];
@@ -112,6 +138,7 @@ export async function POST(req) {
 // PUT - Modifier un utilisateur existant
 export async function PUT(req) {
   try {
+    await requireAdmin();
     const { userId, email, role, active } = await req.json();
     console.log(userId, email, role);
     // Validation des données
@@ -154,6 +181,18 @@ export async function PUT(req) {
     });
   } catch (error) {
     console.error("Erreur lors de la modification de l'utilisateur:", error);
+
+    if (error?.message?.includes("Access denied")) {
+      return NextResponse.json(
+        { error: "Accès refusé. Rôle admin requis." },
+        { status: 403 }
+      );
+    }
+
+    if (error?.message?.includes("Authentication required")) {
+      return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
+    }
+
     return NextResponse.json(
       {
         error:
@@ -167,6 +206,7 @@ export async function PUT(req) {
 // DELETE - Supprimer un utilisateur
 export async function DELETE(req) {
   try {
+    await requireAdmin();
     const { userId } = await req.json();
 
     // Validation des données
@@ -185,6 +225,18 @@ export async function DELETE(req) {
     });
   } catch (error) {
     console.error("Erreur lors de la suppression de l'utilisateur:", error);
+
+    if (error?.message?.includes("Access denied")) {
+      return NextResponse.json(
+        { error: "Accès refusé. Rôle admin requis." },
+        { status: 403 }
+      );
+    }
+
+    if (error?.message?.includes("Authentication required")) {
+      return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
+    }
+
     return NextResponse.json(
       {
         error:

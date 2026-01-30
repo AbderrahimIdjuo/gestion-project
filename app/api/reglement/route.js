@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../lib/prisma";
+import { requireAdmin } from "@/lib/auth-utils";
 export const dynamic = "force-dynamic";
 
 export async function GET(req) {
@@ -290,6 +291,7 @@ export async function GET(req) {
 
 export async function PATCH(req) {
   try {
+    await requireAdmin();
     const body = await req.json();
     const { id, statut, statusPrelevement } = body;
 
@@ -439,6 +441,18 @@ export async function PATCH(req) {
     );
   } catch (error) {
     console.error("Erreur lors de la mise à jour du statut:", error);
+    if (error?.message?.includes("Access denied")) {
+      return NextResponse.json(
+        { error: "Accès refusé. Rôle admin requis." },
+        { status: 403 }
+      );
+    }
+    if (error?.message?.includes("Authentication required")) {
+      return NextResponse.json(
+        { error: "Authentification requise" },
+        { status: 401 }
+      );
+    }
     return NextResponse.json(
       { error: "Erreur lors de la mise à jour du statut" },
       { status: 500 }
@@ -448,6 +462,7 @@ export async function PATCH(req) {
 
 export async function PUT(req) {
   try {
+    await requireAdmin();
     const body = await req.json();
     const {
       id,
@@ -712,6 +727,18 @@ export async function PUT(req) {
     return NextResponse.json(result);
   } catch (error) {
     console.error("Erreur lors de la mise à jour du règlement:", error);
+    if (error?.message?.includes("Access denied")) {
+      return NextResponse.json(
+        { error: "Accès refusé. Rôle admin requis." },
+        { status: 403 }
+      );
+    }
+    if (error?.message?.includes("Authentication required")) {
+      return NextResponse.json(
+        { error: "Authentification requise" },
+        { status: 401 }
+      );
+    }
     return NextResponse.json(
       { error: "Erreur lors de la mise à jour du règlement" },
       { status: 500 }
@@ -721,6 +748,7 @@ export async function PUT(req) {
 
 export async function DELETE(req) {
   try {
+    await requireAdmin();
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
 
@@ -810,6 +838,20 @@ export async function DELETE(req) {
     return NextResponse.json(result);
   } catch (error) {
     console.error("Erreur lors de la suppression du règlement:", error);
+
+    if (error?.message?.includes("Access denied")) {
+      return NextResponse.json(
+        { error: "Accès refusé. Rôle admin requis." },
+        { status: 403 }
+      );
+    }
+
+    if (error?.message?.includes("Authentication required")) {
+      return NextResponse.json(
+        { error: "Authentification requise" },
+        { status: 401 }
+      );
+    }
 
     if (error.message === "Règlement non trouvé") {
       return NextResponse.json(

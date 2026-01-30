@@ -26,6 +26,7 @@ export function DevisActions({
   setDeleteDialogOpen,
   setCurrentDevi,
   bLGroups,
+  isAdmin = false,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isBankDialogOpen, setIsBankDialogOpen] = useState(false);
@@ -55,19 +56,21 @@ export function DevisActions({
               Modifier
             </span>
           </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => {
-              setDeleteDialogOpen(true);
-              setCurrentDevi(devis);
-              setMenuOpen(false);
-            }}
-            className="flex items-center gap-2 cursor-pointer group hover:!bg-red-100"
-          >
-            <Trash2 className="h-4 w-4 text-red-600" />
-            <span className="transition-colors duration-200 group-hover:text-red-600 group-hover:bg-red-100">
-              Supprimer
-            </span>
-          </DropdownMenuItem>
+          {isAdmin && (
+            <DropdownMenuItem
+              onClick={() => {
+                setDeleteDialogOpen(true);
+                setCurrentDevi(devis);
+                setMenuOpen(false);
+              }}
+              className="flex items-center gap-2 cursor-pointer group hover:!bg-red-100"
+            >
+              <Trash2 className="h-4 w-4 text-red-600" />
+              <span className="transition-colors duration-200 group-hover:text-red-600 group-hover:bg-red-100">
+                Supprimer
+              </span>
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem
             onClick={() => {
               setIsBankDialogOpen(true);

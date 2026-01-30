@@ -1,7 +1,25 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../../lib/prisma";
+import { requireAdmin } from "@/lib/auth-utils";
 
 export async function DELETE(request, { params }) {
+  try {
+    await requireAdmin();
+  } catch (error) {
+    if (error?.message?.includes("Access denied")) {
+      return NextResponse.json(
+        { error: "Accès refusé. Rôle admin requis." },
+        { status: 403 }
+      );
+    }
+    if (error?.message?.includes("Authentication required")) {
+      return NextResponse.json(
+        { error: "Authentification requise" },
+        { status: 401 }
+      );
+    }
+    throw error;
+  }
   const id = params.id;
 
   const url = new URL(request.url);

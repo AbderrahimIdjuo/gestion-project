@@ -278,7 +278,7 @@ export default function FacturesAchatsPage() {
                             <TableHead>Fournisseur</TableHead>
                             <TableHead>ICE</TableHead>
                             <TableHead>Total</TableHead>
-                            <TableHead className="text-center">
+                            <TableHead className="text-right">
                               Actions
                             </TableHead>
                           </TableRow>

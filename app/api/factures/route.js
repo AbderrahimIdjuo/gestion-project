@@ -5,29 +5,92 @@ import prisma from "../../../lib/prisma";
 export async function POST(req) {
   try {
     const response = await req.json();
-    const { numero, devisNumero, date, total, articls, clientId } = response;
-    const resultat = await prisma.factures.create({
-      data: {
-        numero,
-        date,
-        devisNumero,
-        client: {
-          connect: { id: clientId },
+    const { numero, devisNumero, date, total, articls, clientId, versementId, versements } = response;
+
+    // Utiliser une transaction pour créer la facture et l'affectation si versementId ou versements existe
+    const resultat = await prisma.$transaction(async (tx) => {
+      // Créer la facture
+      const facture = await tx.factures.create({
+        data: {
+          numero,
+          date,
+          devisNumero,
+          client: {
+            connect: { id: clientId },
+          },
+          articls: {
+            create: articls.map((articl) => ({
+              height: articl.height || 0,
+              length: articl.length || 0,
+              unite: articl.unite || "U",
+              width: articl.width || 0,
+              designation: articl.designation,
+              quantite: articl.quantite,
+              prixUnite: articl.prixUnite || 0,
+            })),
+          },
+          total: total || 0,
         },
-        articls: {
-          create: articls.map((articl) => ({
-            height: articl.height || 0,
-            length: articl.length || 0,
-            unite: articl.unite || "U",
-            width: articl.width || 0,
-            designation: articl.designation,
-            quantite: articl.quantite,
-            prixUnite: articl.prixUnite || 0,
-          })),
-        },
-        total: total || 0,
-      },
+      });
+
+      // Gérer les affectations de versements
+      const versementsToProcess = versements || (versementId ? [{ versementId, montant: total }] : []);
+
+      if (versementsToProcess.length > 0) {
+        let totalMontantAffecte = 0;
+
+        // Vérifier tous les versements et calculer le total
+        for (const v of versementsToProcess) {
+          const versement = await tx.versement.findUnique({
+            where: { id: v.versementId },
+            include: {
+              affectationsVersement: true,
+            },
+          });
+
+          if (!versement) {
+            throw new Error(`Versement introuvable: ${v.versementId}`);
+          }
+
+          // Calculer le montant déjà affecté pour ce versement
+          const montantDejaAffecte = versement.affectationsVersement.reduce(
+            (sum, aff) => sum + aff.montant,
+            0
+          );
+          const montantDisponible = versement.montant - montantDejaAffecte;
+
+          // Vérifier que le montant à affecter ne dépasse pas le montant disponible
+          if (v.montant > montantDisponible) {
+            throw new Error(
+              `Le montant à affecter (${v.montant}) dépasse le montant disponible pour le versement ${versement.reference || versement.id} (${montantDisponible} disponible)`
+            );
+          }
+
+          totalMontantAffecte += v.montant;
+        }
+
+        // Vérifier que le total des affectations ne dépasse pas le montant de la facture
+        if (totalMontantAffecte > total) {
+          throw new Error(
+            `Le total des montants affectés (${totalMontantAffecte}) dépasse le montant de la facture (${total})`
+          );
+        }
+
+        // Créer toutes les affectations
+        for (const v of versementsToProcess) {
+          await tx.affectationVersement.create({
+            data: {
+              versementId: v.versementId,
+              factureId: facture.id,
+              montant: v.montant,
+            },
+          });
+        }
+      }
+
+      return facture;
     });
+
     return NextResponse.json({
       message: "facture créée avec succès.",
       resultat,
@@ -35,7 +98,9 @@ export async function POST(req) {
   } catch (error) {
     console.error(error);
     return NextResponse.json(
-      { message: "Une erreur est survenue lors de la création de la facture." },
+      { 
+        message: error.message || "Une erreur est survenue lors de la création de la facture." 
+      },
       { status: 500 }
     );
   }

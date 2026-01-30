@@ -46,6 +46,7 @@ import { useEffect, useState } from "react";
 import { Toaster } from "react-hot-toast";
 import { BonLivraisonT, useBonLivraisonColumns } from "./columns";
 import { DataTable } from "./data-table";
+import { useUser } from "@clerk/nextjs";
 
 function formatDate(dateString: String) {
   return dateString?.split("T")[0].split("-").reverse().join("-");
@@ -130,6 +131,8 @@ export default function BonLivraison() {
     montant: [0, typeof maxMontant === "number" ? maxMontant : 0],
   });
   const deleteBonLivraison = useDeleteBonLivraison();
+  const { user } = useUser();
+  const isAdmin = user?.publicMetadata?.role === "admin";
 
   // Fonctions pour gérer les statuts multiples
   const handleStatutPaiementChange = (statut: string, checked: boolean) => {
@@ -251,11 +254,12 @@ export default function BonLivraison() {
           <div className="flex-1 flex flex-col">
             {/* Page content */}
             <div className="flex-1 overflow-auto">
-              <div className="container mx-auto space-y-2 mb-[5rem] p-6">
-                <div className="flex justify-between items-center mb-2">
-                  <h1 className="text-3xl font-bold">Bons de livraisons</h1>
-                </div>
+              <div className="space-y-6 p-6">
                 <div className="flex justify-between items-center">
+                  <h1 className="text-3xl font-bold">Bons de livraison</h1>
+                </div>
+
+                <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-6 ">
                   <div className="relative w-full sm:w-96">
                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
@@ -269,8 +273,7 @@ export default function BonLivraison() {
                       {isFetching && !isLoading && <LoadingDots />}
                     </div>
                   </div>
-
-                  <div className="flex gap-3">
+                  <div className="flex space-x-2">
                     <Sheet>
                       <SheetTrigger asChild>
                         <Button
@@ -494,6 +497,7 @@ export default function BonLivraison() {
                     setDeleteDialogOpen,
                     setUpdateDialogOpen,
                     setPaiementDialogOpen,
+                    isAdmin,
                   })}
                   data={listBonLivraison}
                   isLoading={isLoading}

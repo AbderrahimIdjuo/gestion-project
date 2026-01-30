@@ -25,6 +25,8 @@ import {
   endOfMonth,
   endOfQuarter,
   endOfYear,
+  format,
+  isValid,
   startOfDay,
   startOfMonth,
   startOfQuarter,
@@ -33,14 +35,14 @@ import {
   subYears,
 } from "date-fns";
 import {
-  CircleDollarSign,
-  HandCoins,
+  FileText,
+  Landmark,
   Package,
   ScrollText,
   TrendingUp,
   Truck,
   Users,
-  Wallet,
+  Wallet
 } from "lucide-react";
 import { useState } from "react";
 
@@ -48,7 +50,7 @@ export default function Page() {
   const { user, isSignedIn, isLoaded } = useUser();
   const [startDate, setStartDate] = useState();
   const [endDate, setEndDate] = useState();
-  const [periode, setPeriode] = useState("");
+  const [periode, setPeriode] = useState("ce-mois");
 
   function getDateRangeFromPeriode(periode) {
     const now = new Date();
@@ -110,8 +112,8 @@ export default function Page() {
     queryFn: async () => {
       const response = await axios.get("/api/statistiques", {
         params: {
-          from: from && isValid(from) ? from.toISOString() : null,
-          to: to && isValid(to) ? to.toISOString() : null,
+          from: from && isValid(from) ? format(from, "yyyy-MM-dd") : null,
+          to: to && isValid(to) ? format(to, "yyyy-MM-dd") : null,
         },
       });
       // console.log("statistiques", response.data);
@@ -336,78 +338,83 @@ export default function Page() {
             <div className="flex-1 overflow-auto">
               <div className="h-full flex flex-col space-y-4 p-6">
                 <h1 className="text-3xl font-bold">Tableau de bord</h1>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  <div className="grid grid-cols-4 items-center gap-2">
-                    <Label
-                      htmlFor="periode"
-                      className="text-sm font-medium col-span-1"
-                    >
-                      Période :
-                    </Label>
-                    <div className="col-span-3">
-                      <Select
-                        value={periode}
-                        onValueChange={value => setPeriode(value)}
-                      >
-                        <SelectTrigger className="focus:ring-2 focus:ring-purple-500">
-                          <SelectValue placeholder="Sélectionnez la période" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="ce-mois">Ce mois</SelectItem>
-                          <SelectItem value="3-derniers-mois">
-                            Les 3 derniers mois
-                          </SelectItem>
-                          <SelectItem value="6-derniers-mois">
-                            Les 6 derniers mois
-                          </SelectItem>
-                          <SelectItem value="cette-annee">
-                            Cette année
-                          </SelectItem>
-                          <SelectItem value="annee-derniere">
-                            L&apos;année dernière
-                          </SelectItem>
-                          <SelectItem value="trimestre-actuel">
-                            Trimestre actuel
-                          </SelectItem>
-                          <SelectItem value="trimestre-precedent">
-                            Trimestre précédent
-                          </SelectItem>
-                          <SelectItem value="personnalisee">
-                            Période personnalisée
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  {periode === "personnalisee" && (
-                    <div className="grid grid-cols-4 items-center gap-2">
-                      <Label
-                        htmlFor="statut"
-                        className="col-span-1 text-left text-black"
-                      >
-                        Date :
-                      </Label>
-                      <div className="col-span-3">
-                        <CustomDateRangePicker
-                          startDate={startDate}
-                          setStartDate={setStartDate}
-                          endDate={endDate}
-                          setEndDate={setEndDate}
-                        />
+
+                {/* Filtre période - bloc dédié */}
+                <Card className="border border-slate-200/80 bg-slate-50/50 shadow-sm">
+                  <CardContent className="p-4 sm:p-5">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-6">
+                      <div className="flex min-w-0 flex-1 items-center gap-3 sm:max-w-xs">
+                        <Label
+                          htmlFor="periode"
+                          className="shrink-0 text-sm font-medium text-slate-700"
+                        >
+                          Période
+                        </Label>
+                        <Select
+                          value={periode}
+                          onValueChange={value => setPeriode(value)}
+                        >
+                          <SelectTrigger
+                            id="periode"
+                            className="h-10 w-full rounded-lg border-slate-200 bg-white font-medium text-slate-800 shadow-sm transition-colors hover:border-slate-300 focus:ring-2 focus:ring-purple-500 focus:ring-offset-1"
+                          >
+                            <SelectValue placeholder="Sélectionnez la période" />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-lg border-slate-200 shadow-lg">
+                            <SelectItem value="ce-mois" className="rounded-md">
+                              Ce mois
+                            </SelectItem>
+                            <SelectItem value="3-derniers-mois" className="rounded-md">
+                              Les 3 derniers mois
+                            </SelectItem>
+                            <SelectItem value="6-derniers-mois" className="rounded-md">
+                              Les 6 derniers mois
+                            </SelectItem>
+                            <SelectItem value="cette-annee" className="rounded-md">
+                              Cette année
+                            </SelectItem>
+                            <SelectItem value="annee-derniere" className="rounded-md">
+                              L&apos;année dernière
+                            </SelectItem>
+                            <SelectItem value="trimestre-actuel" className="rounded-md">
+                              Trimestre actuel
+                            </SelectItem>
+                            <SelectItem value="trimestre-precedent" className="rounded-md">
+                              Trimestre précédent
+                            </SelectItem>
+                            <SelectItem value="personnalisee" className="rounded-md">
+                              Période personnalisée
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
+                      {periode === "personnalisee" && (
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+                          <Label className="shrink-0 text-sm font-medium text-slate-700">
+                            Plage de dates
+                          </Label>
+                          <div className="min-w-0 flex-1">
+                            <CustomDateRangePicker
+                              startDate={startDate}
+                              setStartDate={setStartDate}
+                              endDate={endDate}
+                              setEndDate={setEndDate}
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
+                  </CardContent>
+                </Card>
                 <div
-                  className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+                  className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
                   id="header-cards"
                 >
                   <Card className="bg-gradient-to-tr from-fuchsia-400 via-purple-500 to-violet-600 overflow-hidden shadow-md border-0 col-span-full lg:col-span-1 order-first transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pt-4">
                       <CardTitle className="text-lg font-medium text-white">
-                        Sold
+                        Bénéfice
                       </CardTitle>
-                      <TrendingUp className="h-6 w-6 text-white" />
                     </CardHeader>
                     <CardContent className="pb-3">
                       {statistiques.isLoading || statistiques.isFetching ? (
@@ -415,8 +422,7 @@ export default function Page() {
                       ) : (
                         <div className="text-3xl font-bold text-white mb-3">
                           {formatCurrency(
-                            statistiques.data?.recettes -
-                              statistiques.data?.depenses
+                            statistiques.data?.benefice ?? 0
                           )}
                         </div>
                       )}
@@ -426,17 +432,50 @@ export default function Page() {
                   <Card className="bg-gradient-to-tr from-emerald-300 via-emerald-400 to-emerald-500 overflow-hidden shadow-md border-0 col-span-full lg:col-span-1 order-first transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pt-4">
                       <CardTitle className="text-lg font-medium text-white ">
-                        Total des recettes
+                        Recettes
                       </CardTitle>
-                      <CircleDollarSign className="h-6 w-6 text-white" />
                     </CardHeader>
                     <CardContent className="pb-3">
                       {statistiques.isLoading || statistiques.isFetching ? (
                         <Skeleton className="h-8 w-[200px] bg-green-200" />
                       ) : (
-                        <div className="text-3xl font-bold text-white mb-3">
-                          {formatCurrency(statistiques.data?.recettes)}
-                        </div>
+                        <>
+                          <div className="text-3xl font-bold text-white mb-1">
+                            {formatCurrency(
+                              statistiques.data?.recettes ?? 0
+                            )}
+                          </div>
+                          <p className="text-sm text-white/90">
+                            {statistiques.data?.nbrRecettes ?? 0} recette
+                            {(statistiques.data?.nbrRecettes ?? 0) !== 1 ? "s" : ""}
+                          </p>
+                        </>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-gradient-to-tr from-amber-400 via-orange-500 to-orange-600 overflow-hidden shadow-md border-0 col-span-full lg:col-span-1 order-first transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pt-4">
+                      <CardTitle className="text-lg font-medium text-white ">
+                        Dépenses fixes
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pb-3">
+                      {statistiques.isLoading || statistiques.isFetching ? (
+                        <Skeleton className="h-8 w-[200px] bg-orange-200" />
+                      ) : (
+                        <>
+                          <div className="text-3xl font-bold text-white mb-1">
+                            {formatCurrency(
+                              statistiques.data?.depensesFixes ?? 0
+                            )}
+                          </div>
+                          <p className="text-sm text-white/90">
+                            {statistiques.data?.nbrDepensesFixes ?? 0} dépense
+                            {(statistiques.data?.nbrDepensesFixes ?? 0) !== 1 ? "s" : ""} fixe
+                            {(statistiques.data?.nbrDepensesFixes ?? 0) !== 1 ? "s" : ""}
+                          </p>
+                        </>
                       )}
                     </CardContent>
                   </Card>
@@ -444,17 +483,25 @@ export default function Page() {
                   <Card className="bg-gradient-to-tr from-red-300 via-red-400 to-red-500 overflow-hidden shadow-md border-0 col-span-full lg:col-span-1 order-first transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pt-4">
                       <CardTitle className="text-lg font-medium text-white ">
-                        Total des dépenses
+                        Dépenses variables
                       </CardTitle>
-                      <HandCoins className="h-6 w-6 text-white" />
                     </CardHeader>
                     <CardContent className="pb-3">
                       {statistiques.isLoading || statistiques.isFetching ? (
                         <Skeleton className="h-8 w-[200px] bg-red-200" />
                       ) : (
-                        <div className="text-3xl font-bold text-white mb-3">
-                          {formatCurrency(statistiques.data?.depenses)}
-                        </div>
+                        <>
+                          <div className="text-3xl font-bold text-white mb-1">
+                            {formatCurrency(
+                              statistiques.data?.depensesVariantes ?? 0
+                            )}
+                          </div>
+                          <p className="text-sm text-white/90">
+                            {statistiques.data?.nbrDepensesVariantes ?? 0} dépense
+                            {(statistiques.data?.nbrDepensesVariantes ?? 0) !== 1 ? "s" : ""} variable
+                            {(statistiques.data?.nbrDepensesVariantes ?? 0) !== 1 ? "s" : ""}
+                          </p>
+                        </>
                       )}
                     </CardContent>
                   </Card>
@@ -464,50 +511,10 @@ export default function Page() {
                   id="Basic-cards"
                 >
                   <BasicCard
-                    title="Clients"
-                    statistiques={statistiques.data?.nbrClients}
-                    Icon={Users}
-                    isLoading={
-                      statistiques.isLoading || statistiques.isFetching
-                    }
-                  />
-                  <BasicCard
-                    title="Fournisseurs"
-                    statistiques={statistiques.data?.nbrFournisseurs}
-                    Icon={Users}
-                    isLoading={
-                      statistiques.isLoading || statistiques.isFetching
-                    }
-                  />
-                  <BasicCard
-                    title="Produits"
-                    statistiques={statistiques.data?.nbrProduits}
-                    Icon={Package}
-                    isLoading={
-                      statistiques.isLoading || statistiques.isFetching
-                    }
-                  />
-                  <BasicCard
-                    title="Commandes de fournitures"
-                    statistiques={statistiques.data?.nbrCommandes}
-                    Icon={Truck}
-                    isLoading={
-                      statistiques.isLoading || statistiques.isFetching
-                    }
-                  />
-                  <BasicCard
-                    title="Bon de livraison"
-                    statistiques={statistiques.data?.nbrBonLivraison}
-                    Icon={ScrollText}
-                    isLoading={
-                      statistiques.isLoading || statistiques.isFetching
-                    }
-                  />
-
-                  <BasicCard
                     title="Caisse"
                     statistiques={formatCurrency(statistiques.data?.caisse)}
                     Icon={Wallet}
+                    iconClassName="bg-amber-100 text-amber-600"
                     isLoading={
                       statistiques.isLoading || statistiques.isFetching
                     }
@@ -518,6 +525,7 @@ export default function Page() {
                       statistiques.data?.comptePersonnel
                     )}
                     Icon={Wallet}
+                    iconClassName="bg-slate-100 text-slate-600"
                     isLoading={
                       statistiques.isLoading || statistiques.isFetching
                     }
@@ -528,10 +536,104 @@ export default function Page() {
                       statistiques.data?.compteProfessionnel
                     )}
                     Icon={Wallet}
+                    iconClassName="bg-violet-100 text-violet-600"
                     isLoading={
                       statistiques.isLoading || statistiques.isFetching
                     }
                   />
+                  <BasicCard
+                    title="Règlements prévus"
+                    statistiques={formatCurrency(
+                      statistiques.data?.sommeReglementsPrevus ?? 0
+                    )}
+                    Icon={Landmark}
+                    iconClassName="bg-blue-100 text-blue-600"
+                    isLoading={
+                      statistiques.isLoading || statistiques.isFetching
+                    }
+                  />
+                  <Card className="relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 bg-white border border-gray-200 hover:border-gray-300">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                      <CardTitle className="text-lg font-medium">
+                        Solde restant après prélèvements
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {statistiques.isLoading || statistiques.isFetching ? (
+                        <Skeleton className="h-4 w-[150px]" />
+                      ) : (
+                        <div
+                          className={`text-3xl font-bold ${
+                            (statistiques.data?.differenceBalance ?? 0) >= 0
+                              ? "text-green-600"
+                              : "text-red-600"
+                          }`}
+                        >
+                          {formatCurrency(
+                            statistiques.data?.differenceBalance ?? 0
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+                    <div className="absolute bottom-4 right-4 p-3 rounded-full bg-emerald-100">
+                      <TrendingUp className="h-8 w-8 text-emerald-600" />
+                    </div>
+                  </Card>
+                  <BasicCard
+                    title="Devis"
+                    statistiques={statistiques.data?.nbrDevis}
+                    Icon={FileText}
+                    iconClassName="bg-fuchsia-100 text-fuchsia-600"
+                    isLoading={
+                      statistiques.isLoading || statistiques.isFetching
+                    }
+                  />
+                  <BasicCard
+                    title="Bon de livraison"
+                    statistiques={statistiques.data?.nbrBonLivraison}
+                    Icon={ScrollText}
+                    iconClassName="bg-teal-100 text-teal-600"
+                    isLoading={
+                      statistiques.isLoading || statistiques.isFetching
+                    }
+                  />
+                  <BasicCard
+                    title="Commandes de fournitures"
+                    statistiques={statistiques.data?.nbrCommandes}
+                    Icon={Truck}
+                    iconClassName="bg-orange-100 text-orange-600"
+                    isLoading={
+                      statistiques.isLoading || statistiques.isFetching
+                    }
+                  />
+                  <BasicCard
+                    title="Clients"
+                    statistiques={statistiques.data?.nbrClients}
+                    Icon={Users}
+                    iconClassName="bg-emerald-100 text-emerald-600"
+                    isLoading={
+                      statistiques.isLoading || statistiques.isFetching
+                    }
+                  />
+                  <BasicCard
+                    title="Fournisseurs"
+                    statistiques={statistiques.data?.nbrFournisseurs}
+                    Icon={Users}
+                    iconClassName="bg-sky-100 text-sky-600"
+                    isLoading={
+                      statistiques.isLoading || statistiques.isFetching
+                    }
+                  />
+                  <BasicCard
+                    title="Produits"
+                    statistiques={statistiques.data?.nbrProduits}
+                    Icon={Package}
+                    iconClassName="bg-indigo-100 text-indigo-600"
+                    isLoading={
+                      statistiques.isLoading || statistiques.isFetching
+                    }
+                  />
+
                 </div>
                 {/* Cartes des produits et articles sur la même ligne */}
                 <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
