@@ -53,14 +53,31 @@ type Versement = {
   }[];
 };
 
+type FactureItem = {
+  key: string;
+  designation?: string;
+  quantite?: number;
+  prixUnite?: number;
+  unite?: string;
+  height?: number;
+  length?: number;
+  width?: number;
+  id?: string;
+};
+
+type CreateFactureFromMultipleVersementsDialogProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+};
+
 export default function CreateFactureFromMultipleVersementsDialog({
   open,
   onOpenChange,
-}) {
-  const [date, setDate] = useState(null);
-  const [numero, setNumero] = useState(null);
-  const [selectedClient, setSelectedClient] = useState(null);
-  const [items, setItems] = useState([]);
+}: CreateFactureFromMultipleVersementsDialogProps) {
+  const [date, setDate] = useState<Date | null>(null);
+  const [numero, setNumero] = useState<string | null>(null);
+  const [selectedClient, setSelectedClient] = useState<{ id: string } | null>(null);
+  const [items, setItems] = useState<FactureItem[]>([]);
   const [isArticleDialogOpen, setIsArticleDialogOpen] = useState(false);
   const [selectedVersements, setSelectedVersements] = useState<Versement[]>([]);
   const [versementMontants, setVersementMontants] = useState<Record<string, number>>({});
@@ -86,7 +103,7 @@ export default function CreateFactureFromMultipleVersementsDialog({
     return nanoidCustom();
   };
 
-  const handleItemChange = (key, field, value) => {
+  const handleItemChange = (key: string, field: string, value: string | number | false) => {
     setItems((prevItems) =>
       prevItems.map((item) =>
         item.key === key ? { ...item, [field]: value } : item
@@ -94,28 +111,25 @@ export default function CreateFactureFromMultipleVersementsDialog({
     );
   };
 
-  const removeItem = (deletedItem) => {
+  const removeItem = (deletedItem: { key: string }) => {
     setItems((prev) => prev.filter((item) => item.key !== deletedItem.key));
   };
 
-  const validateFloat = (value) => {
-    if (typeof value === "string") {
-      value = value.replace(",", ".");
-      value = value.trim();
-    }
-    const parsed = parseFloat(value);
+  const validateFloat = (value: string | number): number | false => {
+    const str = typeof value === "string" ? value.replace(",", ".").trim() : String(value);
+    const parsed = parseFloat(str);
     if (isNaN(parsed)) {
       return false;
     }
     return parsed;
   };
 
-  const handleAddArticles = (newArticles) => {
+  const handleAddArticles = (newArticles: FactureItem[]) => {
     setItems((prevItems) => [
       ...prevItems,
-      ...newArticles.map((article) => ({
+      ...newArticles.map((article: FactureItem) => ({
         ...article,
-        key: article.key || generateUniqueKey(),
+        key: typeof article.key === "string" ? article.key : generateUniqueKey(),
       })),
     ]);
   };
@@ -124,7 +138,7 @@ export default function CreateFactureFromMultipleVersementsDialog({
     return parseFloat(
       items
         .reduce((acc, item) => {
-          const total = item.quantite * item.prixUnite;
+          const total = (item.quantite ?? 0) * (item.prixUnite ?? 0);
           return acc + (isNaN(total) ? 0 : total);
         }, 0)
         .toFixed(2)
@@ -248,10 +262,11 @@ export default function CreateFactureFromMultipleVersementsDialog({
         const response = await axios.post("/api/factures", data);
         toast.success("Facture créée avec succès");
         return response.data;
-      } catch (error) {
+      } catch (error: unknown) {
+        const err = error as { response?: { data?: { message?: string } }; message?: string };
         toast.error(
-          error.response?.data?.message ||
-            error.message ||
+          err.response?.data?.message ||
+            err.message ||
             "Échec de la création de la facture!"
         );
         throw error;
@@ -581,8 +596,8 @@ export default function CreateFactureFromMultipleVersementsDialog({
                               />
                             </TableCell>
                             <TableCell>
-                              {!isNaN(item.quantite * item.prixUnite)
-                                ? (item.quantite * item.prixUnite).toFixed(2)
+                              {!isNaN((item.quantite ?? 0) * (item.prixUnite ?? 0))
+                                ? ((item.quantite ?? 0) * (item.prixUnite ?? 0)).toFixed(2)
                                 : 0}{" "}
                               DH
                             </TableCell>
@@ -601,20 +616,21 @@ export default function CreateFactureFromMultipleVersementsDialog({
                                   variant="ghost"
                                   size="icon"
                                   onClick={() => {
-                                    const origineItem = items.find(
+                                    const orig = items.find(
                                       (i) => i.key === item.key
                                     );
+                                    if (!orig) return;
                                     setItems((prevItems) => [
                                       ...prevItems,
                                       {
                                         ...item,
-                                        designation: origineItem.designation,
-                                        quantite: origineItem.quantite,
-                                        prixUnite: origineItem.prixUnite,
-                                        length: origineItem.length,
-                                        width: origineItem.width,
-                                        height: origineItem.height,
-                                        unite: origineItem.unite,
+                                        designation: orig.designation,
+                                        quantite: orig.quantite,
+                                        prixUnite: orig.prixUnite,
+                                        length: orig.length,
+                                        width: orig.width,
+                                        height: orig.height,
+                                        unite: orig.unite,
                                         key: generateUniqueKey(),
                                       },
                                     ]);
@@ -715,7 +731,7 @@ export default function CreateFactureFromMultipleVersementsDialog({
                     toast.error("Veuillez sélectionner un client");
                     return;
                   }
-                  if (!numero || numero.trim() === "") {
+                  if (!numero || (typeof numero === "string" && numero.trim() === "")) {
                     toast.error("Veuillez saisir un numéro de facture");
                     return;
                   }
@@ -738,16 +754,16 @@ export default function CreateFactureFromMultipleVersementsDialog({
                   createFacture.mutate();
                 }}
                 disabled={
-                  createFacture.isPending ||
+                  (createFacture as { isLoading?: boolean }).isLoading ||
                   !numero ||
-                  numero.trim() === "" ||
+                  (typeof numero === "string" && numero.trim() === "") ||
                   items.length === 0 ||
                   selectedVersements.length === 0 ||
                   !selectedClient ||
                   total() > totalMontantVersements()
                 }
               >
-                {createFacture.isPending ? "En cours..." : "Créer la facture"}
+                {(createFacture as { isLoading?: boolean }).isLoading ? "En cours..." : "Créer la facture"}
               </Button>
             </div>
           </DialogFooter>
