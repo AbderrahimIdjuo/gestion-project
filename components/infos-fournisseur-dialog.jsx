@@ -1,7 +1,7 @@
 "use client";
 
-import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
 import Spinner from "@/components/customUi/Spinner";
+import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -47,8 +47,10 @@ import {
   Building2,
   Calendar,
   CreditCard,
+  FileText,
   LandmarkIcon,
   Package,
+  Printer,
   Receipt,
   TrendingUp,
 } from "lucide-react";
@@ -73,6 +75,14 @@ export default function InfosFournisseurDialog({
   const [startDateReglements, setStartDateReglements] = useState();
   const [endDateReglements, setEndDateReglements] = useState();
   const [periodeReglements, setPeriodeReglements] = useState("ce-mois");
+
+  // États pour le rapport BL & Règlements (tableau sous Produits et Règlements)
+  const [periodeRapport, setPeriodeRapport] = useState("ce-mois");
+  const [startDateRapport, setStartDateRapport] = useState();
+  const [endDateRapport, setEndDateRapport] = useState();
+
+  // Affichage du rapport à la demande uniquement (produits et règlements se chargent à l'ouverture)
+  const [rapportRequested, setRapportRequested] = useState(false);
 
   function getDateRangeFromPeriode(periode, customStartDate, customEndDate) {
     const now = new Date();
@@ -146,6 +156,15 @@ export default function InfosFournisseurDialog({
       setEndDateReglements(to ? to.toISOString() : undefined);
     }
   }, [periodeReglements]);
+
+  // Mettre à jour les dates quand la période du rapport change
+  useEffect(() => {
+    if (periodeRapport !== "personnalisee") {
+      const { from, to } = getDateRangeFromPeriode(periodeRapport);
+      setStartDateRapport(from ? from.toISOString() : undefined);
+      setEndDateRapport(to ? to.toISOString() : undefined);
+    }
+  }, [periodeRapport]);
 
   const formatCurrency = amount => {
     return new Intl.NumberFormat("fr-MA", {
@@ -243,20 +262,23 @@ export default function InfosFournisseurDialog({
   };
 
   const data = useQuery({
-    queryKey: ["fournisseursStatistiques", fournisseur],
+    queryKey: ["fournisseursStatistiques", fournisseur?.id],
     queryFn: async () => {
       const response = await axios.get("/api/fournisseurs/statistiques", {
         params: {
           fournisseurId: fournisseur.id,
         },
       });
-      setBonLivraisons(response.data.bonLivraisons);
-      setReglements(response.data.reglements);
-      console.log("response.data", response.data);
+      setBonLivraisons(response.data.bonLivraisons || []);
+      setReglements(response.data.reglements || []);
       return response.data;
     },
-    enabled: !!fournisseur?.id,
+    enabled: !!fournisseur?.id && !!isOpen,
   });
+
+  useEffect(() => {
+    if (!isOpen) setRapportRequested(false);
+  }, [isOpen]);
   const chiffreAffaires =
     bonLivraisons?.reduce((acc, bon) => {
       if (bon.type === "achats") {
@@ -355,6 +377,96 @@ export default function InfosFournisseurDialog({
       return true;
     });
   }, [reglements, startDateReglements, endDateReglements]);
+
+  // Rapport : BL + Règlements fusionnés, filtrés par période, triés par date décroissante
+  const rapportItems = useMemo(() => {
+    const { from, to } = getDateRangeFromPeriode(
+      periodeRapport,
+      startDateRapport,
+      endDateRapport
+    );
+    const fromDate = from ? new Date(from) : null;
+    const toDate = to ? new Date(to) : null;
+    if (toDate) toDate.setHours(23, 59, 59, 999);
+
+    const items = [];
+
+    (bonLivraisons || []).forEach(bl => {
+      const blDate = bl.date ? new Date(bl.date) : null;
+      if (!blDate) return;
+      if (fromDate && blDate < fromDate) return;
+      if (toDate && blDate > toDate) return;
+      items.push({
+        date: bl.date,
+        typeLabel: bl.type === "achats" ? "BL Achats" : bl.type === "retour" ? "BL Retour" : "BL",
+        reference: bl.numero || bl.reference || "—",
+        montant: bl.type === "retour" ? -(bl.total || 0) : (bl.total || 0),
+        itemType: "bl",
+        blType: bl.type,
+      });
+    });
+
+    (reglements || []).forEach(reg => {
+      const regDate = reg.dateReglement ? new Date(reg.dateReglement) : null;
+      if (!regDate) return;
+      if (fromDate && regDate < fromDate) return;
+      if (toDate && regDate > toDate) return;
+      items.push({
+        date: reg.dateReglement,
+        typeLabel: "Règlement",
+        reference: reg.id?.substring(0, 8) || "—",
+        motif: reg.motif ?? null,
+        montant: -(reg.montant || 0),
+        itemType: "reglement",
+      });
+    });
+
+    return items.sort((a, b) => {
+      const dateDiff = new Date(a.date) - new Date(b.date);
+      if (dateDiff !== 0) return dateDiff;
+      // Même date : BL avant règlement (règlement après BL)
+      return (a.itemType === "reglement" ? 1 : 0) - (b.itemType === "reglement" ? 1 : 0);
+    });
+  }, [
+    bonLivraisons,
+    reglements,
+    periodeRapport,
+    startDateRapport,
+    endDateRapport,
+  ]);
+
+  // Totaux et dette pour le rapport (ordre chronologique : ancien → récent)
+  // Dette augmente avec chaque BL achats, diminue avec chaque BL retour ou règlement
+  const rapportTotaux = useMemo(() => {
+    const sumAchats = rapportItems
+      .filter(i => i.itemType === "bl" && i.blType === "achats")
+      .reduce((acc, i) => acc + (i.montant || 0), 0);
+    const sumRetours = rapportItems
+      .filter(i => i.itemType === "bl" && i.blType === "retour")
+      .reduce((acc, i) => acc + Math.abs(i.montant || 0), 0);
+    const sumReglements = rapportItems
+      .filter(i => i.itemType === "reglement")
+      .reduce((acc, i) => acc + Math.abs(i.montant || 0), 0);
+    const detteFinale = montantRestantBL;
+    const detteInitiale =
+      detteFinale - sumAchats + sumReglements + sumRetours;
+    const runningDette = [];
+    for (let i = 0; i < rapportItems.length; i++) {
+      runningDette.push(
+        i === 0
+          ? detteInitiale + rapportItems[0].montant
+          : runningDette[i - 1] + rapportItems[i].montant
+      );
+    }
+    return {
+      sumAchats,
+      sumRetours,
+      sumReglements,
+      detteInitiale,
+      detteFinale,
+      runningDette,
+    };
+  }, [rapportItems, montantRestantBL]);
 
   const getStatusPrelevementLabel = statusPrelevement => {
     if (!statusPrelevement) return "—";
@@ -519,7 +631,7 @@ export default function InfosFournisseurDialog({
                   variant="destructive"
                   className="text-base sm:text-lg px-3 sm:px-4 py-1.5 sm:py-2 font-bold shadow-md w-full sm:w-auto text-center"
                 >
-                  {formatCurrency(montantRestantBL)}
+                  {data.isLoading || !data?.data ? "—" : formatCurrency(montantRestantBL)}
                 </Badge>
               </div>
             </div>
@@ -547,6 +659,14 @@ export default function InfosFournisseurDialog({
             </div>
           </div>
 
+          {data.isLoading && (
+            <div className="flex justify-center py-12">
+              <Spinner />
+            </div>
+          )}
+
+          {!data.isLoading && data.data && (
+          <div className="space-y-4 sm:space-y-6">
           {/* Liste de produits et règlements */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             {/* Top 5 Products */}
@@ -898,6 +1018,177 @@ export default function InfosFournisseurDialog({
               </CardContent>
             </Card>
           </div>
+
+          {/* Rapport BL & Règlements — affichage à la demande uniquement */}
+          <Card className="border-2 shadow-lg mt-4 sm:mt-6">
+            <CardHeader className="bg-gradient-to-r from-zinc-50 to-zinc-100 border-b">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <CardTitle className="text-xl font-semibold flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-lg bg-fuchsia-500 flex items-center justify-center">
+                    <FileText className="h-4 w-4 text-white" />
+                  </div>
+                  Rapport BL & Règlements
+                </CardTitle>
+                {rapportRequested && rapportItems.length > 0 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="bg-fuchsia-500 hover:bg-fuchsia-600 text-white hover:text-white border-0 rounded-full"
+                    onClick={() => {
+                      const payload = {
+                        fournisseur,
+                        rapportItems,
+                        rapportTotaux,
+                        periodeRapport,
+                        startDateRapport,
+                        endDateRapport,
+                      };
+                      localStorage.setItem("fournisseur-rapport-bl-reglements", JSON.stringify(payload));
+                      window.open("/fournisseurs/imprimer-rapport", "_blank");
+                    }}
+                  >
+                    <Printer className="mr-2 h-4 w-4" />
+                    Imprimer le rapport
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              {!rapportRequested ? (
+                <div className="flex justify-center py-10">
+                  <Button
+                    type="button"
+                    onClick={() => setRapportRequested(true)}
+                    className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:from-fuchsia-600 hover:via-purple-600 hover:to-violet-600 text-white font-semibold rounded-full px-6"
+                  >
+                    <FileText className="mr-2 h-4 w-4" />
+                    Afficher le rapport
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                <div className="px-4 pt-4 space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="periode-rapport" className="text-sm font-medium">
+                      Période
+                    </Label>
+                    <Select value={periodeRapport} onValueChange={setPeriodeRapport}>
+                      <SelectTrigger className="focus:ring-2 focus:ring-purple-500 max-w-[220px]">
+                        <SelectValue placeholder="Sélectionnez la période" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="aujourd'hui">Aujourd&apos;hui</SelectItem>
+                        <SelectItem value="ce-mois">Ce mois</SelectItem>
+                        <SelectItem value="mois-dernier">Le mois dernier</SelectItem>
+                        <SelectItem value="trimestre-actuel">Trimestre actuel</SelectItem>
+                        <SelectItem value="trimestre-precedent">Trimestre précédent</SelectItem>
+                        <SelectItem value="cette-annee">Cette année</SelectItem>
+                        <SelectItem value="annee-derniere">L&apos;année dernière</SelectItem>
+                        <SelectItem value="personnalisee">Période personnalisée</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {periodeRapport === "personnalisee" && (
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Date</Label>
+                      <CustomDateRangePicker
+                        startDate={startDateRapport}
+                        setStartDate={setStartDateRapport}
+                        endDate={endDateRapport}
+                        setEndDate={setEndDateRapport}
+                      />
+                    </div>
+                  )}
+                </div>
+              <div className="rounded-xl overflow-x-auto max-h-[500px] overflow-y-auto mt-4">
+                {rapportItems.length > 0 ? (
+                  <Table>
+                    <TableHeader className="sticky top-0 bg-gradient-to-r from-zinc-50 to-zinc-100 border-b z-10">
+                      <TableRow>
+                        <TableHead className="font-semibold">Date</TableHead>
+                        <TableHead className="font-semibold">Description</TableHead>
+                        <TableHead className="font-semibold text-right">Fourniture</TableHead>
+                        <TableHead className="font-semibold text-right">Règlement</TableHead>
+                        <TableHead className="font-semibold text-right">Retour</TableHead>
+                        <TableHead className="font-semibold text-right">Dette</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      <TableRow className="bg-gray-700 hover:bg-gray-700 text-white border-b font-semibold">
+                        <TableCell className="py-2">DETTE INITIALE</TableCell>
+                        <TableCell className="py-2"></TableCell>
+                        <TableCell className="py-2 text-right"></TableCell>
+                        <TableCell className="py-2 text-right"></TableCell>
+                        <TableCell className="py-2 text-right"></TableCell>
+                        <TableCell className="py-2 text-right font-semibold">
+                          {formatCurrency(rapportTotaux.detteInitiale)}
+                        </TableCell>
+                      </TableRow>
+                      {rapportItems.map((item, index) => (
+                        <TableRow key={`${item.itemType}-${item.reference}-${index}`} className="border-b hover:bg-purple-50/50">
+                          <TableCell className="py-2">{formatDate(item.date)}</TableCell>
+                          <TableCell className="py-2 font-medium">
+                            {item.itemType === "reglement" && item.motif
+                              ? item.motif
+                              : item.reference}
+                          </TableCell>
+                          <TableCell className="py-2 text-right">
+                            {item.itemType === "bl" && item.blType === "achats" ? (
+                              <span className="text-green-600 font-medium">{formatCurrency(item.montant)}</span>
+                            ) : (
+                              ""
+                            )}
+                          </TableCell>
+                          <TableCell className="py-2 text-right">
+                            {item.itemType === "reglement" ? (
+                              <span className="text-blue-600 font-medium">{formatCurrency(Math.abs(item.montant))}</span>
+                            ) : (
+                              ""
+                            )}
+                          </TableCell>
+                          <TableCell className="py-2 text-right">
+                            {item.itemType === "bl" && item.blType === "retour" ? (
+                              <span className="text-red-600 font-medium">{formatCurrency(Math.abs(item.montant))}</span>
+                            ) : (
+                              ""
+                            )}
+                          </TableCell>
+                          <TableCell
+                            className={`py-2 text-right font-medium ${
+                              rapportTotaux.runningDette[index] >= 0 ? "text-green-600" : "text-red-600"
+                            }`}
+                          >
+                            {formatCurrency(rapportTotaux.runningDette[index])}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {/* <TableRow className="bg-gray-50 border-b font-semibold">
+                        <TableCell className="py-2">DETTE FINALE</TableCell>
+                        <TableCell className="py-2" colSpan={4}></TableCell>
+                        <TableCell
+                          className={`py-2 text-right font-semibold ${
+                            rapportTotaux.detteFinale >= 0 ? "text-green-600" : "text-red-600"
+                          }`}
+                        >
+                          {formatCurrency(rapportTotaux.detteFinale)}
+                        </TableCell>
+                      </TableRow> */}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p className="font-medium">Aucune donnée pour cette période</p>
+                  </div>
+                )}
+              </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          </div>
+          )}
         </div>
       </DialogContent>
 

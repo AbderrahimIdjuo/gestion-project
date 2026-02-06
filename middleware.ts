@@ -1,36 +1,19 @@
-import { createClerkClient } from "@clerk/backend";
 import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
+/**
+ * Lightweight middleware: runs ONLY on routes listed in config.matcher.
+ * No Clerk API calls, no DB, no fetch. Role checks (admin-only pages)
+ * should be done in layout/page or via Clerk JWT session claims.
+ */
 export default clerkMiddleware(async (auth, request) => {
   const { pathname } = request.nextUrl;
-  const authObject = await auth();
+  const authResult = await auth();
 
-  // Create Clerk client instance
-  const clerkClient = createClerkClient({
-    secretKey: process.env.CLERK_SECRET_KEY!,
-  });
+  const hasUser = !!authResult.userId;
 
-  // Routes à exclure de la vérification (SSO callback, API, etc.)
-  const excludedRoutes = [
-    "/sso-callback",
-    "/api",
-    "/_next",
-    "/favicon.ico",
-    "/no-access",
-  ];
-
-  const isExcludedRoute = excludedRoutes.some(route =>
-    pathname.startsWith(route)
-  );
-
-  // Si c'est une route exclue, laisser passer
-  if (isExcludedRoute) {
-    return NextResponse.next();
-  }
-
-  // Routes protégées
-  const protectedRoutes = [
+  // Protected route prefixes (must stay in sync with matcher)
+  const protectedPrefixes = [
     "/admin",
     "/commercant",
     "/clients",
@@ -43,62 +26,53 @@ export default clerkMiddleware(async (auth, request) => {
     "/articls",
     "/dashboard",
   ];
+  const isProtectedRoute = protectedPrefixes.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
-  const isProtectedRoute = protectedRoutes.some(route =>
-    pathname.startsWith(route)
-  );
-
-  // Si pas connecté et route protégée → rediriger
-  if (!authObject.userId && isProtectedRoute) {
+  // Not signed in on protected route → sign-in
+  if (!hasUser && isProtectedRoute) {
     return NextResponse.redirect(new URL("/sign-in", request.url));
   }
 
-  // Vérification du rôle pour TOUS les utilisateurs connectés
-  if (authObject.userId) {
-    try {
-      const user = await clerkClient.users.getUser(authObject.userId);
-
-      // On suppose que tu stockes le rôle dans `publicMetadata.role`
-      const role = user.publicMetadata.role as string | undefined;
-
-      // Si aucun rôle → refuser l'accès à toute l'app
-      if (!role) {
-        return NextResponse.redirect(new URL("/no-access", request.url));
-      }
-
-      // Paramètres: accès réservé aux admins uniquement
-      if (pathname.startsWith("/parametres")) {
-        if (role !== "admin") {
-          return NextResponse.redirect(new URL("/no-access", request.url));
-        }
-      }
-
-      // Employés: accès réservé aux admins uniquement
-      if (pathname.startsWith("/Employes")) {
-        if (role !== "admin") {
-          return NextResponse.redirect(new URL("/no-access", request.url));
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching user in middleware:", error);
-      // En cas d'erreur, rediriger vers no-access pour éviter les boucles
-      return NextResponse.redirect(new URL("/no-access", request.url));
-    }
-  }
-
-  // Si déjà connecté et essaie d'aller sur /sign-in ou /sign-up → redirect dashboard
-  if (
-    authObject.userId &&
-    (pathname.startsWith("/sign-in") || pathname.startsWith("/sign-up"))
-  ) {
+  // Signed in on auth pages → dashboard
+  if (hasUser && (pathname === "/sign-in" || pathname.startsWith("/sign-in/") || pathname === "/sign-up" || pathname.startsWith("/sign-up/"))) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
   return NextResponse.next();
 });
 
+/**
+ * Run middleware ONLY on these paths. Everything else (API, _next, static files,
+ * sso-callback, no-access, etc.) is never touched → large reduction in invocations.
+ */
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/",
+    "/sign-in",
+    "/sign-in/(.*)",
+    "/sign-up",
+    "/sign-up/(.*)",
+    "/dashboard",
+    "/dashboard/(.*)",
+    "/admin",
+    "/admin/(.*)",
+    "/commercant",
+    "/commercant/(.*)",
+    "/clients",
+    "/clients/(.*)",
+    "/produits",
+    "/produits/(.*)",
+    "/ventes",
+    "/ventes/(.*)",
+    "/achats",
+    "/achats/(.*)",
+    "/transactions",
+    "/transactions/(.*)",
+    "/parametres",
+    "/parametres/(.*)",
+    "/Employes",
+    "/Employes/(.*)",
+    "/articls",
+    "/articls/(.*)",
   ],
 };

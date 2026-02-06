@@ -121,11 +121,11 @@ export default function AddBonLivraison({ lastBonLivraison }) {
         fournisseurNom: selectedFournisseur.nom,
         total: montantTotal || total().toFixed(2),
         type,
-        totalPaye: 0,
+        totalPaye: type === "retour" ? null : (montantPaye ?? 0),
         bLGroups,
-        statutPaiement,
-        compte,
-        montantPaye,
+        statutPaiement: type === "retour" ? null : statutPaiement,
+        compte: type === "retour" ? "" : compte,
+        montantPaye: type === "retour" ? null : montantPaye,
       };
       console.log("data : ", data);
       const loadingToast = toast.loading("Ajout du bon de livraison...");
@@ -462,65 +462,67 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                       setFournisseur={setSelectedFournisseur}
                     />
                   </div>
-                  <div className="w-full space-y-2">
-                    <Label className="text-sm font-medium block pt-1">
-                      Statut de paiement
-                    </Label>
-                    <Select
-                      value={statutPaiement}
-                      onValueChange={(value) => setStatutPaiement(value)}
-                    >
-                      <SelectTrigger className="w-full col-span-3 bg-white focus:ring-purple-500">
-                        <SelectValue placeholder="Séléctionnez ..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          <SelectItem value="impaye">Impayé</SelectItem>
-                          <SelectItem value="paye">Payé</SelectItem>
-                          <SelectItem value="enPartie">En partie</SelectItem>
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {statutPaiement !== "impaye" && (
-                    <div className="grid w-full items-center gap-1.5">
-                      <Label htmlFor="compte">Compte bancaire</Label>
-                      <Select
-                        value={compte}
-                        name="compte"
-                        onValueChange={(value) => setCompte(value)}
-                      >
-                        <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500 mt-2">
-                          <SelectValue placeholder="Séléctionner..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {comptes.data?.map((element) => (
-                            <SelectItem key={element.id} value={element.compte}>
-                              <div className="flex items-center gap-2">
-                                {element.compte}
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                  {statutPaiement === "enPartie" && (
+                  {type !== "retour" && (
                     <>
                       <div className="w-full space-y-2">
                         <Label className="text-sm font-medium block pt-1">
-                          Montant payé
+                          Statut de paiement
                         </Label>
-                        <Input
-                          id="montantPaye"
-                          value={montantPaye}
-                          onChange={(e) => {
-                            setMontantPaye(Number(e.target.value));
-                          }}
-                          className="col-span-3 focus:!ring-purple-500 "
-                          spellCheck={false}
-                        />
-                      </div>{" "}
+                        <Select
+                          value={statutPaiement}
+                          onValueChange={(value) => setStatutPaiement(value)}
+                        >
+                          <SelectTrigger className="w-full col-span-3 bg-white focus:ring-purple-500">
+                            <SelectValue placeholder="Séléctionnez ..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectGroup>
+                              <SelectItem value="impaye">Impayé</SelectItem>
+                              <SelectItem value="paye">Payé</SelectItem>
+                              <SelectItem value="enPartie">En partie</SelectItem>
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {statutPaiement !== "impaye" && (
+                        <div className="grid w-full items-center gap-1.5">
+                          <Label htmlFor="compte">Compte bancaire</Label>
+                          <Select
+                            value={compte}
+                            name="compte"
+                            onValueChange={(value) => setCompte(value)}
+                          >
+                            <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500 mt-2">
+                              <SelectValue placeholder="Séléctionner..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {comptes.data?.map((element) => (
+                                <SelectItem key={element.id} value={element.compte}>
+                                  <div className="flex items-center gap-2">
+                                    {element.compte}
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                      {statutPaiement === "enPartie" && (
+                        <div className="w-full space-y-2">
+                          <Label className="text-sm font-medium block pt-1">
+                            Montant payé
+                          </Label>
+                          <Input
+                            id="montantPaye"
+                            value={montantPaye}
+                            onChange={(e) => {
+                              setMontantPaye(Number(e.target.value));
+                            }}
+                            className="col-span-3 focus:!ring-purple-500 "
+                            spellCheck={false}
+                          />
+                        </div>
+                      )}
                     </>
                   )}
                 </div>

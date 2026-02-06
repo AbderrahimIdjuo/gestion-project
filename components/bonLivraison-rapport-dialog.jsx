@@ -68,6 +68,7 @@ export default function BonLivraisonRapportDialog() {
     type: "tous",
     periode: "ce-mois",
     statutPaiement: ["impaye", "enPartie"],
+    modeAffichage: "parBL", // "parBL" | "parMontant"
   });
   function getDateRangeFromPeriode(periode) {
     const now = new Date();
@@ -113,8 +114,8 @@ export default function BonLivraisonRapportDialog() {
         };
       case "personnalisee":
         return {
-          from: startDate ? new Date(startDate) : null,
-          to: endDate ? new Date(endDate) : null,
+          from: startDate ? startOfDay(new Date(startDate)) : null,
+          to: endDate ? endOfDay(new Date(endDate)) : null,
         };
       default:
         return {
@@ -148,6 +149,7 @@ export default function BonLivraisonRapportDialog() {
       type: "tous",
       periode: "ce-mois",
       statutPaiement: ["impaye", "enPartie"],
+      modeAffichage: "parBL",
     });
     setSelectedFournisseur(null);
     setComboKey(prev => prev + 1);
@@ -172,8 +174,12 @@ export default function BonLivraisonRapportDialog() {
   };
 
   const { from, to } = getDateRangeFromPeriode(formData.periode);
-  
-  // Query pour récupérer les BL et règlements
+
+  // Un intervalle valide : période prédéfinie (from/to toujours définis) ou personnalisée avec les deux dates
+  const hasValidDateRange =
+    formData.periode !== "personnalisee" || (startDate && endDate);
+
+  // Query pour récupérer les BL et règlements (uniquement dans l'intervalle [from, to])
   const bonLivraisons = useQuery({
     queryKey: [
       "bonLivraisons-rapport",
@@ -183,6 +189,8 @@ export default function BonLivraisonRapportDialog() {
       startDate,
       endDate,
       selectedFournisseur,
+      from?.toISOString(),
+      to?.toISOString(),
     ],
     queryFn: async () => {
       const response = await axios.get("/api/bonLivraison/rapport", {
@@ -195,13 +203,12 @@ export default function BonLivraisonRapportDialog() {
           to: to?.toISOString() ?? null,
         },
       });
-      console.log("bonLivraison rapport", response.data.bonLivraison);
       return response.data.bonLivraison;
     },
-    enabled: currentStep === 2,
+    enabled: currentStep === 2 && hasValidDateRange,
   });
 
-  // Query pour récupérer les règlements dans la période
+  // Query pour récupérer les règlements (uniquement pour la vue par transaction, pas pour par BL / par montant)
   const reglements = useQuery({
     queryKey: [
       "reglements-rapport",
@@ -215,12 +222,16 @@ export default function BonLivraisonRapportDialog() {
           fournisseurId: selectedFournisseur?.id || undefined,
           from: from?.toISOString() ?? null,
           to: to?.toISOString() ?? null,
-          limit: 10000, // Récupérer tous les règlements
+          limit: 10000,
         },
       });
       return response.data.reglements || [];
     },
-    enabled: currentStep === 2,
+    enabled:
+      currentStep === 2 &&
+      hasValidDateRange &&
+      formData.modeAffichage !== "parBL" &&
+      formData.modeAffichage !== "parMontant",
   });
 
   // Fonction pour calculer la dette initiale
@@ -271,6 +282,48 @@ export default function BonLivraisonRapportDialog() {
 
   function rest() {
     return (total() - totalPaye()).toFixed(2);
+  }
+
+  // Pour le mode "par BL" : montant total = somme des total des BL (achats +, retours -)
+  function montantTotalBL() {
+    const bls = bonLivraisons?.data || [];
+    return bls
+      .reduce((acc, bl) => {
+        if (bl.type === "achats") return acc + (bl.total || 0);
+        if (bl.type === "retour") return acc - (bl.total || 0);
+        return acc;
+      }, 0)
+      .toFixed(2);
+  }
+  // Reste à payé total = somme des (total - totalPaye) par BL
+  function restAPayeTotal() {
+    return Number(calculerDetteFinale()).toFixed(2);
+  }
+  // Montant payé = montant total - reste à payé
+  function montantPayeTotal() {
+    return (Number(montantTotalBL()) - Number(restAPayeTotal())).toFixed(2);
+  }
+
+  function getStatutLabel(statut) {
+    if (!statut) return "—";
+    if (statut === "paye") return "Payé";
+    if (statut === "impaye") return "Impayé";
+    if (statut === "enPartie") return "En partie";
+    return statut;
+  }
+
+  // Même style que la page bonLivraison : couleurs par statut
+  function getStatutStyle(statut) {
+    if (statut === "paye")
+      return { label: "Payé", colorClass: "bg-green-100 text-green-700" };
+    if (statut === "impaye")
+      return { label: "Impayé", colorClass: "bg-red-100 text-red-700" };
+    if (statut === "enPartie")
+      return { label: "En partie", colorClass: "bg-amber-100 text-amber-700" };
+    return {
+      label: statut || "Indéterminé",
+      colorClass: "bg-gray-200 text-gray-700",
+    };
   }
 
   // Fonction pour calculer la dette finale : somme des montants restants des BL impayés et enPartie
@@ -372,22 +425,27 @@ export default function BonLivraisonRapportDialog() {
       const isAchat = bl.type === "achats";
       const isRetour = bl.type === "retour";
 
+      const netTotal = isAchat ? total : -total;
+      const restAPayer = total - totalPaye;
+
       if (!map.has(nom)) {
         map.set(nom, {
           fournisseur: nom,
           NbrBL: 1,
           NbrBLAchats: isAchat ? 1 : 0,
           NbrBLRetour: isRetour ? 1 : 0,
-          total: isAchat ? total : -total,
+          total: netTotal,
           montantAchats: isAchat ? total : 0,
           montantRetour: isRetour ? total : 0,
           montantPaye: totalPaye,
+          restAPayer: restAPayer,
         });
       } else {
         const existing = map.get(nom);
         existing.NbrBL += 1;
-        existing.total += isAchat ? total : -total;
+        existing.total += netTotal;
         existing.montantPaye += totalPaye;
+        existing.restAPayer += restAPayer;
 
         if (isAchat) {
           existing.montantAchats += total;
@@ -565,7 +623,26 @@ export default function BonLivraisonRapportDialog() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="modeAffichage" className="text-sm font-medium">
+                  Mode d&apos;affichage
+                </Label>
+                <Select
+                  value={formData.modeAffichage}
+                  onValueChange={value =>
+                    handleInputChange("modeAffichage", value)
+                  }
+                >
+                  <SelectTrigger className="focus:ring-2 focus:ring-purple-500">
+                    <SelectValue placeholder="Mode d'affichage" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="parBL">Par BL</SelectItem>
+                    <SelectItem value="parMontant">Par montant</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="periode" className="text-sm font-medium">
                   Période
@@ -644,15 +721,11 @@ export default function BonLivraisonRapportDialog() {
               <Button
                 className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full"
                 variant="outline"
-                onClick={() => {
-                  console.log("Form Data:", {
-                    formData,
-                    selectedFournisseur,
-                    startDate,
-                    endDate,
-                  });
-                  setCurrentStep(2);
-                }}
+                disabled={
+                  formData.periode === "personnalisee" &&
+                  (!startDate || !endDate)
+                }
+                onClick={() => setCurrentStep(2)}
                 type="submit"
               >
                 Créer
@@ -662,124 +735,231 @@ export default function BonLivraisonRapportDialog() {
         )}
 
         {currentStep === 2 && (
-            // Rapport (avec ou sans fournisseur spécifique)
             <div>
               <div className="rounded-xl border shadow-sm overflow-x-auto">
-                {bonLivraisons.isLoading || reglements.isLoading ? (
+                {bonLivraisons.isLoading ? (
                   <div className="text-center py-10 text-muted-foreground">
                     <p>Chargement des données...</p>
                   </div>
-                ) : mergeAndSortTransactions().length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Fournisseur</TableHead>
-                        <TableHead className="text-right">Fourniture</TableHead>
-                        <TableHead className="text-right">Retour</TableHead>
-                        <TableHead className="text-right">Règlement</TableHead>
-                        <TableHead className="text-right">Dette</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {/* Ligne de dette initiale */}
-                      <TableRow className="bg-gray-700 text-white hover:!bg-gray-700 hover:!text-white border-b">
-                        <TableCell className="px-1 py-2 font-semibold">
-                          DETTE INITIALE
-                        </TableCell>
-                        <TableCell className="px-1 py-2"></TableCell>
-                        <TableCell className="px-1 py-2 text-right"></TableCell>
-                        <TableCell className="px-1 py-2 text-right"></TableCell>
-                        <TableCell className="px-1 py-2 text-right"></TableCell>
-                        <TableCell className="px-1 py-2 text-right pr-4 font-semibold">
-                          {formatCurrency(calculerDetteInitiale())}
-                        </TableCell>
-                      </TableRow>
-                      {/* Transactions */}
-                      {mergeAndSortTransactions().map((transaction, index) => (
-                        <TableRow key={`${transaction.type}-${transaction.id}-${index}`} className="border-b">
-                          <TableCell className="px-1 py-2">
-                            {formatDate(transaction.date.toISOString())}
-                          </TableCell>
-                          <TableCell className="px-1 py-2">
-                            {transaction.fournisseur}
-                          </TableCell>
-                          <TableCell className="px-1 py-2 text-right pr-4">
-                            {transaction.type === "bonLivraison" && transaction.blType === "achats" ? (
-                              <span className="text-green-600">
-                                {formatCurrency(transaction.montant)}
-                              </span>
-                            ) : (
-                              ""
-                            )}
-                          </TableCell>
-                          <TableCell className="px-1 py-2 text-right pr-4">
-                            {transaction.type === "bonLivraison" && transaction.blType === "retour" ? (
-                              <span className="text-red-600">
-                                {formatCurrency(transaction.montant)}
-                              </span>
-                            ) : (
-                              ""
-                            )}
-                          </TableCell>
-                          <TableCell className="px-1 py-2 text-right pr-4">
-                            {transaction.type === "reglement" ? (
-                              <span className="text-blue-600">
-                                {formatCurrency(transaction.montant)}
-                              </span>
-                            ) : (
-                              ""
-                            )}
-                          </TableCell>
-                          <TableCell
-                            className={`px-1 py-2 text-right pr-4 font-semibold ${
-                              transaction.runningDette >= 0
-                                ? "text-green-600"
-                                : "text-red-600"
-                            }`}
-                          >
-                            {formatCurrency(transaction.runningDette)}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                    <TableFooter className="bg-gray-50">
-                      <TableRow className="border-b">
-                        <TableCell
-                          colSpan={5}
-                          className="text-right text-lg font-semibold p-2"
-                        >
-                          Dette finale :
-                        </TableCell>
-                        <TableCell
-                          className={`text-right text-lg font-semibold p-2 ${
-                            calculerDetteFinale() >= 0
-                              ? "text-green-600"
-                              : "text-red-600"
-                          }`}
-                        >
-                          {formatCurrency(calculerDetteFinale())}
-                        </TableCell>
-                      </TableRow>
-                    </TableFooter>
-                  </Table>
+                ) : formData.modeAffichage === "parBL" ? (
+                  // Vue par BL : liste des BL avec fournisseur, type, statut, reste à payé
+                  (() => {
+                    const bls = bonLivraisons?.data || [];
+                    if (bls.length === 0) {
+                      return (
+                        <div className="text-center py-10 text-muted-foreground">
+                          <p>Aucun bon de livraison trouvé</p>
+                        </div>
+                      );
+                    }
+                    return (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Date</TableHead>
+                            <TableHead className="text-left">N° BL</TableHead>
+                            <TableHead>Fournisseur</TableHead>
+                            <TableHead>Type</TableHead>
+                            <TableHead className="text-right">Montant</TableHead>
+                            <TableHead className="text-right">Montant payé</TableHead>
+                            <TableHead>Statut paiement</TableHead>
+                            <TableHead className="text-right">Reste à payé</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {bls.map(bl => {
+                            const restAPayer =
+                              (bl.total || 0) - (bl.totalPaye || 0);
+                            return (
+                              <TableRow key={bl.id} className="border-b">
+                                  <TableCell className="px-1 py-2 font-medium">
+                                  {bl.date ? formatDate(bl.date) : "—"}
+                                </TableCell>
+                                <TableCell className="px-1 py-2 font-medium">
+                                  {bl.numero || bl.reference || "—"}
+                                </TableCell>
+                                <TableCell className="px-1 py-2">
+                                  {bl.fournisseur?.nom || "Inconnu"}
+                                </TableCell>
+                                <TableCell className="px-1 py-2">
+                                  <span
+                                    className={
+                                      bl.type === "achats"
+                                        ? "text-green-600 font-medium"
+                                        : "text-red-600 font-medium"
+                                    }
+                                  >
+                                    {bl.type === "achats"
+                                      ? "Achats"
+                                      : bl.type === "retour"
+                                        ? "Retour"
+                                        : bl.type || "—"}
+                                  </span>
+                                </TableCell>
+                                <TableCell className="px-1 py-2 text-right pr-4">
+                                  <span
+                                    className={
+                                      bl.type === "achats"
+                                        ? "text-green-600"
+                                        : "text-red-600"
+                                    }
+                                  >
+                                    {formatCurrency(bl.total || 0)}
+                                  </span>
+                                </TableCell>
+                                <TableCell className="px-1 py-2 text-right pr-4">
+                                  {formatCurrency(bl.totalPaye || 0)}
+                                </TableCell>
+                                <TableCell className="px-1 py-2">
+                                  {(() => {
+                                    const { label, colorClass } =
+                                      getStatutStyle(bl.statutPaiement);
+                                    return (
+                                      <span
+                                        className={`inline-block px-2 py-1 rounded-full text-xs font-semibold uppercase ${colorClass}`}
+                                      >
+                                        {label}
+                                      </span>
+                                    );
+                                  })()}
+                                </TableCell>
+                                <TableCell className="px-1 py-2 text-right pr-4 font-medium">
+                                  {formatCurrency(restAPayer)}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                        <TableFooter className="bg-gray-50">
+                          <TableRow className="border-b font-semibold">
+                            <TableCell
+                              colSpan={5}
+                              className="p-2 text-right text-sky-600 text-xl"
+                            >
+                              Montant total
+                            </TableCell>
+                            <TableCell className="p-2"></TableCell>
+                            <TableCell className="p-2"></TableCell>
+                            <TableCell className="p-2 text-right pr-4 text-sky-600 text-xl">
+                              {formatCurrency(montantTotalBL())}
+                            </TableCell>
+                          </TableRow>
+                                                  <TableRow className="border-b font-semibold">
+                            <TableCell
+                              colSpan={5}
+                              className="p-2 text-right text-green-600 text-xl"
+                            >
+                              Montant payé
+                            </TableCell>
+                            <TableCell className="p-2"></TableCell>
+                            <TableCell className="p-2"></TableCell>
+                            <TableCell className="p-2 text-right pr-4 text-green-600 text-xl">
+                              {formatCurrency(montantPayeTotal())}
+                            </TableCell>
+                          </TableRow>
+                          <TableRow className="border-b font-semibold">
+                            <TableCell
+                              colSpan={5}
+                              className="p-2 text-right  text-rose-600 text-xl"
+                            >
+                              Reste à payé
+                            </TableCell>
+                            <TableCell className="p-2"></TableCell>
+                            <TableCell className="p-2"></TableCell>
+                            <TableCell className="p-2 text-right pr-4 text-rose-600 text-xl">
+                              {formatCurrency(restAPayeTotal())}
+                            </TableCell>
+                          </TableRow>
+  
+                        </TableFooter>
+                      </Table>
+                    );
+                  })()
+                ) : formData.modeAffichage === "parMontant" ? (
+                  // Vue par montant : regroupement par fournisseur
+                  (() => {
+                    const grouped = regrouperBLParFournisseur(
+                      bonLivraisons?.data || []
+                    );
+                    if (grouped.length === 0) {
+                      return (
+                        <div className="text-center py-10 text-muted-foreground">
+                          <p>Aucune donnée</p>
+                        </div>
+                      );
+                    }
+                    return (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>#</TableHead>
+                            <TableHead>Fournisseur</TableHead>
+                            <TableHead className="text-right">
+                              Montant des BL
+                            </TableHead>
+                            <TableHead className="text-right">
+                              Reste à payé
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {grouped.map((row, idx) => (
+                            <TableRow key={`${row.fournisseur}-${idx}`} className="border-b">
+                              <TableCell className="text-left px-4 py-2 font-medium">
+                                {idx + 1}
+                              </TableCell>
+                              <TableCell className="px-1 py-2 font-medium">
+                                {row.fournisseur}
+                              </TableCell>
+                              <TableCell className="px-1 py-2 text-right pr-4">
+                                <span
+                                  className={
+                                    row.total >= 0
+                                      ? "text-green-600"
+                                      : "text-red-600"
+                                  }
+                                >
+                                  {formatCurrency(row.total)}
+                                </span>
+                              </TableCell>
+                              <TableCell className="px-1 py-2 text-right pr-4 font-medium">
+                                {formatCurrency(row.restAPayer)}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                        <TableFooter className="bg-gray-50">
+                          <TableRow className="border-b font-semibold">
+                            <TableCell className="p-2 text-right text-sky-600 text-xl" colSpan={3}>
+                              Montant total
+                            </TableCell>
+                            <TableCell className="p-2 text-right text-sky-600 pr-4 text-xl">
+                              {formatCurrency(montantTotalBL())}
+                            </TableCell>
+                          </TableRow>
+                          <TableRow className="border-b font-semibold">
+                            <TableCell className="p-2 text-right text-green-600 text-xl" colSpan={3}>
+                              Montant payé
+                            </TableCell>
+                            <TableCell className="p-2 text-right pr-4 text-green-600 text-xl">
+                              {formatCurrency(montantPayeTotal())}
+                            </TableCell>
+                          </TableRow>
+                          <TableRow className="border-b font-semibold">
+                            <TableCell className="p-2 text-right text-rose-600 text-xl" colSpan={3}>
+                              Reste à payé
+                            </TableCell>
+                            <TableCell className="p-2 text-right pr-4 text-rose-600 text-xl">
+                              {formatCurrency(restAPayeTotal())}
+                            </TableCell>
+                          </TableRow>
+                        </TableFooter>
+                      </Table>
+                    );
+                  })()
                 ) : (
                   <div className="text-center py-10 text-muted-foreground">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                      className="size-14 mx-auto mb-4 opacity-50"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m5.231 13.481L15 17.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v16.5c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Zm3.75 11.625a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"
-                      />
-                    </svg>
-                    <p>Aucune transaction trouvée</p>
+                    <p>Aucune donnée</p>
                   </div>
                 )}
               </div>
@@ -791,35 +971,41 @@ export default function BonLivraisonRapportDialog() {
                 >
                   Retour
                 </Button>
-                {mergeAndSortTransactions().length > 0 && (
+                {(formData.modeAffichage === "parBL" &&
+                  (bonLivraisons?.data || []).length > 0) ||
+                (formData.modeAffichage === "parMontant" &&
+                  regrouperBLParFournisseur(bonLivraisons?.data || []).length >
+                    0) ? (
                   <Button
                     className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full"
                     variant="outline"
                     onClick={() => {
-                      // Sérialiser les transactions en convertissant les dates en chaînes
-                      const transactions = mergeAndSortTransactions().map(transaction => ({
-                        ...transaction,
-                        date: transaction.date instanceof Date 
-                          ? transaction.date.toISOString() 
-                          : transaction.date,
-                      }));
-
                       const data = {
                         from: from?.toISOString(),
                         to: to?.toISOString(),
-                        transactions: transactions,
-                        detteInitiale: calculerDetteInitiale(),
-                        detteFinale: calculerDetteFinale(),
+                        modeAffichage: formData.modeAffichage,
                         fournisseurNom: selectedFournisseur?.nom || null,
                       };
-
-                      // Stocker les données AVANT d'ouvrir la fenêtre
+                      if (formData.modeAffichage === "parBL") {
+                        data.bls = (bonLivraisons?.data || []).map(bl => ({
+                          ...bl,
+                          restAPayer: (bl.total || 0) - (bl.totalPaye || 0),
+                        }));
+                        data.montantTotal = montantTotalBL();
+                        data.restAPaye = restAPayeTotal();
+                        data.montantPaye = montantPayeTotal();
+                      } else {
+                        data.grouped = regrouperBLParFournisseur(
+                          bonLivraisons?.data || []
+                        );
+                        data.montantTotal = montantTotalBL();
+                        data.restAPaye = restAPayeTotal();
+                        data.montantPaye = montantPayeTotal();
+                      }
                       localStorage.setItem(
                         "bonLivraison-rapport",
                         JSON.stringify(data)
                       );
-
-                      // Ouvrir la fenêtre après avoir stocké les données
                       window.open(
                         `/achats/bonLivraison/imprimer-rapport`,
                         "_blank"
@@ -828,7 +1014,7 @@ export default function BonLivraisonRapportDialog() {
                   >
                     <Printer className="mr-2 h-4 w-4" /> Imprimer
                   </Button>
-                )}
+                ) : null}
               </div>
             </div>
           )}

@@ -31,6 +31,7 @@ export type BonLivraisonT = {
   total: number;
   totalPaye: number;
   reference: string;
+  type?: string | null;
   statutPaiement?: string | null;
   transactions: {
     date: string;
@@ -81,8 +82,8 @@ export function useBonLivraisonColumns({
       header: "Statut Paiement",
       cell: ({ row }) => {
         const statutPaiement = row.getValue("statutPaiement") as string | null;
-        let colorClass = "bg-gray-200 text-gray-700";
-        let label = "Indéterminé";
+        let colorClass = "";
+        let label = "";
         if (statutPaiement === "enPartie") {
           colorClass = "bg-amber-100 text-amber-700";
           label = "En partie";
@@ -154,6 +155,10 @@ export function useBonLivraisonColumns({
       header: () => <div className="text-right">Montant payé</div>,
       cell: ({ row }) => {
         const bonLivraison = row.original;
+        // BL de type retour : pas de montant payé, afficher un tiret
+        if (bonLivraison.type === "retour") {
+          return null;
+        }
         const amount = parseFloat(row.getValue("totalPaye"));
         const formatted = formatCurrency(amount);
 

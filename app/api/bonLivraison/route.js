@@ -17,10 +17,13 @@ export async function POST(req) {
       compte,
       fournisseurNom,
     } = response;
+    const isRetour = type === "retour";
     const montant =
-      statutPaiement === "paye"
-        ? parseFloat(total)
-        : parseFloat(montantPaye) || 0;
+      isRetour
+        ? 0
+        : statutPaiement === "paye"
+          ? parseFloat(total)
+          : parseFloat(montantPaye) || 0;
     const result = await prisma.$transaction(
       async prisma => {
         const bonLivraison = await prisma.bonLivraison.create({
@@ -30,8 +33,8 @@ export async function POST(req) {
             total: parseFloat(total),
             reference,
             type,
-            statutPaiement: statutPaiement || "impaye",
-            totalPaye: montant,
+            statutPaiement: isRetour ? null : (statutPaiement || "impaye"),
+            totalPaye: isRetour ? null : montant,
             fournisseur: {
               connect: { id: fournisseurId },
             },
@@ -55,8 +58,8 @@ export async function POST(req) {
           },
         });
 
-        // creation de la transaction
-        if (statutPaiement !== "impaye") {
+        // creation de la transaction (pas pour les BL de type retour)
+        if (statutPaiement && statutPaiement !== "impaye" && !isRetour) {
           await prisma.transactions.create({
             data: {
               reference: bonLivraison.id,

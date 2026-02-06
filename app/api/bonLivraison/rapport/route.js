@@ -32,13 +32,13 @@ export async function GET(req) {
     filters.fournisseurId = fournisseurId;
   }
 
-  // ✅ Filtrer par période (createdAt entre from et to)
-  console.log("/api/bonLivraison/rapport ###   from", from, "to", to);
-
+  // ✅ Filtrer par période : uniquement les BL dont la date est dans l'intervalle [from, to]
   if (from && to) {
+    const fromDate = new Date(from);
+    const toDate = new Date(to);
     filters.date = {
-      gte: new Date(from),
-      lte: new Date(to),
+      gte: fromDate,
+      lte: toDate,
     };
   }
 
