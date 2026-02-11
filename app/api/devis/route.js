@@ -183,6 +183,17 @@ export async function PUT(req) {
         updateData.dateEnd = null;
       }
 
+      // Recalculer le statut de paiement selon le nouveau total et le montant déjà payé
+      const nouveauTotal = Math.round(Number(total));
+      const totalPaye = Number(devi.totalPaye) || 0;
+      if (totalPaye >= nouveauTotal && nouveauTotal > 0) {
+        updateData.statutPaiement = "paye";
+      } else if (totalPaye > 0 && totalPaye < nouveauTotal) {
+        updateData.statutPaiement = "enPartie";
+      } else {
+        updateData.statutPaiement = "impaye";
+      }
+
       await prisma.devis.update({
         where: { id },
         data: {
@@ -273,9 +284,11 @@ export async function GET(req) {
   const maxTotal = searchParams.get("maxTotal");
   const statutPaiement = searchParams.get("statutPaiement");
   const commercant = searchParams.get("commercant");
+  const limitParam = searchParams.get("limit"); // pour le rapport (tous les devis)
   const filters = {};
 
-  const devisPerPage = 10;
+  const devisPerPage = limitParam ? Math.min(Number(limitParam) || 10000, 10000) : 10;
+  const skip = limitParam ? 0 : (page - 1) * devisPerPage;
 
   // Search filter by numero, client name, and commercant
   if (searchQuery) {
@@ -365,7 +378,7 @@ export async function GET(req) {
   const [devis, totalDevis, deviMaxTotal] = await Promise.all([
     prisma.devis.findMany({
       where: filters,
-      skip: (page - 1) * devisPerPage,
+      skip,
       take: devisPerPage,
       orderBy: { date: "desc" },
       include: {

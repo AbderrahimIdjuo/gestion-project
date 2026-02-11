@@ -277,12 +277,12 @@ export default function CommandesAchats() {
                                       commande={commande}
                                     />
                                   </CustomTooltip>
-                                  <CustomTooltip message="BL">
+                                  {/* <CustomTooltip message="Création de BL">
                                     <AddBonLivraison
                                       lastBonLivraison={lastBonLivraison}
                                       commande={commande}
                                     />
-                                  </CustomTooltip>
+                                  </CustomTooltip> */}
                                   <CustomTooltip message="Imprimer">
                                     <Button
                                       variant="ghost"

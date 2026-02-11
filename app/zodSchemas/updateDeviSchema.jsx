@@ -108,7 +108,7 @@ const articlSchema = z.object({
 
     return number;
   }, z.number({ invalid_type_error: "Ce champ doit contenir un nombre valide" }).optional()),
-  id: z.string(),
+  id: z.string().optional(), // optionnel pour les articles dupliqués (créés à l'enregistrement)
   unite: z.string().optional(),
 });
 const updateDeviSchema = z.object({

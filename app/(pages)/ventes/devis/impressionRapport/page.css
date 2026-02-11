@@ -1,0 +1,67 @@
+@media print {
+  @page {
+    margin: 1cm;
+    size: A4 landscape;
+  }
+
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    background-color: white !important;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  #print-area,
+  #print-area * {
+    visibility: visible;
+  }
+
+  #print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 0 !important;
+  }
+
+  .print\:hidden,
+  button,
+  nav,
+  .sidebar,
+  .navbar {
+    display: none !important;
+  }
+
+  .print-block {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .main-table-container {
+    page-break-inside: auto;
+  }
+
+  table {
+    width: 100% !important;
+    page-break-inside: auto;
+    border-collapse: collapse !important;
+    font-size: 10px;
+  }
+
+  thead {
+    display: table-row-group !important;
+  }
+
+  tr {
+    page-break-inside: avoid;
+  }
+
+  th,
+  td {
+    border: 1px solid #374151 !important;
+    padding: 4px 6px !important;
+  }
+}

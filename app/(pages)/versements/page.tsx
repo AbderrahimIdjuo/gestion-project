@@ -113,6 +113,7 @@ type Versement = {
 };
 
 const PAGE_SIZE = 10;
+const NO_SOURCE_VALUE = "__none__"; // valeur sentinelle pour "Aucun compte source" (Select n'accepte pas value="")
 
 function VersementsContent() {
   const [page, setPage] = useState(1);
@@ -156,6 +157,17 @@ function VersementsContent() {
       clearTimeout(handler);
     };
   }, [searchQuery]);
+
+  // Initialiser les champs du formulaire "Modifier" quand le dialog s'ouvre avec un versement sélectionné
+  // (onOpenChange(true) n'est pas toujours appelé par Radix quand on ouvre programmatiquement)
+  useEffect(() => {
+    if (editVersementDialogOpen && selectedVersement) {
+      setEditVersementMontant(selectedVersement.montant.toString());
+      setEditVersementSourceCompteId(selectedVersement.sourceCompte?.id ?? NO_SOURCE_VALUE);
+      setEditVersementReference(selectedVersement.reference ?? "");
+      setEditVersementNote(selectedVersement.note ?? "");
+    }
+  }, [editVersementDialogOpen, selectedVersement]);
 
   // Query pour récupérer le compte professionnel et son solde
   const compteProQuery = useQuery({
@@ -1195,15 +1207,15 @@ function VersementsContent() {
           if (!open) {
             setSelectedVersement(null);
             setEditVersementMontant("");
-            setEditVersementSourceCompteId("");
+            setEditVersementSourceCompteId(NO_SOURCE_VALUE);
             setEditVersementReference("");
             setEditVersementNote("");
           } else if (selectedVersement) {
-            // Initialiser les valeurs quand le dialog s'ouvre
+            // Initialiser les valeurs quand le dialog s'ouvre (le useEffect le fait aussi)
             setEditVersementMontant(selectedVersement.montant.toString());
-            setEditVersementSourceCompteId(selectedVersement.sourceCompte?.id || "");
-            setEditVersementReference(selectedVersement.reference || "");
-            setEditVersementNote(selectedVersement.note || "");
+            setEditVersementSourceCompteId(selectedVersement.sourceCompte?.id ?? NO_SOURCE_VALUE);
+            setEditVersementReference(selectedVersement.reference ?? "");
+            setEditVersementNote(selectedVersement.note ?? "");
           }
         }}
       >
@@ -1255,14 +1267,14 @@ function VersementsContent() {
                     Compte source {selectedVersement.sourceCompte ? "*" : "(optionnel)"}
                   </Label>
                   <Select
-                    value={editVersementSourceCompteId || ""}
-                    onValueChange={(value) => setEditVersementSourceCompteId(value || "")}
+                    value={editVersementSourceCompteId || NO_SOURCE_VALUE}
+                    onValueChange={(value) => setEditVersementSourceCompteId(value)}
                   >
                     <SelectTrigger className="bg-white">
                       <SelectValue placeholder="Sélectionner un compte (optionnel)" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Aucun compte source</SelectItem>
+                      <SelectItem value={NO_SOURCE_VALUE}>Aucun compte source</SelectItem>
                       {comptes.data
                         ?.filter(
                           (c: { id: string; compte: string }) =>
@@ -1333,13 +1345,18 @@ function VersementsContent() {
                   }
 
                   // Vérifier le solde si le compte source a changé ou si le montant a augmenté
-                  const compteSourceChange = selectedVersement.sourceCompte?.id !== editVersementSourceCompteId;
+                  const effectiveNewSourceId =
+                    editVersementSourceCompteId && editVersementSourceCompteId !== NO_SOURCE_VALUE
+                      ? editVersementSourceCompteId
+                      : undefined;
+                  const compteSourceChange =
+                    (selectedVersement.sourceCompte?.id ?? null) !== (effectiveNewSourceId ?? null);
                   const montantChange = montant !== selectedVersement.montant;
 
                   if (compteSourceChange || (montantChange && montant > selectedVersement.montant)) {
-                    const sourceCompte = comptes.data?.find(
-                      (c: { id: string }) => c.id === editVersementSourceCompteId
-                    );
+                    const sourceCompte = effectiveNewSourceId
+                      ? comptes.data?.find((c: { id: string }) => c.id === effectiveNewSourceId)
+                      : undefined;
 
                     if (compteSourceChange) {
                       // Nouveau compte source, vérifier qu'il a assez de solde pour le nouveau montant
@@ -1364,7 +1381,7 @@ function VersementsContent() {
                   updateVersementMutation.mutate({
                     id: selectedVersement.id,
                     montant,
-                    ...(editVersementSourceCompteId && { sourceCompteId: editVersementSourceCompteId }),
+                    ...(effectiveNewSourceId && { sourceCompteId: effectiveNewSourceId }),
                     ...(editVersementReference && { reference: editVersementReference }),
                     ...(editVersementNote && { note: editVersementNote }),
                   });

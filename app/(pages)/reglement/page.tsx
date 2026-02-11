@@ -2390,7 +2390,7 @@ function ReglementContent() {
 
           <div className="space-y-6 py-4">
             {/* Formulaire de versement */}
-            <div className="space-y-4 border-b pb-4">
+            <div className="space-y-4 pb-4">
               <h3 className="text-lg font-semibold">Nouveau versement</h3>
               
               <div className="grid gap-4">
@@ -2522,77 +2522,6 @@ function ReglementContent() {
               </Button>
             </div>
 
-            {/* Historique des versements */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold flex items-center gap-2">
-                  <History className="h-5 w-5" />
-                  Historique des versements
-                </h3>
-              </div>
-
-              {versementsHistoryQuery.isLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <LoadingDots />
-                </div>
-              ) : versementsHistoryQuery.data?.versements?.length > 0 ? (
-                <>
-                  <div className="border rounded-lg overflow-hidden">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Montant</TableHead>
-                          <TableHead>Compte source</TableHead>
-                          <TableHead>Compte pro</TableHead>
-                          <TableHead>Référence</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {versementsHistoryQuery.data.versements.map(
-                          (versement: {
-                            id: string;
-                            date: string;
-                            montant: number;
-                            sourceCompte: { compte: string };
-                            comptePro: { compte: string };
-                            reference: string | null;
-                          }) => (
-                            <TableRow key={versement.id}>
-                              <TableCell>
-                                {formatDate(versement.date)}
-                              </TableCell>
-                              <TableCell className="font-semibold">
-                                {formatCurrency(versement.montant)}
-                              </TableCell>
-                              <TableCell>{versement.sourceCompte.compte}</TableCell>
-                              <TableCell>{versement.comptePro.compte}</TableCell>
-                              <TableCell>
-                                {versement.reference || "—"}
-                              </TableCell>
-                            </TableRow>
-                          )
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-
-                  {versementsHistoryQuery.data.pagination.totalPages > 1 && (
-                    <div className="flex justify-center">
-                      <CustomPagination
-                        currentPage={versementHistoryPage}
-                        totalPages={versementsHistoryQuery.data.pagination.totalPages}
-                        setCurrentPage={setVersementHistoryPage}
-                      />
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="text-center py-8 text-gray-500 border rounded-lg">
-                  Aucun versement enregistré
-                </div>
-              )}
-            </div>
           </div>
 
           <DialogFooter>

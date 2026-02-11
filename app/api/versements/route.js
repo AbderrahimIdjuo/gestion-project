@@ -109,6 +109,20 @@ export async function POST(req) {
         },
       });
 
+      // Créer une transaction de type "transfert" pour le versement vers le compte pro
+      await tx.transactions.create({
+        data: {
+          type: "transfert",
+          lable: "versement vers le compte pro",
+          montant,
+          compte: sourceCompte ? sourceCompte.compte : null,
+          methodePaiement: "versement",
+          date: new Date(),
+          reference: reference || null,
+          description: note || null,
+        },
+      });
+
       return {
         versement,
         sourceCompteSolde: sourceCompte ? sourceCompte.solde - montant : null,

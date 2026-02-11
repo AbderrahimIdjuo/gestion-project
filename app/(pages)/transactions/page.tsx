@@ -321,7 +321,12 @@ export default function Banques() {
         lable: "Vider la caisse",
         color: "bg-blue-100 text-blue-600 font-medium",
       };
-    } else {
+    } else if (t === "transfert") {
+      return {
+        lable: "Transfert",
+        color: "bg-fuchsia-100 text-fuchsia-600 font-medium",
+      };
+    }else {
       return {
         lable: "inconue",
         color: "bg-gray-100 text-gray-600 font-medium",
@@ -424,14 +429,18 @@ export default function Banques() {
                                               ? "bg-green-100 text-green-800 hover:bg-green-200"
                                               : type === "depense"
                                               ? "bg-red-100 text-red-800 hover:bg-red-200"
-                                              : "bg-blue-100 text-blue-800 hover:bg-blue-200"
+                                              : type === "vider"
+                                              ? "bg-blue-100 text-blue-800 hover:bg-blue-200"
+                                              : "bg-fuchsia-100 text-fuchsia-800 hover:bg-fuchsia-200"
                                           }`}
                                         >
                                           {type === "recette"
                                             ? "Recette"
                                             : type === "depense"
                                             ? "Dépense"
-                                            : "Vider la caisse"}
+                                            : type === "vider"
+                                            ? "Vider la caisse"
+                                            : "Transfert"}
                                           <X
                                             className="ml-1 h-3 w-3 cursor-pointer hover:text-purple-600"
                                             onClick={e => {
@@ -506,6 +515,25 @@ export default function Banques() {
                                     >
                                       <span className="h-2 w-2 rounded-full bg-blue-500" />
                                       Vider la caisse
+                                    </Label>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <Checkbox
+                                      id="transfert"
+                                      checked={filters.type.includes("transfert")}
+                                      onCheckedChange={checked =>
+                                        handleTypeChange(
+                                          "transfert",
+                                          checked as boolean
+                                        )
+                                      }
+                                    />
+                                    <Label
+                                      htmlFor="transfert"
+                                      className="text-sm font-medium cursor-pointer flex items-center gap-2"
+                                    >
+                                      <span className="h-2 w-2 rounded-full bg-fuchsia-500" />
+                                      Transfert
                                     </Label>
                                   </div>
                                 </div>

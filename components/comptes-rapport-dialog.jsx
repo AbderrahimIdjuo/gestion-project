@@ -147,9 +147,12 @@ export default function ComptesRapportDialog() {
         lable: "Dépense",
         color: "bg-rose-50 text-rose-600 font-medium",
       };
-    } else if (t === "vider") {
+    } else if (t === "vider" || t === "transfert") {
       return {
-        lable: "Vider la caisse",
+        lable:
+          t === "transfert"
+            ? "Versement vers le compte pro"
+            : "Vider la caisse",
         color: "bg-sky-100 text-sky-600 font-medium",
       };
     } else {
@@ -167,7 +170,7 @@ export default function ComptesRapportDialog() {
           return acc + t.montant;
         } else if (t.type === "depense") {
           return acc - t.montant;
-        } else if (t.type === "vider") {
+        } else if (t.type === "vider" || t.type === "transfert") {
           return acc - t.montant;
         }
       }, 0);
@@ -180,7 +183,7 @@ export default function ComptesRapportDialog() {
           return acc + t.montant;
         } else if (t.type === "depense") {
           return acc - t.montant;
-        } else if (t.type === "vider") {
+        } else if (t.type === "vider" || t.type === "transfert") {
           return acc + t.montant;
         }
       }, 0);
@@ -214,7 +217,11 @@ export default function ComptesRapportDialog() {
       total: transactions.reduce((sum, transaction) => {
         if (type === "recette") {
           return sum + transaction.montant;
-        } else if (type === "depense" || type === "vider") {
+        } else if (
+          type === "depense" ||
+          type === "vider" ||
+          type === "transfert"
+        ) {
           return sum - transaction.montant;
         }
         return sum;
@@ -247,7 +254,8 @@ export default function ComptesRapportDialog() {
           acc.totalRecettes += transaction.montant;
         } else if (
           transaction.type === "depense" ||
-          transaction.type === "vider"
+          transaction.type === "vider" ||
+          transaction.type === "transfert"
         ) {
           acc.totalDepenses += transaction.montant;
         }
@@ -277,7 +285,8 @@ export default function ComptesRapportDialog() {
         runningBalance += transaction.montant;
       } else if (
         transaction.type === "depense" ||
-        transaction.type === "vider"
+        transaction.type === "vider" ||
+        transaction.type === "transfert"
       ) {
         runningBalance -= transaction.montant;
       }
@@ -518,7 +527,13 @@ export default function ComptesRapportDialog() {
                                 formatDate(transaction.createdAt)}
                             </TableCell>
                             <TableCell className="px-1 py-2 border-r">
-                              {transaction.description}
+                              {transaction.type === "vider"
+                                ? "Vider la caisse"
+                                : transaction.type === "transfert"
+                                  ? "Versement vers le compte pro"
+                                  : transaction.description === ""
+                                    ? transaction.lable
+                                    : transaction.description}
                             </TableCell>
                             <TableCell className="px-1 py-2 text-right pr-4 border-r">
                               {transaction.type === "recette"
@@ -527,7 +542,8 @@ export default function ComptesRapportDialog() {
                             </TableCell>
                             <TableCell className="px-1 py-2 text-right pr-4 border-r">
                               {transaction.type === "depense" ||
-                              transaction.type === "vider"
+                              transaction.type === "vider" ||
+                              transaction.type === "transfert"
                                 ? formatCurrency(transaction.montant)
                                 : ""}
                             </TableCell>

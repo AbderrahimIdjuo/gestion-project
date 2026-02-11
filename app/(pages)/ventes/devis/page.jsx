@@ -6,6 +6,7 @@ import { PriceRangeSlider } from "@/components/customUi/customSlider";
 import { AddButton } from "@/components/customUi/styledButton";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import { DevisActions } from "@/components/devis-actions";
+import DevisRapportDialog from "@/components/devis-rapport-dialog";
 import { LoadingDots } from "@/components/loading-dots";
 import { Navbar } from "@/components/navbar";
 import { Sidebar } from "@/components/sidebar";
@@ -922,6 +923,7 @@ export default function DevisPage() {
                       <Printer className="h-4 w-4" />
                       Imprimer
                     </Button>
+                    <DevisRapportDialog />
                     <Link href="/ventes/devis/nouveau">
                       <AddButton title="Nouveau devis" />
                     </Link>

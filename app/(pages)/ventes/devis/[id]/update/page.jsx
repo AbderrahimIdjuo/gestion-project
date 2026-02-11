@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import axios from "axios";
 import {
   Select,
   SelectContent,
@@ -32,7 +33,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+
 import { CircleX, Copy, Trash2 } from "lucide-react";
 import { customAlphabet } from "nanoid";
 import Link from "next/link";
@@ -620,15 +621,12 @@ export default function UpdateDevisPage({ params }) {
                                           const origineItem = items.find(
                                             i => i.key === item.key
                                           );
-                                          console.log(
-                                            "origineItem",
-                                            origineItem
-                                          );
-
+                                          if (!origineItem) return;
+                                          const { id: _omitId, ...restItem } = item;
                                           setItems(prevItems => [
                                             ...prevItems,
                                             {
-                                              ...item,
+                                              ...restItem,
                                               designation:
                                                 origineItem.designation,
                                               quantite: origineItem.quantite,
@@ -639,8 +637,6 @@ export default function UpdateDevisPage({ params }) {
                                               key: generateUniqueKey(),
                                             },
                                           ]);
-                                          console.log("Cloned item");
-                                          console.log("items", items);
                                         }}
                                         className="h-8 w-8 rounded-full hover:bg-blue-100 hover:text-blue-600"
                                       >

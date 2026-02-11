@@ -1,7 +1,6 @@
 "use client";
 
 import ComboBoxDevis from "@/components/comboBox-devis";
-import ComboBoxFournisseur from "@/components/comboBox-fournisseurs";
 import { CustomDatePicker } from "@/components/customUi/customDatePicker";
 import CustomTooltip from "@/components/customUi/customTooltip";
 import { AddButton } from "@/components/customUi/styledButton";
@@ -62,18 +61,42 @@ export default function AddBonLivraison({ lastBonLivraison, commande }) {
 
   const queryClient = useQueryClient();
 
+  // Préremplir les groupes et le fournisseur à partir de la commande
   useEffect(() => {
-    console.log("## commande : ", commande);
-    setBLGroups(commande.groups);
-    // setSelectedFournisseur(commande.fournisseur);
-    // setType(commande.type);
-    // setDate(commande.date);
-    // setReference(commande.reference);
-    // setMontantTotal(commande.total);
-    // setMontantPaye(commande.totalPaye);
-    // setStatutPaiement(commande.statutPaiement);
-    // setCompte(commande.compte);
-    // setSelectedDevis(commande.selectedDevis);
+    if (!commande) return;
+    if (commande.fournisseur) {
+      setSelectedFournisseur(commande.fournisseur);
+    }
+    const groups = commande.groups;
+    if (!groups?.length) {
+      setBLGroups([]);
+      setGroupModes({});
+      return;
+    }
+    const mappedGroups = groups.map(group => ({
+      id: group.id,
+      devisNumber: group.devisNumero ?? null,
+      clientName: group.clientName ?? null,
+      clientId: group.clientId ?? null,
+      charge: null,
+      numero: group.devisNumero ?? null,
+      totalDevi: group.totalDevi ?? null,
+      items: (group.produits || []).map(p => ({
+        id: p.produitId,
+        designation: p.produit?.designation ?? "",
+        prixUnite: p.prixUnite ?? p.produit?.prixAchat ?? 0,
+        quantite: p.quantite ?? 0,
+        uniqueKey: p.id ?? `${p.produitId}-${crypto.randomUUID()}`,
+      })),
+    }));
+    setBLGroups(mappedGroups);
+    setGroupModes(prev => {
+      const next = { ...prev };
+      mappedGroups.forEach(g => {
+        next[g.id] = true;
+      });
+      return next;
+    });
   }, [commande]);
 
   function formatDate(date) {
@@ -109,8 +132,9 @@ export default function AddBonLivraison({ lastBonLivraison, commande }) {
   };
 
   const total = () => {
+    console.log("## commande : ", commande);
     console.log("##### bLGroups : ", bLGroups);
-    const produits = bLGroups.flatMap(group => group.items); 
+    const produits = bLGroups.flatMap(group => group.items);
     console.log("##### produits : ", produits);
     return produits
       .reduce((acc, produit) => {
@@ -480,9 +504,13 @@ export default function AddBonLivraison({ lastBonLivraison, commande }) {
                     />
                   </div>
                   <div className="w-full space-y-2">
-                    <ComboBoxFournisseur
-                      fournisseur={selectedFournisseur}
-                      setFournisseur={setSelectedFournisseur}
+                    <Label className="text-sm font-medium block pt-1">
+                      Fournisseur
+                    </Label>
+                    <Input
+                      value={commande?.fournisseur?.nom ?? ""}
+                      readOnly
+                      className="col-span-3 bg-muted cursor-default"
                     />
                   </div>
                   <div className="w-full space-y-2">
@@ -844,7 +872,7 @@ export default function AddBonLivraison({ lastBonLivraison, commande }) {
                   onClick={() => {
                     setCurrentStep(2);
                   }}
-                  disabled={!selectedFournisseur || !type}
+                  disabled={!type}
                 >
                   Suivant
                 </Button>

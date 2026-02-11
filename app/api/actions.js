@@ -219,6 +219,34 @@ export async function addtransaction(data) {
           solde: { increment: montant },
         },
       });
+      // Si la destination est le compte professionnel, créer un versement (source = caisse)
+      const compteDest = (compte || "").toLowerCase();
+      if (
+        compteDest === "compte professionnel" ||
+        compteDest === "compte professionel"
+      ) {
+        const caisseAccount = await prisma.comptesBancaires.findFirst({
+          where: { compte: "caisse" },
+        });
+        const compteProAccount = await prisma.comptesBancaires.findFirst({
+          where: {
+            OR: [
+              { compte: { equals: "compte professionnel", mode: "insensitive" } },
+              { compte: "compte professionel" },
+            ],
+          },
+        });
+        if (caisseAccount && compteProAccount) {
+          await prisma.versement.create({
+            data: {
+              montant,
+              sourceCompteId: caisseAccount.id,
+              compteProId: compteProAccount.id,
+              note: "Vider la caisse vers compte pro",
+            },
+          });
+        }
+      }
     } else if (type === "depense" || type === "recette") {
       // Mise à jour d'un compte bancaire
       await prisma.comptesBancaires.updateMany({
