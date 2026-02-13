@@ -1192,6 +1192,22 @@ export default function BonLivraisonRapportDialog() {
                         fournisseurNom: selectedFournisseur?.nom || null,
                       };
                       if (formData.modeAffichage === "parBL") {
+                        const items = rapportItemsBLReglements;
+                        data.rapportItems = items;
+                        data.rapportTotaux = rapportTotauxBLReglements;
+                        data.showFournisseurCol = !selectedFournisseur;
+                        data.totalFourniture = items.reduce(
+                          (s, it) => s + (it.itemType === "bl" && it.blType === "achats" ? it.montant || 0 : 0),
+                          0
+                        );
+                        data.totalReglement = items.reduce(
+                          (s, it) => s + (it.itemType === "reglement" ? Math.abs(it.montant || 0) : 0),
+                          0
+                        );
+                        data.totalRetour = items.reduce(
+                          (s, it) => s + (it.itemType === "bl" && it.blType === "retour" ? Math.abs(it.montant || 0) : 0),
+                          0
+                        );
                         data.bls = (bonLivraisons?.data || []).map(bl => ({
                           ...bl,
                           restAPayer: (bl.total || 0) - (bl.totalPaye || 0),

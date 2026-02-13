@@ -4,9 +4,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const employes = await prisma.employes.findMany({
-      where: { role: "manager" },
-    });
+    const employes = await prisma.employes.findMany();
     return NextResponse.json({ employes });
   } catch (error) {
     console.error("Error fetching employes:", error);

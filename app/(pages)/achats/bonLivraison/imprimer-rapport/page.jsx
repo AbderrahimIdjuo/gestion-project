@@ -47,130 +47,213 @@ export default function ImprimerRapport() {
     return formatDate(date.toISOString());
   };
 
+  // Ancien format par BL (liste des BL) — fallback si rapportItems absent
+  function renderTableParBLAncien(bls) {
+    return (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Date</TableHead>
+            <TableHead className="text-left">N° BL</TableHead>
+            <TableHead>Fournisseur</TableHead>
+            <TableHead>Type</TableHead>
+            <TableHead className="text-right">Montant</TableHead>
+            <TableHead className="text-right">Montant payé</TableHead>
+            <TableHead>Statut paiement</TableHead>
+            <TableHead className="text-right">Reste à payé</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {bls.map((bl) => {
+            const restAPayer = bl.restAPayer ?? (bl.total || 0) - (bl.totalPaye || 0);
+            const fournisseurNom = bl.fournisseur?.nom ?? "Inconnu";
+            const typeLabel =
+              bl.type === "achats" ? "Achats" : bl.type === "retour" ? "Retour" : bl.type || "—";
+            const { label: statutLabel, colorClass: statutColorClass } =
+              getStatutStyle(bl.statutPaiement);
+            return (
+              <TableRow key={bl.id} className="border-b">
+                <TableCell className="px-1 py-2 font-medium">
+                  {bl.date ? formatDateString(bl.date) : "—"}
+                </TableCell>
+                <TableCell className="px-1 py-2 font-medium">
+                  {bl.numero || bl.reference || "—"}
+                </TableCell>
+                <TableCell className="px-1 py-2">{fournisseurNom}</TableCell>
+                <TableCell className="px-1 py-2">
+                  <span className="text-foreground font-medium">
+                    {typeLabel}
+                  </span>
+                </TableCell>
+                <TableCell className="px-1 py-2 text-right pr-4 text-foreground">
+                  {formatCurrency(bl.total || 0)}
+                </TableCell>
+                <TableCell className="px-1 py-2 text-right pr-4 text-foreground">
+                  {bl.type === "retour" ? "—" : formatCurrency(bl.totalPaye || 0)}
+                </TableCell>
+                <TableCell className="px-1 py-2">
+                  {bl.type === "retour" ? (
+                    "—"
+                  ) : (
+                    <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold uppercase ${statutColorClass}`}>
+                      {statutLabel}
+                    </span>
+                  )}
+                </TableCell>
+                <TableCell className="px-1 py-2 text-right pr-4 font-medium text-foreground">
+                  {formatCurrency(restAPayer)}
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+        <TableFooter className="bg-gray-50">
+          <TableRow className="border-b font-semibold">
+            <TableCell colSpan={5} className="p-2 text-right text-xl text-foreground">Montant total</TableCell>
+            <TableCell className="p-2" />
+            <TableCell className="p-2" />
+            <TableCell className="p-2 text-right pr-4 text-xl text-foreground">
+              {formatCurrency(bonLivraison?.montantTotal || 0)}
+            </TableCell>
+          </TableRow>
+          <TableRow className="border-b font-semibold">
+            <TableCell colSpan={5} className="p-2 text-right text-xl text-foreground">Montant payé</TableCell>
+            <TableCell className="p-2" />
+            <TableCell className="p-2" />
+            <TableCell className="p-2 text-right pr-4 text-xl text-foreground">
+              {formatCurrency(bonLivraison?.montantPaye || 0)}
+            </TableCell>
+          </TableRow>
+          <TableRow className="border-b font-semibold">
+            <TableCell colSpan={5} className="p-2 text-right text-xl text-foreground">Reste à payé</TableCell>
+            <TableCell className="p-2" />
+            <TableCell className="p-2" />
+            <TableCell className="p-2 text-right pr-4 text-xl text-foreground">
+              {formatCurrency(bonLivraison?.restAPaye || 0)}
+            </TableCell>
+          </TableRow>
+        </TableFooter>
+      </Table>
+    );
+  }
+
   // Contenu du tableau selon le mode (synchronisé avec le dialogue)
   const renderTable = () => {
-    // Mode "par BL" : même tableau que dans le dialogue
+    // Mode "par BL" : tableau Rapport BL & Règlements (comme dans le dialogue)
     if (modeAffichage === "parBL") {
-      const bls = bonLivraison?.bls || [];
-      if (bls.length === 0) {
+      const items = bonLivraison?.rapportItems || [];
+      const totaux = bonLivraison?.rapportTotaux || {};
+      const showFournisseurCol = !!bonLivraison?.showFournisseurCol;
+      const totalFourniture = bonLivraison?.totalFourniture ?? 0;
+      const totalReglement = bonLivraison?.totalReglement ?? 0;
+      const totalRetour = bonLivraison?.totalRetour ?? 0;
+      const runningDette = totaux.runningDette || [];
+
+      if (items.length === 0) {
+        const bls = bonLivraison?.bls || [];
+        if (bls.length > 0) {
+          return renderTableParBLAncien(bls);
+        }
         return (
           <div className="text-center py-10 text-muted-foreground">
-            <p>Aucun bon de livraison trouvé</p>
+            <p>Aucune donnée pour cette période</p>
           </div>
         );
       }
+
       return (
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-gradient-to-r from-zinc-50 to-zinc-100 border-b">
             <TableRow>
-              <TableHead>Date</TableHead>
-              <TableHead className="text-left">N° BL</TableHead>
-              <TableHead>Fournisseur</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead className="text-right">Montant</TableHead>
-              <TableHead className="text-right">Montant payé</TableHead>
-              <TableHead>Statut paiement</TableHead>
-              <TableHead className="text-right">Reste à payé</TableHead>
+              <TableHead className="font-semibold">Date</TableHead>
+              <TableHead className="font-semibold">Description</TableHead>
+              {showFournisseurCol && (
+                <TableHead className="font-semibold">Fournisseur</TableHead>
+              )}
+              <TableHead className="font-semibold text-right">Fourniture</TableHead>
+              <TableHead className="font-semibold text-right">Règlement</TableHead>
+              <TableHead className="font-semibold text-right">Retour</TableHead>
+              <TableHead className="font-semibold text-right">Dette</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {bls.map((bl) => {
-              const restAPayer = bl.restAPayer ?? (bl.total || 0) - (bl.totalPaye || 0);
-              const fournisseurNom = bl.fournisseur?.nom ?? "Inconnu";
-              const typeLabel =
-                bl.type === "achats"
-                  ? "Achats"
-                  : bl.type === "retour"
-                    ? "Retour"
-                    : bl.type || "—";
-              const { label: statutLabel, colorClass: statutColorClass } =
-                getStatutStyle(bl.statutPaiement);
-              return (
-                <TableRow key={bl.id} className="border-b">
-                  <TableCell className="px-1 py-2 font-medium">
-                    {bl.date ? formatDateString(bl.date) : "—"}
+            <TableRow className="bg-gray-100 border-b font-semibold">
+              <TableCell className="py-2">DETTE INITIALE</TableCell>
+              <TableCell className="py-2" colSpan={showFournisseurCol ? 5 : 4} />
+              <TableCell className="py-2 text-right font-semibold text-foreground">
+                {formatCurrency(totaux.detteInitiale ?? 0)}
+              </TableCell>
+            </TableRow>
+            {items.map((item, index) => (
+              <TableRow
+                key={`${item.itemType}-${item.reference}-${index}`}
+                className="border-b"
+              >
+                <TableCell className="py-2">
+                  {item.date ? formatDateString(item.date) : "—"}
+                </TableCell>
+                <TableCell className="py-2 font-medium">
+                  {item.itemType === "reglement" && item.motif
+                    ? item.motif
+                    : item.reference}
+                </TableCell>
+                {showFournisseurCol && (
+                  <TableCell className="py-2 text-muted-foreground">
+                    {item.fournisseurNom ?? "—"}
                   </TableCell>
-                  <TableCell className="px-1 py-2 font-medium">
-                    {bl.numero || bl.reference || "—"}
-                  </TableCell>
-                  <TableCell className="px-1 py-2">{fournisseurNom}</TableCell>
-                  <TableCell className="px-1 py-2">
-                    <span
-                      className={
-                        bl.type === "achats"
-                          ? "text-green-600 font-medium"
-                          : "text-red-600 font-medium"
-                      }
-                    >
-                      {typeLabel}
+                )}
+                <TableCell className="py-2 text-right">
+                  {item.itemType === "bl" && item.blType === "achats" ? (
+                    <span className="text-foreground font-medium">
+                      {formatCurrency(item.montant)}
                     </span>
-                  </TableCell>
-                  <TableCell className="px-1 py-2 text-right pr-4">
-                    <span
-                      className={
-                        bl.type === "achats"
-                          ? "text-green-600"
-                          : "text-red-600"
-                      }
-                    >
-                      {formatCurrency(bl.total || 0)}
+                  ) : (
+                    ""
+                  )}
+                </TableCell>
+                <TableCell className="py-2 text-right">
+                  {item.itemType === "reglement" ? (
+                    <span className="text-foreground font-medium">
+                      {formatCurrency(Math.abs(item.montant || 0))}
                     </span>
-                  </TableCell>
-                  <TableCell className="px-1 py-2 text-right pr-4">
-                    {bl.type === "retour"
-                      ? "—"
-                      : formatCurrency(bl.totalPaye || 0)}
-                  </TableCell>
-                  <TableCell className="px-1 py-2">
-                    {bl.type === "retour" ? (
-                      "—"
-                    ) : (
-                      <span
-                        className={`inline-block px-2 py-1 rounded-full text-xs font-semibold uppercase ${statutColorClass}`}
-                      >
-                        {statutLabel}
-                      </span>
-                    )}
-                  </TableCell>
-                  <TableCell className="px-1 py-2 text-right pr-4 font-medium">
-                    {formatCurrency(restAPayer)}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
+                  ) : (
+                    ""
+                  )}
+                </TableCell>
+                <TableCell className="py-2 text-right">
+                  {item.itemType === "bl" && item.blType === "retour" ? (
+                    <span className="text-red-600 font-medium">
+                      {formatCurrency(Math.abs(item.montant || 0))}
+                    </span>
+                  ) : (
+                    ""
+                  )}
+                </TableCell>
+                <TableCell
+                  className="py-2 text-right font-medium text-foreground"
+                >
+                  {formatCurrency(runningDette[index] ?? 0)}
+                </TableCell>
+              </TableRow>
+            ))}
+            <TableRow className="bg-gray-100 border-b font-semibold">
+              <TableCell className="py-2">Total</TableCell>
+              <TableCell className="py-2" colSpan={showFournisseurCol ? 1 : 0} />
+              {showFournisseurCol && <TableCell className="py-2" />}
+              <TableCell className="py-2 text-right font-semibold text-foreground">
+                {formatCurrency(totalFourniture)}
+              </TableCell>
+              <TableCell className="py-2 text-right font-semibold text-foreground">
+                {formatCurrency(totalReglement)}
+              </TableCell>
+              <TableCell className="py-2 text-right font-semibold text-foreground">
+                {formatCurrency(totalRetour)}
+              </TableCell>
+              <TableCell className="py-2 text-right font-semibold text-foreground">
+                {formatCurrency(totaux.detteFinale ?? 0)}
+              </TableCell>
+            </TableRow>
           </TableBody>
-          <TableFooter className="bg-gray-50">
-            <TableRow className="border-b font-semibold">
-              <TableCell colSpan={5} className="p-2 text-right text-sky-600 text-xl">
-                Montant total
-              </TableCell>
-              <TableCell className="p-2"></TableCell>
-              <TableCell className="p-2"></TableCell>
-              <TableCell className="p-2 text-right pr-4 text-sky-600 text-xl">
-                {formatCurrency(bonLivraison?.montantTotal || 0)}
-              </TableCell>
-            </TableRow>
-            <TableRow className="border-b font-semibold">
-              <TableCell colSpan={5} className="p-2 text-right text-green-600 text-xl">
-                Montant payé
-              </TableCell>
-              <TableCell className="p-2"></TableCell>
-              <TableCell className="p-2"></TableCell>
-              <TableCell className="p-2 text-right pr-4 text-green-600 text-xl">
-                {formatCurrency(bonLivraison?.montantPaye || 0)}
-              </TableCell>
-            </TableRow>
-            <TableRow className="border-b font-semibold">
-              <TableCell colSpan={5} className="p-2 text-right text-rose-600 text-xl">
-                Reste à payé
-              </TableCell>
-              <TableCell className="p-2"></TableCell>
-              <TableCell className="p-2"></TableCell>
-              <TableCell className="p-2 text-right pr-4 text-rose-600 text-xl">
-                {formatCurrency(bonLivraison?.restAPaye || 0)}
-              </TableCell>
-            </TableRow>
-          </TableFooter>
         </Table>
       );
     }
@@ -204,16 +287,10 @@ export default function ImprimerRapport() {
                 <TableCell className="px-1 py-2 font-medium">
                   {row.fournisseur}
                 </TableCell>
-                <TableCell className="px-1 py-2 text-right pr-4">
-                  <span
-                    className={
-                      row.total >= 0 ? "text-green-600" : "text-red-600"
-                    }
-                  >
-                    {formatCurrency(row.total)}
-                  </span>
+                <TableCell className="px-1 py-2 text-right pr-4 text-foreground">
+                  {formatCurrency(row.total)}
                 </TableCell>
-                <TableCell className="px-1 py-2 text-right pr-4 font-medium">
+                <TableCell className="px-1 py-2 text-right pr-4 font-medium text-foreground">
                   {formatCurrency(row.restAPayer)}
                 </TableCell>
               </TableRow>
@@ -221,26 +298,26 @@ export default function ImprimerRapport() {
           </TableBody>
           <TableFooter className="bg-gray-50">
             <TableRow className="border-b font-semibold">
-              <TableCell className="p-2 text-right text-sky-600 text-xl" colSpan={3}>
+              <TableCell className="p-2 text-right text-xl text-foreground" colSpan={3}>
                 Montant total
               </TableCell>
-              <TableCell className="p-2 text-right text-sky-600 pr-4 text-xl">
+              <TableCell className="p-2 text-right pr-4 text-xl text-foreground">
                 {formatCurrency(bonLivraison?.montantTotal || 0)}
               </TableCell>
             </TableRow>
             <TableRow className="border-b font-semibold">
-              <TableCell className="p-2 text-right text-green-600 text-xl" colSpan={3}>
+              <TableCell className="p-2 text-right text-xl text-foreground" colSpan={3}>
                 Montant payé
               </TableCell>
-              <TableCell className="p-2 text-right pr-4 text-green-600 text-xl">
+              <TableCell className="p-2 text-right pr-4 text-xl text-foreground">
                 {formatCurrency(bonLivraison?.montantPaye || 0)}
               </TableCell>
             </TableRow>
             <TableRow className="border-b font-semibold">
-              <TableCell className="p-2 text-right text-rose-600 text-xl" colSpan={3}>
+              <TableCell className="p-2 text-right text-xl text-foreground" colSpan={3}>
                 Reste à payé
               </TableCell>
-              <TableCell className="p-2 text-right pr-4 text-rose-600 text-xl">
+              <TableCell className="p-2 text-right pr-4 text-xl text-foreground">
                 {formatCurrency(bonLivraison?.restAPaye || 0)}
               </TableCell>
             </TableRow>
@@ -263,12 +340,12 @@ export default function ImprimerRapport() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          <TableRow className="bg-gray-700 text-white">
+          <TableRow className="bg-gray-100">
             <TableCell className="px-1 py-2 font-semibold">
               DETTE INITIALE
             </TableCell>
             <TableCell className="px-1 py-2" colSpan={4}></TableCell>
-            <TableCell className="px-1 py-2 text-right pr-4 font-semibold">
+            <TableCell className="px-1 py-2 text-right pr-4 font-semibold text-foreground">
               {formatCurrency(bonLivraison?.detteInitiale || 0)}
             </TableCell>
           </TableRow>
@@ -283,42 +360,24 @@ export default function ImprimerRapport() {
               <TableCell className="px-1 py-2">
                 {transaction.fournisseur}
               </TableCell>
-              <TableCell className="px-1 py-2 text-right pr-4">
+              <TableCell className="px-1 py-2 text-right pr-4 text-foreground">
                 {transaction.type === "bonLivraison" &&
-                transaction.blType === "achats" ? (
-                  <span className="text-green-600">
-                    {formatCurrency(transaction.montant)}
-                  </span>
-                ) : (
-                  ""
-                )}
+                transaction.blType === "achats"
+                  ? formatCurrency(transaction.montant)
+                  : ""}
               </TableCell>
-              <TableCell className="px-1 py-2 text-right pr-4">
+              <TableCell className="px-1 py-2 text-right pr-4 text-foreground">
                 {transaction.type === "bonLivraison" &&
-                transaction.blType === "retour" ? (
-                  <span className="text-red-600">
-                    {formatCurrency(transaction.montant)}
-                  </span>
-                ) : (
-                  ""
-                )}
+                transaction.blType === "retour"
+                  ? formatCurrency(transaction.montant)
+                  : ""}
               </TableCell>
-              <TableCell className="px-1 py-2 text-right pr-4">
-                {transaction.type === "reglement" ? (
-                  <span className="text-blue-600">
-                    {formatCurrency(transaction.montant)}
-                  </span>
-                ) : (
-                  ""
-                )}
+              <TableCell className="px-1 py-2 text-right pr-4 text-foreground">
+                {transaction.type === "reglement"
+                  ? formatCurrency(transaction.montant)
+                  : ""}
               </TableCell>
-              <TableCell
-                className={`px-1 py-2 text-right pr-4 font-semibold ${
-                  transaction.runningDette >= 0
-                    ? "text-green-600"
-                    : "text-red-600"
-                }`}
-              >
+              <TableCell className="px-1 py-2 text-right pr-4 font-semibold text-foreground">
                 {formatCurrency(transaction.runningDette || 0)}
               </TableCell>
             </TableRow>
@@ -332,13 +391,7 @@ export default function ImprimerRapport() {
             >
               Dette finale :
             </TableCell>
-            <TableCell
-              className={`text-right text-lg font-semibold p-2 ${
-                (bonLivraison?.detteFinale || 0) >= 0
-                  ? "text-green-600"
-                  : "text-red-600"
-              }`}
-            >
+            <TableCell className="text-right text-lg font-semibold p-2 text-foreground">
               {formatCurrency(bonLivraison?.detteFinale || 0)}
             </TableCell>
           </TableRow>
@@ -353,12 +406,12 @@ export default function ImprimerRapport() {
         <div id="print-area" className="space-y-3">
           <EnteteDevis />
 
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className="space-y-2">
               <h3 className="font-semibold text-lg text-gray-900 mb-2">
                 Rapport des achats
               </h3>
-              <div className="grid grid-cols-2 items-center mb-4">
+                        <div className="flex items-center justify-between gap-2 px-4 py-2 rounded-lg bg-muted/50  text-sm print-block">
                 {bonLivraison?.fournisseurNom ? (
                   <div className="flex gap-2 items-center">
                     <h3 className="font-semibold text-gray-900">

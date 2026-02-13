@@ -1,6 +1,8 @@
 "use client";
 
+import Spinner from "@/components/customUi/Spinner";
 import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -11,7 +13,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -27,13 +35,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/functions";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
@@ -266,7 +267,7 @@ export default function DevisRapportDialog() {
           Rapport devis
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[80vw] max-h-[80vh] overflow-y-auto print:shadow-none print:max-h-none print:overflow-visible">
+      <DialogContent className="sm:max-w-[90vw] max-h-[900vh] overflow-y-auto print:shadow-none print:max-h-none print:overflow-visible">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl font-bold bg-gradient-to-r from-fuchsia-600 to-violet-600 bg-clip-text text-transparent">
             <FileText className="h-5 w-5 text-purple-600" />
@@ -570,13 +571,23 @@ export default function DevisRapportDialog() {
         {step === 2 && (
           <div className="space-y-4 py-4">
             {rapportQuery.isLoading ? (
-              <p className="text-muted-foreground">Chargement…</p>
+              <div className="flex flex-col items-center justify-center gap-4 py-16 text-muted-foreground">
+                <Spinner className="w-10 h-10 border-2 border-purple-200 border-t-purple-600" />
+                <p className="text-sm font-medium">Chargement…</p>
+              </div>
             ) : (
               <>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 p-4 bg-muted/50 rounded-lg">
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 p-4 bg-muted/50 rounded-lg">
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">Commerçant</p>
+                    <p className="text-lg font-semibold text-foreground">
+                      {commercant === "all" ? "Tous" : commercant}
+                    </p>
+                  </div>
                   <div>
                     <p className="text-xs font-medium text-muted-foreground">Total devis</p>
-                    <p className="text-lg font-semibold text-foreground">
+                    <p className="text-lg font-semibold text-fuchsia-600">
                       {formatCurrency(t?.montantTotalDevis ?? 0)}
                     </p>
                   </div>
@@ -612,6 +623,8 @@ export default function DevisRapportDialog() {
                   </div>
                 </div>
 
+
+
                 <div className="rounded-md border overflow-x-auto max-h-[50vh] overflow-y-auto">
                   <Table>
                     <TableHeader>
@@ -619,7 +632,6 @@ export default function DevisRapportDialog() {
                         <TableHead>Date</TableHead>
                         <TableHead>N°</TableHead>
                         <TableHead>Client</TableHead>
-                        <TableHead>Commerçant</TableHead>
                         <TableHead className="text-right">Total</TableHead>
                         <TableHead className="text-right">Payé</TableHead>
                         <TableHead className="text-right">Reste</TableHead>
@@ -638,7 +650,6 @@ export default function DevisRapportDialog() {
                             <TableCell>{formatDate(d.date)}</TableCell>
                             <TableCell className="font-medium">{d.numero}</TableCell>
                             <TableCell>{d.client?.nom ?? "—"}</TableCell>
-                            <TableCell>{d.commercant?.nom ?? "—"}</TableCell>
                             <TableCell className="text-right">
                               {formatCurrency(d.total)}
                             </TableCell>
