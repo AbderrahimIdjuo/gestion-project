@@ -185,6 +185,7 @@ export default function UpdateBonLivraison({ isOpen, onClose, bonLivraison }) {
     onSuccess: () => {
       onClose();
       queryClient.invalidateQueries({ queryKey: ["bonLivraison"] });
+      queryClient.invalidateQueries({ queryKey: ["fournisseurs"] });
     },
   });
 

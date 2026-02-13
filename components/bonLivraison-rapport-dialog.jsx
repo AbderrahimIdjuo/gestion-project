@@ -6,52 +6,53 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
 } from "@/components/ui/popover";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from "@/components/ui/select";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
+    Table,
+    TableBody,
+    TableCell,
+    TableFooter,
+    TableHead,
+    TableHeader,
+    TableRow,
 } from "@/components/ui/table";
+import Spinner from "@/components/customUi/Spinner";
 import { formatCurrency } from "@/lib/functions";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import {
-  endOfDay,
-  endOfMonth,
-  endOfQuarter,
-  endOfYear,
-  startOfDay,
-  startOfMonth,
-  startOfQuarter,
-  startOfYear,
-  subQuarters,
-  subYears,
+    endOfDay,
+    endOfMonth,
+    endOfQuarter,
+    endOfYear,
+    startOfDay,
+    startOfMonth,
+    startOfQuarter,
+    startOfYear,
+    subQuarters,
+    subYears,
 } from "date-fns";
-import { ChevronDown, FileText, Printer, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Calendar, ChevronDown, Filter, LayoutList, FileText, Printer, Tag, User, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 function formatDate(dateString) {
   return dateString?.split("T")[0].split("-").reverse().join("-");
@@ -144,6 +145,19 @@ export default function BonLivraisonRapportDialog() {
     { Label: "Retour", Value: "retour", Color: "bg-red-500" },
   ];
 
+  const periodeLabels = {
+    "aujourd'hui": "Aujourd'hui",
+    "ce-mois": "Ce mois",
+    "mois-dernier": "Le mois dernier",
+    "trimestre-actuel": "Trimestre actuel",
+    "trimestre-precedent": "Trimestre précédent",
+    "cette-annee": "Cette année",
+    "annee-derniere": "L'année dernière",
+    personnalisee: "Période personnalisée",
+  };
+  const modeAffichageLabels = { parBL: "Par BL", parMontant: "Par montant" };
+  const statutLabels = { paye: "Payé", impaye: "Impayé", enPartie: "En partie" };
+
   const reset = () => {
     setFormData({
       type: "tous",
@@ -176,8 +190,9 @@ export default function BonLivraisonRapportDialog() {
   const { from, to } = getDateRangeFromPeriode(formData.periode);
 
   // Un intervalle valide : période prédéfinie (from/to toujours définis) ou personnalisée avec les deux dates
-  const hasValidDateRange =
-    formData.periode !== "personnalisee" || (startDate && endDate);
+  const hasValidDateRange = Boolean(
+    formData.periode !== "personnalisee" || (startDate && endDate)
+  );
 
   // Query pour récupérer les BL et règlements (uniquement dans l'intervalle [from, to])
   const bonLivraisons = useQuery({
@@ -208,7 +223,7 @@ export default function BonLivraisonRapportDialog() {
     enabled: currentStep === 2 && hasValidDateRange,
   });
 
-  // Query pour récupérer les règlements (uniquement pour la vue par transaction, pas pour par BL / par montant)
+  // Query pour récupérer les règlements (par BL avec ou sans fournisseur, ou vue par transaction)
   const reglements = useQuery({
     queryKey: [
       "reglements-rapport",
@@ -230,8 +245,28 @@ export default function BonLivraisonRapportDialog() {
     enabled:
       currentStep === 2 &&
       hasValidDateRange &&
-      formData.modeAffichage !== "parBL" &&
-      formData.modeAffichage !== "parMontant",
+      (formData.modeAffichage === "parBL" ||
+        (formData.modeAffichage !== "parBL" && formData.modeAffichage !== "parMontant")),
+  });
+
+  // Liste des fournisseurs avec dette (pour mode par BL sans fournisseur : dette finale = somme des dettes)
+  const fournisseursList = useQuery({
+    queryKey: ["fournisseurs-list-dette", currentStep],
+    queryFn: async () => {
+      const { data } = await axios.get("/api/fournisseurs", { params: { page: 1, limit: 5000 } });
+      return data.fournisseurs || [];
+    },
+    enabled: currentStep === 2 && !selectedFournisseur && formData.modeAffichage === "parBL",
+  });
+
+  // Fournisseur avec dette (pour afficher fournisseur.dette en bas du tableau quand par BL + fournisseur)
+  const fournisseurAvecDette = useQuery({
+    queryKey: ["fournisseur-dette", selectedFournisseur?.id],
+    queryFn: async () => {
+      const { data } = await axios.get(`/api/fournisseurs/${selectedFournisseur.id}`);
+      return data;
+    },
+    enabled: currentStep === 2 && !!selectedFournisseur?.id && formData.modeAffichage === "parBL",
   });
 
   // Fonction pour calculer la dette initiale
@@ -459,6 +494,351 @@ export default function BonLivraisonRapportDialog() {
     }
 
     return Array.from(map.values());
+  }
+
+  // Rapport BL & Règlements : items fusionnés (BL + règlements) triés par date — avec ou sans fournisseur
+  const rapportItemsBLReglements = useMemo(() => {
+    if (formData.modeAffichage !== "parBL") return [];
+    const bls = bonLivraisons?.data || [];
+    const regs = reglements?.data || [];
+    const items = [];
+    bls.forEach(bl => {
+      items.push({
+        date: bl.date,
+        reference: bl.numero || bl.reference || "—",
+        montant: bl.type === "retour" ? -(bl.total || 0) : (bl.total || 0),
+        itemType: "bl",
+        blType: bl.type,
+        motif: null,
+        fournisseurId: bl.fournisseurId,
+        fournisseurNom: bl.fournisseur?.nom ?? "Inconnu",
+      });
+    });
+    regs.forEach(reg => {
+      items.push({
+        date: reg.dateReglement,
+        reference: reg.id?.substring(0, 8) || "—",
+        motif: reg.motif ?? null,
+        montant: -(reg.montant || 0),
+        itemType: "reglement",
+        fournisseurId: reg.fournisseurId ?? reg.fournisseur?.id,
+        fournisseurNom: reg.fournisseur?.nom ?? "Inconnu",
+      });
+    });
+    return items.sort((a, b) => {
+      const dateDiff = new Date(a.date) - new Date(b.date);
+      if (dateDiff !== 0) return dateDiff;
+      return (a.itemType === "reglement" ? 1 : 0) - (b.itemType === "reglement" ? 1 : 0);
+    });
+  }, [
+    formData.modeAffichage,
+    bonLivraisons?.data,
+    reglements?.data,
+  ]);
+
+  // Calcul inverse : dette finale = fournisseur.dette (ou somme des dettes si pas de fournisseur), puis remontée pour dette initiale
+  const rapportTotauxBLReglements = useMemo(() => {
+    const items = rapportItemsBLReglements;
+    const n = items.length;
+
+    // Dette finale : un fournisseur sélectionné → fournisseur.dette ; sinon somme des dettes des fournisseurs du tableau
+    let detteFinale = 0;
+    if (selectedFournisseur) {
+      const fournisseurDette = fournisseurAvecDette?.data?.dette;
+      if (n === 0) return { detteInitiale: fournisseurDette ?? 0, runningDette: [], detteFinale: fournisseurDette ?? 0 };
+      detteFinale = fournisseurDette ?? calculerDetteFinale();
+    } else {
+      // Dette finale = somme des dettes des fournisseurs qui apparaissent dans le tableau (BL + règlements)
+      const list = fournisseursList?.data || [];
+      const idsInTable = new Set(
+        items.map(it => it.fournisseurId).filter(Boolean).map(id => String(id))
+      );
+      detteFinale = list
+        .filter(f => idsInTable.has(String(f.id)))
+        .reduce((sum, f) => sum + (Number(f.dette) || 0), 0);
+      if (n === 0) return { detteInitiale: detteFinale, runningDette: [], detteFinale };
+    }
+
+    // Remonter dans le temps : runningDette[i] = dette (totale) après l'item i
+    const runningDette = new Array(n);
+    runningDette[n - 1] = detteFinale;
+    for (let i = n - 2; i >= 0; i--) {
+      runningDette[i] = runningDette[i + 1] - (items[i + 1].montant || 0);
+    }
+    const detteInitiale = runningDette[0] - (items[0].montant || 0);
+
+    return { detteInitiale, runningDette, detteFinale };
+  }, [
+    rapportItemsBLReglements,
+    selectedFournisseur,
+    fournisseurAvecDette?.data?.dette,
+    fournisseursList?.data,
+    bonLivraisons?.data,
+  ]);
+
+  function renderRapportTableContent() {
+    if (bonLivraisons.isLoading) {
+      return (
+        <div className="flex flex-col items-center justify-center gap-4 py-16 text-muted-foreground">
+          <Spinner className="w-10 h-10 border-2 border-purple-200 border-t-purple-600" />
+          <p className="text-sm font-medium">Chargement des données...</p>
+        </div>
+      );
+    }
+    if (formData.modeAffichage === "parBL") {
+      const dataReady =
+        (selectedFournisseur && !reglements.isLoading) ||
+        (!selectedFournisseur && !reglements.isLoading && !fournisseursList.isLoading);
+      if (!dataReady) {
+        return (
+          <div className="flex flex-col items-center justify-center gap-4 py-16 text-muted-foreground">
+            <Spinner className="w-10 h-10 border-2 border-purple-200 border-t-purple-600" />
+            <p className="text-sm font-medium">Chargement des BL et règlements...</p>
+          </div>
+        );
+      }
+      const items = rapportItemsBLReglements;
+      const totaux = rapportTotauxBLReglements;
+      const showFournisseurCol = !selectedFournisseur;
+      const colCount = showFournisseurCol ? 7 : 6;
+      const totalFourniture = items.reduce(
+        (s, it) => s + (it.itemType === "bl" && it.blType === "achats" ? it.montant || 0 : 0),
+        0
+      );
+      const totalReglement = items.reduce(
+        (s, it) => s + (it.itemType === "reglement" ? Math.abs(it.montant || 0) : 0),
+        0
+      );
+      const totalRetour = items.reduce(
+        (s, it) => s + (it.itemType === "bl" && it.blType === "retour" ? Math.abs(it.montant || 0) : 0),
+        0
+      );
+      return (
+        <Table>
+          <TableHeader className="sticky top-0 bg-gradient-to-r from-zinc-50 to-zinc-100 border-b z-10">
+            <TableRow>
+              <TableHead className="font-semibold">Date</TableHead>
+              <TableHead className="font-semibold">Description</TableHead>
+              {showFournisseurCol && <TableHead className="font-semibold">Fournisseur</TableHead>}
+              <TableHead className="font-semibold text-right">Fourniture</TableHead>
+              <TableHead className="font-semibold text-right">Règlement</TableHead>
+              <TableHead className="font-semibold text-right">Retour</TableHead>
+              <TableHead className="font-semibold text-right">Dette</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow className="bg-gray-700 hover:bg-gray-700 text-white border-b font-semibold">
+              <TableCell className="py-2">DETTE INITIALE</TableCell>
+              <TableCell className="py-2" colSpan={showFournisseurCol ? 5 : 4}></TableCell>
+              <TableCell className="py-2 text-right font-semibold">
+                {formatCurrency(totaux.detteInitiale)}
+              </TableCell>
+            </TableRow>
+            {items.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={colCount} className="text-center py-10 text-muted-foreground">
+                  Aucune donnée pour cette période
+                </TableCell>
+              </TableRow>
+            ) : (
+              <>
+                {items.map((item, index) => (
+                  <TableRow key={`${item.itemType}-${item.reference}-${index}`} className="border-b hover:bg-purple-50/50">
+                    <TableCell className="py-2">{formatDate(item.date)}</TableCell>
+                    <TableCell className="py-2 font-medium">
+                      {item.itemType === "reglement" && item.motif ? item.motif : item.reference}
+                    </TableCell>
+                    {showFournisseurCol && (
+                      <TableCell className="py-2 text-muted-foreground">{item.fournisseurNom ?? "—"}</TableCell>
+                    )}
+                    <TableCell className="py-2 text-right">
+                      {item.itemType === "bl" && item.blType === "achats" ? (
+                        <span className="text-green-600 font-medium">{formatCurrency(item.montant)}</span>
+                      ) : (
+                        ""
+                      )}
+                    </TableCell>
+                    <TableCell className="py-2 text-right">
+                      {item.itemType === "reglement" ? (
+                        <span className="text-blue-600 font-medium">{formatCurrency(Math.abs(item.montant))}</span>
+                      ) : (
+                        ""
+                      )}
+                    </TableCell>
+                    <TableCell className="py-2 text-right">
+                      {item.itemType === "bl" && item.blType === "retour" ? (
+                        <span className="text-red-600 font-medium">{formatCurrency(Math.abs(item.montant))}</span>
+                      ) : (
+                        ""
+                      )}
+                    </TableCell>
+                    <TableCell
+                      className={`py-2 text-right font-medium ${
+                        (totaux.runningDette[index] ?? 0) >= 0 ? "text-green-600" : "text-red-600"
+                      }`}
+                    >
+                      {formatCurrency(totaux.runningDette[index] ?? 0)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                <TableRow className="bg-gray-700 hover:bg-gray-700 text-white border-b font-semibold">
+                  <TableCell className="py-2">Total</TableCell>
+                  <TableCell className="py-2" colSpan={showFournisseurCol ? 1 : 0}></TableCell>
+                  {showFournisseurCol && <TableCell className="py-2"></TableCell>}
+                  <TableCell className="py-2 text-right font-semibold text-white">
+                    {formatCurrency(totalFourniture)}
+                  </TableCell>
+                  <TableCell className="py-2 text-right font-semibold text-white">
+                    {formatCurrency(totalReglement)}
+                  </TableCell>
+                  <TableCell className="py-2 text-right font-semibold text-white">
+                    {formatCurrency(totalRetour)}
+                  </TableCell>
+                  <TableCell className="py-2 text-right font-semibold">
+                    {formatCurrency(totaux.detteFinale)}
+                  </TableCell>
+                </TableRow>
+              </>
+            )}
+          </TableBody>
+        </Table>
+      );
+    }
+    if (formData.modeAffichage === "parMontant") {
+      return renderParMontantContent();
+    }
+    // Vue liste des BL (par défaut)
+    const bls = bonLivraisons?.data || [];
+    if (bls.length === 0) {
+      return (
+        <div className="text-center py-10 text-muted-foreground">
+          <p>Aucun bon de livraison trouvé</p>
+        </div>
+      );
+    }
+    return (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Date</TableHead>
+            <TableHead className="text-left">N° BL</TableHead>
+            <TableHead>Fournisseur</TableHead>
+            <TableHead>Type</TableHead>
+            <TableHead className="text-right">Montant</TableHead>
+            <TableHead className="text-right">Montant payé</TableHead>
+            <TableHead>Statut paiement</TableHead>
+            <TableHead className="text-right">Reste à payé</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {bls.map(bl => {
+            const restAPayer = (bl.total || 0) - (bl.totalPaye || 0);
+            return (
+              <TableRow key={bl.id} className="border-b">
+                <TableCell className="px-1 py-2 font-medium">{bl.date ? formatDate(bl.date) : "—"}</TableCell>
+                <TableCell className="px-1 py-2 font-medium">{bl.numero || bl.reference || "—"}</TableCell>
+                <TableCell className="px-1 py-2">{bl.fournisseur?.nom || "Inconnu"}</TableCell>
+                <TableCell className="px-1 py-2">
+                  <span className={bl.type === "achats" ? "text-green-600 font-medium" : "text-red-600 font-medium"}>
+                    {bl.type === "achats" ? "Achats" : bl.type === "retour" ? "Retour" : bl.type || "—"}
+                  </span>
+                </TableCell>
+                <TableCell className="px-1 py-2 text-right pr-4">
+                  <span className={bl.type === "achats" ? "text-green-600" : "text-red-600"}>
+                    {formatCurrency(bl.total || 0)}
+                  </span>
+                </TableCell>
+                <TableCell className="px-1 py-2 text-right pr-4">
+                  {bl.type === "retour" ? "—" : formatCurrency(bl.totalPaye || 0)}
+                </TableCell>
+                <TableCell className="px-1 py-2">
+                  {bl.type === "retour" ? "—" : (() => {
+                    const { label, colorClass } = getStatutStyle(bl.statutPaiement);
+                    return (
+                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold uppercase ${colorClass}`}>
+                        {label}
+                      </span>
+                    );
+                  })()}
+                </TableCell>
+                <TableCell className="px-1 py-2 text-right pr-4 font-medium">
+                  {formatCurrency(restAPayer)}
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+        <TableFooter className="bg-gray-50">
+          <TableRow className="border-b font-semibold">
+            <TableCell colSpan={5} className="p-2 text-right text-sky-600 text-xl">Montant total</TableCell>
+            <TableCell className="p-2"></TableCell>
+            <TableCell className="p-2"></TableCell>
+            <TableCell className="p-2 text-right pr-4 text-sky-600 text-xl">{formatCurrency(montantTotalBL())}</TableCell>
+          </TableRow>
+          <TableRow className="border-b font-semibold">
+            <TableCell colSpan={5} className="p-2 text-right text-green-600 text-xl">Montant payé</TableCell>
+            <TableCell className="p-2"></TableCell>
+            <TableCell className="p-2"></TableCell>
+            <TableCell className="p-2 text-right pr-4 text-green-600 text-xl">{formatCurrency(montantPayeTotal())}</TableCell>
+          </TableRow>
+          <TableRow className="border-b font-semibold">
+            <TableCell colSpan={5} className="p-2 text-right text-rose-600 text-xl">Reste à payé</TableCell>
+            <TableCell className="p-2"></TableCell>
+            <TableCell className="p-2"></TableCell>
+            <TableCell className="p-2 text-right pr-4 text-rose-600 text-xl">{formatCurrency(restAPayeTotal())}</TableCell>
+          </TableRow>
+        </TableFooter>
+      </Table>
+    );
+  }
+
+  function renderParMontantContent() {
+    const grouped = regrouperBLParFournisseur(bonLivraisons?.data || []);
+    if (grouped.length === 0) {
+      return (
+        <div className="text-center py-10 text-muted-foreground">
+          <p>Aucune donnée</p>
+        </div>
+      );
+    }
+    return (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>#</TableHead>
+            <TableHead>Fournisseur</TableHead>
+            <TableHead className="text-right">Montant des BL</TableHead>
+            <TableHead className="text-right">Reste à payé</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {grouped.map((row, idx) => (
+            <TableRow key={`${row.fournisseur}-${idx}`} className="border-b">
+              <TableCell className="text-left px-4 py-2 font-medium">{idx + 1}</TableCell>
+              <TableCell className="px-1 py-2 font-medium">{row.fournisseur}</TableCell>
+              <TableCell className="px-1 py-2 text-right pr-4">
+                <span className={row.total >= 0 ? "text-green-600" : "text-red-600"}>{formatCurrency(row.total)}</span>
+              </TableCell>
+              <TableCell className="px-1 py-2 text-right pr-4 font-medium">{formatCurrency(row.restAPayer)}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+        <TableFooter className="bg-gray-50">
+          <TableRow className="border-b font-semibold">
+            <TableCell className="p-2 text-right text-sky-600 text-xl" colSpan={3}>Montant total</TableCell>
+            <TableCell className="p-2 text-right text-sky-600 pr-4 text-xl">{formatCurrency(montantTotalBL())}</TableCell>
+          </TableRow>
+          <TableRow className="border-b font-semibold">
+            <TableCell className="p-2 text-right text-green-600 text-xl" colSpan={3}>Montant payé</TableCell>
+            <TableCell className="p-2 text-right pr-4 text-green-600 text-xl">{formatCurrency(montantPayeTotal())}</TableCell>
+          </TableRow>
+          <TableRow className="border-b font-semibold">
+            <TableCell className="p-2 text-right text-rose-600 text-xl" colSpan={3}>Reste à payé</TableCell>
+            <TableCell className="p-2 text-right pr-4 text-rose-600 text-xl">{formatCurrency(restAPayeTotal())}</TableCell>
+          </TableRow>
+        </TableFooter>
+      </Table>
+    );
   }
 
   return (
@@ -735,233 +1115,58 @@ export default function BonLivraisonRapportDialog() {
         )}
 
         {currentStep === 2 && (
-            <div>
+            <div className="space-y-4">
+              {/* Informations du filtre */}
+              <div className="rounded-xl border-2 border-purple-100 bg-gradient-to-br from-purple-50/80 via-fuchsia-50/50 to-violet-50/80 shadow-sm overflow-hidden">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 px-4 py-4">
+                  <div className="flex items-center gap-2 min-w-0 rounded-lg bg-white/70 px-3 py-2 shadow-sm border border-purple-100/80">
+                    <User className="h-4 w-4 shrink-0 text-purple-500" />
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase tracking-wider font-semibold text-purple-600/90">Fournisseur</p>
+                      <p className="text-sm font-medium text-gray-800 truncate">{selectedFournisseur?.nom ?? "Tous"}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 min-w-0 rounded-lg bg-white/70 px-3 py-2 shadow-sm border border-purple-100/80">
+                    <Calendar className="h-4 w-4 shrink-0 text-purple-500" />
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase tracking-wider font-semibold text-purple-600/90">Période</p>
+                      <p className="text-sm font-medium text-gray-800 truncate">
+                        {formData.periode === "personnalisee" && startDate && endDate
+                          ? `${formatDate(startDate?.toISOString?.() ?? startDate)} — ${formatDate(endDate?.toISOString?.() ?? endDate)}`
+                          : periodeLabels[formData.periode] ?? formData.periode}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 min-w-0 rounded-lg bg-white/70 px-3 py-2 shadow-sm border border-purple-100/80">
+                    <Tag className="h-4 w-4 shrink-0 text-purple-500" />
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase tracking-wider font-semibold text-purple-600/90">Type</p>
+                      <p className="text-sm font-medium text-gray-800">{Types.find(t => t.Value === formData.type)?.Label ?? formData.type}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 min-w-0 rounded-lg bg-white/70 px-3 py-2 shadow-sm border border-purple-100/80">
+                    <FileText className="h-4 w-4 shrink-0 text-purple-500" />
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase tracking-wider font-semibold text-purple-600/90">Statut paiement</p>
+                      <p className="text-sm font-medium text-gray-800">
+                        {formData.statutPaiement?.length
+                          ? formData.statutPaiement.map(s => statutLabels[s] ?? s).join(", ")
+                          : "—"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 min-w-0 rounded-lg bg-white/70 px-3 py-2 shadow-sm border border-purple-100/80">
+                    <LayoutList className="h-4 w-4 shrink-0 text-purple-500" />
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase tracking-wider font-semibold text-purple-600/90">Affichage</p>
+                      <p className="text-sm font-medium text-gray-800">{modeAffichageLabels[formData.modeAffichage] ?? formData.modeAffichage}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div className="rounded-xl border shadow-sm overflow-x-auto">
-                {bonLivraisons.isLoading ? (
-                  <div className="text-center py-10 text-muted-foreground">
-                    <p>Chargement des données...</p>
-                  </div>
-                ) : formData.modeAffichage === "parBL" ? (
-                  // Vue par BL : liste des BL avec fournisseur, type, statut, reste à payé
-                  (() => {
-                    const bls = bonLivraisons?.data || [];
-                    if (bls.length === 0) {
-                      return (
-                        <div className="text-center py-10 text-muted-foreground">
-                          <p>Aucun bon de livraison trouvé</p>
-                        </div>
-                      );
-                    }
-                    return (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Date</TableHead>
-                            <TableHead className="text-left">N° BL</TableHead>
-                            <TableHead>Fournisseur</TableHead>
-                            <TableHead>Type</TableHead>
-                            <TableHead className="text-right">Montant</TableHead>
-                            <TableHead className="text-right">Montant payé</TableHead>
-                            <TableHead>Statut paiement</TableHead>
-                            <TableHead className="text-right">Reste à payé</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {bls.map(bl => {
-                            const restAPayer =
-                              (bl.total || 0) - (bl.totalPaye || 0);
-                            return (
-                              <TableRow key={bl.id} className="border-b">
-                                  <TableCell className="px-1 py-2 font-medium">
-                                  {bl.date ? formatDate(bl.date) : "—"}
-                                </TableCell>
-                                <TableCell className="px-1 py-2 font-medium">
-                                  {bl.numero || bl.reference || "—"}
-                                </TableCell>
-                                <TableCell className="px-1 py-2">
-                                  {bl.fournisseur?.nom || "Inconnu"}
-                                </TableCell>
-                                <TableCell className="px-1 py-2">
-                                  <span
-                                    className={
-                                      bl.type === "achats"
-                                        ? "text-green-600 font-medium"
-                                        : "text-red-600 font-medium"
-                                    }
-                                  >
-                                    {bl.type === "achats"
-                                      ? "Achats"
-                                      : bl.type === "retour"
-                                        ? "Retour"
-                                        : bl.type || "—"}
-                                  </span>
-                                </TableCell>
-                                <TableCell className="px-1 py-2 text-right pr-4">
-                                  <span
-                                    className={
-                                      bl.type === "achats"
-                                        ? "text-green-600"
-                                        : "text-red-600"
-                                    }
-                                  >
-                                    {formatCurrency(bl.total || 0)}
-                                  </span>
-                                </TableCell>
-                                <TableCell className="px-1 py-2 text-right pr-4">
-                                  {formatCurrency(bl.totalPaye || 0)}
-                                </TableCell>
-                                <TableCell className="px-1 py-2">
-                                  {(() => {
-                                    const { label, colorClass } =
-                                      getStatutStyle(bl.statutPaiement);
-                                    return (
-                                      <span
-                                        className={`inline-block px-2 py-1 rounded-full text-xs font-semibold uppercase ${colorClass}`}
-                                      >
-                                        {label}
-                                      </span>
-                                    );
-                                  })()}
-                                </TableCell>
-                                <TableCell className="px-1 py-2 text-right pr-4 font-medium">
-                                  {formatCurrency(restAPayer)}
-                                </TableCell>
-                              </TableRow>
-                            );
-                          })}
-                        </TableBody>
-                        <TableFooter className="bg-gray-50">
-                          <TableRow className="border-b font-semibold">
-                            <TableCell
-                              colSpan={5}
-                              className="p-2 text-right text-sky-600 text-xl"
-                            >
-                              Montant total
-                            </TableCell>
-                            <TableCell className="p-2"></TableCell>
-                            <TableCell className="p-2"></TableCell>
-                            <TableCell className="p-2 text-right pr-4 text-sky-600 text-xl">
-                              {formatCurrency(montantTotalBL())}
-                            </TableCell>
-                          </TableRow>
-                                                  <TableRow className="border-b font-semibold">
-                            <TableCell
-                              colSpan={5}
-                              className="p-2 text-right text-green-600 text-xl"
-                            >
-                              Montant payé
-                            </TableCell>
-                            <TableCell className="p-2"></TableCell>
-                            <TableCell className="p-2"></TableCell>
-                            <TableCell className="p-2 text-right pr-4 text-green-600 text-xl">
-                              {formatCurrency(montantPayeTotal())}
-                            </TableCell>
-                          </TableRow>
-                          <TableRow className="border-b font-semibold">
-                            <TableCell
-                              colSpan={5}
-                              className="p-2 text-right  text-rose-600 text-xl"
-                            >
-                              Reste à payé
-                            </TableCell>
-                            <TableCell className="p-2"></TableCell>
-                            <TableCell className="p-2"></TableCell>
-                            <TableCell className="p-2 text-right pr-4 text-rose-600 text-xl">
-                              {formatCurrency(restAPayeTotal())}
-                            </TableCell>
-                          </TableRow>
-  
-                        </TableFooter>
-                      </Table>
-                    );
-                  })()
-                ) : formData.modeAffichage === "parMontant" ? (
-                  // Vue par montant : regroupement par fournisseur
-                  (() => {
-                    const grouped = regrouperBLParFournisseur(
-                      bonLivraisons?.data || []
-                    );
-                    if (grouped.length === 0) {
-                      return (
-                        <div className="text-center py-10 text-muted-foreground">
-                          <p>Aucune donnée</p>
-                        </div>
-                      );
-                    }
-                    return (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>#</TableHead>
-                            <TableHead>Fournisseur</TableHead>
-                            <TableHead className="text-right">
-                              Montant des BL
-                            </TableHead>
-                            <TableHead className="text-right">
-                              Reste à payé
-                            </TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {grouped.map((row, idx) => (
-                            <TableRow key={`${row.fournisseur}-${idx}`} className="border-b">
-                              <TableCell className="text-left px-4 py-2 font-medium">
-                                {idx + 1}
-                              </TableCell>
-                              <TableCell className="px-1 py-2 font-medium">
-                                {row.fournisseur}
-                              </TableCell>
-                              <TableCell className="px-1 py-2 text-right pr-4">
-                                <span
-                                  className={
-                                    row.total >= 0
-                                      ? "text-green-600"
-                                      : "text-red-600"
-                                  }
-                                >
-                                  {formatCurrency(row.total)}
-                                </span>
-                              </TableCell>
-                              <TableCell className="px-1 py-2 text-right pr-4 font-medium">
-                                {formatCurrency(row.restAPayer)}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                        <TableFooter className="bg-gray-50">
-                          <TableRow className="border-b font-semibold">
-                            <TableCell className="p-2 text-right text-sky-600 text-xl" colSpan={3}>
-                              Montant total
-                            </TableCell>
-                            <TableCell className="p-2 text-right text-sky-600 pr-4 text-xl">
-                              {formatCurrency(montantTotalBL())}
-                            </TableCell>
-                          </TableRow>
-                          <TableRow className="border-b font-semibold">
-                            <TableCell className="p-2 text-right text-green-600 text-xl" colSpan={3}>
-                              Montant payé
-                            </TableCell>
-                            <TableCell className="p-2 text-right pr-4 text-green-600 text-xl">
-                              {formatCurrency(montantPayeTotal())}
-                            </TableCell>
-                          </TableRow>
-                          <TableRow className="border-b font-semibold">
-                            <TableCell className="p-2 text-right text-rose-600 text-xl" colSpan={3}>
-                              Reste à payé
-                            </TableCell>
-                            <TableCell className="p-2 text-right pr-4 text-rose-600 text-xl">
-                              {formatCurrency(restAPayeTotal())}
-                            </TableCell>
-                          </TableRow>
-                        </TableFooter>
-                      </Table>
-                    );
-                  })()
-                ) : (
-                  <div className="text-center py-10 text-muted-foreground">
-                    <p>Aucune donnée</p>
-                  </div>
-                )}
+                {renderRapportTableContent()}
               </div>
               <div className="flex justify-end gap-3 mt-6 print:hidden">
                 <Button

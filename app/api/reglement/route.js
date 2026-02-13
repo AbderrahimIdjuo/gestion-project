@@ -495,6 +495,9 @@ export async function PUT(req) {
       );
     }
 
+    const ancienMontantReglement = reglementExistant.montant;
+    const nouveauMontantReglement = Number(montant) || reglementExistant.montant;
+
     // Utiliser une transaction Prisma pour garantir la cohérence
     const result = await prisma.$transaction(async tx => {
       // Gérer le chèque si la méthode de paiement est chèque
@@ -679,11 +682,6 @@ export async function PUT(req) {
 
       // Si le règlement a une référence (BL), mettre à jour le BL
       if (reglementExistant.reference) {
-        // Calculer les nouvelles valeurs
-        const ancienMontant = reglementExistant.montant;
-        const nouveauMontant = montant || reglementExistant.montant;
-        const differenceMontant = nouveauMontant - ancienMontant;
-
         // Récupérer le BL pour connaître son total et totalPaye actuel
         const bonLivraison = await tx.bonLivraison.findUnique({
           where: { id: reglementExistant.reference },
@@ -693,7 +691,7 @@ export async function PUT(req) {
           // Mettre à jour le montant payé (ajouter ou soustraire la différence)
           const nouveauTotalPaye = Math.max(
             0,
-            bonLivraison.totalPaye + differenceMontant
+            (bonLivraison.totalPaye ?? 0) + (nouveauMontantReglement - ancienMontantReglement)
           );
 
           // Calculer le nouveau statut de paiement
@@ -715,6 +713,18 @@ export async function PUT(req) {
             },
           });
         }
+      }
+
+      // Ajuster la dette fournisseur : ancien règlement diminuait la dette de ancienMontantReglement, le nouveau de nouveauMontantReglement
+      const deltaDette = ancienMontantReglement - nouveauMontantReglement;
+      if (deltaDette !== 0) {
+        await tx.fournisseurs.update({
+          where: { id: reglementExistant.fournisseurId },
+          data:
+            deltaDette > 0
+              ? { dette: { increment: deltaDette } }
+              : { dette: { decrement: -deltaDette } },
+        });
       }
 
       return {
@@ -822,6 +832,12 @@ export async function DELETE(req) {
           });
         }
       }
+
+      // Augmenter la dette du fournisseur (annuler l'effet du règlement supprimé)
+      await tx.fournisseurs.update({
+        where: { id: reglement.fournisseurId },
+        data: { dette: { increment: reglement.montant } },
+      });
 
       // Supprimer le règlement (le chèque sera supprimé automatiquement grâce au cascade)
       await tx.reglement.delete({

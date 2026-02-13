@@ -12,6 +12,7 @@
     "migrate:categories": "node scripts/migrateCategories.mjs",
     "migrate:articles-categories": "node scripts/migrateArticlesCategories.mjs",
     "migrate:items-categories": "node scripts/migrateArticlesCategories.mjs",
+    "update-fournisseurs-dette": "node scripts/update-fournisseurs-dette.mjs",
     "postinstall": "prisma generate"
   },
   "dependencies": {

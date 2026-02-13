@@ -68,10 +68,15 @@ export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const page = parseInt(searchParams.get("page") || "1");
   const searchQuery = searchParams.get("query") || "";
+  const limitParam = searchParams.get("limit");
 
   const filters = {};
 
-  const fournisseursPerPage = 10;
+  // Si limit est fourni (ex: rapport qui a besoin de tous les fournisseurs avec dette), l'utiliser
+  const fournisseursPerPage =
+    limitParam != null
+      ? Math.min(parseInt(limitParam, 10) || 10, 10000)
+      : 10;
 
   // Search filter by numero and client name
   filters.OR = [

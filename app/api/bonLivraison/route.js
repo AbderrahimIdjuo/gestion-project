@@ -85,19 +85,20 @@ export async function POST(req) {
           });
         }
 
-        // Mettre à jour la dette du fournisseur
-        const difference = montantPaye
-          ? parseFloat(total) - parseFloat(montantPaye)
-          : parseFloat(total);
-        await prisma.fournisseurs.update({
-          where: { id: fournisseurId },
-          data: {
-            dette:
-              type === "achats"
-                ? { increment: difference }
-                : type === "retour" && { decrement: parseFloat(total) },
-          },
-        });
+        // Mettre à jour la dette du fournisseur : achats → + montant impayé, retour → - montant du BL
+        const totalNum = parseFloat(total);
+        if (type === "achats") {
+          const montantImpaye = montantPaye ? totalNum - parseFloat(montantPaye) : totalNum;
+          await prisma.fournisseurs.update({
+            where: { id: fournisseurId },
+            data: { dette: { increment: montantImpaye } },
+          });
+        } else if (type === "retour") {
+          await prisma.fournisseurs.update({
+            where: { id: fournisseurId },
+            data: { dette: { decrement: totalNum } },
+          });
+        }
 
         // Mettre à jour les devis liés aux groupes de BL
         const DevisNumbers = bLGroups
@@ -180,9 +181,10 @@ export async function PUT(req) {
       type,
       reference,
       statutPaiement,
+      totalPaye,
     } = response;
 
-    // 1. Récupérer les groups existants
+    // 1. Récupérer le BL existant (total, totalPaye, type, fournisseurId pour le calcul dette)
     const existing = await prisma.bonLivraison.findUnique({
       where: { id },
       include: {
@@ -230,19 +232,23 @@ export async function PUT(req) {
       }
     }
 
-    // 4. Upsert commandeFourniture avec groupes et produits
-    const result = await prisma.bonLivraison.update({
-      where: { id },
-      data: {
-        date,
-        total: parseFloat(total),
-        type,
-        reference,
-        statutPaiement,
-        fournisseur: {
-          connect: { id: fournisseurId },
-        },
-        groups: {
+    const newTotal = parseFloat(total);
+    const newTotalPaye =
+      totalPaye !== undefined && totalPaye !== null
+        ? parseFloat(totalPaye)
+        : existing.totalPaye;
+
+    // 4. Mise à jour du BL (totalPaye pour type achats si fourni)
+    const updateData = {
+      date,
+      total: newTotal,
+      type,
+      reference,
+      statutPaiement,
+      fournisseur: {
+        connect: { id: fournisseurId },
+      },
+      groups: {
           upsert: bLGroups.map(group => ({
             where: { id: group.id },
             update: {
@@ -287,35 +293,61 @@ export async function PUT(req) {
               },
             },
           })),
-        },
       },
+    };
+    if (type === "retour") {
+      updateData.totalPaye = null;
+    } else if (type === "achats") {
+      updateData.totalPaye = newTotalPaye ?? 0;
+    }
+    const result = await prisma.bonLivraison.update({
+      where: { id },
+      data: updateData,
     });
 
-    const difference = parseFloat(total) - parseFloat(existing.total);
+    // 5. Mise à jour dette fournisseur : basée sur la variation du montant impayé (achats) ou du total (retour)
+    const oldTotal = parseFloat(existing.total) || 0;
+    const oldTotalPaye = parseFloat(existing.totalPaye) || 0;
+    // Effet du BL sur la dette : achats => + montant impayé, retour => - total
+    const oldEffect =
+      existing.type === "achats"
+        ? oldTotal - oldTotalPaye
+        : existing.type === "retour"
+          ? -oldTotal
+          : 0;
+    const newEffect =
+      type === "achats"
+        ? newTotal - (newTotalPaye ?? 0)
+        : type === "retour"
+          ? -newTotal
+          : 0;
+    const sameFournisseur = existing.fournisseurId === fournisseurId;
+    const deltaDette = newEffect - oldEffect;
 
-    let detteUpdate = {};
-
-    if (type === "achats") {
-      if (difference > 0) {
-        detteUpdate = { increment: difference };
-      } else if (difference < 0) {
-        detteUpdate = { decrement: -difference };
+    if (sameFournisseur) {
+      if (deltaDette !== 0) {
+        await prisma.fournisseurs.update({
+          where: { id: fournisseurId },
+          data: {
+            dette: deltaDette > 0 ? { increment: deltaDette } : { decrement: -deltaDette },
+          },
+        });
       }
-    } else if (type === "retour") {
-      if (difference > 0) {
-        detteUpdate = { decrement: difference };
-      } else if (difference < 0) {
-        detteUpdate = { increment: -difference };
+    } else {
+      if (oldEffect !== 0) {
+        await prisma.fournisseurs.update({
+          where: { id: existing.fournisseurId },
+          data: { dette: { increment: -oldEffect } },
+        });
       }
-    }
-
-    if (Object.keys(detteUpdate).length > 0) {
-      await prisma.fournisseurs.update({
-        where: { id: fournisseurId },
-        data: {
-          dette: detteUpdate,
-        },
-      });
+      if (newEffect !== 0) {
+        await prisma.fournisseurs.update({
+          where: { id: fournisseurId },
+          data: {
+            dette: newEffect > 0 ? { increment: newEffect } : { decrement: -newEffect },
+          },
+        });
+      }
     }
 
     return NextResponse.json({ result });

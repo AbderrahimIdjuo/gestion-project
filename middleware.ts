@@ -42,8 +42,8 @@ export default clerkMiddleware(async (auth, request) => {
 });
 
 /**
- * Run middleware ONLY on these paths. Everything else (API, _next, static files,
- * sso-callback, no-access, etc.) is never touched → large reduction in invocations.
+ * Run middleware on these paths so Clerk auth() works in pages and API routes.
+ * API routes that use auth() or requireAdmin() need the matcher to include /api.
  */
 export const config = {
   matcher: [
@@ -74,5 +74,6 @@ export const config = {
     "/Employes/(.*)",
     "/articls",
     "/articls/(.*)",
+    "/api/(.*)",
   ],
 };

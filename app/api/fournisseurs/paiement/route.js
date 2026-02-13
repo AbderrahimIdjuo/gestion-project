@@ -61,6 +61,12 @@ export async function POST(req) {
           },
         });
 
+        // Diminuer la dette du fournisseur pour tout nouveau règlement
+        await prisma.fournisseurs.update({
+          where: { id: fournisseurId },
+          data: { dette: { decrement: montant } },
+        });
+
         // creation de la transaction uniquement si méthode de paiement est "espece" ou "versement"
         if (methodePaiement === "espece" || methodePaiement === "versement") {
           await prisma.transactions.create({
@@ -89,14 +95,6 @@ export async function POST(req) {
             where: { compte: compte },
             data: {
               solde: { decrement: montant },
-            },
-          });
-
-          // mise à jour de la dette du fournisseur
-          await prisma.fournisseurs.update({
-            where: { id: fournisseurId },
-            data: {
-              dette: { decrement: montant },
             },
           });
         }
