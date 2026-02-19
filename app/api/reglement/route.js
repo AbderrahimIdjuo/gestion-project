@@ -771,11 +771,12 @@ export async function DELETE(req) {
 
     // Utiliser une transaction Prisma pour garantir la cohérence des données
     const result = await prisma.$transaction(async tx => {
-      // Récupérer le règlement avec ses relations
+      // Récupérer le règlement avec ses relations et allocations BL
       const reglement = await tx.reglement.findUnique({
         where: { id },
         include: {
           cheque: true,
+          blAllocations: { orderBy: { id: "asc" } },
         },
       });
 
@@ -798,21 +799,47 @@ export async function DELETE(req) {
         },
       });
 
-      // Si le règlement a une référence (BL), mettre à jour le BL
-      if (reglement.reference) {
-        // Récupérer le BL pour connaître son total et totalPaye actuel
+      // Inverser l'effet sur les BL : soit via les allocations (règlement ayant payé plusieurs BL), soit via reference (un seul BL)
+      if (reglement.blAllocations && reglement.blAllocations.length > 0) {
+        // Règlement ayant payé plusieurs BL (les plus anciens d'abord) : on retire chaque allocation dans l'ordre inverse
+        for (const alloc of reglement.blAllocations) {
+          const bl = await tx.bonLivraison.findUnique({
+            where: { id: alloc.bonLivraisonId },
+          });
+          if (bl) {
+            const nouveauTotalPaye = Math.max(
+              0,
+              (bl.totalPaye ?? 0) - alloc.montant
+            );
+            let nouveauStatutPaiement = "impaye";
+            if (nouveauTotalPaye > 0 && nouveauTotalPaye < bl.total) {
+              nouveauStatutPaiement = "enPartie";
+            } else if (nouveauTotalPaye >= bl.total) {
+              nouveauStatutPaiement = "paye";
+            }
+            await tx.bonLivraison.update({
+              where: { id: alloc.bonLivraisonId },
+              data: {
+                totalPaye: nouveauTotalPaye,
+                statutPaiement: nouveauStatutPaiement,
+              },
+            });
+          }
+        }
+        await tx.reglementBlAllocation.deleteMany({
+          where: { reglementId: id },
+        });
+      } else if (reglement.reference) {
+        // Ancien cas : règlement lié à un seul BL via reference
         const bonLivraison = await tx.bonLivraison.findUnique({
           where: { id: reglement.reference },
         });
 
         if (bonLivraison) {
-          // Diminuer le montant payé
           const nouveauTotalPaye = Math.max(
             0,
-            bonLivraison.totalPaye - reglement.montant
+            (bonLivraison.totalPaye ?? 0) - reglement.montant
           );
-
-          // Calculer le nouveau statut de paiement
           let nouveauStatutPaiement = bonLivraison.statutPaiement;
           if (nouveauTotalPaye <= 0) {
             nouveauStatutPaiement = "impaye";
@@ -821,8 +848,6 @@ export async function DELETE(req) {
           } else if (nouveauTotalPaye >= bonLivraison.total) {
             nouveauStatutPaiement = "paye";
           }
-
-          // Mettre à jour le BL
           await tx.bonLivraison.update({
             where: { id: reglement.reference },
             data: {
@@ -839,7 +864,7 @@ export async function DELETE(req) {
         data: { dette: { increment: reglement.montant } },
       });
 
-      // Supprimer le règlement (le chèque sera supprimé automatiquement grâce au cascade)
+      // Supprimer le règlement (cascade supprime blAllocations et le chèque)
       await tx.reglement.delete({
         where: { id },
       });

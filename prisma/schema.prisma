@@ -279,19 +279,20 @@ model FacturesArticls {
 }
 
 model BonLivraison {
-  id             String       @id @default(uuid())
-  numero         String       @unique
-  reference      String?
-  fournisseurId  String
-  date           DateTime?
-  total          Float
-  totalPaye      Float?       @default(0)
-  statutPaiement String?      @default("impaye")
-  type           String?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  groups         BLGroups[]
-  fournisseur    Fournisseurs @relation(fields: [fournisseurId], references: [id], onDelete: Cascade)
+  id                    String                   @id @default(uuid())
+  numero                String                   @unique
+  reference             String?
+  fournisseurId         String
+  date                  DateTime?
+  total                 Float
+  totalPaye             Float?                   @default(0)
+  statutPaiement        String?                  @default("impaye")
+  type                  String?
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @updatedAt
+  groups                BLGroups[]
+  fournisseur           Fournisseurs             @relation(fields: [fournisseurId], references: [id], onDelete: Cascade)
+  reglementBlAllocations ReglementBlAllocation[]
 }
 
 model DepensesVariantes {
@@ -343,24 +344,25 @@ model Cheques {
 }
 
 model Reglement {
-  id                String          @id @default(uuid())
+  id                String                   @id @default(uuid())
   fournisseurId     String
   compte            String
   montant           Float
   methodePaiement   String // espece, cheque, versement, traite
   dateReglement     DateTime // Date de réglement
   datePrelevement   DateTime? // Date de prélèvement
-  statusPrelevement String          @default("en_attente") // en_attente, confirme, echoue, reporte, refuse
+  statusPrelevement String                   @default("en_attente") // en_attente, confirme, echoue, reporte, refuse
   motif             String? // Motif du règlement
-  statut            String          @default("en_attente") // en_attente, paye, en_retard, annule
+  statut            String                   @default("en_attente") // en_attente, paye, en_retard, annule
   factureAchatsId   String?
-  factureAchats     FacturesAchats? @relation(fields: [factureAchatsId], references: [id], onDelete: Cascade)
-  chequeId          String?         @unique
-  cheque            Cheques?        @relation(fields: [chequeId], references: [id], onDelete: Cascade)
-  fournisseur       Fournisseurs    @relation(fields: [fournisseurId], references: [id], onDelete: Cascade)
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
+  factureAchats     FacturesAchats?          @relation(fields: [factureAchatsId], references: [id], onDelete: Cascade)
+  chequeId          String?                   @unique
+  cheque            Cheques?                  @relation(fields: [chequeId], references: [id], onDelete: Cascade)
+  fournisseur       Fournisseurs              @relation(fields: [fournisseurId], references: [id], onDelete: Cascade)
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
   reference         String?
+  blAllocations     ReglementBlAllocation[]
 
   @@index([fournisseurId])
   @@index([dateReglement])
@@ -368,6 +370,18 @@ model Reglement {
   @@index([factureAchatsId])
   @@index([datePrelevement])
   @@index([statusPrelevement])
+}
+
+model ReglementBlAllocation {
+  id             String       @id @default(uuid())
+  reglementId    String
+  bonLivraisonId String
+  montant        Float
+  reglement      Reglement    @relation(fields: [reglementId], references: [id], onDelete: Cascade)
+  bonLivraison   BonLivraison @relation(fields: [bonLivraisonId], references: [id], onDelete: Cascade)
+
+  @@index([reglementId])
+  @@index([bonLivraisonId])
 }
 
 model TachesEmployes {

@@ -36,8 +36,8 @@ export async function POST(req) {
           });
         }
 
-        // Création d'un nouveau règlement
-        await prisma.reglement.create({
+        // Création d'un nouveau règlement (on garde l'id pour enregistrer les allocations BL)
+        const reglement = await prisma.reglement.create({
           data: {
             fournisseur: {
               connect: { id: fournisseurId },
@@ -99,11 +99,9 @@ export async function POST(req) {
           });
         }
 
-        // Paye les BL du fournisseur
-        const montantDisponible = montant; // par exemple
-        let montantRestant = montantDisponible;
+        // Paye les BL du fournisseur (les plus anciens d'abord) et enregistre chaque allocation
+        let montantRestant = montant;
 
-        // Récupérer les BL impayés ou partiellement payés, triés par date croissante
         const bonLivraisonList = await prisma.bonLivraison.findMany({
           where: {
             fournisseurId,
@@ -118,14 +116,15 @@ export async function POST(req) {
         });
 
         for (const bl of bonLivraisonList) {
-          const resteAPayer = bl.total - bl.totalPaye;
+          const totalPayeActuel = bl.totalPaye ?? 0;
+          const resteAPayer = bl.total - totalPayeActuel;
 
-          if (montantRestant <= 0) break; // plus d'argent
+          if (montantRestant <= 0) break;
 
+          let montantAlloue = 0;
           if (montantRestant >= resteAPayer) {
-            // Payer entièrement
+            montantAlloue = resteAPayer;
             montantRestant -= resteAPayer;
-
             await prisma.bonLivraison.update({
               where: { id: bl.id },
               data: {
@@ -134,7 +133,7 @@ export async function POST(req) {
               },
             });
           } else {
-            // Payer partiellement
+            montantAlloue = montantRestant;
             await prisma.bonLivraison.update({
               where: { id: bl.id },
               data: {
@@ -144,9 +143,17 @@ export async function POST(req) {
                 statutPaiement: "enPartie",
               },
             });
-
             montantRestant = 0;
-            break;
+          }
+
+          if (montantAlloue > 0) {
+            await prisma.reglementBlAllocation.create({
+              data: {
+                reglementId: reglement.id,
+                bonLivraisonId: bl.id,
+                montant: montantAlloue,
+              },
+            });
           }
         }
       },
