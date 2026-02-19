@@ -53,9 +53,9 @@ export default function ImprimerRapport() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Date</TableHead>
+            <TableHead >Date</TableHead>
             <TableHead className="text-left">N° BL</TableHead>
-            <TableHead>Fournisseur</TableHead>
+            <TableHead className="col-fournisseur">Fournisseur</TableHead>
             <TableHead>Type</TableHead>
             <TableHead className="text-right">Montant</TableHead>
             <TableHead className="text-right">Montant payé</TableHead>
@@ -79,7 +79,7 @@ export default function ImprimerRapport() {
                 <TableCell className="px-1 py-2 font-medium">
                   {bl.numero || bl.reference || "—"}
                 </TableCell>
-                <TableCell className="px-1 py-2">{fournisseurNom}</TableCell>
+                <TableCell className="px-1 py-2 col-fournisseur" title={fournisseurNom}>{fournisseurNom}</TableCell>
                 <TableCell className="px-1 py-2">
                   <span className="text-foreground font-medium">
                     {typeLabel}
@@ -166,9 +166,9 @@ export default function ImprimerRapport() {
           <TableHeader className="bg-gradient-to-r from-zinc-50 to-zinc-100 border-b">
             <TableRow>
               <TableHead className="font-semibold">Date</TableHead>
-              <TableHead className="font-semibold">Description</TableHead>
+              <TableHead className="font-semibold col-description">Description</TableHead>
               {showFournisseurCol && (
-                <TableHead className="font-semibold">Fournisseur</TableHead>
+                <TableHead className="font-semibold col-fournisseur">Fournisseur</TableHead>
               )}
               <TableHead className="font-semibold text-right">Fourniture</TableHead>
               <TableHead className="font-semibold text-right">Règlement</TableHead>
@@ -192,13 +192,13 @@ export default function ImprimerRapport() {
                 <TableCell className="py-2">
                   {item.date ? formatDateString(item.date) : "—"}
                 </TableCell>
-                <TableCell className="py-2 font-medium">
+                <TableCell className="py-2 font-medium col-description" title={item.itemType === "reglement" && item.motif ? item.motif : item.reference}>
                   {item.itemType === "reglement" && item.motif
                     ? item.motif
                     : item.reference}
                 </TableCell>
                 {showFournisseurCol && (
-                  <TableCell className="py-2 text-muted-foreground">
+                  <TableCell className="py-2 text-muted-foreground col-fournisseur" title={item.fournisseurNom ?? "—"}>
                     {item.fournisseurNom ?? "—"}
                   </TableCell>
                 )}
@@ -273,7 +273,7 @@ export default function ImprimerRapport() {
           <TableHeader>
             <TableRow>
               <TableHead>#</TableHead>
-              <TableHead>Fournisseur</TableHead>
+              <TableHead className="col-fournisseur">Fournisseur</TableHead>
               <TableHead className="text-right">Montant des BL</TableHead>
               <TableHead className="text-right">Reste à payé</TableHead>
             </TableRow>
@@ -284,7 +284,7 @@ export default function ImprimerRapport() {
                 <TableCell className="text-left px-4 py-2 font-medium">
                   {idx + 1}
                 </TableCell>
-                <TableCell className="px-1 py-2 font-medium">
+                <TableCell className="px-1 py-2 font-medium col-fournisseur" title={row.fournisseur}>
                   {row.fournisseur}
                 </TableCell>
                 <TableCell className="px-1 py-2 text-right pr-4 text-foreground">
@@ -332,7 +332,7 @@ export default function ImprimerRapport() {
         <TableHeader>
           <TableRow>
             <TableHead>Date</TableHead>
-            <TableHead>Fournisseur</TableHead>
+            <TableHead className="col-fournisseur">Fournisseur</TableHead>
             <TableHead className="text-right">Fourniture</TableHead>
             <TableHead className="text-right">Retour</TableHead>
             <TableHead className="text-right">Règlement</TableHead>
@@ -357,7 +357,7 @@ export default function ImprimerRapport() {
               <TableCell className="px-1 py-2">
                 {formatDateString(transaction.date)}
               </TableCell>
-              <TableCell className="px-1 py-2">
+              <TableCell className="px-1 py-2 col-fournisseur" title={transaction.fournisseur}>
                 {transaction.fournisseur}
               </TableCell>
               <TableCell className="px-1 py-2 text-right pr-4 text-foreground">

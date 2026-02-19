@@ -1,4 +1,12 @@
-/* Styles spécifiques pour l'impression du rapport des bons de livraison */
+/* Colonnes Description et Fournisseur : afficher le texte complet avec retour à la ligne */
+.col-description,
+.col-fournisseur {
+  max-width: 200px;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
 @media print {
   @page {
     margin: 1cm;
@@ -165,9 +173,18 @@
     overflow: visible !important;
   }
 
-  /* Ajuster la largeur des colonnes pour l'orientation horizontale */
-  th,
-  td {
+  /* Colonnes Description et Fournisseur : afficher le texte complet avec retour à la ligne */
+  .col-description,
+  .col-fournisseur {
+    max-width: 140px !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+  }
+
+  /* Autres colonnes : pas de nowrap pour éviter que le tableau déborde */
+  th:not(.col-description):not(.col-fournisseur),
+  td:not(.col-description):not(.col-fournisseur) {
     white-space: nowrap !important;
     min-width: auto !important;
   }
