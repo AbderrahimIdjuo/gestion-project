@@ -78,9 +78,12 @@ export async function GET(req) {
     }
 
     // Statut de prélèvement filter (peut être multiple, séparé par des virgules)
+    // "annule" inclut aussi les anciennes valeurs "echoue" et "refuse" pour rétrocompatibilité
     if (statusPrelevement && statusPrelevement !== "all") {
-      const statusArray = statusPrelevement.split(",").map(s => s.trim());
-      
+      let statusArray = statusPrelevement.split(",").map(s => s.trim());
+      if (statusArray.includes("annule")) {
+        statusArray = [...new Set([...statusArray, "annule", "echoue", "refuse"])];
+      }
       if (statusArray.length === 1) {
         // Un seul statut
         const singleStatus = statusArray[0];
@@ -94,6 +97,9 @@ export async function GET(req) {
             not: null,
             lt: today,
           };
+        } else if (singleStatus === "annule") {
+          // "annule" inclut les anciennes valeurs echoue et refuse
+          filters.statusPrelevement = { in: ["annule", "echoue", "refuse"] };
         } else {
           filters.statusPrelevement = singleStatus;
           // Si on filtre par "en_attente", exclure les règlements sans date de prélèvement
@@ -305,9 +311,8 @@ export async function PATCH(req) {
       const statusPrelevementsValides = [
         "en_attente",
         "confirme",
-        "echoue",
+        "annule",
         "reporte",
-        "refuse",
       ];
       if (!statusPrelevementsValides.includes(statusPrelevement)) {
         return NextResponse.json(
@@ -318,9 +323,10 @@ export async function PATCH(req) {
 
       // Utiliser une transaction pour garantir la cohérence
       const result = await prisma.$transaction(async tx => {
-        // Récupérer le règlement existant pour connaître l'ancien statut et les infos du compte
+        // Récupérer le règlement existant avec ses allocations BL pour pouvoir mettre à jour les BL en cas d'annulation
         const reglementExistant = await tx.reglement.findUnique({
           where: { id },
+          include: { blAllocations: { orderBy: { id: "asc" } } },
         });
 
         if (!reglementExistant) {
@@ -377,27 +383,171 @@ export async function PATCH(req) {
             },
           });
         }
-        // Cas 2: Passage de "confirme" à un autre statut (remboursement dans le compte + suppression de transaction)
-        else if (
+        // Cas 2: Passage de "confirme" à un autre statut : remboursement compte + suppression transaction
+        if (
           ancienStatusPrelevement === "confirme" &&
           nouveauStatusPrelevement !== "confirme"
         ) {
-          // Remettre le montant dans le compte bancaire car le prélèvement n'est plus confirmé
-          // Le compte doit augmenter de la valeur du règlement
           await tx.comptesBancaires.updateMany({
             where: { compte: reglementExistant.compte },
             data: {
               solde: { increment: reglementExistant.montant },
             },
           });
-
-          // Supprimer la transaction associée au règlement confirmé
           await tx.transactions.deleteMany({
             where: {
               reference: reglementExistant.id,
               type: "depense",
             },
           });
+        }
+
+        // Cas 3: Passage à "annulé" (quel que soit l'ancien statut) : inverser l'effet de création du règlement = annuler le paiement des BL
+        if (
+          nouveauStatusPrelevement === "annule" &&
+          ancienStatusPrelevement !== "annule"
+        ) {
+          if (reglementExistant.blAllocations && reglementExistant.blAllocations.length > 0) {
+            for (const alloc of reglementExistant.blAllocations) {
+              const bl = await tx.bonLivraison.findUnique({
+                where: { id: alloc.bonLivraisonId },
+              });
+              if (bl) {
+                const nouveauTotalPaye = Math.max(
+                  0,
+                  (bl.totalPaye ?? 0) - alloc.montant
+                );
+                let nouveauStatutPaiement = "impaye";
+                if (nouveauTotalPaye > 0 && nouveauTotalPaye < bl.total) {
+                  nouveauStatutPaiement = "enPartie";
+                } else if (nouveauTotalPaye >= bl.total) {
+                  nouveauStatutPaiement = "paye";
+                }
+                await tx.bonLivraison.update({
+                  where: { id: alloc.bonLivraisonId },
+                  data: {
+                    totalPaye: nouveauTotalPaye,
+                    statutPaiement: nouveauStatutPaiement,
+                  },
+                });
+              }
+            }
+          } else if (reglementExistant.reference) {
+            const bonLivraison = await tx.bonLivraison.findUnique({
+              where: { id: reglementExistant.reference },
+            });
+            if (bonLivraison) {
+              const nouveauTotalPaye = Math.max(
+                0,
+                (bonLivraison.totalPaye ?? 0) - reglementExistant.montant
+              );
+              let nouveauStatutPaiement = bonLivraison.statutPaiement;
+              if (nouveauTotalPaye <= 0) {
+                nouveauStatutPaiement = "impaye";
+              } else if (nouveauTotalPaye < bonLivraison.total) {
+                nouveauStatutPaiement = "enPartie";
+              } else if (nouveauTotalPaye >= bonLivraison.total) {
+                nouveauStatutPaiement = "paye";
+              }
+              await tx.bonLivraison.update({
+                where: { id: reglementExistant.reference },
+                data: {
+                  totalPaye: nouveauTotalPaye,
+                  statutPaiement: nouveauStatutPaiement,
+                },
+              });
+            }
+          }
+        }
+
+        // Cas 4: Passage de "annulé" à un autre statut : repayer les BL associés à ce fournisseur (les plus anciens d'abord)
+        if (
+          ancienStatusPrelevement === "annule" &&
+          nouveauStatusPrelevement !== "annule"
+        ) {
+          if (reglementExistant.blAllocations && reglementExistant.blAllocations.length > 0) {
+            for (const alloc of reglementExistant.blAllocations) {
+              const bl = await tx.bonLivraison.findUnique({
+                where: { id: alloc.bonLivraisonId },
+              });
+              if (bl) {
+                const nouveauTotalPaye = (bl.totalPaye ?? 0) + alloc.montant;
+                let nouveauStatutPaiement = "enPartie";
+                if (nouveauTotalPaye >= bl.total) {
+                  nouveauStatutPaiement = "paye";
+                }
+                await tx.bonLivraison.update({
+                  where: { id: alloc.bonLivraisonId },
+                  data: {
+                    totalPaye: nouveauTotalPaye,
+                    statutPaiement: nouveauStatutPaiement,
+                  },
+                });
+              }
+            }
+          } else if (reglementExistant.reference) {
+            const bonLivraison = await tx.bonLivraison.findUnique({
+              where: { id: reglementExistant.reference },
+            });
+            if (bonLivraison) {
+              const nouveauTotalPaye = (bonLivraison.totalPaye ?? 0) + reglementExistant.montant;
+              let nouveauStatutPaiement = "enPartie";
+              if (nouveauTotalPaye >= bonLivraison.total) {
+                nouveauStatutPaiement = "paye";
+              }
+              await tx.bonLivraison.update({
+                where: { id: reglementExistant.reference },
+                data: {
+                  totalPaye: nouveauTotalPaye,
+                  statutPaiement: nouveauStatutPaiement,
+                },
+              });
+            }
+          } else {
+            // Pas d'allocations existantes : payer les BL du fournisseur en commençant par les plus anciens
+            const bonLivraisonList = await tx.bonLivraison.findMany({
+              where: {
+                fournisseurId: reglementExistant.fournisseurId,
+                statutPaiement: { in: ["impaye", "enPartie"] },
+                type: "achats",
+              },
+              orderBy: { date: "asc" },
+            });
+            let montantRestant = reglementExistant.montant;
+            for (const bl of bonLivraisonList) {
+              if (montantRestant <= 0) break;
+              const totalPayeActuel = bl.totalPaye ?? 0;
+              const resteAPayer = bl.total - totalPayeActuel;
+              let montantAlloue = 0;
+              if (montantRestant >= resteAPayer) {
+                montantAlloue = resteAPayer;
+                montantRestant -= resteAPayer;
+                await tx.bonLivraison.update({
+                  where: { id: bl.id },
+                  data: { totalPaye: bl.total, statutPaiement: "paye" },
+                });
+              } else {
+                montantAlloue = montantRestant;
+                montantRestant = 0;
+                await tx.bonLivraison.update({
+                  where: { id: bl.id },
+                  data: {
+                    totalPaye: { increment: montantAlloue },
+                    statutPaiement: "enPartie",
+                  },
+                });
+              }
+              if (montantAlloue > 0) {
+                await tx.reglementBlAllocation.create({
+                  data: {
+                    reglementId: reglementExistant.id,
+                    bonLivraisonId: bl.id,
+                    montant: montantAlloue,
+                  },
+                });
+              }
+            }
+          }
         }
 
         // Mettre à jour le statusPrelevement du règlement
@@ -423,7 +573,128 @@ export async function PATCH(req) {
         return NextResponse.json({ error: "Statut invalide" }, { status: 400 });
       }
 
-      // Mettre à jour le statut du règlement
+      const reglementExistant = await prisma.reglement.findUnique({
+        where: { id },
+        include: { blAllocations: { orderBy: { id: "asc" } } },
+      });
+      if (!reglementExistant) {
+        return NextResponse.json({ error: "Règlement non trouvé" }, { status: 404 });
+      }
+
+      // Si passage à "annule", inverser l'effet sur les BL (annuler le paiement des BL)
+      if (statut === "annule" && reglementExistant.statut !== "annule") {
+        await prisma.$transaction(async tx => {
+          if (reglementExistant.blAllocations && reglementExistant.blAllocations.length > 0) {
+            for (const alloc of reglementExistant.blAllocations) {
+              const bl = await tx.bonLivraison.findUnique({
+                where: { id: alloc.bonLivraisonId },
+              });
+              if (bl) {
+                const nouveauTotalPaye = Math.max(0, (bl.totalPaye ?? 0) - alloc.montant);
+                let nouveauStatutPaiement = "impaye";
+                if (nouveauTotalPaye > 0 && nouveauTotalPaye < bl.total) nouveauStatutPaiement = "enPartie";
+                else if (nouveauTotalPaye >= bl.total) nouveauStatutPaiement = "paye";
+                await tx.bonLivraison.update({
+                  where: { id: alloc.bonLivraisonId },
+                  data: { totalPaye: nouveauTotalPaye, statutPaiement: nouveauStatutPaiement },
+                });
+              }
+            }
+          } else if (reglementExistant.reference) {
+            const bonLivraison = await tx.bonLivraison.findUnique({
+              where: { id: reglementExistant.reference },
+            });
+            if (bonLivraison) {
+              const nouveauTotalPaye = Math.max(0, (bonLivraison.totalPaye ?? 0) - reglementExistant.montant);
+              let nouveauStatutPaiement = "impaye";
+              if (nouveauTotalPaye > 0 && nouveauTotalPaye < bonLivraison.total) nouveauStatutPaiement = "enPartie";
+              else if (nouveauTotalPaye >= bonLivraison.total) nouveauStatutPaiement = "paye";
+              await tx.bonLivraison.update({
+                where: { id: reglementExistant.reference },
+                data: { totalPaye: nouveauTotalPaye, statutPaiement: nouveauStatutPaiement },
+              });
+            }
+          }
+        });
+      }
+
+      // Si passage de "annule" à un autre statut : repayer les BL du fournisseur (les plus anciens d'abord)
+      if (reglementExistant.statut === "annule" && statut !== "annule") {
+        await prisma.$transaction(async tx => {
+          if (reglementExistant.blAllocations && reglementExistant.blAllocations.length > 0) {
+            for (const alloc of reglementExistant.blAllocations) {
+              const bl = await tx.bonLivraison.findUnique({
+                where: { id: alloc.bonLivraisonId },
+              });
+              if (bl) {
+                const nouveauTotalPaye = (bl.totalPaye ?? 0) + alloc.montant;
+                let nouveauStatutPaiement = "enPartie";
+                if (nouveauTotalPaye >= bl.total) nouveauStatutPaiement = "paye";
+                await tx.bonLivraison.update({
+                  where: { id: alloc.bonLivraisonId },
+                  data: { totalPaye: nouveauTotalPaye, statutPaiement: nouveauStatutPaiement },
+                });
+              }
+            }
+          } else if (reglementExistant.reference) {
+            const bonLivraison = await tx.bonLivraison.findUnique({
+              where: { id: reglementExistant.reference },
+            });
+            if (bonLivraison) {
+              const nouveauTotalPaye = (bonLivraison.totalPaye ?? 0) + reglementExistant.montant;
+              let nouveauStatutPaiement = "enPartie";
+              if (nouveauTotalPaye >= bonLivraison.total) nouveauStatutPaiement = "paye";
+              await tx.bonLivraison.update({
+                where: { id: reglementExistant.reference },
+                data: { totalPaye: nouveauTotalPaye, statutPaiement: nouveauStatutPaiement },
+              });
+            }
+          } else {
+            const bonLivraisonList = await tx.bonLivraison.findMany({
+              where: {
+                fournisseurId: reglementExistant.fournisseurId,
+                statutPaiement: { in: ["impaye", "enPartie"] },
+                type: "achats",
+              },
+              orderBy: { date: "asc" },
+            });
+            let montantRestant = reglementExistant.montant;
+            for (const bl of bonLivraisonList) {
+              if (montantRestant <= 0) break;
+              const resteAPayer = bl.total - (bl.totalPaye ?? 0);
+              let montantAlloue = 0;
+              if (montantRestant >= resteAPayer) {
+                montantAlloue = resteAPayer;
+                montantRestant -= resteAPayer;
+                await tx.bonLivraison.update({
+                  where: { id: bl.id },
+                  data: { totalPaye: bl.total, statutPaiement: "paye" },
+                });
+              } else {
+                montantAlloue = montantRestant;
+                montantRestant = 0;
+                await tx.bonLivraison.update({
+                  where: { id: bl.id },
+                  data: {
+                    totalPaye: { increment: montantAlloue },
+                    statutPaiement: "enPartie",
+                  },
+                });
+              }
+              if (montantAlloue > 0) {
+                await tx.reglementBlAllocation.create({
+                  data: {
+                    reglementId: reglementExistant.id,
+                    bonLivraisonId: bl.id,
+                    montant: montantAlloue,
+                  },
+                });
+              }
+            }
+          }
+        });
+      }
+
       const reglement = await prisma.reglement.update({
         where: { id },
         data: { statut },

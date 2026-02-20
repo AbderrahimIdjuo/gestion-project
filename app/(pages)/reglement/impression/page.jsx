@@ -71,12 +71,12 @@ export default function ImpressionReglements() {
         return "En attente";
       case "confirme":
         return "Confirmé";
+      case "annule":
       case "echoue":
-        return "Échoué";
+      case "refuse":
+        return "Annulé";
       case "reporte":
         return "Reporté";
-      case "refuse":
-        return "Refusé";
       default:
         return "—";
     }

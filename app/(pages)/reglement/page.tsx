@@ -101,9 +101,8 @@ type Reglement = {
   statusPrelevement?:
     | "en_attente"
     | "confirme"
-    | "echoue"
-    | "reporte"
-    | "refuse";
+    | "annule"
+    | "reporte";
   motif?: string | null;
   statut: "en_attente" | "paye" | "en_retard" | "annule";
   factureAchatsId?: string | null;
@@ -358,13 +357,13 @@ function ReglementContent() {
     montant: [0, 0] as [number, number],
   });
   const [statusPrelevements, setStatusPrelevements] = useState<
-    Record<string, "en_attente" | "confirme" | "echoue" | "reporte" | "refuse">
+    Record<string, "en_attente" | "confirme" | "annule" | "reporte">
   >({});
   const [statutChangeDialog, setStatutChangeDialog] = useState(false);
   const [pendingStatutChange, setPendingStatutChange] = useState<{
     id: string;
     currentStatut: string;
-    newStatut: "en_attente" | "confirme" | "echoue" | "reporte" | "refuse";
+    newStatut: "en_attente" | "confirme" | "annule" | "reporte";
     fournisseurNom?: string;
   } | null>(null);
   const [prelevementDialogOpen, setPrelevementDialogOpen] = useState(false);
@@ -629,9 +628,8 @@ function ReglementContent() {
       statusPrelevement:
         | "en_attente"
         | "confirme"
-        | "echoue"
-        | "reporte"
-        | "refuse";
+        | "annule"
+        | "reporte";
     }) => {
       if (!isAdmin) {
         throw new Error("Access denied. Admin role required.");
@@ -791,12 +789,12 @@ function ReglementContent() {
         return "En attente";
       case "confirme":
         return "Confirmé";
+      case "annule":
       case "echoue":
-        return "Échoué";
+      case "refuse":
+        return "Annulé";
       case "reporte":
         return "Reporté";
-      case "refuse":
-        return "Refusé";
       default:
         return "—";
     }
@@ -808,12 +806,12 @@ function ReglementContent() {
         return "bg-amber-100 text-amber-700";
       case "confirme":
         return "bg-green-100 text-green-700";
+      case "annule":
       case "echoue":
-        return "bg-red-100 text-red-700";
-      case "reporte":
-        return "bg-amber-100 text-amber-700";
       case "refuse":
-        return "bg-gray-100 text-gray-700";
+        return "bg-rose-100 text-rose-700";
+      case "reporte":
+        return "bg-purple-100 text-purple-700";
       default:
         return "bg-gray-100 text-gray-700";
     }
@@ -823,9 +821,8 @@ function ReglementContent() {
   const statusPrelevementOptions = [
     { value: "en_attente", label: "En attente", color: "amber-500" },
     { value: "confirme", label: "Confirmé", color: "green-500" },
-    { value: "echoue", label: "Échoué", color: "red-500" },
-    { value: "reporte", label: "Reporté", color: "amber-500" },
-    { value: "refuse", label: "Refusé", color: "gray-500" },
+    { value: "annule", label: "Annulé", color: "rose-500" },
+    { value: "reporte", label: "Reporté", color: "purple-500" },
   ];
 
   // Fonctions pour gérer les statuts de prélèvement multiples
@@ -902,15 +899,13 @@ function ReglementContent() {
     newStatusPrelevement:
       | "en_attente"
       | "confirme"
-      | "echoue"
-      | "reporte"
-      | "refuse",
+      | "annule"
+      | "reporte",
     currentStatusPrelevement:
       | "en_attente"
       | "confirme"
-      | "echoue"
+      | "annule"
       | "reporte"
-      | "refuse"
       | null
       | undefined,
     fournisseurNom?: string,
@@ -1151,10 +1146,10 @@ function ReglementContent() {
                                                 ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
                                                 : statut === "confirme"
                                                 ? "bg-green-100 text-green-800 hover:bg-green-200"
-                                                : statut === "echoue"
-                                                ? "bg-red-100 text-red-800 hover:bg-red-200"
+                                                : statut === "annule"
+                                                ? "bg-rose-100 text-rose-800 hover:bg-rose-200"
                                                 : statut === "reporte"
-                                                ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
+                                                ? "bg-purple-100 text-purple-800 hover:bg-purple-200"
                                                 : "bg-gray-100 text-gray-800 hover:bg-gray-200"
                                             }`}
                                           >
@@ -1718,9 +1713,8 @@ function ReglementContent() {
                                                   value as
                                                     | "en_attente"
                                                     | "confirme"
-                                                    | "echoue"
-                                                    | "reporte"
-                                                    | "refuse",
+                                                    | "annule"
+                                                    | "reporte",
                                                   (statusPrelevements[
                                                     reglement.id
                                                   ] ||
@@ -1728,9 +1722,8 @@ function ReglementContent() {
                                                     "en_attente") as
                                                     | "en_attente"
                                                     | "confirme"
-                                                    | "echoue"
+                                                    | "annule"
                                                     | "reporte"
-                                                    | "refuse"
                                                     | null
                                                     | undefined,
                                                   reglement.fournisseur.nom,
@@ -1770,22 +1763,17 @@ function ReglementContent() {
                                                     Confirmé
                                                   </span>
                                                 </SelectItem>
-                                                <SelectItem value="echoue">
-                                                  <span className="flex items-center gap-2">
-                                                    <span className="h-2 w-2 rounded-full bg-red-500"></span>
-                                                    Échoué
-                                                  </span>
-                                                </SelectItem>
+                                           
                                                 <SelectItem value="reporte">
                                                   <span className="flex items-center gap-2">
-                                                    <span className="h-2 w-2 rounded-full bg-amber-500"></span>
+                                                    <span className="h-2 w-2 rounded-full bg-purple-500"></span>
                                                     Reporté
                                                   </span>
                                                 </SelectItem>
-                                                <SelectItem value="refuse">
+                                                     <SelectItem value="annule">
                                                   <span className="flex items-center gap-2">
-                                                    <span className="h-2 w-2 rounded-full bg-gray-500"></span>
-                                                    Refusé
+                                                    <span className="h-2 w-2 rounded-full bg-rose-500"></span>
+                                                    Annulé
                                                   </span>
                                                 </SelectItem>
                                               </SelectContent>

@@ -22,12 +22,12 @@ export async function POST(
     }
 
     // Validate status
-    const validStatuses = ["confirme", "echoue", "reporte", "refuse"];
+    const validStatuses = ["confirme", "annule", "reporte"];
     if (!status || !validStatuses.includes(status)) {
       return NextResponse.json(
         {
           error:
-            "Statut invalide. Doit être: confirme, echoue, reporte, ou refuse",
+            "Statut invalide. Doit être: confirme, annule, ou reporte",
         },
         { status: 400 }
       );
@@ -41,7 +41,7 @@ export async function POST(
       );
     }
 
-    // Check if règlement exists
+    // Check if règlement exists (avec allocations BL pour mise à jour en cas d'annulation)
     const reglementExistant = await prisma.reglement.findUnique({
       where: { id },
       include: {
@@ -51,6 +51,7 @@ export async function POST(
             nom: true,
           },
         },
+        blAllocations: { orderBy: { id: "asc" } },
       },
     });
 
@@ -129,27 +130,165 @@ export async function POST(
           },
         });
       }
-      // Cas 2: Passage de "confirme" à un autre statut (remboursement dans le compte + suppression de transaction)
-      else if (
+      // Cas 2: Passage de "confirme" à un autre statut : remboursement + suppression transaction
+      if (
         ancienStatusPrelevement === "confirme" &&
         nouveauStatusPrelevement !== "confirme"
       ) {
-        // Remettre le montant dans le compte bancaire car le prélèvement n'est plus confirmé
-        // Le compte doit augmenter de la valeur du règlement
         await tx.comptesBancaires.updateMany({
           where: { compte: reglementExistant.compte },
           data: {
             solde: { increment: reglementExistant.montant },
           },
         });
-
-        // Supprimer la transaction associée au règlement confirmé
         await tx.transactions.deleteMany({
           where: {
             reference: reglementExistant.id,
             type: "depense",
           },
         });
+      }
+
+      // Cas 3: Passage à "annulé" (quel que soit l'ancien statut) : inverser l'effet de création = annuler le paiement des BL
+      if (
+        nouveauStatusPrelevement === "annule" &&
+        ancienStatusPrelevement !== "annule"
+      ) {
+        if (reglementExistant.blAllocations && reglementExistant.blAllocations.length > 0) {
+          for (const alloc of reglementExistant.blAllocations) {
+            const bl = await tx.bonLivraison.findUnique({
+              where: { id: alloc.bonLivraisonId },
+            });
+            if (bl) {
+              const nouveauTotalPaye = Math.max(
+                0,
+                (bl.totalPaye ?? 0) - alloc.montant
+              );
+              let nouveauStatutPaiement = "impaye";
+              if (nouveauTotalPaye > 0 && nouveauTotalPaye < bl.total) {
+                nouveauStatutPaiement = "enPartie";
+              } else if (nouveauTotalPaye >= bl.total) {
+                nouveauStatutPaiement = "paye";
+              }
+              await tx.bonLivraison.update({
+                where: { id: alloc.bonLivraisonId },
+                data: {
+                  totalPaye: nouveauTotalPaye,
+                  statutPaiement: nouveauStatutPaiement,
+                },
+              });
+            }
+          }
+        } else if (reglementExistant.reference) {
+          const bonLivraison = await tx.bonLivraison.findUnique({
+            where: { id: reglementExistant.reference },
+          });
+          if (bonLivraison) {
+            const nouveauTotalPaye = Math.max(
+              0,
+              (bonLivraison.totalPaye ?? 0) - reglementExistant.montant
+            );
+            let nouveauStatutPaiement = bonLivraison.statutPaiement;
+            if (nouveauTotalPaye <= 0) {
+              nouveauStatutPaiement = "impaye";
+            } else if (nouveauTotalPaye < bonLivraison.total) {
+              nouveauStatutPaiement = "enPartie";
+            } else if (nouveauTotalPaye >= bonLivraison.total) {
+              nouveauStatutPaiement = "paye";
+            }
+            await tx.bonLivraison.update({
+              where: { id: reglementExistant.reference },
+              data: {
+                totalPaye: nouveauTotalPaye,
+                statutPaiement: nouveauStatutPaiement,
+              },
+            });
+          }
+        }
+      }
+
+      // Cas 4: Passage de "annulé" à un autre statut : repayer les BL du fournisseur (les plus anciens d'abord)
+      if (
+        ancienStatusPrelevement === "annule" &&
+        nouveauStatusPrelevement !== "annule"
+      ) {
+        if (reglementExistant.blAllocations && reglementExistant.blAllocations.length > 0) {
+          for (const alloc of reglementExistant.blAllocations) {
+            const bl = await tx.bonLivraison.findUnique({
+              where: { id: alloc.bonLivraisonId },
+            });
+            if (bl) {
+              const nouveauTotalPaye = (bl.totalPaye ?? 0) + alloc.montant;
+              let nouveauStatutPaiement = "enPartie";
+              if (nouveauTotalPaye >= bl.total) nouveauStatutPaiement = "paye";
+              await tx.bonLivraison.update({
+                where: { id: alloc.bonLivraisonId },
+                data: {
+                  totalPaye: nouveauTotalPaye,
+                  statutPaiement: nouveauStatutPaiement,
+                },
+              });
+            }
+          }
+        } else if (reglementExistant.reference) {
+          const bonLivraison = await tx.bonLivraison.findUnique({
+            where: { id: reglementExistant.reference },
+          });
+          if (bonLivraison) {
+            const nouveauTotalPaye = (bonLivraison.totalPaye ?? 0) + reglementExistant.montant;
+            let nouveauStatutPaiement = "enPartie";
+            if (nouveauTotalPaye >= bonLivraison.total) nouveauStatutPaiement = "paye";
+            await tx.bonLivraison.update({
+              where: { id: reglementExistant.reference },
+              data: {
+                totalPaye: nouveauTotalPaye,
+                statutPaiement: nouveauStatutPaiement,
+              },
+            });
+          }
+        } else {
+          const bonLivraisonList = await tx.bonLivraison.findMany({
+            where: {
+              fournisseurId: reglementExistant.fournisseurId,
+              statutPaiement: { in: ["impaye", "enPartie"] },
+              type: "achats",
+            },
+            orderBy: { date: "asc" },
+          });
+          let montantRestant = reglementExistant.montant;
+          for (const bl of bonLivraisonList) {
+            if (montantRestant <= 0) break;
+            const resteAPayer = bl.total - (bl.totalPaye ?? 0);
+            let montantAlloue = 0;
+            if (montantRestant >= resteAPayer) {
+              montantAlloue = resteAPayer;
+              montantRestant -= resteAPayer;
+              await tx.bonLivraison.update({
+                where: { id: bl.id },
+                data: { totalPaye: bl.total, statutPaiement: "paye" },
+              });
+            } else {
+              montantAlloue = montantRestant;
+              montantRestant = 0;
+              await tx.bonLivraison.update({
+                where: { id: bl.id },
+                data: {
+                  totalPaye: { increment: montantAlloue },
+                  statutPaiement: "enPartie",
+                },
+              });
+            }
+            if (montantAlloue > 0) {
+              await tx.reglementBlAllocation.create({
+                data: {
+                  reglementId: reglementExistant.id,
+                  bonLivraisonId: bl.id,
+                  montant: montantAlloue,
+                },
+              });
+            }
+          }
+        }
       }
 
       // Update the règlement

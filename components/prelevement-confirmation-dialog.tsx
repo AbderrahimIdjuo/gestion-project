@@ -26,7 +26,7 @@ import { Ban, CalendarClock, CalendarIcon, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 
-type PrelevementStatus = "confirme" | "echoue" | "reporte" | "refuse";
+type PrelevementStatus = "confirme" | "annule" | "reporte";
 
 interface PrelevementConfirmationDialogProps {
   isOpen: boolean;
@@ -204,13 +204,13 @@ export function PrelevementConfirmationDialog({
               "reporte",
               "Reporté",
               <CalendarClock className="h-5 w-5" />,
-              "bg-amber-500 hover:bg-amber-600 text-white"
+              "bg-purple-500 hover:bg-purple-600 text-white"
             )}
             {getStatusButton(
-              "refuse",
-              "Refusé",
+              "annule",
+              "Annulé",
               <Ban className="h-5 w-5" />,
-              "bg-gray-500 hover:bg-gray-600 text-white"
+              "bg-rose-500 hover:bg-rose-600 text-white"
             )}
           </div>
 

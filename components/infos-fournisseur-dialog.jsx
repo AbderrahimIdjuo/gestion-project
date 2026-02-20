@@ -475,12 +475,12 @@ export default function InfosFournisseurDialog({
         return "En attente";
       case "confirme":
         return "Confirmé";
+      case "annule":
       case "echoue":
-        return "Échoué";
+      case "refuse":
+        return "Annulé";
       case "reporte":
         return "Reporté";
-      case "refuse":
-        return "Refusé";
       default:
         return "—";
     }
@@ -493,12 +493,12 @@ export default function InfosFournisseurDialog({
         return "bg-amber-100 text-amber-700";
       case "confirme":
         return "bg-green-100 text-green-700";
+      case "annule":
       case "echoue":
-        return "bg-red-100 text-red-700";
-      case "reporte":
-        return "bg-amber-100 text-amber-700";
       case "refuse":
-        return "bg-gray-100 text-gray-700";
+        return "bg-rose-100 text-rose-700";
+      case "reporte":
+        return "bg-purple-100 text-purple-700";
       default:
         return "bg-gray-100 text-gray-700";
     }

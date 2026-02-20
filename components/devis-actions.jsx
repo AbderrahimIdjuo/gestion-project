@@ -111,7 +111,8 @@ export function DevisActions({
               Imprimer
             </span>
           </DropdownMenuItem>
-          <DropdownMenuItem
+           {/* Cacher la fonctionnalité de création de facture pour le moment */}
+          {/* <DropdownMenuItem
             onClick={() => {
               setIsFactureOpen(true);
               setMenuOpen(false);
@@ -123,7 +124,7 @@ export function DevisActions({
             <span className="transition-colors duration-200 group-hover:text-emerald-600 group-hover:bg-emerald-100">
               créer une facture
             </span>
-          </DropdownMenuItem>
+          </DropdownMenuItem> */}
         </DropdownMenuContent>
       </DropdownMenu>
       <PaiementDialog

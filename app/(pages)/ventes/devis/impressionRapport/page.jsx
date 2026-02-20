@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/functions";
+import { useUser } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import "./page.css";
 
@@ -105,8 +107,18 @@ function RapportSkeleton() {
 }
 
 export default function ImpressionRapportDevis() {
+  const { user } = useUser();
+  const router = useRouter();
+  const isAdmin = user?.publicMetadata?.role === "admin";
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (user && !isAdmin) {
+      router.replace("/ventes/devis");
+      return;
+    }
+  }, [user, isAdmin, router]);
 
   useEffect(() => {
     const stored = localStorage.getItem("devis-rapport");
@@ -119,6 +131,10 @@ export default function ImpressionRapportDevis() {
     }
     setIsLoading(false);
   }, []);
+
+  if (user && !isAdmin) {
+    return null;
+  }
 
   if (isLoading) {
     return (

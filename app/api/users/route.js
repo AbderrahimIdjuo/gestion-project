@@ -1,5 +1,6 @@
 import { createClerkClient } from "@clerk/backend";
 import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { requireAdmin } from "@/lib/auth-utils";
 
 // Create Clerk client instance
@@ -7,10 +8,13 @@ const clerkClient = createClerkClient({
   secretKey: process.env.CLERK_SECRET_KEY,
 });
 
-// GET - Récupérer tous les utilisateurs
+// GET - Récupérer tous les utilisateurs (accessible à tous les utilisateurs authentifiés, ex. pour afficher les noms sur la page devis)
 export async function GET() {
   try {
-    await requireAdmin();
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
+    }
     const { data: users } = await clerkClient.users.getUserList({ limit: 100 });
 
     const mappedUsers = users

@@ -276,35 +276,6 @@ export default function DevisPDFPage() {
                 <TableRow>
                   <TableCell
                     colSpan={6}
-                    className=" p-2 text-right text-lg font-bold"
-                  >
-                    Total H.T :
-                  </TableCell>
-                  <TableCell
-                    colSpan={2}
-                    className="border-l border-black p-2 text-left text-lg font-bold"
-                  >
-                    {formatCurrency(total)}
-                  </TableCell>
-                </TableRow>
-
-                <TableRow>
-                  <TableCell
-                    colSpan={6}
-                    className="border-t border-black p-2 text-right text-lg font-bold"
-                  >
-                    TVA :
-                  </TableCell>
-                  <TableCell
-                    colSpan={2}
-                    className="border-l border-t border-black p-2 text-lg text-left font-bold"
-                  >
-                    {formatCurrency(tva(total))}
-                  </TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell
-                    colSpan={6}
                     className=" text-gray-900 border-t border-black  text-xl p-2 text-right font-extrabold"
                   >
                     Total TTC:
@@ -313,7 +284,7 @@ export default function DevisPDFPage() {
                     colSpan={2}
                     className="border-l border-t border-black p-2 text-xl text-gray-900 text-left font-extrabold"
                   >
-                    {formatCurrency(totalTTC(total))}
+                    {formatCurrency(total)}
                   </TableCell>
                 </TableRow>
               </TableFooter>

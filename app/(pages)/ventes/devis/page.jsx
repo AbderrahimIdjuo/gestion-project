@@ -923,7 +923,7 @@ export default function DevisPage() {
                       <Printer className="h-4 w-4" />
                       Imprimer
                     </Button>
-                    <DevisRapportDialog />
+                    {isAdmin && <DevisRapportDialog />}
                     <Link href="/ventes/devis/nouveau">
                       <AddButton title="Nouveau devis" />
                     </Link>
