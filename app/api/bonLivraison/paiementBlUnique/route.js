@@ -48,7 +48,7 @@ export async function POST(req) {
         });
       }
 
-      // Création d'un nouveau règlement
+      // Création d'un nouveau règlement (numero = numéro de chèque ou numéro de versement)
       const reglement = await prisma.reglement.create({
         data: {
           fournisseur: {
@@ -66,6 +66,12 @@ export async function POST(req) {
             methodePaiement === "espece" || methodePaiement === "versement"
               ? "confirme"
               : "en_attente",
+          numero:
+            cheque != null
+              ? cheque.numero ?? null
+              : methodePaiement === "versement"
+                ? numeroCheque ?? null
+                : null,
           cheque: cheque
             ? {
                 connect: { id: cheque.id },
@@ -74,10 +80,20 @@ export async function POST(req) {
         },
       });
 
+      // Lier le règlement au BL via ReglementBlAllocation (pour l'historique des règlements sur le BL)
+      await prisma.reglementBlAllocation.create({
+        data: {
+          reglementId: reglement.id,
+          bonLivraisonId: bonLivraisonId,
+          montant: montant,
+        },
+      });
+
       // creation de la transaction uniquement si méthode de paiement est "espece" ou "versement"
       if (methodePaiement === "espece" || methodePaiement === "versement") {
         await prisma.transactions.create({
           data: {
+            ReglementId: reglement ? reglement.id : null,
             reference: reglement ? reglement.id : null,
             type,
             montant,

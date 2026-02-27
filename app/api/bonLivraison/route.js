@@ -436,6 +436,24 @@ export async function GET(req) {
               id: true,
             },
           },
+          reglementBlAllocations: {
+            include: {
+              reglement: {
+                select: {
+                  numero: true,
+                  methodePaiement: true,
+                  dateReglement: true,
+                  datePrelevement: true,
+                  compte: true,
+                  motif: true,
+                  reference: true,
+                  cheque: {
+                    select: { numero: true },
+                  },
+                },
+              },
+            },
+          },
           groups: {
             include: {
               produits: {

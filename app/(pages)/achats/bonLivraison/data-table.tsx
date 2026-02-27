@@ -28,12 +28,20 @@ interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   isLoading: Boolean;
+  getRowId?: (row: TData) => string;
+  expandedRowId?: string | null;
+  onToggleExpand?: (rowId: string) => void;
+  renderExpandedRow?: (row: TData) => React.ReactNode;
 }
 
 export function DataTable<TData, TValue>({
   isLoading,
   columns,
   data,
+  getRowId,
+  expandedRowId,
+  onToggleExpand,
+  renderExpandedRow,
 }: DataTableProps<TData, TValue>) {
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
@@ -158,21 +166,36 @@ export function DataTable<TData, TValue>({
             </TableHeader>
             <TableBody>
               {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map(row => (
-                  <TableRow
-                    key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
-                  >
-                    {row.getVisibleCells().map(cell => (
-                      <TableCell key={cell.id}>
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
+                table.getRowModel().rows.map(row => {
+                  const rowId = getRowId ? getRowId(row.original) : row.id;
+                  const isExpanded = expandedRowId != null && expandedRowId === rowId;
+                  return (
+                    <React.Fragment key={row.id}>
+                      <TableRow
+                        data-state={row.getIsSelected() && "selected"}
+                      >
+                        {row.getVisibleCells().map(cell => (
+                          <TableCell key={cell.id}>
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext()
+                            )}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                      {isExpanded && renderExpandedRow && (
+                        <TableRow>
+                          <TableCell
+                            colSpan={row.getVisibleCells().length}
+                            className="bg-gray-50 p-4"
+                          >
+                            {renderExpandedRow(row.original)}
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </React.Fragment>
+                  );
+                })
               ) : (
                 <TableRow>
                   <TableCell

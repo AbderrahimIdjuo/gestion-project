@@ -363,6 +363,7 @@ export async function PATCH(req) {
           // Créer une transaction pour enregistrer le prélèvement confirmé
           await tx.transactions.create({
             data: {
+              ReglementId: reglementExistant.id,
               reference: reglementExistant.id,
               type: "depense",
               montant: reglementExistant.montant,
@@ -396,13 +397,15 @@ export async function PATCH(req) {
           });
           await tx.transactions.deleteMany({
             where: {
-              reference: reglementExistant.id,
-              type: "depense",
+              OR: [
+                { ReglementId: reglementExistant.id },
+                { reference: reglementExistant.id, type: "depense" },
+              ],
             },
           });
         }
 
-        // Cas 3: Passage à "annulé" (quel que soit l'ancien statut) : inverser l'effet de création du règlement = annuler le paiement des BL
+        // Cas 3: Passage à "annulé" (quel que soit l'ancien statut) : inverser l'effet de création du règlement = annuler le paiement des BL et supprimer les allocations
         if (
           nouveauStatusPrelevement === "annule" &&
           ancienStatusPrelevement !== "annule"
@@ -432,6 +435,7 @@ export async function PATCH(req) {
                 });
               }
             }
+            await tx.reglementBlAllocation.deleteMany({ where: { reglementId: id } });
           } else if (reglementExistant.reference) {
             const bonLivraison = await tx.bonLivraison.findUnique({
               where: { id: reglementExistant.reference },
@@ -581,7 +585,7 @@ export async function PATCH(req) {
         return NextResponse.json({ error: "Règlement non trouvé" }, { status: 404 });
       }
 
-      // Si passage à "annule", inverser l'effet sur les BL (annuler le paiement des BL)
+      // Si passage à "annule", inverser l'effet sur les BL (annuler le paiement des BL) et supprimer les allocations
       if (statut === "annule" && reglementExistant.statut !== "annule") {
         await prisma.$transaction(async tx => {
           if (reglementExistant.blAllocations && reglementExistant.blAllocations.length > 0) {
@@ -600,6 +604,7 @@ export async function PATCH(req) {
                 });
               }
             }
+            await tx.reglementBlAllocation.deleteMany({ where: { reglementId: id } });
           } else if (reglementExistant.reference) {
             const bonLivraison = await tx.bonLivraison.findUnique({
               where: { id: reglementExistant.reference },
@@ -844,7 +849,14 @@ export async function PUT(req) {
         });
       }
 
-      // Mettre à jour le règlement
+      // Mettre à jour le règlement (numero = numéro de chèque ou numéro de versement)
+      const nouveauNumero =
+        methodePaiement === "cheque" || methodePaiement === "traite"
+          ? numeroCheque ?? reglementExistant.cheque?.numero ?? reglementExistant.numero ?? null
+          : methodePaiement === "versement"
+            ? numeroCheque ?? reglementExistant.numero ?? null
+            : reglementExistant.numero ?? null;
+
       const reglement = await tx.reglement.update({
         where: { id },
         data: {
@@ -856,6 +868,7 @@ export async function PUT(req) {
             : reglementExistant.dateReglement,
           datePrelevement: datePrelevement || reglementExistant.datePrelevement,
           motif: motif !== undefined ? motif : reglementExistant.motif,
+          numero: nouveauNumero,
           chequeId: chequeId,
         },
         include: {
@@ -894,10 +907,10 @@ export async function PUT(req) {
         const nouveauMotif =
           motif !== undefined ? motif : reglementExistant.motif;
 
-        // Chercher la transaction associée au règlement par reference
+        // Chercher la transaction associée au règlement par ReglementId ou reference
         const transactionExistante = await tx.transactions.findFirst({
           where: {
-            reference: id,
+            OR: [{ ReglementId: id }, { reference: id }],
             type: "depense",
           },
         });
@@ -929,6 +942,7 @@ export async function PUT(req) {
           // Si la transaction n'existe pas, la créer
           await tx.transactions.create({
             data: {
+              ReglementId: id,
               reference: id,
               type: "depense",
               montant: nouveauMontant,
@@ -1063,10 +1077,14 @@ export async function DELETE(req) {
         },
       });
 
-      // Supprimer la transaction associée si elle existe (l'id du règlement est stocké dans reference)
+      // Supprimer les transactions associées au règlement (ReglementId, ou reference / chequeId pour rétrocompatibilité)
       await tx.transactions.deleteMany({
         where: {
-          reference: id,
+          OR: [
+            { ReglementId: id },
+            { reference: id },
+            ...(reglement.chequeId ? [{ chequeId: reglement.chequeId }] : []),
+          ],
         },
       });
 

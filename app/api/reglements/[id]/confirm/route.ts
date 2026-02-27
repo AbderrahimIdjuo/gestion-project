@@ -143,13 +143,15 @@ export async function POST(
         });
         await tx.transactions.deleteMany({
           where: {
-            reference: reglementExistant.id,
-            type: "depense",
+            OR: [
+              { ReglementId: reglementExistant.id },
+              { reference: reglementExistant.id, type: "depense" },
+            ],
           },
         });
       }
 
-      // Cas 3: Passage à "annulé" (quel que soit l'ancien statut) : inverser l'effet de création = annuler le paiement des BL
+      // Cas 3: Passage à "annulé" (quel que soit l'ancien statut) : inverser l'effet de création = annuler le paiement des BL et supprimer les allocations
       if (
         nouveauStatusPrelevement === "annule" &&
         ancienStatusPrelevement !== "annule"
@@ -179,6 +181,7 @@ export async function POST(
               });
             }
           }
+          await tx.reglementBlAllocation.deleteMany({ where: { reglementId: id } });
         } else if (reglementExistant.reference) {
           const bonLivraison = await tx.bonLivraison.findUnique({
             where: { id: reglementExistant.reference },

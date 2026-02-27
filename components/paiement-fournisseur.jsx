@@ -146,7 +146,7 @@ export default function PaiementFournisseurDialog({
           <form onSubmit={handleSubmit(onSubmit)}>
             <DialogHeader>
               <DialogTitle>
-                #### Paiement en faveur de {fournisseur?.nom}
+              Paiement en faveur de {fournisseur?.nom}
               </DialogTitle>
               <DialogDescription>
                 Sélectionnez le type de paiement et remplissez les détails

@@ -98,9 +98,10 @@ export function PrelevementConfirmationDialog({
         id: loadingToast,
       });
 
-      // Invalider les queries pour mettre à jour les notifications
+      // Invalider les queries pour mettre à jour les notifications et l'historique BL
       queryClient.invalidateQueries({ queryKey: ["today-prelevements"] });
       queryClient.invalidateQueries({ queryKey: ["reglements"] });
+      queryClient.invalidateQueries({ queryKey: ["bonLivraison"] });
 
       // Reset state
       setSelectedStatus(null);

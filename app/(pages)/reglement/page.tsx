@@ -104,6 +104,7 @@ type Reglement = {
     | "annule"
     | "reporte";
   motif?: string | null;
+  numero?: string | null;
   statut: "en_attente" | "paye" | "en_retard" | "annule";
   factureAchatsId?: string | null;
   factureAchats?: {
@@ -642,6 +643,7 @@ function ReglementContent() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["reglements"] });
+      queryClient.invalidateQueries({ queryKey: ["bonLivraison"] });
       // Invalider aussi les notifications de prélèvements
       queryClient.invalidateQueries({ queryKey: ["today-prelevements"] });
     },
@@ -1803,7 +1805,7 @@ function ReglementContent() {
                                     )}
                                     {visibleColumns.numero && (
                                       <TableCell className="font-medium py-0">
-                                        {reglementTable.cheque?.numero || "—"}
+                                        {reglement.numero ?? reglement.cheque?.numero ?? "—"}
                                       </TableCell>
                                     )}
                                     {visibleColumns.facture && (
@@ -2054,6 +2056,7 @@ function ReglementContent() {
         }
         onConfirm={() => {
           queryClient.invalidateQueries({ queryKey: ["reglements"] });
+          queryClient.invalidateQueries({ queryKey: ["bonLivraison"] });
         }}
       />
       <Dialog open={chequeDialogOpen} onOpenChange={setChequeDialogOpen}>

@@ -15,6 +15,7 @@ import {
 import { formatCurrency } from "@/lib/functions";
 import { ColumnDef } from "@tanstack/react-table";
 import {
+  ChevronDown,
   CircleDollarSign,
   Eye,
   MoreVertical,
@@ -22,6 +23,16 @@ import {
   Printer,
   Trash2,
 } from "lucide-react";
+
+export type HistoriquePaiementBL = {
+  montant: number;
+  dateReglement: string | null;
+  datePrelevement: string | null;
+  methodePaiement: string | null;
+  compte: string | null;
+  motif: string | null;
+  numero: string | null;
+};
 
 export type BonLivraisonT = {
   id: string;
@@ -33,6 +44,7 @@ export type BonLivraisonT = {
   reference: string;
   type?: string | null;
   statutPaiement?: string | null;
+  historiquePaiements?: HistoriquePaiementBL[];
   transactions: {
     date: string;
     montant: number;
@@ -41,7 +53,7 @@ export type BonLivraisonT = {
   }[];
 };
 
-const getMethodePaiement = (methode: string, compte: string) => {
+const getMethodePaiement = (methode: string, compte?: string) => {
   if (
     methode === "espece" &&
     (compte === "compte personnel" || compte === "compte professionel")
@@ -51,7 +63,12 @@ const getMethodePaiement = (methode: string, compte: string) => {
     return "Espèce";
   } else if (methode === "cheque") {
     return "Chèque";
+  } else if (methode === "versement") {
+    return "Versement";
+  } else if (methode === "traite") {
+    return "Traite";
   }
+  return methode || "—";
 };
 export function useBonLivraisonColumns({
   setCurrentBL,
@@ -59,6 +76,8 @@ export function useBonLivraisonColumns({
   setDeleteDialogOpen,
   setUpdateDialogOpen,
   setPaiementDialogOpen,
+  expandedBLId,
+  onToggleExpandBL,
   isAdmin = false,
 }: {
   setCurrentBL: (bl: BonLivraisonT) => void;
@@ -66,9 +85,36 @@ export function useBonLivraisonColumns({
   setDeleteDialogOpen: (val: boolean) => void;
   setUpdateDialogOpen: (val: boolean) => void;
   setPaiementDialogOpen: (val: boolean) => void;
+  expandedBLId: string | null;
+  onToggleExpandBL: (blId: string) => void;
   isAdmin?: boolean;
 }) {
   const columns: ColumnDef<BonLivraisonT>[] = [
+    {
+      id: "expand",
+      header: () => null,
+      enableHiding: false,
+      cell: ({ row }) => {
+        const bonLivraison = row.original;
+        const historiquePaiements = bonLivraison.historiquePaiements ?? [];
+        const hasHistorique =
+          bonLivraison.type !== "retour" && historiquePaiements.length > 0;
+        const isExpanded = expandedBLId === bonLivraison.id;
+        if (!hasHistorique) return <span className="w-6 inline-block" />;
+        return (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={() => onToggleExpandBL(bonLivraison.id)}
+          >
+            <ChevronDown
+              className={`h-4 w-4 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+            />
+          </Button>
+        );
+      },
+    },
     {
       accessorKey: "date",
       header: "Date",
@@ -76,6 +122,9 @@ export function useBonLivraisonColumns({
     {
       accessorKey: "numero",
       header: "Numéro",
+      cell: ({ row }) => (
+        <span className="font-medium">{row.original.numero}</span>
+      ),
     },
     {
       accessorKey: "statutPaiement",

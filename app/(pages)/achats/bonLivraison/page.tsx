@@ -37,19 +37,39 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import UpdateBonLivraison from "@/components/update-bonLivraison";
 import { useDeleteBonLivraison } from "@/hooks/useDeleteBonLivraison";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
+import { formatCurrency } from "@/lib/functions";
 import { ChevronDown, Filter, Search, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Toaster } from "react-hot-toast";
-import { BonLivraisonT, useBonLivraisonColumns } from "./columns";
+import { BonLivraisonT, HistoriquePaiementBL, useBonLivraisonColumns } from "./columns";
 import { DataTable } from "./data-table";
 import { useUser } from "@clerk/nextjs";
 
 function formatDate(dateString: String) {
   return dateString?.split("T")[0].split("-").reverse().join("-");
+}
+
+function methodePaiementLabel(methode: string | null): string {
+  if (!methode) return "—";
+  const labels: Record<string, string> = {
+    espece: "Espèce",
+    cheque: "Chèque",
+    versement: "Versement",
+    traite: "Traite",
+  };
+  return labels[methode] ?? methode;
 }
 
 export default function BonLivraison() {
@@ -66,6 +86,7 @@ export default function BonLivraison() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
   const [paiementDialogOpen, setPaiementDialogOpen] = useState(false);
+  const [expandedBLId, setExpandedBLId] = useState<string | null>(null);
   const [transactions, setTransactions] = useState([]);
   type Transaction = {
     id: string;
@@ -220,23 +241,36 @@ export default function BonLivraison() {
     refetchOnWindowFocus: false,
   });
   const listBonLivraison =
-    bonLivraison?.map((bon: any) => ({
-      id: bon.id,
-      date: formatDate(bon.date),
-      numero: bon.numero,
-      type: bon.type,
-      totalPaye: bon.totalPaye,
-      reference: bon.reference,
-      fournisseur: bon.fournisseur.nom,
-      fournisseurId: bon.fournisseur.id,
-      total: bon.total,
-      groups: bon.groups,
-      statutPaiement: bon.statutPaiement,
-      transactions:
-        regrouperTransactionsParBL(transactions).find(
-          group => group.bl === bon.numero
-        )?.transactions || [],
-    })) ?? [];
+    bonLivraison?.map((bon: any) => {
+      const historiquePaiements =
+        bon.reglementBlAllocations?.map((a: any) => ({
+          montant: a.montant,
+          dateReglement: a.reglement?.dateReglement,
+          datePrelevement: a.reglement?.datePrelevement ?? null,
+          methodePaiement: a.reglement?.methodePaiement,
+          compte: a.reglement?.compte ?? null,
+          motif: a.reglement?.motif ?? null,
+          numero: a.reglement?.numero ?? a.reglement?.cheque?.numero ?? null,
+        })) ?? [];
+      return {
+        id: bon.id,
+        date: formatDate(bon.date),
+        numero: bon.numero,
+        type: bon.type,
+        totalPaye: bon.totalPaye,
+        reference: bon.reference,
+        fournisseur: bon.fournisseur.nom,
+        fournisseurId: bon.fournisseur.id,
+        total: bon.total,
+        groups: bon.groups,
+        statutPaiement: bon.statutPaiement,
+        historiquePaiements,
+        transactions:
+          regrouperTransactionsParBL(transactions).find(
+            group => group.bl === bon.numero
+          )?.transactions || [],
+      };
+    }) ?? [];
 
   return (
     <>
@@ -497,10 +531,79 @@ export default function BonLivraison() {
                     setDeleteDialogOpen,
                     setUpdateDialogOpen,
                     setPaiementDialogOpen,
+                    expandedBLId,
+                    onToggleExpandBL: (id) => setExpandedBLId((prev) => (prev === id ? null : id)),
                     isAdmin,
                   })}
                   data={listBonLivraison}
                   isLoading={isLoading}
+                  getRowId={(row) => row.id}
+                  expandedRowId={expandedBLId}
+                  renderExpandedRow={(bl) => (
+                    <div className="space-y-3">
+                      <h4 className="font-semibold text-sm text-gray-700">
+                        Historique des règlements
+                      </h4>
+                      <div className="border rounded-lg overflow-hidden overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="bg-muted/50">
+                              <TableHead className="text-xs whitespace-nowrap">Date</TableHead>
+                                <TableHead className="text-xs whitespace-nowrap">Date prélèvement</TableHead>
+                              
+                              <TableHead className="text-xs whitespace-nowrap">Montant</TableHead>
+                              <TableHead className="text-xs whitespace-nowrap">Méthode</TableHead>
+                              <TableHead className="text-xs whitespace-nowrap">Compte</TableHead>
+                            <TableHead className="text-xs whitespace-nowrap">N°</TableHead>
+                              <TableHead className="text-xs whitespace-nowrap">Motif</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {(bl.historiquePaiements ?? []).map((p: HistoriquePaiementBL, index: number) => (
+                              <TableRow key={index}>
+                                <TableCell className="text-xs py-2 whitespace-nowrap">
+                                  {p.dateReglement
+                                    ? new Date(p.dateReglement).toLocaleDateString("fr-FR")
+                                    : "—"}
+                                </TableCell>
+                                <TableCell className="text-xs py-2 whitespace-nowrap">
+                                  {p.datePrelevement
+                                    ? new Date(p.datePrelevement).toLocaleDateString("fr-FR")
+                                    : "—"}
+                                </TableCell>
+                                <TableCell className="text-xs font-medium py-2 whitespace-nowrap">
+                                  {formatCurrency(p.montant)}
+                                </TableCell>
+                                <TableCell className="text-xs py-2">
+                                  <span className="bg-purple-100 text-violet-700 px-2 py-0.5 rounded text-xs font-medium">
+                                    {methodePaiementLabel(p.methodePaiement)}
+                                  </span>
+                                </TableCell>
+                                <TableCell className="text-xs text-muted-foreground py-2">
+                                  {p.compte ?? "—"}
+                                </TableCell>
+                                
+                                <TableCell className="text-xs py-2 font-medium">
+                                  {p.numero ?? "—"}
+                                </TableCell>
+                                <TableCell className="text-xs text-muted-foreground py-2 max-w-[180px] truncate" title={p.motif ?? undefined}>
+                                  {p.motif ?? "—"}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                      <div className="border-t pt-2 flex justify-between items-center text-sm">
+                        <span className="font-semibold text-gray-700">Total payé :</span>
+                        <span className="font-bold text-gray-700">
+                          {formatCurrency(
+                            (bl.historiquePaiements ?? []).reduce((s, p) => s + p.montant, 0)
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 />
                 {bonLivraison?.length > 0 ? (
                   <CustomPagination
