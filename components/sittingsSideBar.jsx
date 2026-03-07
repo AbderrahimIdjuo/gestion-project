@@ -35,7 +35,7 @@ function SittingsSideBar({ page }) {
       <div className="flex w-64 flex-col bg-white py-4 shadow-lg rounded-lg">
         <div className="mb-8 flex flex-col items-center space-y-2">
           <Avatar className="w-16 h-16 shadow-md">
-            <AvatarImage src={query.data?.logoUrl} />
+            <AvatarImage src="/images/LOGO-OUDAOUD.jpg" alt="OUDAOUD" />
             <AvatarFallback></AvatarFallback>
           </Avatar>
           <span className="text-lg font-semibold text-orange-400">
@@ -44,13 +44,13 @@ function SittingsSideBar({ page }) {
         </div>
 
         <nav className="space-y-1">
-          <Link href="/parametres/infoEntreprise">
+          {/* <Link href="/parametres/infoEntreprise">
             <NavItem
               icon={<Info className="h-4 w-4" />}
               label="Informations"
               isActive={page === "infoEntreprise"}
             />
-          </Link>
+          </Link> */}
           <Link href="/parametres/categories">
             <NavItem
               icon={<Tags className="h-4 w-4" />}
@@ -65,13 +65,13 @@ function SittingsSideBar({ page }) {
               isActive={page === "banques"}
             />
           </Link>
-          <Link href="/parametres/modesPaiement">
+          {/* <Link href="/parametres/modesPaiement">
             <NavItem
               icon={<CircleDollarSign className="h-4 w-4" />}
               label="Modes de paiement"
               isActive={page === "modesPaiement"}
             />
-          </Link>
+          </Link> */}
           <Link href="/parametres/typeTaches">
             <NavItem
               icon={<List className="h-4 w-4" />}

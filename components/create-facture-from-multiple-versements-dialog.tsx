@@ -68,11 +68,14 @@ type FactureItem = {
 type CreateFactureFromMultipleVersementsDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Mode facture provisoire : pas de sélection de versements */
+  modeProvisoire?: boolean;
 };
 
 export default function CreateFactureFromMultipleVersementsDialog({
   open,
   onOpenChange,
+  modeProvisoire = false,
 }: CreateFactureFromMultipleVersementsDialogProps) {
   const [date, setDate] = useState<Date | null>(null);
   const [numero, setNumero] = useState<string | null>(null);
@@ -222,27 +225,34 @@ export default function CreateFactureFromMultipleVersementsDialog({
         throw new Error("Veuillez ajouter au moins un article");
       }
 
-      if (selectedVersements.length === 0) {
+      if (!modeProvisoire && selectedVersements.length === 0) {
         throw new Error("Veuillez sélectionner au moins un versement");
       }
 
       const totalMontant = total();
       const totalVersements = totalMontantVersements();
 
-      if (totalMontant > totalVersements) {
+      if (!modeProvisoire && totalMontant > totalVersements) {
         throw new Error(
           `Le total de la facture (${formatCurrency(totalMontant)}) ne peut pas dépasser le total des montants des versements (${formatCurrency(totalVersements)})`
         );
       }
 
-      const versements = selectedVersements.map((v) => ({
-        versementId: v.id,
-        montant: versementMontants[v.id] || 0,
-      }));
+      const versements = modeProvisoire
+        ? []
+        : selectedVersements.map((v) => ({
+            versementId: v.id,
+            montant: versementMontants[v.id] || 0,
+          }));
+
+      const numeroFinal =
+        modeProvisoire && (!numero || (typeof numero === "string" && !numero.trim()))
+          ? `PROV-${Date.now()}`
+          : numero;
 
       const data = {
         date: date || new Date(),
-        numero,
+        numero: numeroFinal,
         articls: items.map((item) => ({
           designation: item.designation,
           quantite: item.quantite || 1,
@@ -254,7 +264,7 @@ export default function CreateFactureFromMultipleVersementsDialog({
         })),
         total: totalMontant,
         clientId: selectedClient.id,
-        versements,
+        ...(versements.length > 0 && { versements }),
       };
 
       const loadingToast = toast.loading("Création de la facture...");
@@ -305,10 +315,12 @@ export default function CreateFactureFromMultipleVersementsDialog({
         <DialogContent className="max-w-[90vw] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold">
-              Créer une facture à partir de plusieurs versements
+              {modeProvisoire ? "Créer une facture provisoire" : "Créer une facture à partir de plusieurs versements"}
             </DialogTitle>
             <DialogDescription>
-              Créer une facture client liée à plusieurs versements vers le compte professionnel
+              {modeProvisoire
+                ? "Créer une facture client sans lier de versements (facture provisoire)"
+                : "Créer une facture client liée à plusieurs versements vers le compte professionnel"}
             </DialogDescription>
           </DialogHeader>
 
@@ -322,7 +334,7 @@ export default function CreateFactureFromMultipleVersementsDialog({
               </div>
               <div className="w-full space-y-2">
                 <Label className="text-sm font-medium block pt-1">
-                  Numéro *
+                  {modeProvisoire ? "Numéro (optionnel)" : "Numéro *"}
                 </Label>
                 <Input
                   id="numero"
@@ -341,7 +353,8 @@ export default function CreateFactureFromMultipleVersementsDialog({
               </div>
             </div>
 
-            {/* Sélection des versements */}
+            {/* Sélection des versements (masqué en mode provisoire) */}
+            {!modeProvisoire && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <Label className="text-sm font-medium">Versements sélectionnés</Label>
@@ -461,6 +474,7 @@ export default function CreateFactureFromMultipleVersementsDialog({
                 </div>
               )}
             </div>
+            )}
 
             {/* Articles */}
             <div className="space-y-4">
@@ -676,8 +690,8 @@ export default function CreateFactureFromMultipleVersementsDialog({
               />
             </div>
 
-            {/* Résumé */}
-            {selectedVersements.length > 0 && items.length > 0 && (
+            {/* Résumé (masqué en mode provisoire) */}
+            {!modeProvisoire && selectedVersements.length > 0 && items.length > 0 && (
               <div className="bg-gray-50 rounded-lg p-4 border">
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
@@ -731,7 +745,7 @@ export default function CreateFactureFromMultipleVersementsDialog({
                     toast.error("Veuillez sélectionner un client");
                     return;
                   }
-                  if (!numero || (typeof numero === "string" && numero.trim() === "")) {
+                  if (!modeProvisoire && (!numero || (typeof numero === "string" && numero.trim() === ""))) {
                     toast.error("Veuillez saisir un numéro de facture");
                     return;
                   }
@@ -739,28 +753,31 @@ export default function CreateFactureFromMultipleVersementsDialog({
                     toast.error("Veuillez ajouter au moins un article");
                     return;
                   }
-                  if (selectedVersements.length === 0) {
+                  if (!modeProvisoire && selectedVersements.length === 0) {
                     toast.error("Veuillez sélectionner au moins un versement");
                     return;
                   }
-                  const totalMontant = total();
-                  const totalVersements = totalMontantVersements();
-                  if (totalMontant > totalVersements) {
-                    toast.error(
-                      `Le total de la facture ne peut pas dépasser ${formatCurrency(totalVersements)}`
-                    );
-                    return;
+                  if (!modeProvisoire) {
+                    const totalMontant = total();
+                    const totalVersements = totalMontantVersements();
+                    if (totalMontant > totalVersements) {
+                      toast.error(
+                        `Le total de la facture ne peut pas dépasser ${formatCurrency(totalVersements)}`
+                      );
+                      return;
+                    }
                   }
                   createFacture.mutate();
                 }}
                 disabled={
                   (createFacture as { isLoading?: boolean }).isLoading ||
-                  !numero ||
-                  (typeof numero === "string" && numero.trim() === "") ||
                   items.length === 0 ||
-                  selectedVersements.length === 0 ||
                   !selectedClient ||
-                  total() > totalMontantVersements()
+                  (!modeProvisoire &&
+                    (!numero ||
+                      (typeof numero === "string" && numero.trim() === "") ||
+                      selectedVersements.length === 0 ||
+                      total() > totalMontantVersements()))
                 }
               >
                 {(createFacture as { isLoading?: boolean }).isLoading ? "En cours..." : "Créer la facture"}

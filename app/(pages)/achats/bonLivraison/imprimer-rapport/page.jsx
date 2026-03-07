@@ -192,10 +192,23 @@ export default function ImprimerRapport() {
                 <TableCell className="py-2">
                   {item.date ? formatDateString(item.date) : "—"}
                 </TableCell>
-                <TableCell className="py-2 font-medium col-description" title={item.itemType === "reglement" && item.motif ? item.motif : item.reference}>
-                  {item.itemType === "reglement" && item.motif
-                    ? item.motif
-                    : item.reference}
+                <TableCell className="py-2 font-medium col-description" title={item.itemType === "reglement" && (item.numeroCheque || item.motif) ? (item.numeroCheque || item.motif) : item.reference}>
+                  {item.itemType === "reglement" ? (
+                    <span className="flex flex-col gap-0.5 text-sm">
+                      {item.datePrelevement && (
+                        <span className="text-muted-foreground">
+                          Prélèvement : {formatDateString(item.datePrelevement)}
+                        </span>
+                      )}
+                      {item.numeroCheque ? (
+                        <span>N° chèque : {item.numeroCheque}</span>
+                      ) : (
+                        item.motif ? item.motif : item.reference
+                      )}
+                    </span>
+                  ) : (
+                    item.reference
+                  )}
                 </TableCell>
                 {showFournisseurCol && (
                   <TableCell className="py-2 text-muted-foreground col-fournisseur" title={item.fournisseurNom ?? "—"}>

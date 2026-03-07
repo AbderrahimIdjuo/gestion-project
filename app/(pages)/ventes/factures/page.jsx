@@ -52,7 +52,7 @@ export default function Factures() {
   const [endDate, setEndDate] = useState();
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState();
-  const [multipleVersementsDialogOpen, setMultipleVersementsDialogOpen] = useState(false);
+  const [factureDialogMode, setFactureDialogMode] = useState(null); // null | 'versements' | 'provisoire'
   const queryClient = useQueryClient();
   const { user } = useUser();
   const isAdmin = user?.publicMetadata?.role === "admin";
@@ -251,13 +251,19 @@ export default function Factures() {
                       </SheetContent>
                     </Sheet>
                     <Button
-                      onClick={() => {
-                        setMultipleVersementsDialogOpen(true);
-                      }}
+                      onClick={() => setFactureDialogMode("versements")}
                       className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 rounded-full whitespace-nowrap text-white hover:text-white"
                     >
                       <Plus className="mr-2 h-4 w-4" />
                       Ajouter une facture
+                    </Button>
+                    <Button
+                      onClick={() => setFactureDialogMode("provisoire")}
+                      variant="outline"
+                      className="rounded-full whitespace-nowrap border-purple-500 text-purple-600 hover:bg-purple-50"
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Facture provisoire
                     </Button>
                   </div>
                 </div>
@@ -272,7 +278,6 @@ export default function Factures() {
                           <TableHead>Numéro</TableHead>
                           <TableHead>Total</TableHead>
                           <TableHead>Client</TableHead>
-                          <TableHead>Devis</TableHead>
                           <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -285,9 +290,6 @@ export default function Factures() {
                               tabIndex={-1}
                               key={index}
                             >
-                              <TableCell className="!py-2" align="left">
-                                <Skeleton className="h-4 w-full" />
-                              </TableCell>
                               <TableCell className="!py-2" align="left">
                                 <Skeleton className="h-4 w-full" />
                               </TableCell>
@@ -325,10 +327,6 @@ export default function Factures() {
                               <TableCell className="text-md !py-2">
                                 {facture.client.nom}
                               </TableCell>
-                              <TableCell className="text-md !py-2">
-                                {facture.devisNumero}
-                              </TableCell>
-
                               <TableCell className="text-right !py-2">
                                 <div className="flex justify-end gap-2">
                                   <CustomTooltip message="imprimer">
@@ -391,7 +389,7 @@ export default function Factures() {
                           ))
                         ) : (
                           <TableRow>
-                            <TableCell colSpan={6} align="center">
+                            <TableCell colSpan={5} align="center">
                               <div className="text-center py-10 text-muted-foreground">
                                 <svg
                                   xmlns="http://www.w3.org/2000/svg"
@@ -446,8 +444,9 @@ export default function Factures() {
         onClose={() => setIsUpdateDialogOpen(false)}
       />
       <CreateFactureFromMultipleVersementsDialog
-        open={multipleVersementsDialogOpen}
-        onOpenChange={setMultipleVersementsDialogOpen}
+        open={factureDialogMode !== null}
+        onOpenChange={(open) => !open && setFactureDialogMode(null)}
+        modeProvisoire={factureDialogMode === "provisoire"}
       />
     </>
   );

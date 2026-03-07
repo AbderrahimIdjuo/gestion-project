@@ -515,10 +515,13 @@ export default function BonLivraisonRapportDialog() {
       });
     });
     regs.forEach(reg => {
+      const numeroCheque = reg.numero ?? reg.cheque?.numero ?? null;
       items.push({
         date: reg.dateReglement,
         reference: reg.id?.substring(0, 8) || "—",
         motif: reg.motif ?? null,
+        datePrelevement: reg.datePrelevement ?? null,
+        numeroCheque: numeroCheque,
         montant: -(reg.montant || 0),
         itemType: "reglement",
         fournisseurId: reg.fournisseurId ?? reg.fournisseur?.id,
@@ -646,7 +649,22 @@ export default function BonLivraisonRapportDialog() {
                   <TableRow key={`${item.itemType}-${item.reference}-${index}`} className="border-b hover:bg-purple-50/50">
                     <TableCell className="py-2">{formatDate(item.date)}</TableCell>
                     <TableCell className="py-2 font-medium">
-                      {item.itemType === "reglement" && item.motif ? item.motif : item.reference}
+                      {item.itemType === "reglement" ? (
+                        <span className="flex flex-col gap-0.5 text-sm">
+                          {item.datePrelevement && (
+                            <span className="text-muted-foreground">
+                              Prélèvement : {formatDate(item.datePrelevement)}
+                            </span>
+                          )}
+                          {item.numeroCheque ? (
+                            <span>N° chèque : {item.numeroCheque}</span>
+                          ) : (
+                            item.motif ? item.motif : item.reference
+                          )}
+                        </span>
+                      ) : (
+                        item.reference
+                      )}
                     </TableCell>
                     {showFournisseurCol && (
                       <TableCell className="py-2 text-muted-foreground">{item.fournisseurNom ?? "—"}</TableCell>
