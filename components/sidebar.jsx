@@ -120,7 +120,7 @@ const menuItems = [
         href: "/parametres/charges",
       },
       { label: "Comptes bancaires", href: "/parametres/banques" },
-      { label: "Modes de paiement", href: "/parametres/modesPaiement" },
+      // { label: "Modes de paiement", href: "/parametres/modesPaiement" },
       { label: "Type de tâches", href: "/parametres/typeTaches" },
       { label: "Utilisateurs", href: "/parametres/users-management" },
     ],

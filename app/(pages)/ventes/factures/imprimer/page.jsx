@@ -276,6 +276,34 @@ export default function DevisPDFPage() {
                 <TableRow>
                   <TableCell
                     colSpan={6}
+                    className=" text-gray-900 border-t border-black text-lg p-2 text-right font-extrabold"
+                  >
+                    Total H.T:
+                  </TableCell>
+                  <TableCell
+                    colSpan={2}
+                    className="border-l border-t border-black p-2 text-lg text-gray-900 text-left font-extrabold"
+                  >
+                    {formatCurrency((total || 0) * 0.8)}
+                  </TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell
+                    colSpan={6}
+                    className=" text-gray-900 border-t border-black text-lg p-2 text-right font-extrabold"
+                  >
+                    T.V.A (20%):
+                  </TableCell>
+                  <TableCell
+                    colSpan={2}
+                    className="border-l border-t border-black p-2 text-lg text-gray-900 text-left font-extrabold"
+                  >
+                    {formatCurrency((total || 0) * 0.2)}
+                  </TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell
+                    colSpan={6}
                     className=" text-gray-900 border-t border-black  text-xl p-2 text-right font-extrabold"
                   >
                     Total TTC:
@@ -295,7 +323,7 @@ export default function DevisPDFPage() {
             <h3 className="text-sm font-medium mb-0">
               Arrêtée la présente facture à la somme de :{" "}
               <span className="text-sm font-bold mb-0 ">
-                {nombreEnLettres(totalTTC(total))}{" "}
+                {nombreEnLettres(total)}{" "}
               </span>{" "}
               Dirhams
             </h3>
