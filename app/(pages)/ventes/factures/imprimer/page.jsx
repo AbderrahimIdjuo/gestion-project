@@ -284,7 +284,7 @@ export default function DevisPDFPage() {
                     colSpan={2}
                     className="border-l border-t border-black p-2 text-lg text-gray-900 text-left font-extrabold"
                   >
-                    {formatCurrency((total || 0) * 0.8)}
+                    {formatCurrency((total || 0))}
                   </TableCell>
                 </TableRow>
                 <TableRow>
@@ -298,7 +298,7 @@ export default function DevisPDFPage() {
                     colSpan={2}
                     className="border-l border-t border-black p-2 text-lg text-gray-900 text-left font-extrabold"
                   >
-                    {formatCurrency((total || 0) * 0.2)}
+                    {formatCurrency(tva(total))}
                   </TableCell>
                 </TableRow>
                 <TableRow>
@@ -312,7 +312,7 @@ export default function DevisPDFPage() {
                     colSpan={2}
                     className="border-l border-t border-black p-2 text-xl text-gray-900 text-left font-extrabold"
                   >
-                    {formatCurrency(total)}
+                    {formatCurrency(totalTTC(total))}
                   </TableCell>
                 </TableRow>
               </TableFooter>
