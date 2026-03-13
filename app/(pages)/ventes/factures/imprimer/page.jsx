@@ -107,10 +107,14 @@ export default function DevisPDFPage() {
   }, []);
   const { articls, date, numero, total, client } = facture ? facture : {};
 
-
-  const tva = total => parseFloat(total * 0.2).toFixed(2);
-  const totalTTC = total =>
-    (parseFloat(total) + parseFloat(tva(total))).toFixed(2);
+  /** Total H.T = somme des (quantité × P.U/m²) de chaque article */
+  const totalHT =
+    articls?.reduce(
+      (acc, a) => acc + (a.quantite ?? 0) * (a.prixUnite ?? 0),
+      0
+    ) ?? 0;
+  const tvaMontant = parseFloat((totalHT * 0.2).toFixed(2));
+  const totalTTC = parseFloat((totalHT * 1.2).toFixed(2));
   return (
     <>
       <div className="container mx-auto p-4 max-w-4xl bg-white min-h-screen print:p-0 print:max-w-none mb-10">
@@ -284,7 +288,7 @@ export default function DevisPDFPage() {
                     colSpan={2}
                     className="border-l border-t border-black p-2 text-lg text-gray-900 text-left font-extrabold"
                   >
-                    {formatCurrency((total || 0))}
+                    {formatCurrency(totalHT)}
                   </TableCell>
                 </TableRow>
                 <TableRow>
@@ -298,7 +302,7 @@ export default function DevisPDFPage() {
                     colSpan={2}
                     className="border-l border-t border-black p-2 text-lg text-gray-900 text-left font-extrabold"
                   >
-                    {formatCurrency(tva(total))}
+                    {formatCurrency(tvaMontant)}
                   </TableCell>
                 </TableRow>
                 <TableRow>
@@ -312,7 +316,7 @@ export default function DevisPDFPage() {
                     colSpan={2}
                     className="border-l border-t border-black p-2 text-xl text-gray-900 text-left font-extrabold"
                   >
-                    {formatCurrency(totalTTC(total))}
+                    {formatCurrency(totalTTC)}
                   </TableCell>
                 </TableRow>
               </TableFooter>
@@ -323,7 +327,7 @@ export default function DevisPDFPage() {
             <h3 className="text-sm font-medium mb-0">
               Arrêtée la présente facture à la somme de :{" "}
               <span className="text-sm font-bold mb-0 ">
-                {nombreEnLettres(total)}{" "}
+                {nombreEnLettres(Math.round(totalTTC))}{" "}
               </span>{" "}
               Dirhams
             </h3>

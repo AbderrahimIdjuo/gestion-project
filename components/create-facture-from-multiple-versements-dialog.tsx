@@ -137,16 +137,20 @@ export default function CreateFactureFromMultipleVersementsDialog({
     ]);
   };
 
-  const total = () => {
+  /** Total HT (somme des lignes) */
+  const totalHT = () => {
     return parseFloat(
       items
         .reduce((acc, item) => {
-          const total = (item.quantite ?? 0) * (item.prixUnite ?? 0);
-          return acc + (isNaN(total) ? 0 : total);
+          const lineTotal = (item.quantite ?? 0) * (item.prixUnite ?? 0);
+          return acc + (isNaN(lineTotal) ? 0 : lineTotal);
         }, 0)
         .toFixed(2)
     );
   };
+
+  /** Total TTC = Total HT + 20% TVA */
+  const totalTTC = () => parseFloat((totalHT() * 1.2).toFixed(2));
 
   // Calculer le montant disponible pour un versement
   const getMontantDisponible = (versement: Versement) => {
@@ -229,7 +233,7 @@ export default function CreateFactureFromMultipleVersementsDialog({
         throw new Error("Veuillez sélectionner au moins un versement");
       }
 
-      const totalMontant = total();
+      const totalMontant = totalTTC();
       const totalVersements = totalMontantVersements();
 
       if (!modeProvisoire && totalMontant > totalVersements) {
@@ -262,7 +266,7 @@ export default function CreateFactureFromMultipleVersementsDialog({
           length: item.length || 0,
           width: item.width || 0,
         })),
-        total: totalMontant,
+        total: totalTTC(),
         clientId: selectedClient.id,
         ...(versements.length > 0 && { versements }),
       };
@@ -660,17 +664,39 @@ export default function CreateFactureFromMultipleVersementsDialog({
                       </TableBody>
                       <TableFooter>
                         <TableRow>
-                          <TableCell
-                            colSpan={6}
-                            className="text-right text-lg pr-3"
-                          >
-                            Total :
-                          </TableCell>
-                          <TableCell colSpan={2} className="text-left text-lg">
-                            {total()} DH
-                          </TableCell>
-                        </TableRow>
-                      </TableFooter>
+                            <TableCell
+                              colSpan={6}
+                              className="text-right text-lg pr-3"
+                            >
+                              Total H.T :
+                            </TableCell>
+                            <TableCell colSpan={2} className="text-left text-lg">
+                              {formatCurrency(totalHT())}
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell
+                              colSpan={6}
+                              className="text-right text-lg pr-3"
+                            >
+                              T.V.A (20%) :
+                            </TableCell>
+                            <TableCell colSpan={2} className="text-left text-lg">
+                              {formatCurrency(totalHT() * 0.2)}
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell
+                              colSpan={6}
+                              className="text-right text-lg pr-3 font-semibold"
+                            >
+                              Total TTC :
+                            </TableCell>
+                            <TableCell colSpan={2} className="text-left text-lg font-semibold">
+                              {formatCurrency(totalTTC())}
+                            </TableCell>
+                          </TableRow>
+                        </TableFooter>
                     </Table>
                   </div>
                 </>
@@ -695,9 +721,9 @@ export default function CreateFactureFromMultipleVersementsDialog({
               <div className="bg-gray-50 rounded-lg p-4 border">
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="text-gray-600">Total de la facture :</span>
+                    <span className="text-gray-600">Total de la facture (TTC) :</span>
                     <span className="ml-2 font-semibold text-lg">
-                      {formatCurrency(total())}
+                      {formatCurrency(totalTTC())}
                     </span>
                   </div>
                   <div>
@@ -706,17 +732,17 @@ export default function CreateFactureFromMultipleVersementsDialog({
                       {formatCurrency(totalMontantVersements())}
                     </span>
                   </div>
-                  {total() > totalMontantVersements() && (
+                  {totalTTC() > totalMontantVersements() && (
                     <div className="col-span-2">
                       <p className="text-xs text-red-600 mt-1">
                         ⚠️ Le total de la facture dépasse le total des montants des versements
                       </p>
                     </div>
                   )}
-                  {total() <= totalMontantVersements() && total() > 0 && (
+                  {totalTTC() <= totalMontantVersements() && totalTTC() > 0 && (
                     <div className="col-span-2">
                       <p className="text-xs text-green-600 mt-1">
-                        ✓ Montant disponible : {formatCurrency(totalMontantVersements() - total())}
+                        ✓ Montant disponible : {formatCurrency(totalMontantVersements() - totalTTC())}
                       </p>
                     </div>
                   )}
@@ -758,7 +784,7 @@ export default function CreateFactureFromMultipleVersementsDialog({
                     return;
                   }
                   if (!modeProvisoire) {
-                    const totalMontant = total();
+                    const totalMontant = totalTTC();
                     const totalVersements = totalMontantVersements();
                     if (totalMontant > totalVersements) {
                       toast.error(
@@ -777,7 +803,7 @@ export default function CreateFactureFromMultipleVersementsDialog({
                     (!numero ||
                       (typeof numero === "string" && numero.trim() === "") ||
                       selectedVersements.length === 0 ||
-                      total() > totalMontantVersements()))
+                      totalTTC() > totalMontantVersements()))
                 }
               >
                 {(createFacture as { isLoading?: boolean }).isLoading ? "En cours..." : "Créer la facture"}
