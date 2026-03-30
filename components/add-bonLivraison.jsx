@@ -123,7 +123,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
         type,
         totalPaye: type === "retour" ? null : (montantPaye ?? 0),
         bLGroups,
-        statutPaiement: type === "retour" ? null : statutPaiement,
+        statutPaiement: type === "retour" ? "impaye" : statutPaiement,
         compte: type === "retour" ? "" : compte,
         montantPaye: type === "retour" ? null : montantPaye,
       };
@@ -143,6 +143,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
       setIsDialogOpen(false);
       resetDialog();
       queryClient.invalidateQueries({ queryKey: ["bonLivraison"] });
+      queryClient.invalidateQueries({ queryKey: ["produits"] });
       await axios.post("/api/bonLivraison/updatePrixUnite", { bLGroups }); // Mettre à jour les prix des produits séparément pour diminuer le temps de la requête
     },
   });

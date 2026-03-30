@@ -27,8 +27,12 @@ export function FournisseurFormDialog() {
     telephone: z.string().optional(),
     telephoneSecondaire: z.string().optional(),
     ice: z.string().optional(),
-//    dette: z.string().optional(),
     adresse: z.string().optional(),
+    dette: z.preprocess(
+      v =>
+        v === "" || v === null || v === undefined ? 0 : Number(v),
+      z.number()
+    ),
   });
   const {
     register,
@@ -37,6 +41,9 @@ export function FournisseurFormDialog() {
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(fournisseurSchema),
+    defaultValues: {
+      dette: 0,
+    },
   });
   const queryClient = useQueryClient();
   const onSubmit = async (data) => {
@@ -188,17 +195,24 @@ export function FournisseurFormDialog() {
                 className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
               />
             </div>
-            {/* <div className="w- full grid grid-cols-1">
+            <div className="w-full grid grid-cols-1">
               <Label htmlFor="dette" className="text-left mb-2 mb-2">
-                Dettte
+                Dette (MAD)
               </Label>
               <Input
                 id="dette"
                 name="dette"
+                type="number"
+                step="0.01"
                 {...register("dette")}
-                className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
+                className={`col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0 ${
+                  errors.dette && "border-red-500 border-2"
+                }`}
               />
-            </div> */}
+              {errors.dette && (
+                <p className="text-red-500 text-sm mt-1">{errors.dette.message}</p>
+              )}
+            </div>
           </div>
           <DialogFooter className="mt-5">
             <Button

@@ -1,6 +1,30 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../lib/prisma";
 
+/** Fournisseur fictif pour sorties de stock interne — pas d’achat fournisseur réel */
+const STOCK_SORTIE_FOURNISSEUR_NOM = "STOCK(sortie)";
+
+function isStockSortieFournisseur(nom) {
+  return (
+    typeof nom === "string" && nom.trim() === STOCK_SORTIE_FOURNISSEUR_NOM
+  );
+}
+
+/** Diminuer le stock de chaque ligne produit du BL (quantité du BL) */
+async function decrementProduitStocksFromBlGroups(prismaTx, bLGroups) {
+  for (const group of bLGroups || []) {
+    for (const item of group.items || []) {
+      const produitId = item.id ?? item.produitId;
+      const q = parseFloat(item.quantite);
+      if (!produitId || !Number.isFinite(q) || q <= 0) continue;
+      await prismaTx.produits.update({
+        where: { id: produitId },
+        data: { stock: { decrement: q } },
+      });
+    }
+  }
+}
+
 export async function POST(req) {
   try {
     const response = await req.json();
@@ -26,6 +50,19 @@ export async function POST(req) {
           : parseFloat(montantPaye) || 0;
     const result = await prisma.$transaction(
       async prisma => {
+        let stockSortieInterne = false;
+        if (type === "achats") {
+          if (isStockSortieFournisseur(fournisseurNom)) {
+            stockSortieInterne = true;
+          } else {
+            const f = await prisma.fournisseurs.findUnique({
+              where: { id: fournisseurId },
+              select: { nom: true },
+            });
+            stockSortieInterne = isStockSortieFournisseur(f?.nom);
+          }
+        }
+
         const bonLivraison = await prisma.bonLivraison.create({
           data: {
             date: date || new Date(),
@@ -33,7 +70,7 @@ export async function POST(req) {
             total: parseFloat(total),
             reference,
             type,
-            statutPaiement: isRetour ? null : (statutPaiement || "impaye"),
+            statutPaiement: isRetour ? "impaye" : (statutPaiement || "impaye"),
             totalPaye: isRetour ? null : montant,
             fournisseur: {
               connect: { id: fournisseurId },
@@ -57,6 +94,11 @@ export async function POST(req) {
             },
           },
         });
+
+        // Sortie stock interne : retirer du stock les quantités livrées sur ce BL
+        if (stockSortieInterne) {
+          await decrementProduitStocksFromBlGroups(prisma, bLGroups);
+        }
 
         // creation de la transaction (pas pour les BL de type retour)
         if (statutPaiement && statutPaiement !== "impaye" && !isRetour) {
@@ -297,6 +339,7 @@ export async function PUT(req) {
     };
     if (type === "retour") {
       updateData.totalPaye = null;
+      updateData.statutPaiement = "impaye";
     } else if (type === "achats") {
       updateData.totalPaye = newTotalPaye ?? 0;
     }

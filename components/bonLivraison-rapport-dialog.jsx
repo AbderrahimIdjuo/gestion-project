@@ -361,23 +361,22 @@ export default function BonLivraisonRapportDialog() {
     };
   }
 
-  // Fonction pour calculer la dette finale : somme des montants restants des BL impayés et enPartie
+  /** Impact net sur la dette pour un BL (achats : reste impayé ; retour : crédit = -total). */
+  function resteDettePourBL(bl) {
+    if (bl.type === "achats") {
+      const reste = (bl.total || 0) - (bl.totalPaye || 0);
+      return reste > 0 ? reste : 0;
+    }
+    if (bl.type === "retour") {
+      return -(bl.total || 0);
+    }
+    return 0;
+  }
+
+  // Fonction pour calculer la dette finale : achats augmentent par le reste impayé, retours diminuent par le total du BL
   function calculerDetteFinale() {
     const bls = bonLivraisons?.data || [];
-    let dette = 0;
-
-    bls.forEach(bl => {
-      // Vérifier si le BL est impayé ou enPartie
-      const reste = bl.total - (bl.totalPaye || 0);
-      
-      // Si le BL est impayé (totalPaye = 0 ou null), prendre le montant total
-      // Si le BL est enPartie (totalPaye > 0 mais < total), prendre le reste
-      if (reste > 0) {
-        dette += reste;
-      }
-    });
-
-    return dette;
+    return bls.reduce((sum, bl) => sum + resteDettePourBL(bl), 0);
   }
 
   useEffect(() => {
@@ -461,7 +460,7 @@ export default function BonLivraisonRapportDialog() {
       const isRetour = bl.type === "retour";
 
       const netTotal = isAchat ? total : -total;
-      const restAPayer = total - totalPaye;
+      const restAPayer = resteDettePourBL(bl);
 
       if (!map.has(nom)) {
         map.set(nom, {
@@ -538,6 +537,18 @@ export default function BonLivraisonRapportDialog() {
     bonLivraisons?.data,
     reglements?.data,
   ]);
+
+  useEffect(() => {
+    if (formData.modeAffichage !== "parBL") return;
+    const regs = reglements?.data || [];
+    const lignesReglement = rapportItemsBLReglements.filter(
+      it => it.itemType === "reglement"
+    );
+    console.log("[Rapport par BL] Règlements", {
+      api: regs,
+      lignesTableau: lignesReglement,
+    });
+  }, [formData.modeAffichage, reglements?.data, rapportItemsBLReglements]);
 
   // Calcul inverse : dette finale = fournisseur.dette (ou somme des dettes si pas de fournisseur), puis remontée pour dette initiale
   const rapportTotauxBLReglements = useMemo(() => {
@@ -750,7 +761,8 @@ export default function BonLivraisonRapportDialog() {
         </TableHeader>
         <TableBody>
           {bls.map(bl => {
-            const restAPayer = (bl.total || 0) - (bl.totalPaye || 0);
+            const restAPayerLigne =
+              bl.type === "retour" ? null : resteDettePourBL(bl);
             return (
               <TableRow key={bl.id} className="border-b">
                 <TableCell className="px-1 py-2 font-medium">{bl.date ? formatDate(bl.date) : "—"}</TableCell>
@@ -780,7 +792,7 @@ export default function BonLivraisonRapportDialog() {
                   })()}
                 </TableCell>
                 <TableCell className="px-1 py-2 text-right pr-4 font-medium">
-                  {formatCurrency(restAPayer)}
+                  {restAPayerLigne === null ? "—" : formatCurrency(restAPayerLigne)}
                 </TableCell>
               </TableRow>
             );
@@ -1228,7 +1240,7 @@ export default function BonLivraisonRapportDialog() {
                         );
                         data.bls = (bonLivraisons?.data || []).map(bl => ({
                           ...bl,
-                          restAPayer: (bl.total || 0) - (bl.totalPaye || 0),
+                          restAPayer: resteDettePourBL(bl),
                         }));
                         data.montantTotal = montantTotalBL();
                         data.restAPaye = restAPayeTotal();

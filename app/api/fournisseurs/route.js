@@ -69,6 +69,8 @@ export async function GET(req) {
   const page = parseInt(searchParams.get("page") || "1");
   const searchQuery = searchParams.get("query") || "";
   const limitParam = searchParams.get("limit");
+  const minDetteParam = searchParams.get("minDette");
+  const maxDetteParam = searchParams.get("maxDette");
 
   const filters = {};
 
@@ -87,8 +89,21 @@ export async function GET(req) {
     { ice: { contains: searchQuery } },
   ];
 
+  if (
+    minDetteParam != null &&
+    maxDetteParam != null &&
+    minDetteParam !== "" &&
+    maxDetteParam !== ""
+  ) {
+    const minD = Number(minDetteParam);
+    const maxD = Number(maxDetteParam);
+    if (!Number.isNaN(minD) && !Number.isNaN(maxD)) {
+      filters.dette = { gte: minD, lte: maxD };
+    }
+  }
+
   // Fetch filtered commandes with pagination and related data
-  const [fournisseurs, totalFournisseurs] = await Promise.all([
+  const [fournisseurs, totalFournisseurs, detteAgg] = await Promise.all([
     prisma.fournisseurs.findMany({
       where: filters,
       skip: (page - 1) * fournisseursPerPage,
@@ -96,6 +111,10 @@ export async function GET(req) {
       orderBy: { createdAt: "desc" },
     }),
     prisma.fournisseurs.count({ where: filters }), // Get total count for pagination
+    prisma.fournisseurs.aggregate({
+      _max: { dette: true },
+      _min: { dette: true },
+    }),
   ]);
 
   // Calculate total pages for pagination
@@ -105,5 +124,7 @@ export async function GET(req) {
   return NextResponse.json({
     fournisseurs,
     totalPages,
+    minDette: detteAgg._min.dette ?? 0,
+    maxDette: detteAgg._max.dette ?? 0,
   });
 }

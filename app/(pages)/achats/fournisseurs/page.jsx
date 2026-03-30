@@ -1,6 +1,7 @@
 "use client";
 
 import CustomPagination from "@/components/customUi/customPagination";
+import { PriceRangeSlider } from "@/components/customUi/customSlider";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import { FournisseurFormDialog } from "@/components/fournisseur-form-dialog";
 import ImportFournisseurs from "@/components/importer-fournisseur";
@@ -13,6 +14,15 @@ import { Sidebar } from "@/components/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -24,9 +34,17 @@ import {
 } from "@/components/ui/table";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { CircleDollarSign, Pen, Search, Trash2, Upload } from "lucide-react";
+import {
+  CircleDollarSign,
+  Filter,
+  Pen,
+  Search,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
+import { formatCurrency } from "@/lib/functions";
 
 export default function FournisseursPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -39,18 +57,36 @@ export default function FournisseursPage() {
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [totalPages, setTotalPages] = useState();
   const [paiementDialogOpen, setPaiementDialogOpen] = useState(false);
+  const [minDetteBound, setMinDetteBound] = useState();
+  const [maxDetteBound, setMaxDetteBound] = useState();
+  const [filters, setFilters] = useState({
+    dette: [undefined, undefined],
+  });
   const queryClient = useQueryClient();
 
   const fournisseurs = useQuery({
-    queryKey: ["fournisseurs", page, debouncedQuery],
+    queryKey: [
+      "fournisseurs",
+      page,
+      debouncedQuery,
+      filters.dette[0],
+      filters.dette[1],
+    ],
     queryFn: async () => {
       const response = await axios.get("/api/fournisseurs", {
         params: {
           query: debouncedQuery,
           page,
+          ...(filters.dette[0] != null &&
+            filters.dette[1] != null && {
+              minDette: filters.dette[0],
+              maxDette: filters.dette[1],
+            }),
         },
       });
       setTotalPages(response.data.totalPages);
+      setMinDetteBound(response.data.minDette ?? 0);
+      setMaxDetteBound(response.data.maxDette ?? 0);
       return response.data.fournisseurs;
     },
     keepPreviousData: true, // Keeps old data visible while fetching new page
@@ -67,6 +103,45 @@ export default function FournisseursPage() {
       clearTimeout(handler);
     };
   }, [searchQuery]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [filters.dette[0], filters.dette[1]]);
+
+  useEffect(() => {
+    setFilters(prev => ({
+      ...prev,
+      dette: [minDetteBound, maxDetteBound],
+    }));
+  }, [minDetteBound, maxDetteBound]);
+
+  const detteSliderMin =
+    typeof minDetteBound === "number" && !Number.isNaN(minDetteBound)
+      ? minDetteBound
+      : 0;
+  const rawDetteMax =
+    typeof maxDetteBound === "number" && !Number.isNaN(maxDetteBound)
+      ? maxDetteBound
+      : 0;
+  const detteSliderMax =
+    rawDetteMax <= detteSliderMin ? detteSliderMin + 1 : rawDetteMax;
+  const detteSpan = detteSliderMax - detteSliderMin;
+  const detteStep =
+    detteSpan > 200_000
+      ? 5_000
+      : detteSpan > 50_000
+        ? 1_000
+        : detteSpan > 10_000
+          ? 500
+          : detteSpan > 2_000
+            ? 100
+            : detteSpan > 200
+              ? 10
+              : 1;
+  const detteRangeValue = [
+    filters.dette[0] ?? detteSliderMin,
+    filters.dette[1] ?? detteSliderMax,
+  ];
 
   const deleteFournisseur = async () => {
     try {
@@ -131,7 +206,56 @@ export default function FournisseursPage() {
                     </div>
                   </div>
 
-                  <div className="flex space-x-2">
+                  <div className="flex flex-wrap gap-2 justify-end">
+                    <Sheet>
+                      <SheetTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="border-purple-500 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900 rounded-full"
+                        >
+                          <Filter className="mr-2 h-4 w-4" />
+                          Filtres
+                        </Button>
+                      </SheetTrigger>
+                      <SheetContent className="border-l-purple-200 bg-white">
+                        <SheetHeader>
+                          <SheetTitle className="text-black">Filtres</SheetTitle>
+                          <SheetDescription className="text-gray-600">
+                            Ajustez la plage de dette pour afficher les
+                            fournisseurs concernés.
+                          </SheetDescription>
+                        </SheetHeader>
+                        <div className="grid gap-4 py-4">
+                          <div className="grid grid-cols-4 items-center gap-4 my-2">
+                            <Label
+                              htmlFor="dette-range"
+                              className="text-left text-black col-span-4"
+                            >
+                              Dette (MAD) :
+                            </Label>
+                            <div className="col-span-4">
+                              <PriceRangeSlider
+                                min={detteSliderMin}
+                                max={detteSliderMax}
+                                step={detteStep}
+                                value={detteRangeValue}
+                                onValueChange={value =>
+                                  setFilters({ ...filters, dette: value })
+                                }
+                              />
+                              <div className="flex justify-between mt-2 text-sm">
+                                <span>
+                                  {formatCurrency(detteRangeValue[0])}
+                                </span>
+                                <span>
+                                  {formatCurrency(detteRangeValue[1])}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </SheetContent>
+                    </Sheet>
                     <ImportFournisseurs>
                       <Button
                         variant="outline"
@@ -155,6 +279,7 @@ export default function FournisseursPage() {
                           <TableHead>Téléphone</TableHead>
                           <TableHead>Adresse</TableHead>
                           <TableHead>Email</TableHead>
+                          <TableHead className="text-right">Dette</TableHead>
                           <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -184,6 +309,9 @@ export default function FournisseursPage() {
                               </TableCell>
                               <TableCell className="!py-2" align="left">
                                 <Skeleton className="h-4 w-[150px]" />
+                              </TableCell>
+                              <TableCell className="!py-2" align="right">
+                                <Skeleton className="h-4 w-[80px] ml-auto" />
                               </TableCell>
                               <TableCell className="!py-2">
                                 <div className="flex gap-2 justify-end">
@@ -231,6 +359,15 @@ export default function FournisseursPage() {
                               </TableCell>
                               <TableCell className="text-md !py-2">
                                 {fournisseur.email}
+                              </TableCell>
+                              <TableCell
+                                className={`text-md !py-2 text-right tabular-nums ${
+                                  (fournisseur.dette ?? 0) > 0
+                                    ? "text-rose-600 font-medium"
+                                    : "text-muted-foreground"
+                                }`}
+                              >
+                                {formatCurrency(fournisseur.dette ?? 0)}
                               </TableCell>
                               <TableCell className="text-right !py-2">
                                 <div className="flex justify-end gap-2">

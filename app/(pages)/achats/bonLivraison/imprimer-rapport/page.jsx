@@ -65,7 +65,6 @@ export default function ImprimerRapport() {
         </TableHeader>
         <TableBody>
           {bls.map((bl) => {
-            const restAPayer = bl.restAPayer ?? (bl.total || 0) - (bl.totalPaye || 0);
             const fournisseurNom = bl.fournisseur?.nom ?? "Inconnu";
             const typeLabel =
               bl.type === "achats" ? "Achats" : bl.type === "retour" ? "Retour" : bl.type || "—";
@@ -101,7 +100,12 @@ export default function ImprimerRapport() {
                   )}
                 </TableCell>
                 <TableCell className="px-1 py-2 text-right pr-4 font-medium text-foreground">
-                  {formatCurrency(restAPayer)}
+                  {bl.type === "retour"
+                    ? "—"
+                    : formatCurrency(
+                        bl.restAPayer ??
+                          (bl.total || 0) - (bl.totalPaye || 0)
+                      )}
                 </TableCell>
               </TableRow>
             );

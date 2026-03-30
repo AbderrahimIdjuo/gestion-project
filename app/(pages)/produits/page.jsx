@@ -1,5 +1,6 @@
 "use client";
 
+import { AjouterStockProduitsDialog } from "@/components/ajouter-stock-produits-dialog";
 import CustomPagination from "@/components/customUi/customPagination";
 import { PriceRangeSlider } from "@/components/customUi/customSlider";
 import CustomTooltip from "@/components/customUi/customTooltip";
@@ -51,11 +52,13 @@ export default function ProduitsPage() {
   const [totalPages, setTotalPages] = useState();
   const [maxPrixAchat, setMaxPrixAchat] = useState();
   const [maxPrixVente, setMaxPrixVente] = useState();
+  const [maxStock, setMaxStock] = useState();
   const [currProduct, setCurrProduct] = useState(null);
   const [filters, setFilters] = useState({
     categorie: "all",
     statut: "all",
     prixAchat: [0, maxPrixAchat],
+    stock: [0, maxStock],
   });
 
   useEffect(() => {
@@ -72,7 +75,7 @@ export default function ProduitsPage() {
   // Réinitialiser la page à 1 lorsque les filtres changent
   useEffect(() => {
     setPage(1);
-  }, [filters.categorie, filters.statut, filters.prixAchat]);
+  }, [filters.categorie, filters.statut, filters.prixAchat, filters.stock]);
 
   const queryClient = useQueryClient();
   const produits = useQuery({
@@ -82,6 +85,10 @@ export default function ProduitsPage() {
       debouncedQuery,
       page,
       filters.categorie,
+      filters.prixAchat[0],
+      filters.prixAchat[1],
+      filters.stock[0],
+      filters.stock[1],
     ],
     queryFn: async () => {
       const response = await axios.get("/api/produits", {
@@ -92,13 +99,17 @@ export default function ProduitsPage() {
           categorie: filters.categorie,
           minPrixAchats: filters.prixAchat[0],
           maxPrixAchats: filters.prixAchat[1],
+          ...(filters.stock[0] != null &&
+            filters.stock[1] != null && {
+              minStock: filters.stock[0],
+              maxStock: filters.stock[1],
+            }),
         },
       });
       setTotalPages(response.data.totalPages);
       setMaxPrixAchat(response.data.maxPrixAchat);
       setMaxPrixVente(response.data.maxPrixVente);
-
-      console.log("### produits ###:", response.data.produits);
+      setMaxStock(response.data.maxStock ?? 0);
 
       return response.data;
     },
@@ -126,10 +137,10 @@ export default function ProduitsPage() {
   useEffect(() => {
     setFilters(prevFilters => ({
       ...prevFilters,
-
       prixAchat: [0, maxPrixAchat],
+      stock: [0, maxStock],
     }));
-  }, [maxPrixAchat, maxPrixVente]);
+  }, [maxPrixAchat, maxPrixVente, maxStock]);
 
   const categories = useQuery({
     queryKey: ["categories"],
@@ -138,6 +149,15 @@ export default function ProduitsPage() {
       return response.data.categories;
     },
   });
+
+  const stockSliderMax = Math.max(
+    typeof maxStock === "number" && !Number.isNaN(maxStock) ? maxStock : 0,
+    1
+  );
+  const stockRangeValue = [
+    filters.stock[0] ?? 0,
+    filters.stock[1] ?? stockSliderMax,
+  ];
 
   return (
     <>
@@ -252,9 +272,49 @@ export default function ProduitsPage() {
                               </div>
                             </div>
                           </div>
+                          <div className="grid grid-cols-4 items-center gap-4 my-2">
+                            <Label
+                              htmlFor="stock-range"
+                              className="text-left text-black col-span-4"
+                            >
+                              Stock :
+                            </Label>
+                            <div className="col-span-4">
+                              <PriceRangeSlider
+                                min={0}
+                                max={stockSliderMax}
+                                step={
+                                  stockSliderMax > 500
+                                    ? Math.max(Math.round(stockSliderMax / 100), 1)
+                                    : stockSliderMax > 100
+                                      ? 5
+                                      : 1
+                                }
+                                value={stockRangeValue}
+                                onValueChange={value =>
+                                  setFilters({ ...filters, stock: value })
+                                }
+                              />
+                              <div className="flex justify-between mt-2">
+                                <span>
+                                  {Number(stockRangeValue[0]).toLocaleString(
+                                    "fr-FR",
+                                    { maximumFractionDigits: 2 }
+                                  )}
+                                </span>
+                                <span>
+                                  {Number(stockRangeValue[1]).toLocaleString(
+                                    "fr-FR",
+                                    { maximumFractionDigits: 2 }
+                                  )}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </SheetContent>
                     </Sheet>
+                    <AjouterStockProduitsDialog />
                     <ImportProduits>
                       <Button
                         variant="outline"
@@ -278,6 +338,9 @@ export default function ProduitsPage() {
                           <TableHead>Catégorie</TableHead>
                           <TableHead>Prix</TableHead>
                           <TableHead>Unite</TableHead>
+                          <TableHead className="text-right tabular-nums">
+                            Stock
+                          </TableHead>
                           <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -308,6 +371,9 @@ export default function ProduitsPage() {
                               <TableCell className="!py-2" align="left">
                                 <Skeleton className="h-4 w-[90px]" />
                               </TableCell>
+                              <TableCell className="!py-2 text-right">
+                                <Skeleton className="h-4 w-[56px] ml-auto" />
+                              </TableCell>
                               <TableCell className="!py-2">
                                 <div className="flex gap-2 justify-end">
                                   <Skeleton className="h-7 w-7 rounded-full" />
@@ -334,6 +400,15 @@ export default function ProduitsPage() {
                               <TableCell className="!py-2">
                                 {product.Unite}
                               </TableCell>
+                              <TableCell className="text-right !py-2 tabular-nums font-medium">
+                                {Number(product.stock ?? 0).toLocaleString(
+                                  "fr-FR",
+                                  {
+                                    minimumFractionDigits: 0,
+                                    maximumFractionDigits: 2,
+                                  }
+                                )}
+                              </TableCell>
                               <TableCell className="text-right !py-2">
                                 <div className="flex justify-end gap-2">
                                   <ModifyProductDialog currProduct={product} />
@@ -357,7 +432,7 @@ export default function ProduitsPage() {
                           ))
                         ) : (
                           <TableRow>
-                            <TableCell colSpan={8} align="center">
+                            <TableCell colSpan={7} align="center">
                               <div className="text-center py-10 text-muted-foreground">
                                 <svg
                                   xmlns="http://www.w3.org/2000/svg"

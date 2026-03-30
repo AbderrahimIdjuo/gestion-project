@@ -5,7 +5,8 @@ export const dynamic = "force-dynamic";
 export async function POST(req) {
   try {
     const resopns = await req.json();
-    const { designation, categorieId, prixAchat, unite, reference } = resopns;
+    const { designation, categorieId, prixAchat, unite, reference, stock } =
+      resopns;
     const result = await prisma.produits.create({
       data: {
         designation,
@@ -13,6 +14,7 @@ export async function POST(req) {
         prixAchat,
         Unite: unite || "U",
         reference,
+        stock: stock || 0,
       },
     });
 
@@ -29,7 +31,7 @@ export async function POST(req) {
 export async function PUT(req) {
   try {
     const resopns = await req.json();
-    const { id, designation, categorieId, prixAchat, unite, reference } =
+    const { id, designation, categorieId, prixAchat, unite, reference, stock } =
       resopns;
 
     const result = await prisma.produits.update({
@@ -40,6 +42,7 @@ export async function PUT(req) {
         prixAchat: parseFloat(prixAchat),
         Unite: unite,
         reference,
+        stock: stock || 0,
       },
     });
 
@@ -60,6 +63,8 @@ export async function GET(req) {
   const categorie = searchParams.get("categorie");
   const minPrixAchats = searchParams.get("minPrixAchats");
   const maxPrixAchats = searchParams.get("maxPrixAchats");
+  const minStockParam = searchParams.get("minStock");
+  const maxStockParam = searchParams.get("maxStock");
 
   const filters = {};
 
@@ -88,8 +93,27 @@ export async function GET(req) {
     };
   }
 
+  // Plage de stock (null compté comme 0 si la plage inclut 0)
+  if (
+    minStockParam != null &&
+    maxStockParam != null &&
+    minStockParam !== "" &&
+    maxStockParam !== ""
+  ) {
+    const minS = Number(minStockParam);
+    const maxS = Number(maxStockParam);
+    if (!Number.isNaN(minS) && !Number.isNaN(maxS)) {
+      const zeroInRange = minS <= 0 && maxS >= 0;
+      const orBranches = [{ stock: { gte: minS, lte: maxS } }];
+      if (zeroInRange) {
+        orBranches.push({ stock: null });
+      }
+      filters.AND = [...(filters.AND || []), { OR: orBranches }];
+    }
+  }
+
   // Fetch filtered commandes with pagination and related data
-  const [produits, totalProduits, maxPrixAchat] = await Promise.all([
+  const [produits, totalProduits, maxPrixAchat, stockAgg] = await Promise.all([
     prisma.produits.findMany({
       where: filters,
       skip: (page - 1) * produitsPerPage,
@@ -109,6 +133,9 @@ export async function GET(req) {
         prixAchat: true,
       },
     }),
+    prisma.produits.aggregate({
+      _max: { stock: true },
+    }),
   ]);
 
   // Calculate total pages for pagination
@@ -119,6 +146,7 @@ export async function GET(req) {
     produits,
     totalProduits,
     maxPrixAchat: maxPrixAchat?.prixAchat || 0,
+    maxStock: stockAgg._max.stock ?? 0,
     totalPages,
   });
 }

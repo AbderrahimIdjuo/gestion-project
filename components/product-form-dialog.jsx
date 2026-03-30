@@ -41,6 +41,11 @@ export function ProductFormDialog() {
     }, z.number({ invalid_type_error: "Le prix d'achat doit être un nombre" }).optional().default(0)),
     reference: z.string().optional(),
     unite: z.string().optional(),
+    stock: z.preprocess(
+      v =>
+        v === "" || v === null || v === undefined ? 0 : Number(v),
+      z.number()
+    ),
   });
   const {
     register,
@@ -51,6 +56,9 @@ export function ProductFormDialog() {
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(productSchema),
+    defaultValues: {
+      stock: 0,
+    },
   });
 
   const queryClient = useQueryClient();
@@ -172,6 +180,28 @@ export function ProductFormDialog() {
                 <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
                   <CircleX className="h-4 w-4" />
                   {errors.prixAchat.message}
+                </p>
+              )}
+            </div>
+            <div className="w-full grid grid-cols-1">
+              <Label htmlFor="stock" className="text-left mb-2 mb-2">
+                Stock
+              </Label>
+              <Input
+                id="stock"
+                name="stock"
+                type="number"
+                step="0.01"
+                min="0"
+                {...register("stock")}
+                className={`col-span-3 focus-visible:ring-purple-300 focus-visible:ring-purple-500 ${
+                  errors.stock && "border-red-500 border-2"
+                }`}
+              />
+              {errors.stock && (
+                <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
+                  <CircleX className="h-4 w-4" />
+                  {errors.stock.message}
                 </p>
               )}
             </div>

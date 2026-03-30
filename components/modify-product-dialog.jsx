@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,9 +42,15 @@ export function ModifyProductDialog({ currProduct }) {
     }, z.number({ invalid_type_error: "Le prix d'achat doit être un nombre" }).optional()),
     reference: z.string().optional(),
     unite: z.string().optional(),
+    stock: z.preprocess(
+      v =>
+        v === "" || v === null || v === undefined ? 0 : Number(v),
+      z.number()
+    ),
   });
   const {
     register,
+    reset,
     watch,
     setValue,
     handleSubmit,
@@ -57,9 +63,25 @@ export function ModifyProductDialog({ currProduct }) {
       prixAchat: currProduct?.prixAchat,
       unite: currProduct?.Unite,
       reference: currProduct?.reference,
+      stock: currProduct?.stock ?? 0,
     },
     resolver: zodResolver(productSchema),
   });
+
+  useEffect(() => {
+    if (open && currProduct) {
+      reset({
+        id: currProduct.id,
+        designation: currProduct.designation,
+        categorieId:
+          currProduct.categorieId || currProduct.categorieProduits?.id,
+        prixAchat: currProduct.prixAchat,
+        unite: currProduct.Unite,
+        reference: currProduct.reference,
+        stock: currProduct.stock ?? 0,
+      });
+    }
+  }, [open, currProduct, reset]);
   
   const uniteList = ["ML", "M²", "U"];
   const modifierProduit = useMutation({
@@ -180,6 +202,28 @@ export function ModifyProductDialog({ currProduct }) {
                   <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
                     <CircleX className="h-4 w-4" />
                     {errors.prixAchat.message}
+                  </p>
+                )}
+              </div>
+              <div className="w-full grid grid-cols-1">
+                <Label htmlFor="stock" className="text-left mb-2 mb-2">
+                  Stock
+                </Label>
+                <Input
+                  id="stock"
+                  name="stock"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  {...register("stock")}
+                  className={`col-span-3 focus-visible:ring-purple-300 focus-visible:ring-purple-500 ${
+                    errors.stock && "border-red-500 border-2"
+                  }`}
+                />
+                {errors.stock && (
+                  <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
+                    <CircleX className="h-4 w-4" />
+                    {errors.stock.message}
                   </p>
                 )}
               </div>

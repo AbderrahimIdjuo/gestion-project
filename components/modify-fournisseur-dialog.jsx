@@ -26,8 +26,12 @@ export function ModifyFournisseur({ currFournisseur, isOpen, onClose }) {
     telephone: z.string().optional(),
     telephoneSecondaire: z.string().optional(),
     ice: z.string().optional(),
-    // dette: z.coerce.number().optional(),
     adresse: z.string().optional(),
+    dette: z.preprocess(
+      v =>
+        v === "" || v === null || v === undefined ? 0 : Number(v),
+      z.number()
+    ),
   });
 
   const queryClient = useQueryClient();
@@ -45,13 +49,12 @@ export function ModifyFournisseur({ currFournisseur, isOpen, onClose }) {
       telephoneSecondaire: currFournisseur?.telephoneSecondaire || "",
       adresse: currFournisseur?.adresse || "",
       ice: currFournisseur?.ice || "",
-      //  dette: currFournisseur?.dette || "",
+      dette: currFournisseur?.dette ?? 0,
     },
   });
 
   // Mettre à jour les valeurs du formulaire quand currFournisseur change
   useEffect(() => {
-    console.log("currFournisseur", currFournisseur);
     if (currFournisseur && isOpen) {
       reset({
         nom: currFournisseur.nom?.toUpperCase() || "",
@@ -60,7 +63,7 @@ export function ModifyFournisseur({ currFournisseur, isOpen, onClose }) {
         telephoneSecondaire: currFournisseur.telephoneSecondaire || "",
         adresse: currFournisseur.adresse || "",
         ice: currFournisseur.ice || "",
-        dette: currFournisseur.dette || "",
+        dette: currFournisseur.dette ?? 0,
       });
     }
   }, [currFournisseur, reset, isOpen]);
@@ -205,17 +208,24 @@ export function ModifyFournisseur({ currFournisseur, isOpen, onClose }) {
                 className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
               />
             </div>
-            {/* <div className="w-full grid grid-cols-1">
-              <Label htmlFor="dette" className="text-left mb-2">
-                Dette
+            <div className="w-full grid grid-cols-1">
+              <Label htmlFor="dette" className="text-left mb-2 mb-2">
+                Dette (MAD)
               </Label>
               <Input
                 id="dette"
                 name="dette"
+                type="number"
+                step="0.01"
                 {...register("dette")}
-                className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0"
+                className={`col-span-3 focus-visible:ring-purple-300 focus-visible:ring-offset-0 ${
+                  errors.dette && "border-red-500 border-2"
+                }`}
               />
-            </div> */}
+              {errors.dette && (
+                <p className="text-red-500 text-sm mt-1">{errors.dette.message}</p>
+              )}
+            </div>
           </div>
           <DialogFooter className="mt-5">
             <Button
