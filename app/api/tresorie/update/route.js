@@ -137,27 +137,27 @@ export async function PUT(req) {
             });
 
             if (oldCompte) {
-              // Retirer le montant de l'ancien compte selon son type
-              let montantARetirer = existingTransaction.montant;
+              // Annuler l'effet historique sur l'ancien compte (inverse de la création)
+              // dépense créée → solde -= m  →  annulation : solde += m
+              // recette créée → solde += m  →  annulation : solde -= m
+              let reverseOld = 0;
               if (existingTransaction.type === "depense") {
-                // Pour une dépense, on retire le montant (solde diminue)
-                montantARetirer = existingTransaction.montant;
+                reverseOld = existingTransaction.montant;
               } else if (existingTransaction.type === "recette") {
-                // Pour une recette, on retire le montant (solde diminue)
-                montantARetirer = existingTransaction.montant;
+                reverseOld = -existingTransaction.montant;
               }
 
-              const resultOld = await tx.comptesBancaires.updateMany({
-                where: { compte: existingTransaction.compte },
-                data: {
-                  solde: {
-                    decrement: montantARetirer,
+              if (reverseOld !== 0) {
+                const resultOld = await tx.comptesBancaires.updateMany({
+                  where: { compte: existingTransaction.compte },
+                  data: {
+                    solde: { increment: reverseOld },
                   },
-                },
-              });
-              console.log(
-                `Ancien compte mis à jour: ${resultOld.count} comptes affectés, montant retiré: ${montantARetirer}`
-              );
+                });
+                console.log(
+                  `Ancien compte (${existingTransaction.compte}) : annulation effet ${existingTransaction.type}, increment solde: ${reverseOld}, lignes: ${resultOld.count}`
+                );
+              }
             } else {
               console.log(
                 `Ancien compte non trouvé: ${existingTransaction.compte}`

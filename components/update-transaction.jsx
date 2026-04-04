@@ -166,6 +166,7 @@ export default function UpdateTransactionDialog({
     onSuccess: () => {
       onClose();
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["comptes"] });
     },
   });
 

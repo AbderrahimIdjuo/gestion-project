@@ -3,10 +3,18 @@ import prisma from "../../../lib/prisma";
 
 /** Fournisseur fictif pour sorties de stock interne — pas d’achat fournisseur réel */
 const STOCK_SORTIE_FOURNISSEUR_NOM = "STOCK(sortie)";
+/** Charge « entrée stock » sur un groupe de BL : réception en magasin */
+const STOCK_ENTREE_CHARGE_NOM = "STOCK(entrée)";
 
 function isStockSortieFournisseur(nom) {
   return (
     typeof nom === "string" && nom.trim() === STOCK_SORTIE_FOURNISSEUR_NOM
+  );
+}
+
+function isStockEntreeCharge(charge) {
+  return (
+    typeof charge === "string" && charge.trim() === STOCK_ENTREE_CHARGE_NOM
   );
 }
 
@@ -20,6 +28,27 @@ async function decrementProduitStocksFromBlGroups(prismaTx, bLGroups) {
       await prismaTx.produits.update({
         where: { id: produitId },
         data: { stock: { decrement: q } },
+      });
+    }
+  }
+}
+
+/** Augmenter le stock pour les lignes des groupes dont la charge est STOCK(entrée) */
+async function incrementProduitStocksForEntreeCharge(prismaTx, bLGroups) {
+  for (const group of bLGroups || []) {
+    if (!isStockEntreeCharge(group.charge)) continue;
+    for (const item of group.items || []) {
+      const produitId = item.id ?? item.produitId;
+      const q = parseFloat(item.quantite);
+      if (!produitId || !Number.isFinite(q) || q <= 0) continue;
+      const p = await prismaTx.produits.findUnique({
+        where: { id: produitId },
+        select: { stock: true },
+      });
+      if (!p) continue;
+      await prismaTx.produits.update({
+        where: { id: produitId },
+        data: { stock: (p.stock ?? 0) + q },
       });
     }
   }
@@ -98,6 +127,11 @@ export async function POST(req) {
         // Sortie stock interne : retirer du stock les quantités livrées sur ce BL
         if (stockSortieInterne) {
           await decrementProduitStocksFromBlGroups(prisma, bLGroups);
+        }
+
+        // Entrée stock (charge sur le groupe) : augmenter le stock des produits du groupe
+        if (type === "achats") {
+          await incrementProduitStocksForEntreeCharge(prisma, bLGroups);
         }
 
         // creation de la transaction (pas pour les BL de type retour)
