@@ -157,7 +157,11 @@ export default function UpdateTransactionDialog({
         await axios.put("/api/tresorie/update", data);
         toast.success("Opération éffectué avec succès");
       } catch (error) {
-        toast.error("Échec de l'opération!");
+        toast.error(
+          error?.response?.data?.message ||
+            error?.response?.data?.error ||
+            "Échec de l'opération!"
+        );
         throw error;
       } finally {
         toast.dismiss(loadingToast);
@@ -167,6 +171,7 @@ export default function UpdateTransactionDialog({
       onClose();
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       queryClient.invalidateQueries({ queryKey: ["comptes"] });
+      queryClient.invalidateQueries({ queryKey: ["reglements"] });
     },
   });
 

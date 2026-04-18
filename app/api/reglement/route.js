@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../lib/prisma";
 import { requireAdmin } from "@/lib/auth-utils";
+import {
+  applyReglementMontantChangeToBonLivraisons,
+  ReglementMontantInvalideError,
+} from "@/lib/reglement-montant-bl-sync";
 export const dynamic = "force-dynamic";
 
 export async function GET(req) {
@@ -761,7 +765,11 @@ export async function PUT(req) {
     // Récupérer le règlement existant
     const reglementExistant = await prisma.reglement.findUnique({
       where: { id },
-      include: { cheque: true, fournisseur: true },
+      include: {
+        cheque: true,
+        fournisseur: true,
+        blAllocations: { orderBy: { id: "asc" } },
+      },
     });
 
     if (!reglementExistant) {
@@ -965,40 +973,14 @@ export async function PUT(req) {
         }
       }
 
-      // Si le règlement a une référence (BL), mettre à jour le BL
-      if (reglementExistant.reference) {
-        // Récupérer le BL pour connaître son total et totalPaye actuel
-        const bonLivraison = await tx.bonLivraison.findUnique({
-          where: { id: reglementExistant.reference },
-        });
-
-        if (bonLivraison) {
-          // Mettre à jour le montant payé (ajouter ou soustraire la différence)
-          const nouveauTotalPaye = Math.max(
-            0,
-            (bonLivraison.totalPaye ?? 0) + (nouveauMontantReglement - ancienMontantReglement)
-          );
-
-          // Calculer le nouveau statut de paiement
-          let nouveauStatutPaiement = bonLivraison.statutPaiement;
-          if (nouveauTotalPaye <= 0) {
-            nouveauStatutPaiement = "impaye";
-          } else if (nouveauTotalPaye < bonLivraison.total) {
-            nouveauStatutPaiement = "enPartie";
-          } else if (nouveauTotalPaye >= bonLivraison.total) {
-            nouveauStatutPaiement = "paye";
-          }
-
-          // Mettre à jour le BL
-          await tx.bonLivraison.update({
-            where: { id: reglementExistant.reference },
-            data: {
-              totalPaye: nouveauTotalPaye,
-              statutPaiement: nouveauStatutPaiement,
-            },
-          });
-        }
-      }
+      await applyReglementMontantChangeToBonLivraisons(tx, {
+        reglementId: reglementExistant.id,
+        fournisseurId: reglementExistant.fournisseurId,
+        ancienMontantReglement,
+        nouveauMontantReglement,
+        reference: reglementExistant.reference,
+        blAllocations: reglementExistant.blAllocations,
+      });
 
       // Ajuster la dette fournisseur : ancien règlement diminuait la dette de ancienMontantReglement, le nouveau de nouveauMontantReglement
       const deltaDette = ancienMontantReglement - nouveauMontantReglement;
@@ -1022,6 +1004,12 @@ export async function PUT(req) {
     return NextResponse.json(result);
   } catch (error) {
     console.error("Erreur lors de la mise à jour du règlement:", error);
+    if (
+      error instanceof ReglementMontantInvalideError ||
+      error?.name === "ReglementMontantInvalideError"
+    ) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
     if (error?.message?.includes("Access denied")) {
       return NextResponse.json(
         { error: "Accès refusé. Rôle admin requis." },

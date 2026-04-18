@@ -22,7 +22,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import axios from "axios";
 import { Check, Minus, PackagePlus, Plus, Search } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -50,8 +54,7 @@ export function AjouterStockProduitsDialog() {
         next[article.id] = {
           ...article,
           quantite: 1,
-          categorie:
-            article.categorieProduits?.categorie || article.categorie,
+          categorie: article.categorieProduits?.categorie || article.categorie,
         };
       }
       return next;
@@ -300,7 +303,11 @@ export function AjouterStockProduitsDialog() {
                   {selectedCount}
                 </Badge>
                 <span className="text-xs text-muted-foreground ml-auto">
-                  +{totalQuantity.toLocaleString("fr-FR", { maximumFractionDigits: 2 })} u.
+                  +
+                  {totalQuantity.toLocaleString("fr-FR", {
+                    maximumFractionDigits: 2,
+                  })}{" "}
+                  u.
                 </span>
               </div>
               <ScrollArea className="flex-1 min-h-[240px] pr-2">
@@ -322,9 +329,7 @@ export function AjouterStockProduitsDialog() {
                           variant="outline"
                           size="icon"
                           className="h-8 w-8 rounded-full"
-                          onClick={() =>
-                            handleQuantityChange(article.id, -1)
-                          }
+                          onClick={() => handleQuantityChange(article.id, -1)}
                         >
                           <Minus className="h-3 w-3" />
                         </Button>
@@ -338,9 +343,7 @@ export function AjouterStockProduitsDialog() {
                           variant="outline"
                           size="icon"
                           className="h-8 w-8 rounded-full"
-                          onClick={() =>
-                            handleQuantityChange(article.id, 1)
-                          }
+                          onClick={() => handleQuantityChange(article.id, 1)}
                         >
                           <Plus className="h-3 w-3" />
                         </Button>
@@ -370,7 +373,9 @@ export function AjouterStockProduitsDialog() {
               type="button"
               className="rounded-full bg-emerald-600 hover:bg-emerald-700 text-white"
               onClick={handleApplyStock}
-              disabled={selectedCount === 0 || totalQuantity <= 0 || isSubmitting}
+              disabled={
+                selectedCount === 0 || totalQuantity <= 0 || isSubmitting
+              }
             >
               {isSubmitting ? "En cours…" : "Mettre à jour le stock"}
             </Button>

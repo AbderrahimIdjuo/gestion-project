@@ -285,7 +285,10 @@ export default function ProduitsPage() {
                                 max={stockSliderMax}
                                 step={
                                   stockSliderMax > 500
-                                    ? Math.max(Math.round(stockSliderMax / 100), 1)
+                                    ? Math.max(
+                                        Math.round(stockSliderMax / 100),
+                                        1
+                                      )
                                     : stockSliderMax > 100
                                       ? 5
                                       : 1

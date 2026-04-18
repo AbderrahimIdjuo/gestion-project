@@ -40,9 +40,6 @@ export async function POST(req) {
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error("POST /api/produits/stock:", error);
-    return NextResponse.json(
-      { message: "Erreur serveur." },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: "Erreur serveur." }, { status: 500 });
   }
 }

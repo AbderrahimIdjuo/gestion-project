@@ -1,9 +1,14 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
-import { Plus, Package, Trash2, X, Copy } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import ComboBoxDevis from "@/components/comboBox-devis";
+import ComboBoxFournisseur from "@/components/comboBox-fournisseurs";
+import { CustomDatePicker } from "@/components/customUi/customDatePicker";
+import CustomTooltip from "@/components/customUi/customTooltip";
+import { AddButton } from "@/components/customUi/styledButton";
+import { ProduitsSelection } from "@/components/produits-selection-CMDF";
+import { ArticleSelectionDialog } from "@/components/produits-selection-NouveauBL";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -15,19 +20,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { ArticleSelectionDialog } from "@/components/produits-selection-NouveauBL";
-import ComboBoxFournisseur from "@/components/comboBox-fournisseurs";
-import { ProduitsSelection } from "@/components/produits-selection-CMDF";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  TableFooter,
-} from "@/components/ui/table";
 import {
   Select,
   SelectContent,
@@ -36,13 +28,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import axios from "axios";
-import { AddButton } from "@/components/customUi/styledButton";
-import { CustomDatePicker } from "@/components/customUi/customDatePicker";
-import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
-import toast from "react-hot-toast";
 import { Switch } from "@/components/ui/switch";
-import CustomTooltip from "@/components/customUi/customTooltip";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+import { Copy, Package, Plus, Trash2, X } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import toast from "react-hot-toast";
 
 export default function AddBonLivraison({ lastBonLivraison }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -95,7 +95,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
   };
 
   const total = () => {
-    const produits = bLGroups.flatMap((group) => group.items);
+    const produits = bLGroups.flatMap(group => group.items);
     return produits
       .reduce((acc, produit) => {
         return acc + produit.quantite * produit.prixUnite;
@@ -103,7 +103,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
       .toFixed(0);
   };
 
-  const sousTotal = (group) => {
+  const sousTotal = group => {
     return group.items
       .reduce((acc, produit) => {
         return acc + produit.quantite * produit.prixUnite;
@@ -164,16 +164,16 @@ export default function AddBonLivraison({ lastBonLivraison }) {
       clientId: null,
       charge: null,
     };
-    setBLGroups((prev) => [...prev, newGroup]);
+    setBLGroups(prev => [...prev, newGroup]);
     // Initialize group mode as devis by default
-    setGroupModes((prev) => ({ ...prev, [newGroupId]: true }));
+    setGroupModes(prev => ({ ...prev, [newGroupId]: true }));
   }, []);
 
   // modifier le numero de commande d'un groupe
   const updateDevisNumberOfGroup = useCallback(
     (groupId, devisNumber, clientName, clientId, numero, totalDevi) => {
-      setBLGroups((prevGroups) =>
-        prevGroups.map((group) =>
+      setBLGroups(prevGroups =>
+        prevGroups.map(group =>
           group.id === groupId
             ? {
                 ...group,
@@ -192,8 +192,8 @@ export default function AddBonLivraison({ lastBonLivraison }) {
   );
 
   const updateChargeOfGroup = useCallback((groupId, charge) => {
-    setBLGroups((prevGroups) =>
-      prevGroups.map((group) =>
+    setBLGroups(prevGroups =>
+      prevGroups.map(group =>
         group.id === groupId
           ? {
               ...group,
@@ -210,7 +210,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
     );
 
     // Clear the selected devis for this group
-    setSelectedDevis((prev) => {
+    setSelectedDevis(prev => {
       const newState = { ...prev };
       delete newState[groupId];
       return newState;
@@ -219,19 +219,19 @@ export default function AddBonLivraison({ lastBonLivraison }) {
 
   // Toggle group mode between devis and charge
   const toggleGroupMode = useCallback((groupId, isDevis) => {
-    setGroupModes((prev) => ({ ...prev, [groupId]: isDevis }));
+    setGroupModes(prev => ({ ...prev, [groupId]: isDevis }));
 
     if (isDevis) {
       // Switching to devis mode - clear charge
-      setBLGroups((prevGroups) =>
-        prevGroups.map((group) =>
+      setBLGroups(prevGroups =>
+        prevGroups.map(group =>
           group.id === groupId ? { ...group, charge: null } : group
         )
       );
     } else {
       // Switching to charge mode - clear all devis-related data
-      setBLGroups((prevGroups) =>
-        prevGroups.map((group) =>
+      setBLGroups(prevGroups =>
+        prevGroups.map(group =>
           group.id === groupId
             ? {
                 ...group,
@@ -247,7 +247,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
       );
 
       // Clear the selected devis for this group
-      setSelectedDevis((prev) => {
+      setSelectedDevis(prev => {
         const newState = { ...prev };
         delete newState[groupId];
         return newState;
@@ -256,14 +256,14 @@ export default function AddBonLivraison({ lastBonLivraison }) {
   }, []);
 
   // Suppression d'un groupe
-  const removeBlGroup = useCallback((groupId) => {
-    setBLGroups((prev) => prev.filter((group) => group.id !== groupId));
-    setSelectedDevis((prev) => {
+  const removeBlGroup = useCallback(groupId => {
+    setBLGroups(prev => prev.filter(group => group.id !== groupId));
+    setSelectedDevis(prev => {
       const newState = { ...prev };
       delete newState[groupId];
       return newState;
     });
-    setGroupModes((prev) => {
+    setGroupModes(prev => {
       const newState = { ...prev };
       delete newState[groupId];
       return newState;
@@ -272,14 +272,14 @@ export default function AddBonLivraison({ lastBonLivraison }) {
 
   // Gestion des articles
   const handleAddArticles = useCallback((groupId, newArticles) => {
-    setBLGroups((prev) =>
-      prev.map((group) => {
+    setBLGroups(prev =>
+      prev.map(group => {
         if (group.id === groupId) {
           return {
             ...group,
             items: [
               ...group.items,
-              ...newArticles.map((article) => ({
+              ...newArticles.map(article => ({
                 ...article,
                 uniqueKey: `${article.id}-${crypto.randomUUID()}`, // Clé vraiment unique
               })),
@@ -293,12 +293,12 @@ export default function AddBonLivraison({ lastBonLivraison }) {
 
   // Suppression d'un article
   const removeItem = useCallback((groupId, itemId) => {
-    setBLGroups((prev) =>
-      prev.map((group) => {
+    setBLGroups(prev =>
+      prev.map(group => {
         if (group.id === groupId) {
           return {
             ...group,
-            items: group.items.filter((item) => item.uniqueKey !== itemId),
+            items: group.items.filter(item => item.uniqueKey !== itemId),
           };
         }
         return group;
@@ -308,12 +308,12 @@ export default function AddBonLivraison({ lastBonLivraison }) {
 
   // Mise à jour d'un article
   const handleItemChange = useCallback((groupId, itemId, field, value) => {
-    setBLGroups((prev) =>
-      prev.map((group) => {
+    setBLGroups(prev =>
+      prev.map(group => {
         if (group.id === groupId) {
           return {
             ...group,
-            items: group.items.map((item) =>
+            items: group.items.map(item =>
               item.uniqueKey === itemId
                 ? { ...item, [field]: Number(value) || 0 }
                 : item
@@ -327,15 +327,15 @@ export default function AddBonLivraison({ lastBonLivraison }) {
 
   // Mise à jour de la commande sélectionnée
   const handleDevisSelect = useCallback((groupId, devis) => {
-    setSelectedDevis((prev) => ({
+    setSelectedDevis(prev => ({
       ...prev,
       [groupId]: devis,
     }));
   }, []);
 
   const handlCopyItem = (groupId, item) => {
-    setBLGroups((prev) =>
-      prev.map((group) => {
+    setBLGroups(prev =>
+      prev.map(group => {
         if (group.id === groupId) {
           return {
             ...group,
@@ -357,7 +357,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
     );
   };
 
-  const validateFloat = (value) => {
+  const validateFloat = value => {
     if (typeof value === "string") {
       value = value.replace(",", ".");
       // Remove any whitespace that might interfere
@@ -394,7 +394,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
       <div className="flex items-center justify-between">
         <Dialog
           open={isDialogOpen}
-          onOpenChange={(open) => {
+          onOpenChange={open => {
             setIsDialogOpen(open);
             if (!open) resetDialog();
           }}
@@ -430,7 +430,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                     </Label>
                     <Select
                       value={type}
-                      onValueChange={(value) => setType(value)}
+                      onValueChange={value => setType(value)}
                     >
                       <SelectTrigger className="w-full col-span-3 bg-white focus:ring-purple-500">
                         <SelectValue placeholder="Séléctionnez ..." />
@@ -450,7 +450,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                     <Input
                       id="reference"
                       value={reference}
-                      onChange={(e) => {
+                      onChange={e => {
                         setReference(e.target.value);
                       }}
                       className="col-span-3 focus:!ring-purple-500 "
@@ -471,7 +471,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                         </Label>
                         <Select
                           value={statutPaiement}
-                          onValueChange={(value) => setStatutPaiement(value)}
+                          onValueChange={value => setStatutPaiement(value)}
                         >
                           <SelectTrigger className="w-full col-span-3 bg-white focus:ring-purple-500">
                             <SelectValue placeholder="Séléctionnez ..." />
@@ -480,7 +480,9 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                             <SelectGroup>
                               <SelectItem value="impaye">Impayé</SelectItem>
                               <SelectItem value="paye">Payé</SelectItem>
-                              <SelectItem value="enPartie">En partie</SelectItem>
+                              <SelectItem value="enPartie">
+                                En partie
+                              </SelectItem>
                             </SelectGroup>
                           </SelectContent>
                         </Select>
@@ -491,14 +493,17 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                           <Select
                             value={compte}
                             name="compte"
-                            onValueChange={(value) => setCompte(value)}
+                            onValueChange={value => setCompte(value)}
                           >
                             <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500 mt-2">
                               <SelectValue placeholder="Séléctionner..." />
                             </SelectTrigger>
                             <SelectContent>
-                              {comptes.data?.map((element) => (
-                                <SelectItem key={element.id} value={element.compte}>
+                              {comptes.data?.map(element => (
+                                <SelectItem
+                                  key={element.id}
+                                  value={element.compte}
+                                >
                                   <div className="flex items-center gap-2">
                                     {element.compte}
                                   </div>
@@ -516,7 +521,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                           <Input
                             id="montantPaye"
                             value={montantPaye}
-                            onChange={(e) => {
+                            onChange={e => {
                               setMontantPaye(Number(e.target.value));
                             }}
                             className="col-span-3 focus:!ring-purple-500 "
@@ -589,19 +594,19 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                     </h3>
                     <Input
                       value={montantTotal}
-                      onChange={(e) => setMontantTotal(e.target.value)}
+                      onChange={e => setMontantTotal(e.target.value)}
                       className="focus:!ring-purple-500 w-full col-span-2"
                     />
                   </div>
                 </div>
 
-                {bLGroups.map((group) => (
+                {bLGroups.map(group => (
                   <Card key={group.id}>
                     <CardHeader className="p-4 pb-2">
                       <div className="flex justify-between items-center">
                         <h3 className="text-lg font-semibold">
                           Groupe{" "}
-                          {bLGroups.findIndex((g) => g.id === group.id) + 1}
+                          {bLGroups.findIndex(g => g.id === group.id) + 1}
                         </h3>
                         <Button
                           variant="ghost"
@@ -616,7 +621,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                         <Switch
                           id={`switch-${group.id}`}
                           checked={groupModes[group.id] || false}
-                          onCheckedChange={(checked) =>
+                          onCheckedChange={checked =>
                             toggleGroupMode(group.id, checked)
                           }
                         />
@@ -628,7 +633,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                         <div className="flex justify-between items-center mt-2">
                           <div className="w-1/2 pr-2">
                             <ComboBoxDevis
-                              onSelect={(devis) => {
+                              onSelect={devis => {
                                 handleDevisSelect(group.id, devis);
                                 updateDevisNumberOfGroup(
                                   group.id,
@@ -639,8 +644,8 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                                   devis.total
                                 );
                               }}
-                              setSelectedDevis={(devis) =>
-                                setSelectedDevis((prev) => ({
+                              setSelectedDevis={devis =>
+                                setSelectedDevis(prev => ({
                                   ...prev,
                                   [group.id]: devis,
                                 }))
@@ -665,7 +670,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                           <Select
                             value={group.charge || ""}
                             name="charge"
-                            onValueChange={(value) => {
+                            onValueChange={value => {
                               updateChargeOfGroup(group.id, value);
                             }}
                           >
@@ -673,7 +678,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                               <SelectValue placeholder="Séléctionner..." />
                             </SelectTrigger>
                             <SelectContent>
-                              {charges.data?.map((element) => (
+                              {charges.data?.map(element => (
                                 <SelectItem
                                   key={element.id}
                                   value={element.charge}
@@ -691,7 +696,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                     <CardContent className="p-4 pt-2">
                       <div className="flex justify-end items-center gap-3 mb-4">
                         <ProduitsSelection
-                          onArticlesAdd={(articles) =>
+                          onArticlesAdd={articles =>
                             handleAddArticles(group.id, articles)
                           }
                         />
@@ -714,7 +719,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {group.items.map((item) => (
+                              {group.items.map(item => (
                                 <TableRow key={item.uniqueKey}>
                                   <TableCell>
                                     <span className="text-md">
@@ -724,7 +729,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                                   <TableCell>
                                     <Input
                                       defaultValue={item.quantite}
-                                      onChange={(e) =>
+                                      onChange={e =>
                                         handleItemChange(
                                           group.id,
                                           item.uniqueKey,
@@ -738,7 +743,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                                   <TableCell>
                                     <Input
                                       defaultValue={item.prixUnite}
-                                      onChange={(e) =>
+                                      onChange={e =>
                                         handleItemChange(
                                           group.id,
                                           item.uniqueKey,

@@ -1,6 +1,138 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../../lib/prisma";
 import { requireAdmin } from "@/lib/auth-utils";
+import {
+  applyReglementMontantChangeToBonLivraisons,
+  ReglementMontantInvalideError,
+} from "@/lib/reglement-montant-bl-sync";
+
+/**
+ * Même logique métier que PUT /api/reglement (chèque, soldes banque, BL comme paiement fournisseur, dette).
+ * Appelé quand on modifie une transaction liée à un règlement (ReglementId).
+ * Retourne le chequeId à enregistrer sur la transaction.
+ */
+async function syncLinkedReglementOnTransactionEdit(tx, params) {
+  const {
+    reglementExistant,
+    montant,
+    compte,
+    methodePaiement,
+    numeroCheque,
+    date,
+    motif,
+    datePrelevement,
+  } = params;
+
+  const id = reglementExistant.id;
+  const ancienMontantReglement = reglementExistant.montant;
+  const nouveauMontantReglement =
+    typeof montant === "number" && !Number.isNaN(montant)
+      ? montant
+      : Number(montant) || reglementExistant.montant;
+
+  let chequeId = reglementExistant.chequeId;
+  const mp = methodePaiement || reglementExistant.methodePaiement;
+
+  if (mp === "cheque" || mp === "traite") {
+    if (reglementExistant.cheque) {
+      await tx.cheques.update({
+        where: { id: reglementExistant.cheque.id },
+        data: {
+          numero: numeroCheque || reglementExistant.cheque.numero,
+          montant: nouveauMontantReglement,
+          compte: compte || reglementExistant.compte,
+          dateReglement: date ? new Date(date) : reglementExistant.dateReglement,
+          datePrelevement: datePrelevement
+            ? new Date(datePrelevement)
+            : reglementExistant.cheque.datePrelevement,
+        },
+      });
+    } else {
+      const nouveauCheque = await tx.cheques.create({
+        data: {
+          type: "EMIS",
+          montant: nouveauMontantReglement,
+          compte: compte || reglementExistant.compte,
+          numero: numeroCheque,
+          fournisseurId: reglementExistant.fournisseurId,
+          dateReglement: date ? new Date(date) : reglementExistant.dateReglement,
+          datePrelevement: datePrelevement ? new Date(datePrelevement) : null,
+        },
+      });
+      chequeId = nouveauCheque.id;
+    }
+  } else if (reglementExistant.chequeId) {
+    await tx.cheques.delete({
+      where: { id: reglementExistant.chequeId },
+    });
+    chequeId = null;
+  }
+
+  const nouveauCompteFinal = compte || reglementExistant.compte;
+
+  if (
+    nouveauMontantReglement !== ancienMontantReglement ||
+    nouveauCompteFinal !== reglementExistant.compte
+  ) {
+    await tx.comptesBancaires.updateMany({
+      where: { compte: reglementExistant.compte },
+      data: { solde: { increment: ancienMontantReglement } },
+    });
+    await tx.comptesBancaires.updateMany({
+      where: { compte: nouveauCompteFinal },
+      data: { solde: { decrement: nouveauMontantReglement } },
+    });
+  }
+
+  const nouveauNumero =
+    mp === "cheque" || mp === "traite"
+      ? numeroCheque ??
+        reglementExistant.cheque?.numero ??
+        reglementExistant.numero ??
+        null
+      : mp === "versement"
+        ? numeroCheque ?? reglementExistant.numero ?? null
+        : reglementExistant.numero ?? null;
+
+  await tx.reglement.update({
+    where: { id },
+    data: {
+      montant: nouveauMontantReglement,
+      compte: nouveauCompteFinal,
+      methodePaiement: mp,
+      dateReglement: date ? new Date(date) : reglementExistant.dateReglement,
+      datePrelevement:
+        datePrelevement !== undefined && datePrelevement !== null
+          ? new Date(datePrelevement)
+          : reglementExistant.datePrelevement,
+      motif: motif !== undefined ? motif : reglementExistant.motif,
+      numero: nouveauNumero,
+      chequeId,
+    },
+  });
+
+  await applyReglementMontantChangeToBonLivraisons(tx, {
+    reglementId: reglementExistant.id,
+    fournisseurId: reglementExistant.fournisseurId,
+    ancienMontantReglement,
+    nouveauMontantReglement,
+    reference: reglementExistant.reference,
+    blAllocations: reglementExistant.blAllocations,
+  });
+
+  const deltaDette = ancienMontantReglement - nouveauMontantReglement;
+  if (deltaDette !== 0) {
+    await tx.fournisseurs.update({
+      where: { id: reglementExistant.fournisseurId },
+      data:
+        deltaDette > 0
+          ? { dette: { increment: deltaDette } }
+          : { dette: { decrement: -deltaDette } },
+    });
+  }
+
+  return chequeId;
+}
 
 export async function PUT(req) {
   try {
@@ -29,6 +161,13 @@ export async function PUT(req) {
       where: { id },
       include: {
         cheque: true,
+        reglement: {
+          include: {
+            cheque: true,
+            fournisseur: { select: { id: true, nom: true } },
+            blAllocations: { orderBy: { id: "asc" } },
+          },
+        },
       },
     });
 
@@ -45,13 +184,26 @@ export async function PUT(req) {
     // Utiliser une transaction Prisma pour garantir la cohérence
     const result = await prisma.$transaction(
       async tx => {
-        // 1. Gérer le chèque selon les cas AVANT de mettre à jour la transaction
-        let newChequeId = null;
+        const linkedReglement =
+          existingTransaction.ReglementId && existingTransaction.reglement
+            ? existingTransaction.reglement
+            : null;
 
-        if (numeroCheque && methodePaiement === "cheque") {
-          // Si on a un numéro de chèque et que la méthode est "chèque"
+        let resolvedChequeId = existingTransaction.chequeId;
+
+        if (linkedReglement) {
+          resolvedChequeId = await syncLinkedReglementOnTransactionEdit(tx, {
+            reglementExistant: linkedReglement,
+            montant: Number(montant),
+            compte,
+            methodePaiement,
+            numeroCheque,
+            date,
+            motif: existingTransaction.motif,
+            datePrelevement: existingTransaction.datePrelevement,
+          });
+        } else if (numeroCheque && methodePaiement === "cheque") {
           if (existingTransaction.chequeId) {
-            // Si la transaction existante avait déjà un chèque, le mettre à jour
             await tx.cheques.update({
               where: { id: existingTransaction.chequeId },
               data: {
@@ -61,10 +213,9 @@ export async function PUT(req) {
                 dateReglement: date,
               },
             });
-            newChequeId = existingTransaction.chequeId;
+            resolvedChequeId = existingTransaction.chequeId;
             console.log(`Chèque existant mis à jour: ${numeroCheque}`);
           } else {
-            // Si la transaction existante n'avait pas de chèque, en créer un nouveau
             const newCheque = await tx.cheques.create({
               data: {
                 numero: numeroCheque,
@@ -74,37 +225,26 @@ export async function PUT(req) {
                 type: "EMIS",
               },
             });
-            newChequeId = newCheque.id;
+            resolvedChequeId = newCheque.id;
             console.log(
               `Nouveau chèque créé: ${numeroCheque} avec ID: ${newCheque.id}`
             );
           }
         } else if (existingTransaction.chequeId) {
-          // Si la transaction existante avait un chèque mais qu'on le supprime ou change de méthode
           console.log(
             `🗑️ Suppression du chèque existant: ${existingTransaction.chequeId}`
           );
-          console.log(
-            `📝 Raison: methodePaiement changé de "cheque" vers "${methodePaiement}" ou numeroCheque supprimé`
-          );
-
-          // D'abord mettre à jour la transaction pour retirer la référence au chèque
           await tx.transactions.update({
             where: { id },
-            data: {
-              chequeId: null,
-            },
+            data: { chequeId: null },
           });
-
-          // Ensuite supprimer le chèque
           await tx.cheques.delete({
             where: { id: existingTransaction.chequeId },
           });
-
+          resolvedChequeId = null;
           console.log("✅ Chèque supprimé avec succès");
         }
 
-        // 2. Maintenant mettre à jour la transaction avec toutes les données
         const updatedTransaction = await tx.transactions.update({
           where: { id },
           data: {
@@ -117,14 +257,17 @@ export async function PUT(req) {
             description,
             type,
             lable,
-            chequeId: newChequeId, // Mettre à jour l'ID du chèque si nécessaire
+            chequeId: resolvedChequeId,
           },
         });
 
-        // 3. Mettre à jour le solde du compte bancaire en tenant compte du type de transaction
         const compteChanged = existingTransaction.compte !== compte;
+        const skipTransactionBankAdjust = Boolean(linkedReglement);
 
-        if (montantDifference !== 0 || compteChanged) {
+        if (
+          !skipTransactionBankAdjust &&
+          (montantDifference !== 0 || compteChanged)
+        ) {
           if (compteChanged) {
             // Si le compte a changé, ajuster les deux comptes
             console.log(
@@ -257,7 +400,13 @@ export async function PUT(req) {
         }
 
         // 5. Si c'est une transaction fournisseur avec référence BL, mettre à jour le bon de livraison
-        if (fournisseurId && reference && reference.startsWith("BL-")) {
+        // (ignorer si liée à un règlement : déjà traité via syncLinkedReglementOnTransactionEdit)
+        if (
+          !linkedReglement &&
+          fournisseurId &&
+          reference &&
+          reference.startsWith("BL-")
+        ) {
           console.log(`🔍 Mise à jour du bon de livraison: ${reference}`);
 
           // Trouver le bon de livraison correspondant
@@ -299,7 +448,8 @@ export async function PUT(req) {
         }
 
         // 6. Si c'est une transaction "paiement fournisseur", modifier les BL liés au fournisseur
-        if (fournisseurId && lable === "paiement fournisseur") {
+        // (ignorer si liée à un règlement : déjà traité côté règlement)
+        if (!linkedReglement && fournisseurId && lable === "paiement fournisseur") {
           console.log(
             `🔍 Modification des BL pour le fournisseur: ${fournisseurId}`
           );
@@ -427,6 +577,13 @@ export async function PUT(req) {
     });
   } catch (error) {
     console.error("Error updating transaction:", error);
+
+    if (
+      error instanceof ReglementMontantInvalideError ||
+      error?.name === "ReglementMontantInvalideError"
+    ) {
+      return NextResponse.json({ message: error.message }, { status: 400 });
+    }
 
     if (error?.message?.includes("Access denied")) {
       return NextResponse.json(
