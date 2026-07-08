@@ -53,12 +53,13 @@ export default function ProduitsPage() {
   const [maxPrixAchat, setMaxPrixAchat] = useState();
   const [maxPrixVente, setMaxPrixVente] = useState();
   const [maxStock, setMaxStock] = useState();
+  const [minStock, setMinStock] = useState();
   const [currProduct, setCurrProduct] = useState(null);
   const [filters, setFilters] = useState({
     categorie: "all",
     statut: "all",
     prixAchat: [0, maxPrixAchat],
-    stock: [0, maxStock],
+    stock: [minStock, maxStock],
   });
 
   useEffect(() => {
@@ -110,6 +111,7 @@ export default function ProduitsPage() {
       setMaxPrixAchat(response.data.maxPrixAchat);
       setMaxPrixVente(response.data.maxPrixVente);
       setMaxStock(response.data.maxStock ?? 0);
+      setMinStock(response.data.minStock ?? 0);
 
       return response.data;
     },
@@ -138,9 +140,9 @@ export default function ProduitsPage() {
     setFilters(prevFilters => ({
       ...prevFilters,
       prixAchat: [0, maxPrixAchat],
-      stock: [0, maxStock],
+      stock: [minStock, maxStock],
     }));
-  }, [maxPrixAchat, maxPrixVente, maxStock]);
+  }, [maxPrixAchat, maxPrixVente, maxStock, minStock]);
 
   const categories = useQuery({
     queryKey: ["categories"],
@@ -150,12 +152,16 @@ export default function ProduitsPage() {
     },
   });
 
+  const stockSliderMin = Math.min(
+    typeof minStock === "number" && !Number.isNaN(minStock) ? minStock : 0,
+    0
+  );
   const stockSliderMax = Math.max(
     typeof maxStock === "number" && !Number.isNaN(maxStock) ? maxStock : 0,
     1
   );
   const stockRangeValue = [
-    filters.stock[0] ?? 0,
+    filters.stock[0] ?? stockSliderMin,
     filters.stock[1] ?? stockSliderMax,
   ];
 
@@ -281,7 +287,7 @@ export default function ProduitsPage() {
                             </Label>
                             <div className="col-span-4">
                               <PriceRangeSlider
-                                min={0}
+                                min={stockSliderMin}
                                 max={stockSliderMax}
                                 step={
                                   stockSliderMax > 500
@@ -302,13 +308,17 @@ export default function ProduitsPage() {
                                 <span>
                                   {Number(stockRangeValue[0]).toLocaleString(
                                     "fr-FR",
-                                    { maximumFractionDigits: 2 }
+                                    {
+                                      maximumFractionDigits: 2,
+                                    }
                                   )}
                                 </span>
                                 <span>
                                   {Number(stockRangeValue[1]).toLocaleString(
                                     "fr-FR",
-                                    { maximumFractionDigits: 2 }
+                                    {
+                                      maximumFractionDigits: 2,
+                                    }
                                   )}
                                 </span>
                               </div>
