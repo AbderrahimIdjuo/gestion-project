@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import axios from "axios";
 import {
   Select,
   SelectContent,
@@ -33,6 +32,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
 
 import { CircleX, Copy, Trash2 } from "lucide-react";
 import { customAlphabet } from "nanoid";
@@ -58,7 +58,7 @@ export default function UpdateDevisPage({ params }) {
     control,
     setValue,
     handleSubmit,
-    formState: { errors, isSubmiting },
+    formState: { errors, isSubmitting },
   } = useForm({
     defaultValues: {
       articls: [],
@@ -247,7 +247,7 @@ export default function UpdateDevisPage({ params }) {
                         <Skeleton className="h-4 w-[8%]" />
                         <Skeleton className="h-4 w-[8%]" />
                       </div>
-                      {[1, 2, 3].map((i) => (
+                      {[1, 2, 3].map(i => (
                         <div key={i} className="flex gap-2 items-center">
                           <Skeleton className="h-10 flex-1" />
                           <Skeleton className="h-10 w-24" />
@@ -290,55 +290,61 @@ export default function UpdateDevisPage({ params }) {
                 </div>
               </div>
             ) : (
-            <form
-              className="w-full flex flex-col flex-1"
-              onSubmit={handleSubmit(onSubmit)}
-            >
-              <div className="w-full space-y-6 p-6 mb-[5rem]">
-              <div className="flex justify-between items-center">
-                <div className="flex gap-3 items-center">
-                  <h1 className="text-3xl font-bold">
-                    Modifier le devis : {watch("numero")}{" "}
-                  </h1>
-                </div>
-              </div>
-              <Card className="w-full">
-                <CardContent className="p-6 space-y-6">
-                  {/* Header Section */}
-                  <div className="grid grid-cols-6 gap-6">
-                    <div className="col-span-3">
-                      <ComboBoxClients setClient={setClient} client={client} />
-                      {errors.clientId && (
-                        <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
-                          <CircleX className="h-4 w-4" />
-                          {errors.clientId.message}
-                        </p>
-                      )}
+              <form
+                className="w-full flex flex-col flex-1"
+                onSubmit={handleSubmit(onSubmit)}
+              >
+                <div className="w-full space-y-6 p-6 mb-[5rem]">
+                  <div className="flex justify-between items-center">
+                    <div className="flex gap-3 items-center">
+                      <h1 className="text-3xl font-bold">
+                        Modifier le devis : {watch("numero")}{" "}
+                      </h1>
                     </div>
-                    <div className="col-span-3">
-                      <ComboBoxEmployes
-                        setEmploye={setEmploye}
-                        employe={employe}
-                      />
-                      {errors.employeId && (
-                        <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
-                          <CircleX className="h-4 w-4" />
-                          {errors.employeId.message}
-                        </p>
-                      )}
-                    </div>
-                    <div className="w-full space-y-2 col-span-2">
-                      <Label htmlFor="client">Date : </Label>
-                      <CustomDatePicker date={date} onDateChange={setDate} />
-                    </div>
-                    <div className="w-full space-y-2 col-span-2">
-                      <Label htmlFor="client">Échéance : </Label>
-                      <CustomDatePicker
-                        date={echeance}
-                        onDateChange={setEcheance}
-                      />
-                    </div>
-                    {/* <div className="space-y-2">
+                  </div>
+                  <Card className="w-full">
+                    <CardContent className="p-6 space-y-6">
+                      {/* Header Section */}
+                      <div className="grid grid-cols-6 gap-6">
+                        <div className="col-span-3">
+                          <ComboBoxClients
+                            setClient={setClient}
+                            client={client}
+                          />
+                          {errors.clientId && (
+                            <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
+                              <CircleX className="h-4 w-4" />
+                              {errors.clientId.message}
+                            </p>
+                          )}
+                        </div>
+                        <div className="col-span-3">
+                          <ComboBoxEmployes
+                            setEmploye={setEmploye}
+                            employe={employe}
+                          />
+                          {errors.employeId && (
+                            <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
+                              <CircleX className="h-4 w-4" />
+                              {errors.employeId.message}
+                            </p>
+                          )}
+                        </div>
+                        <div className="w-full space-y-2 col-span-2">
+                          <Label htmlFor="client">Date : </Label>
+                          <CustomDatePicker
+                            date={date}
+                            onDateChange={setDate}
+                          />
+                        </div>
+                        <div className="w-full space-y-2 col-span-2">
+                          <Label htmlFor="client">Échéance : </Label>
+                          <CustomDatePicker
+                            date={echeance}
+                            onDateChange={setEcheance}
+                          />
+                        </div>
+                        {/* <div className="space-y-2">
                   <Label htmlFor="client">Date limite de livraison : </Label>
                   <Popover>
                     <PopoverTrigger asChild>
@@ -391,396 +397,416 @@ export default function UpdateDevisPage({ params }) {
                     </p>
                   )}
                 </div> */}
-                    <div className="space-y-2 col-span-2">
-                      <Label htmlFor="statut" className="text-right text-black">
-                        Statut
-                      </Label>
-                      <Select
-                        value={watch("statut")}
-                        name="statut"
-                        onValueChange={value => setValue("statut", value)}
-                      >
-                        <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
-                          <SelectValue placeholder="Tous les statuts" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {status.map((statut, index) => (
-                            <SelectItem key={index} value={statut.lable}>
-                              <div className="flex items-center gap-2">
-                                <span
-                                  className={`h-2 w-2 rounded-full bg-${statut.color}`}
-                                />
-                                {statut.lable}
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="grid gap-6 grid-cols-3"></div>
-                  {/* Items Table */}
-                  <div className="space-y-4">
-                    {items.length > 0 && (
-                      <>
-                        <div className="overflow-hidden border rounded-lg">
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead className="w-[30%]">
-                                  Articls
-                                </TableHead>
-                                <TableHead className="w-[10%] text-center">
-                                  Hauteur
-                                </TableHead>
-                                <TableHead className="w-[10%] text-center">
-                                  Longueur
-                                </TableHead>
-                                <TableHead className="w-[10%] text-center">
-                                  Largeur
-                                </TableHead>
-                                <TableHead className="w-[10%] text-center">
-                                  Unité
-                                </TableHead>
-                                <TableHead>Quantité</TableHead>
-                                <TableHead>Prix d&apos;unité</TableHead>
-                                <TableHead className="text-left">
-                                  Montant
-                                </TableHead>
-                                <TableHead className="text-right pr-3">
-                                  Actions
-                                </TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {items.map((item, index) => (
-                                <TableRow key={item.key}>
-                                  <TableCell>
-                                    <Input
-                                      spellCheck="false"
-                                      defaultValue={item.designation}
-                                      onChange={e => {
-                                        handleItemChange(
-                                          item.key,
-                                          "designation",
-                                          e.target.value
-                                        );
-                                      }}
-                                      className={`focus:!ring-purple-500 w-full ${
-                                        errors.articls?.[index]?.length &&
-                                        "!border-red-500"
-                                      }`}
-                                    />
-                                  </TableCell>
-                                  <TableCell>
-                                    <Input
-                                      defaultValue={item.height}
-                                      onChange={e => {
-                                        handleItemChange(
-                                          item.key,
-                                          "height",
-                                          Number(e.target.value)
-                                        );
-                                      }}
-                                      className={`focus:!ring-purple-500 w-24 ${
-                                        errors.articls?.[index]?.height &&
-                                        "!border-red-500"
-                                      }`}
-                                    />
-                                    {errors.articls?.[index]?.height && (
-                                      <p className="text-xs text-red-500 mt-1">
-                                        {errors.articls[index].height.message}
-                                      </p>
-                                    )}
-                                  </TableCell>
-                                  <TableCell>
-                                    <Input
-                                      defaultValue={item.length}
-                                      onChange={e => {
-                                        handleItemChange(
-                                          item.key,
-                                          "length",
-                                          Number(e.target.value)
-                                        );
-                                      }}
-                                      className={`focus:!ring-purple-500 w-24 ${
-                                        errors.articls?.[index]?.length &&
-                                        "!border-red-500"
-                                      }`}
-                                    />
-                                    {errors.articls?.[index]?.length && (
-                                      <p className="text-xs text-red-500 mt-1">
-                                        {errors.articls[index].length.message}
-                                      </p>
-                                    )}
-                                  </TableCell>
-                                  <TableCell>
-                                    <Input
-                                      defaultValue={item.width}
-                                      onChange={e =>
-                                        handleItemChange(
-                                          item.key,
-                                          "width",
-                                          validateFloat(e.target.value)
-                                        )
-                                      }
-                                      className={`focus:!ring-purple-500 w-24 ${
-                                        errors.articls?.[index]?.width &&
-                                        "!border-red-500"
-                                      }`}
-                                    />
-                                    {errors.articls?.[index]?.width && (
-                                      <p className="text-xs text-red-500 mt-1">
-                                        {errors.articls[index].width.message}
-                                      </p>
-                                    )}
-                                  </TableCell>
-                                  <TableCell>
-                                    <Select
-                                      defaultValue={item.unite || "U"}
-                                      name="unites"
-                                      onValueChange={value =>
-                                        handleItemChange(
-                                          item.key,
-                                          "unite",
-                                          value
-                                        )
-                                      }
-                                    >
-                                      <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
-                                        <SelectValue placeholder="Séléctionner un statut" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        {unites.map(unite => (
-                                          <SelectItem key={unite} value={unite}>
-                                            {unite}
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                  </TableCell>
-                                  <TableCell>
-                                    <Input
-                                      defaultValue={item.quantite}
-                                      onChange={e =>
-                                        handleItemChange(
-                                          item.key,
-                                          "quantite",
-                                          validateFloat(e.target.value)
-                                        )
-                                      }
-                                      className="focus:!ring-purple-500 w-20"
-                                    />
-                                  </TableCell>
-                                  <TableCell>
-                                    <Input
-                                      defaultValue={item.prixUnite}
-                                      onChange={e => {
-                                        handleItemChange(
-                                          item.key,
-                                          "prixUnite",
-                                          validateFloat(e.target.value)
-                                        );
-                                      }}
-                                      className={`focus:!ring-purple-500 w-24 ${
-                                        errors.articls?.[index]?.prixUnite &&
-                                        "!border-red-500"
-                                      }`}
-                                    />
-                                    {errors.articls?.[index]?.prixUnite && (
-                                      <p className="text-xs text-red-500 mt-1">
-                                        {
-                                          errors.articls[index].prixUnite
-                                            .message
-                                        }
-                                      </p>
-                                    )}
-                                  </TableCell>
-                                  <TableCell>
-                                    {!isNaN(item.quantite * item.prixUnite)
-                                      ? (
-                                          item.quantite * item.prixUnite
-                                        ).toFixed(2)
-                                      : 0}
-                                  </TableCell>
-                                  <TableCell className="pr-3">
-                                    <div className="flex justify-end gap-1">
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={() => removeItem(item)}
-                                        className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
-                                      >
-                                        <Trash2 className="h-4 w-4" />
-                                      </Button>
-                                      <Button
-                                        type="button" // <- important pour ne PAS soumettre
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={() => {
-                                          const origineItem = items.find(
-                                            i => i.key === item.key
-                                          );
-                                          if (!origineItem) return;
-                                          const { id: _omitId, ...restItem } = item;
-                                          setItems(prevItems => [
-                                            ...prevItems,
-                                            {
-                                              ...restItem,
-                                              designation:
-                                                origineItem.designation,
-                                              quantite: origineItem.quantite,
-                                              prixUnite: origineItem.prixUnite,
-                                              length: origineItem.length,
-                                              width: origineItem.width,
-                                              unite: origineItem.unite,
-                                              key: generateUniqueKey(),
-                                            },
-                                          ]);
-                                        }}
-                                        className="h-8 w-8 rounded-full hover:bg-blue-100 hover:text-blue-600"
-                                      >
-                                        <Copy className="h-4 w-4" />
-                                      </Button>
-                                    </div>
-                                  </TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        </div>
-                      </>
-                    )}
-
-                    <AddButton
-                      type="button"
-                      onClick={() => setIsArticleDialogOpen(true)}
-                      title="Ajouter des articls"
-                    />
-                    {errors.produits && (
-                      <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
-                        <CircleX className="h-4 w-4" />
-                        {errors.produits.message}
-                      </p>
-                    )}
-                    <ArticleSelectionDialog
-                      open={isArticleDialogOpen}
-                      onOpenChange={setIsArticleDialogOpen}
-                      onArticlesAdd={handleAddArticles}
-                    />
-                  </div>
-                  <div className="grid gap-6 w-full p-5">
-                    <Label
-                      htmlFor="noteClient"
-                      className="text-left text-black"
-                    >
-                      Note de client
-                    </Label>
-                    <Textarea
-                      name="note"
-                      {...register("note")}
-                      className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-purple-500"
-                    />
-                  </div>
-
-                  {/* Totals Section */}
-                  <div className="space-y-4 bg-purple-50 p-4 rounded-lg">
-                    <div className="space-y-4">
-                      <div className="flex justify-between py-2 border-b">
-                        <span>Total H.T</span>
-                        <span>{calculateSubTotal().toFixed(2)} MAD</span>
-                      </div>
-                      <div className="flex justify-between py-2 ">
-                        <div className="flex items-center space-x-2">
-                          <Switch
-                            id="switch"
-                            checked={activerTVA}
-                            onCheckedChange={setActiverTVA}
-                          />
-                          <Label htmlFor="switch">
-                            {activerTVA
-                              ? "TVA de 20% est activé"
-                              : "TVA désactivé"}
+                        <div className="space-y-2 col-span-2">
+                          <Label
+                            htmlFor="statut"
+                            className="text-right text-black"
+                          >
+                            Statut
                           </Label>
+                          <Select
+                            value={watch("statut")}
+                            name="statut"
+                            onValueChange={value => setValue("statut", value)}
+                          >
+                            <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
+                              <SelectValue placeholder="Tous les statuts" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {status.map((statut, index) => (
+                                <SelectItem key={index} value={statut.lable}>
+                                  <div className="flex items-center gap-2">
+                                    <span
+                                      className={`h-2 w-2 rounded-full bg-${statut.color}`}
+                                    />
+                                    {statut.lable}
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
-                        {activerTVA && (
-                          <span>{calculateTVA().toFixed(2)} MAD</span>
-                        )}
                       </div>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="discount">Réduction</Label>
-                          <div className="flex items-center">
-                            <div className="relative flex items-center">
-                              <Input
-                                id="reduction"
-                                name="reduction"
-                                {...register("reduction")}
-                                className="w-40 pr-[70px] focus:!ring-purple-500"
-                              />
-                              <Select
-                                value={watch("typeReduction")}
-                                onValueChange={value =>
-                                  setValue("typeReduction", value)
-                                }
-                              >
-                                <SelectTrigger className="absolute right-0 w-[80px] rounded-l-none border-l-0 focus:ring-1 focus:!ring-purple-500">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="%">%</SelectItem>
-                                  <SelectItem value="DH">MAD</SelectItem>
-                                </SelectContent>
-                              </Select>
+                      <div className="grid gap-6 grid-cols-3"></div>
+                      {/* Items Table */}
+                      <div className="space-y-4">
+                        {items.length > 0 && (
+                          <>
+                            <div className="overflow-hidden border rounded-lg">
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead className="w-[30%]">
+                                      Articls
+                                    </TableHead>
+                                    <TableHead className="w-[10%] text-center">
+                                      Hauteur
+                                    </TableHead>
+                                    <TableHead className="w-[10%] text-center">
+                                      Longueur
+                                    </TableHead>
+                                    <TableHead className="w-[10%] text-center">
+                                      Largeur
+                                    </TableHead>
+                                    <TableHead className="w-[10%] text-center">
+                                      Unité
+                                    </TableHead>
+                                    <TableHead>Quantité</TableHead>
+                                    <TableHead>Prix d&apos;unité</TableHead>
+                                    <TableHead className="text-left">
+                                      Montant
+                                    </TableHead>
+                                    <TableHead className="text-right pr-3">
+                                      Actions
+                                    </TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {items.map((item, index) => (
+                                    <TableRow key={item.key}>
+                                      <TableCell>
+                                        <Input
+                                          spellCheck="false"
+                                          defaultValue={item.designation}
+                                          onChange={e => {
+                                            handleItemChange(
+                                              item.key,
+                                              "designation",
+                                              e.target.value
+                                            );
+                                          }}
+                                          className={`focus:!ring-purple-500 w-full ${
+                                            errors.articls?.[index]?.length &&
+                                            "!border-red-500"
+                                          }`}
+                                        />
+                                      </TableCell>
+                                      <TableCell>
+                                        <Input
+                                          defaultValue={item.height}
+                                          onChange={e => {
+                                            handleItemChange(
+                                              item.key,
+                                              "height",
+                                              Number(e.target.value)
+                                            );
+                                          }}
+                                          className={`focus:!ring-purple-500 w-24 ${
+                                            errors.articls?.[index]?.height &&
+                                            "!border-red-500"
+                                          }`}
+                                        />
+                                        {errors.articls?.[index]?.height && (
+                                          <p className="text-xs text-red-500 mt-1">
+                                            {
+                                              errors.articls[index].height
+                                                .message
+                                            }
+                                          </p>
+                                        )}
+                                      </TableCell>
+                                      <TableCell>
+                                        <Input
+                                          defaultValue={item.length}
+                                          onChange={e => {
+                                            handleItemChange(
+                                              item.key,
+                                              "length",
+                                              Number(e.target.value)
+                                            );
+                                          }}
+                                          className={`focus:!ring-purple-500 w-24 ${
+                                            errors.articls?.[index]?.length &&
+                                            "!border-red-500"
+                                          }`}
+                                        />
+                                        {errors.articls?.[index]?.length && (
+                                          <p className="text-xs text-red-500 mt-1">
+                                            {
+                                              errors.articls[index].length
+                                                .message
+                                            }
+                                          </p>
+                                        )}
+                                      </TableCell>
+                                      <TableCell>
+                                        <Input
+                                          defaultValue={item.width}
+                                          onChange={e =>
+                                            handleItemChange(
+                                              item.key,
+                                              "width",
+                                              validateFloat(e.target.value)
+                                            )
+                                          }
+                                          className={`focus:!ring-purple-500 w-24 ${
+                                            errors.articls?.[index]?.width &&
+                                            "!border-red-500"
+                                          }`}
+                                        />
+                                        {errors.articls?.[index]?.width && (
+                                          <p className="text-xs text-red-500 mt-1">
+                                            {
+                                              errors.articls[index].width
+                                                .message
+                                            }
+                                          </p>
+                                        )}
+                                      </TableCell>
+                                      <TableCell>
+                                        <Select
+                                          defaultValue={item.unite || "U"}
+                                          name="unites"
+                                          onValueChange={value =>
+                                            handleItemChange(
+                                              item.key,
+                                              "unite",
+                                              value
+                                            )
+                                          }
+                                        >
+                                          <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
+                                            <SelectValue placeholder="Séléctionner un statut" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {unites.map(unite => (
+                                              <SelectItem
+                                                key={unite}
+                                                value={unite}
+                                              >
+                                                {unite}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                      </TableCell>
+                                      <TableCell>
+                                        <Input
+                                          defaultValue={item.quantite}
+                                          onChange={e =>
+                                            handleItemChange(
+                                              item.key,
+                                              "quantite",
+                                              validateFloat(e.target.value)
+                                            )
+                                          }
+                                          className="focus:!ring-purple-500 w-20"
+                                        />
+                                      </TableCell>
+                                      <TableCell>
+                                        <Input
+                                          defaultValue={item.prixUnite}
+                                          onChange={e => {
+                                            handleItemChange(
+                                              item.key,
+                                              "prixUnite",
+                                              validateFloat(e.target.value)
+                                            );
+                                          }}
+                                          className={`focus:!ring-purple-500 w-24 ${
+                                            errors.articls?.[index]
+                                              ?.prixUnite && "!border-red-500"
+                                          }`}
+                                        />
+                                        {errors.articls?.[index]?.prixUnite && (
+                                          <p className="text-xs text-red-500 mt-1">
+                                            {
+                                              errors.articls[index].prixUnite
+                                                .message
+                                            }
+                                          </p>
+                                        )}
+                                      </TableCell>
+                                      <TableCell>
+                                        {!isNaN(item.quantite * item.prixUnite)
+                                          ? (
+                                              item.quantite * item.prixUnite
+                                            ).toFixed(2)
+                                          : 0}
+                                      </TableCell>
+                                      <TableCell className="pr-3">
+                                        <div className="flex justify-end gap-1">
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => removeItem(item)}
+                                            className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
+                                          >
+                                            <Trash2 className="h-4 w-4" />
+                                          </Button>
+                                          <Button
+                                            type="button" // <- important pour ne PAS soumettre
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => {
+                                              const origineItem = items.find(
+                                                i => i.key === item.key
+                                              );
+                                              if (!origineItem) return;
+                                              const {
+                                                id: _omitId,
+                                                ...restItem
+                                              } = item;
+                                              setItems(prevItems => [
+                                                ...prevItems,
+                                                {
+                                                  ...restItem,
+                                                  designation:
+                                                    origineItem.designation,
+                                                  quantite:
+                                                    origineItem.quantite,
+                                                  prixUnite:
+                                                    origineItem.prixUnite,
+                                                  length: origineItem.length,
+                                                  width: origineItem.width,
+                                                  unite: origineItem.unite,
+                                                  key: generateUniqueKey(),
+                                                },
+                                              ]);
+                                            }}
+                                            className="h-8 w-8 rounded-full hover:bg-blue-100 hover:text-blue-600"
+                                          >
+                                            <Copy className="h-4 w-4" />
+                                          </Button>
+                                        </div>
+                                      </TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
                             </div>
+                          </>
+                        )}
+
+                        <AddButton
+                          type="button"
+                          onClick={() => setIsArticleDialogOpen(true)}
+                          title="Ajouter des articls"
+                        />
+                        {errors.produits && (
+                          <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
+                            <CircleX className="h-4 w-4" />
+                            {errors.produits.message}
+                          </p>
+                        )}
+                        <ArticleSelectionDialog
+                          open={isArticleDialogOpen}
+                          onOpenChange={setIsArticleDialogOpen}
+                          onArticlesAdd={handleAddArticles}
+                        />
+                      </div>
+                      <div className="grid gap-6 w-full p-5">
+                        <Label
+                          htmlFor="noteClient"
+                          className="text-left text-black"
+                        >
+                          Note de client
+                        </Label>
+                        <Textarea
+                          name="note"
+                          {...register("note")}
+                          className="col-span-3 focus-visible:ring-purple-300 focus-visible:ring-purple-500"
+                        />
+                      </div>
+
+                      {/* Totals Section */}
+                      <div className="space-y-4 bg-purple-50 p-4 rounded-lg">
+                        <div className="space-y-4">
+                          <div className="flex justify-between py-2 border-b">
+                            <span>Total H.T</span>
+                            <span>{calculateSubTotal().toFixed(2)} MAD</span>
+                          </div>
+                          <div className="flex justify-between py-2 ">
+                            <div className="flex items-center space-x-2">
+                              <Switch
+                                id="switch"
+                                checked={activerTVA}
+                                onCheckedChange={setActiverTVA}
+                              />
+                              <Label htmlFor="switch">
+                                {activerTVA
+                                  ? "TVA de 20% est activé"
+                                  : "TVA désactivé"}
+                              </Label>
+                            </div>
+                            {activerTVA && (
+                              <span>{calculateTVA().toFixed(2)} MAD</span>
+                            )}
+                          </div>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <Label htmlFor="discount">Réduction</Label>
+                              <div className="flex items-center">
+                                <div className="relative flex items-center">
+                                  <Input
+                                    id="reduction"
+                                    name="reduction"
+                                    {...register("reduction")}
+                                    className="w-40 pr-[70px] focus:!ring-purple-500"
+                                  />
+                                  <Select
+                                    value={watch("typeReduction")}
+                                    onValueChange={value =>
+                                      setValue("typeReduction", value)
+                                    }
+                                  >
+                                    <SelectTrigger className="absolute right-0 w-[80px] rounded-l-none border-l-0 focus:ring-1 focus:!ring-purple-500">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="%">%</SelectItem>
+                                      <SelectItem value="DH">MAD</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex justify-between py-2 border-t font-bold">
+                            <span>Total TTC</span>
+                            <span>{calculateTotal()} MAD</span>
                           </div>
                         </div>
                       </div>
-
-                      <div className="flex justify-between py-2 border-t font-bold">
-                        <span>Total TTC</span>
-                        <span>{calculateTotal()} MAD</span>
-                      </div>
+                    </CardContent>
+                  </Card>
+                  <div className="flex justify-end items-center">
+                    <div className="space-x-2">
+                      <Link href="/ventes/devis">
+                        <Button
+                          type="button"
+                          className="rounded-full"
+                          variant="outline"
+                        >
+                          Annuler
+                        </Button>
+                      </Link>
+                      <Button
+                        onClick={() => {
+                          setValue("clientId", client?.id);
+                          setValue("employeId", employe?.id);
+                          setValue(
+                            "sousTotal",
+                            parseFloat(calculateSubTotal().toFixed(2))
+                          );
+                          setValue(
+                            "tva",
+                            activerTVA ? calculateTVA().toFixed(2) : 0
+                          );
+                          setValue("total", parseFloat(calculateTotal()));
+                          setValue("articls", items);
+                        }}
+                        type="submit"
+                        className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 hover:scale-105 text-white hover:!text-white font-semibold transition-all duration-300 transform rounded-full"
+                        disabled={isSubmitting}
+                      >
+                        Enregistrer
+                      </Button>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-              <div className="flex justify-end items-center">
-                <div className="space-x-2">
-                  <Link href="/ventes/devis">
-                    <Button
-                      type="button"
-                      className="rounded-full"
-                      variant="outline"
-                    >
-                      Annuler
-                    </Button>
-                  </Link>
-                  <Button
-                    onClick={() => {
-                      setValue("clientId", client?.id);
-                      setValue("employeId", employe?.id);
-                      setValue(
-                        "sousTotal",
-                        parseFloat(calculateSubTotal().toFixed(2))
-                      );
-                      setValue(
-                        "tva",
-                        activerTVA ? calculateTVA().toFixed(2) : 0
-                      );
-                      setValue("total", parseFloat(calculateTotal()));
-                      setValue("articls", items);
-                    }}
-                    type="submit"
-                    className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 hover:scale-105 text-white hover:!text-white font-semibold transition-all duration-300 transform rounded-full"
-                    disabled={isSubmiting}
-                  >
-                    Enregistrer
-                  </Button>
                 </div>
-              </div>
-            </div>
-            </form>
+              </form>
             )}
           </div>
         </div>

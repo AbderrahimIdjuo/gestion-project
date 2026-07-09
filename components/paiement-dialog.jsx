@@ -35,7 +35,7 @@ export function PaiementDialog({ isOpen, onClose, devis }) {
     watch,
     setValue,
     handleSubmit,
-    formState: { errors, isSubmiting },
+    formState: { errors, isSubmitting },
   } = useForm({
     defaultValues: {
       methodePaiement: "espece",
@@ -86,7 +86,11 @@ export function PaiementDialog({ isOpen, onClose, devis }) {
           throw new Error("Unexpected response status");
         }
       } catch (error) {
-        const errorMessage = error.response?.data?.details || error.response?.data?.error || error.message || "Échec de l'opération!";
+        const errorMessage =
+          error.response?.data?.details ||
+          error.response?.data?.error ||
+          error.message ||
+          "Échec de l'opération!";
         toast.error(errorMessage);
         throw error;
       } finally {
@@ -103,10 +107,10 @@ export function PaiementDialog({ isOpen, onClose, devis }) {
   });
   const onSubmit = async data => {
     const { methodePaiement, compte, montant, numero } = data;
-    
+
     // Calculer le reste à payer
     const resteAPayer = devis.total - (devis.totalPaye || 0);
-    
+
     // Vérifier que le montant ne dépasse pas le reste à payer
     if (montant > resteAPayer) {
       toast.error(
@@ -114,7 +118,7 @@ export function PaiementDialog({ isOpen, onClose, devis }) {
       );
       return;
     }
-    
+
     const Data = {
       methodePaiement,
       compte,
@@ -344,20 +348,26 @@ export function PaiementDialog({ isOpen, onClose, devis }) {
                 const montant = watch("montant");
                 const resteAPayer = devis.total - (devis.totalPaye || 0);
                 const montantInvalide = montant && montant > resteAPayer;
-                
+
                 return (
                   <>
                     {montantInvalide && (
                       <p className="text-red-500 text-sm mr-auto">
-                        ⚠️ Le montant dépasse le reste à payer ({resteAPayer.toFixed(2)} DH)
+                        ⚠️ Le montant dépasse le reste à payer (
+                        {resteAPayer.toFixed(2)} DH)
                       </p>
                     )}
                     <Button
                       className="bg-[#00e701] hover:bg-[#00e701] shadow-lg hover:scale-105 text-white text-md rounded-full font-bold transition-all duration-300 transform disabled:opacity-50 disabled:cursor-not-allowed"
                       type="submit"
-                      disabled={isSubmiting || montantInvalide || !montant || !watch("compte")}
+                      disabled={
+                        isSubmitting ||
+                        montantInvalide ||
+                        !montant ||
+                        !watch("compte")
+                      }
                     >
-                      {isSubmiting ? "En cours..." : "Confirmer"}
+                      {isSubmitting ? "En cours..." : "Confirmer"}
                     </Button>
                   </>
                 );

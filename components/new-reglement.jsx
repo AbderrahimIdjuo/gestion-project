@@ -40,7 +40,7 @@ export default function NewReglementDialog() {
     watch,
     handleSubmit,
     setValue,
-    formState: { errors, isSubmiting },
+    formState: { errors, isSubmitting },
   } = useForm();
   // Initialiser automatiquement le compte selon le type de paiement
   const handleTypePaiementChange = value => {
@@ -635,9 +635,9 @@ export default function NewReglementDialog() {
                   <Button
                     className="bg-[#00e701] hover:bg-[#00e701] shadow-lg hover:scale-105 text-white text-md rounded-full font-bold transition-all duration-300 transform"
                     type="submit"
-                    disabled={isSubmiting}
+                    disabled={isSubmitting}
                   >
-                    {isSubmiting ? "En cours..." : "Confirmer"}
+                    {isSubmitting ? "En cours..." : "Confirmer"}
                   </Button>
                 </div>
               )}

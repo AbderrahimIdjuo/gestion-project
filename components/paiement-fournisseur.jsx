@@ -39,7 +39,7 @@ export default function PaiementFournisseurDialog({
     watch,
     handleSubmit,
     setValue,
-    formState: { errors, isSubmiting },
+    formState: { errors, isSubmitting },
   } = useForm();
   // Initialiser automatiquement le compte selon le type de paiement
   const handleTypePaiementChange = value => {
@@ -146,7 +146,7 @@ export default function PaiementFournisseurDialog({
           <form onSubmit={handleSubmit(onSubmit)}>
             <DialogHeader>
               <DialogTitle>
-              Paiement en faveur de {fournisseur?.nom}
+                Paiement en faveur de {fournisseur?.nom}
               </DialogTitle>
               <DialogDescription>
                 Sélectionnez le type de paiement et remplissez les détails
@@ -459,9 +459,9 @@ export default function PaiementFournisseurDialog({
               <Button
                 className="bg-[#00e701] hover:bg-[#00e701] shadow-lg hover:scale-105 text-white text-md rounded-full font-bold transition-all duration-300 transform"
                 type="submit"
-                disabled={isSubmiting}
+                disabled={isSubmitting}
               >
-                {isSubmiting ? "En cours..." : "Confirmer"}
+                {isSubmitting ? "En cours..." : "Confirmer"}
               </Button>
             </DialogFooter>
           </form>

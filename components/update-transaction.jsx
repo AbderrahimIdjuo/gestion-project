@@ -21,13 +21,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
-import { Textarea } from "@/components/ui/textarea";
 
 import z from "zod";
 
@@ -101,7 +101,7 @@ export default function UpdateTransactionDialog({
     watch,
     handleSubmit,
     setValue,
-    formState: { errors, isSubmiting },
+    formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(newTransactionSchema),
   });
@@ -321,9 +321,9 @@ export default function UpdateTransactionDialog({
                 }}
                 className="bg-[#00e701] hover:bg-[#00e701] shadow-lg hover:scale-105 text-white text-md rounded-full font-bold transition-all duration-300 transform"
                 type="submit"
-                disabled={isSubmiting}
+                disabled={isSubmitting}
               >
-                {isSubmiting ? "En cours..." : "Confirmer"}
+                {isSubmitting ? "En cours..." : "Confirmer"}
               </Button>
             </DialogFooter>
           </form>
@@ -424,9 +424,9 @@ export default function UpdateTransactionDialog({
                 }}
                 className="bg-[#00e701] hover:bg-[#00e701] shadow-lg hover:scale-105 text-white text-md rounded-full font-bold transition-all duration-300 transform"
                 type="submit"
-                disabled={isSubmiting}
+                disabled={isSubmitting}
               >
-                {isSubmiting ? "En cours..." : "Confirmer"}
+                {isSubmitting ? "En cours..." : "Confirmer"}
               </Button>
             </DialogFooter>
           </form>
@@ -606,9 +606,9 @@ export default function UpdateTransactionDialog({
                 }}
                 className="bg-[#00e701] hover:bg-[#00e701] shadow-lg hover:scale-105 text-white text-md rounded-full font-bold transition-all duration-300 transform"
                 type="submit"
-                disabled={isSubmiting}
+                disabled={isSubmitting}
               >
-                {isSubmiting ? "En cours..." : "Confirmer"}
+                {isSubmitting ? "En cours..." : "Confirmer"}
               </Button>
             </DialogFooter>
           </form>

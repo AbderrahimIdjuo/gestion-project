@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,37 +10,43 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Pen } from "lucide-react";
-import axios from "axios";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import toast from "react-hot-toast";
-import { useForm } from "react-hook-form";
+import { Label } from "@/components/ui/label";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+import { Pen } from "lucide-react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import toast from "react-hot-toast";
 import { z } from "zod";
 
 const soldeSchema = z.object({
-  solde: z.preprocess((value) => {
-    // Convert "" or undefined to undefined
-    if (value === "" || value === undefined) return undefined;
+  solde: z.preprocess(
+    value => {
+      // Convert "" or undefined to undefined
+      if (value === "" || value === undefined) return undefined;
 
-    // Convert string with comma to dot notation
-    if (typeof value === "string") {
-      value = value.replace(",", ".");
-      // Remove any whitespace that might interfere
-      value = value.trim();
-    }
+      // Convert string with comma to dot notation
+      if (typeof value === "string") {
+        value = value.replace(",", ".");
+        // Remove any whitespace that might interfere
+        value = value.trim();
+      }
 
-    const number = parseFloat(value);
-    // If the conversion fails, return undefined to trigger the validation error
-    if (isNaN(number)) return undefined;
+      const number = parseFloat(value);
+      // If the conversion fails, return undefined to trigger the validation error
+      if (isNaN(number)) return undefined;
 
-    return number;
-  }, z.number({ invalid_type_error: "Ce champ doit contenir un nombre valide" }).optional()),
+      return number;
+    },
+    z
+      .number({ invalid_type_error: "Ce champ doit contenir un nombre valide" })
+      .optional()
+  ),
 });
 
-export default function UpdatSolde({ solde , id }) {
+export default function UpdatSolde({ solde, id }) {
   const [open, setOpen] = useState(false);
   const {
     register,
@@ -49,16 +54,16 @@ export default function UpdatSolde({ solde , id }) {
     watch,
     handleSubmit,
     setValue,
-    formState: { isSubmiting },
+    formState: { isSubmitting },
   } = useForm({
     resolver: zodResolver(soldeSchema),
   });
   const queryClient = useQueryClient();
   const updateSoldeCaisse = useMutation({
-    mutationFn: async (data) => {
+    mutationFn: async data => {
       const loadingToast = toast.loading("Modification en cours...");
       try {
-        const response = await axios.put("/api/solde-comptes", {...data , id});
+        const response = await axios.put("/api/solde-comptes", { ...data, id });
         toast.success("Solde modifier avec succès!");
         return response.data;
       } catch (error) {
@@ -73,7 +78,7 @@ export default function UpdatSolde({ solde , id }) {
       queryClient.invalidateQueries({ queryKey: ["statistiques"] });
     },
   });
-  const onSubmit = async (data) => {
+  const onSubmit = async data => {
     updateSoldeCaisse.mutate(data);
     console.log("solde modifier:", data);
     setOpen(false);
@@ -110,7 +115,7 @@ export default function UpdatSolde({ solde , id }) {
                 id="montant"
                 name="montant"
                 className="col-span-3 focus-visible:ring-purple-500"
-                onChange={(e) => setValue("solde",e.target.value)}
+                onChange={e => setValue("solde", e.target.value)}
               />
               <div className="absolute inset-y-0 right-0 w-12 flex items-center justify-center bg-slate-100 border rounded-r-md">
                 <span className="text-sm text-gray-600">MAD</span>
@@ -119,13 +124,13 @@ export default function UpdatSolde({ solde , id }) {
           </div>
           <DialogFooter>
             <Button
-              onClick={() => onSubmit({solde: watch("solde")})}
+              onClick={() => onSubmit({ solde: watch("solde") })}
               className="bg-[#00e701] hover:bg-[#00e701] shadow-lg hover:scale-105 text-white text-md rounded-full font-bold transition-all duration-300 transform"
               type="submit"
-              //isSubmiting={isSubmiting}
-              disabled={isSubmiting}
+              //isSubmitting={isSubmitting}
+              disabled={isSubmitting}
             >
-              {isSubmiting ? "En cours..." : "Confirmer"}
+              {isSubmitting ? "En cours..." : "Confirmer"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,16 +1,5 @@
 "use client";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useForm } from "react-hook-form";
-import toast from "react-hot-toast";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { CircleX } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
-import { Textarea } from "@/components/ui/textarea";
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +9,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -27,13 +18,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
+import { CircleX, Plus } from "lucide-react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import toast from "react-hot-toast";
+import { z } from "zod";
 export function ClientFormDialog() {
   const [open, setOpen] = useState(false);
   const clientSchema = z.object({
     nom: z.string().min(1, "Veuillez insérer le nom du client"),
     titre: z.enum(["M", "Mme", "Mlle", "Sté"]).optional(),
     ice: z.string().optional(),
-    email: z.preprocess((email) => {
+    email: z.preprocess(email => {
       // If email is empty or undefined, return null
       return email === "" ? null : email;
     }, z.string().email("Email invalide").nullable()),
@@ -59,7 +58,7 @@ export function ClientFormDialog() {
   });
 
   const queryClient = useQueryClient();
-  const onSubmit = async (data) => {
+  const onSubmit = async data => {
     console.log("data :", data);
     toast.promise(
       (async () => {
@@ -126,13 +125,13 @@ export function ClientFormDialog() {
                     defaultValue="M"
                     value={watch("titre")}
                     name="titre"
-                    onValueChange={(value) => setValue("titre", value)}
+                    onValueChange={value => setValue("titre", value)}
                   >
                     <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {titres.map((titre) => (
+                      {titres.map(titre => (
                         <SelectItem key={titre} value={titre}>
                           {titre}
                         </SelectItem>
@@ -303,7 +302,7 @@ export function ClientFormDialog() {
             <Button
               className="bg-[#00e701] hover:bg-[#00e701] shadow-lg hover:scale-105 text-white text-md rounded-full font-bold transition-all duration-300 transform"
               type="submit"
-              // isSubmiting={isSubmiting}
+              // isSubmitting={isSubmitting}
               disabled={isSubmitting}
             >
               {isSubmitting ? "En cours..." : "Enregistrer"}

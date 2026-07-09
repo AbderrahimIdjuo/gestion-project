@@ -1,15 +1,5 @@
 "use client";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useForm } from "react-hook-form";
-import toast from "react-hot-toast";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { CircleX } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -19,6 +9,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
+import { CircleX, Plus } from "lucide-react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import toast from "react-hot-toast";
+import { z } from "zod";
 export function FournisseurFormDialog() {
   const [open, setOpen] = useState(false);
   const fournisseurSchema = z.object({
@@ -29,8 +28,7 @@ export function FournisseurFormDialog() {
     ice: z.string().optional(),
     adresse: z.string().optional(),
     dette: z.preprocess(
-      v =>
-        v === "" || v === null || v === undefined ? 0 : Number(v),
+      v => (v === "" || v === null || v === undefined ? 0 : Number(v)),
       z.number()
     ),
   });
@@ -46,7 +44,7 @@ export function FournisseurFormDialog() {
     },
   });
   const queryClient = useQueryClient();
-  const onSubmit = async (data) => {
+  const onSubmit = async data => {
     console.log(data);
 
     toast.promise(
@@ -210,7 +208,9 @@ export function FournisseurFormDialog() {
                 }`}
               />
               {errors.dette && (
-                <p className="text-red-500 text-sm mt-1">{errors.dette.message}</p>
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.dette.message}
+                </p>
               )}
             </div>
           </div>
@@ -218,7 +218,7 @@ export function FournisseurFormDialog() {
             <Button
               className="bg-[#00e701] hover:bg-[#00e701] shadow-lg hover:scale-105 text-white text-md rounded-full font-bold transition-all duration-300 transform"
               type="submit"
-              // isSubmiting={isSubmiting}
+              // isSubmitting={isSubmitting}
               disabled={isSubmitting}
             >
               {isSubmitting ? "En cours..." : "Enregistrer"}

@@ -35,7 +35,7 @@ export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
     watch,
     handleSubmit,
     setValue,
-    formState: { errors, isSubmiting },
+    formState: { errors, isSubmitting },
   } = useForm();
   const queryClient = useQueryClient();
 
@@ -465,9 +465,9 @@ export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
               <Button
                 className="bg-[#00e701] hover:bg-[#00e701] shadow-lg hover:scale-105 text-white text-md rounded-full font-bold transition-all duration-300 transform"
                 type="submit"
-                disabled={isSubmiting}
+                disabled={isSubmitting}
               >
-                {isSubmiting ? "En cours..." : "Confirmer"}
+                {isSubmitting ? "En cours..." : "Confirmer"}
               </Button>
             </DialogFooter>
           </form>
