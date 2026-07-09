@@ -27,6 +27,7 @@ import toast from "react-hot-toast";
 
 export function PaiementDialog({ isOpen, onClose, devis }) {
   const [date, setDate] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const queryClient = useQueryClient();
   const {
@@ -100,12 +101,15 @@ export function PaiementDialog({ isOpen, onClose, devis }) {
     onSuccess: () => {
       queryClient.invalidateQueries(["transactions"]);
       queryClient.invalidateQueries(["devis"]);
+      setLoading(false);
       onClose();
       reset();
       setDate(null);
     },
   });
   const onSubmit = async data => {
+    if (loading) return;
+    setLoading(true);
     const { methodePaiement, compte, montant, numero } = data;
 
     // Calculer le reste à payer
@@ -361,13 +365,13 @@ export function PaiementDialog({ isOpen, onClose, devis }) {
                       className="bg-[#00e701] hover:bg-[#00e701] shadow-lg hover:scale-105 text-white text-md rounded-full font-bold transition-all duration-300 transform disabled:opacity-50 disabled:cursor-not-allowed"
                       type="submit"
                       disabled={
-                        isSubmitting ||
+                        loading ||
                         montantInvalide ||
                         !montant ||
                         !watch("compte")
                       }
                     >
-                      {isSubmitting ? "En cours..." : "Confirmer"}
+                      {loading ? "En cours..." : "Confirmer"}
                     </Button>
                   </>
                 );

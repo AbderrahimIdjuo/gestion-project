@@ -32,6 +32,8 @@ export default function PaiementFournisseurDialog({
 }) {
   const [date, setDate] = useState(null);
   const [datePrelevement, setDatePrelevement] = useState(null);
+  
+
 
   const {
     register,
@@ -98,6 +100,8 @@ export default function PaiementFournisseurDialog({
       queryClient.invalidateQueries(["transactions"]);
       queryClient.invalidateQueries({ queryKey: ["bonLivraison"] });
       queryClient.invalidateQueries({ queryKey: ["statistiques"] });
+      queryClient.invalidateQueries({ queryKey: ["fournisseurs"] });
+
     },
   });
   const onSubmit = async data => {

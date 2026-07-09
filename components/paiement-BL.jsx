@@ -28,6 +28,7 @@ import { toast } from "react-hot-toast";
 export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
   const [date, setDate] = useState(null);
   const [datePrelevement, setDatePrelevement] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const {
     register,
@@ -35,7 +36,7 @@ export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
     watch,
     handleSubmit,
     setValue,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm();
   const queryClient = useQueryClient();
 
@@ -52,6 +53,8 @@ export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
   };
 
   const onSubmit = async data => {
+    if (loading) return;
+    setLoading(true);
     const { compte, montant, methodePaiement, numero, motif } = data;
     const transData = {
       bonLivraisonId: bonLivraison.id,
@@ -90,6 +93,7 @@ export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
         queryClient.invalidateQueries({ queryKey: ["bonLivraison"] });
         queryClient.invalidateQueries({ queryKey: ["fournisseurs"] });
         queryClient.invalidateQueries({ queryKey: ["statistiques"] });
+        setLoading(false);
       })(),
       {
         loading: "Opération en cours...",
@@ -465,9 +469,9 @@ export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
               <Button
                 className="bg-[#00e701] hover:bg-[#00e701] shadow-lg hover:scale-105 text-white text-md rounded-full font-bold transition-all duration-300 transform"
                 type="submit"
-                disabled={isSubmitting}
+                disabled={loading}
               >
-                {isSubmitting ? "En cours..." : "Confirmer"}
+                {loading ? "En cours..." : "Confirmer"}
               </Button>
             </DialogFooter>
           </form>
