@@ -152,13 +152,11 @@ export default function ProduitsPage() {
     },
   });
 
-  const stockSliderMin = Math.min(
-    typeof minStock === "number" && !Number.isNaN(minStock) ? minStock : 0,
-    0
-  );
+  const stockSliderMin =
+    typeof minStock === "number" && !Number.isNaN(minStock) ? minStock : 0;
   const stockSliderMax = Math.max(
     typeof maxStock === "number" && !Number.isNaN(maxStock) ? maxStock : 0,
-    1
+    stockSliderMin + 1
   );
   const stockRangeValue = [
     filters.stock[0] ?? stockSliderMin,

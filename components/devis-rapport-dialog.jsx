@@ -36,7 +36,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/functions";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import {
   endOfDay,
@@ -50,8 +50,11 @@ import {
   subQuarters,
   subYears,
 } from "date-fns";
-import { ChevronDown, FileText, Printer, X } from "lucide-react";
+import { ChevronDown, FileText, Printer, Search, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { useInView } from "react-intersection-observer";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { LoadingDots } from "@/components/loading-dots";
 
 function formatDate(dateString) {
   if (!dateString) return "—";
@@ -136,12 +139,16 @@ export default function DevisRapportDialog() {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(1);
   const [commercant, setCommercant] = useState("all");
+  const [selectedClients, setSelectedClients] = useState([]);
+  const [clientSearchQuery, setClientSearchQuery] = useState("");
+  const [debouncedClientQuery, setDebouncedClientQuery] = useState("");
   const [periode, setPeriode] = useState("");
   const [startDate, setStartDate] = useState();
   const [endDate, setEndDate] = useState();
   const [statutPaiement, setStatutPaiement] = useState([]);
   const [statut, setStatut] = useState([]);
   const [pourcentageBenefice, setPourcentageBenefice] = useState("");
+  const { ref: clientsInViewRef, inView: clientsInView } = useInView();
 
   const { from, to } = getDateRangeFromPeriode(periode, startDate, endDate);
 
@@ -162,9 +169,26 @@ export default function DevisRapportDialog() {
     setStatut((prev) => prev.filter((s) => s !== value));
   };
 
+  const toggleClient = (client, checked) => {
+    setSelectedClients((prev) => {
+      if (checked) {
+        if (prev.some((c) => c.id === client.id)) return prev;
+        return [...prev, { id: client.id, nom: client.nom }];
+      }
+      return prev.filter((c) => c.id !== client.id);
+    });
+  };
+
+  const removeClient = (id) => {
+    setSelectedClients((prev) => prev.filter((c) => c.id !== id));
+  };
+
   const reset = () => {
     setStep(1);
     setCommercant("all");
+    setSelectedClients([]);
+    setClientSearchQuery("");
+    setDebouncedClientQuery("");
     setPeriode("");
     setStartDate(undefined);
     setEndDate(undefined);
@@ -177,6 +201,13 @@ export default function DevisRapportDialog() {
     if (!open) reset();
   }, [open]);
 
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedClientQuery(clientSearchQuery);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [clientSearchQuery]);
+
   const commercantsQuery = useQuery({
     queryKey: ["commercants-rapport"],
     queryFn: async () => {
@@ -186,10 +217,39 @@ export default function DevisRapportDialog() {
     enabled: open,
   });
 
+  const clientsQuery = useInfiniteQuery({
+    queryKey: ["clients-rapport-select", debouncedClientQuery],
+    queryFn: async ({ pageParam = null }) => {
+      const response = await axios.get("/api/clients/clientsList", {
+        params: {
+          limit: 20,
+          query: debouncedClientQuery,
+          cursor: pageParam,
+        },
+      });
+      return response.data;
+    },
+    getNextPageParam: (lastPage) => lastPage.nextCursor || null,
+    keepPreviousData: true,
+    enabled: open && step === 1,
+  });
+
+  const clientsList =
+    clientsQuery.data?.pages.flatMap((page) => page.clients) || [];
+
+  useEffect(() => {
+    if (clientsInView && clientsQuery.hasNextPage) {
+      clientsQuery.fetchNextPage();
+    }
+  }, [clientsInView, clientsQuery.hasNextPage, clientsQuery.fetchNextPage]);
+
+  const selectedClientIds = selectedClients.map((c) => c.id);
+
   const rapportQuery = useQuery({
     queryKey: [
       "devis-rapport",
       commercant,
+      selectedClientIds,
       periode,
       startDate,
       endDate,
@@ -202,6 +262,10 @@ export default function DevisRapportDialog() {
       const params = {
         limit: 9999,
         commercant: commercant !== "all" ? commercant : undefined,
+        clientIds:
+          selectedClientIds.length > 0
+            ? selectedClientIds.join(",")
+            : undefined,
         dateStartFrom: from?.toISOString?.() ?? undefined,
         dateStartTo: to?.toISOString?.() ?? undefined,
         statutPaiement:
@@ -283,7 +347,11 @@ export default function DevisRapportDialog() {
         {step === 1 && (
           <div className="space-y-6">
             <div
-              className={`grid grid-cols-2 gap-4 ${periode === "personnalisee" ? "grid-cols-3" : ""}`}
+              className={`grid gap-4 ${
+                periode === "personnalisee"
+                  ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
+                  : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+              }`}
             >
               <div className="grid gap-2">
                 <Label>Commerçant</Label>
@@ -300,6 +368,111 @@ export default function DevisRapportDialog() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Clients</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-between text-left font-normal focus:ring-2 focus:ring-purple-500 bg-white min-h-10 h-auto"
+                    >
+                      <div className="flex flex-wrap gap-1">
+                        {selectedClients.length === 0 ? (
+                          <span className="text-muted-foreground">
+                            Tous les clients
+                          </span>
+                        ) : (
+                          selectedClients.map((c) => (
+                            <Badge
+                              key={c.id}
+                              variant="secondary"
+                              className="text-xs bg-purple-100 text-purple-800 hover:bg-purple-200"
+                            >
+                              {c.nom}
+                              <X
+                                className="ml-1 h-3 w-3 cursor-pointer hover:text-purple-600"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeClient(c.id);
+                                }}
+                              />
+                            </Badge>
+                          ))
+                        )}
+                      </div>
+                      <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-3" align="start">
+                    <div className="space-y-3">
+                      <div className="relative">
+                        <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          placeholder="Rechercher un client…"
+                          value={clientSearchQuery}
+                          onChange={(e) => setClientSearchQuery(e.target.value)}
+                          className="pl-8 h-9 focus-visible:ring-purple-500"
+                        />
+                      </div>
+                      {selectedClients.length > 0 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-xs text-muted-foreground"
+                          onClick={() => setSelectedClients([])}
+                        >
+                          Effacer la sélection
+                        </Button>
+                      )}
+                      <ScrollArea className="h-56">
+                        <div className="space-y-2 pr-2">
+                          {clientsQuery.isLoading ? (
+                            <div className="flex justify-center py-6">
+                              <LoadingDots size={6} />
+                            </div>
+                          ) : clientsList.length === 0 ? (
+                            <p className="text-sm text-muted-foreground text-center py-6">
+                              Aucun client trouvé
+                            </p>
+                          ) : (
+                            <>
+                              {clientsList.map((client) => (
+                                <div
+                                  key={client.id}
+                                  className="flex items-center space-x-2"
+                                >
+                                  <Checkbox
+                                    id={`client-${client.id}`}
+                                    checked={selectedClients.some(
+                                      (c) => c.id === client.id
+                                    )}
+                                    onCheckedChange={(checked) =>
+                                      toggleClient(client, checked === true)
+                                    }
+                                  />
+                                  <Label
+                                    htmlFor={`client-${client.id}`}
+                                    className="text-sm font-medium cursor-pointer flex-1 truncate"
+                                  >
+                                    {client.nom}
+                                  </Label>
+                                </div>
+                              ))}
+                              <div ref={clientsInViewRef} className="h-4" />
+                              {clientsQuery.isFetchingNextPage && (
+                                <div className="flex justify-center py-2">
+                                  <LoadingDots size={5} />
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </ScrollArea>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="periode" className="text-sm font-medium">
@@ -578,11 +751,19 @@ export default function DevisRapportDialog() {
             ) : (
               <>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 p-4 bg-muted/50 rounded-lg">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-8 gap-3 p-4 bg-muted/50 rounded-lg">
                   <div>
                     <p className="text-xs font-medium text-muted-foreground">Commerçant</p>
                     <p className="text-lg font-semibold text-foreground">
                       {commercant === "all" ? "Tous" : commercant}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">Clients</p>
+                    <p className="text-sm font-semibold text-foreground line-clamp-2">
+                      {selectedClients.length === 0
+                        ? "Tous"
+                        : selectedClients.map((c) => c.nom).join(", ")}
                     </p>
                   </div>
                   <div>
@@ -703,6 +884,7 @@ export default function DevisRapportDialog() {
                         bLGroupsList,
                         totals: t ?? {},
                         commercant,
+                        clients: selectedClients,
                         periode,
                         from: from?.toISOString?.() ?? null,
                         to: to?.toISOString?.() ?? null,

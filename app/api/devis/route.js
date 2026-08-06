@@ -284,6 +284,7 @@ export async function GET(req) {
   const maxTotal = searchParams.get("maxTotal");
   const statutPaiement = searchParams.get("statutPaiement");
   const commercant = searchParams.get("commercant");
+  const clientIdsParam = searchParams.get("clientIds"); // plusieurs IDs séparés par ","
   const limitParam = searchParams.get("limit"); // pour le rapport (tous les devis)
   const filters = {};
 
@@ -320,6 +321,17 @@ export async function GET(req) {
     filters.commercant = {
       nom: commercant,
     };
+  }
+
+  // Clients filter (plusieurs IDs séparés par ",")
+  if (clientIdsParam && clientIdsParam !== "all") {
+    const clientIds = clientIdsParam
+      .split(",")
+      .map((id) => id.trim())
+      .filter(Boolean);
+    if (clientIds.length > 0) {
+      filters.clientId = { in: clientIds };
+    }
   }
 
   if (from && to) {

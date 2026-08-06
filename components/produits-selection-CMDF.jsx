@@ -240,17 +240,22 @@ export function ProduitsSelection({ onArticlesAdd }) {
                               <p className="text-md font-medium">
                                 {article.designation}
                               </p>
-                              <div className="flex justify-between w-full">
-                                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                              <div className="grid grid-cols-3 gap-2 w-full items-center">
+                                <p className="text-xs text-muted-foreground">
                                   Prix d&apos;unité :{" "}
                                   {article.prixAchat.toFixed(2) || "0"} MAD
                                 </p>
 
-                                {article.reference && (
-                                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                    Réf : {article.reference}
-                                  </p>
-                                )}
+                                <p className="text-xs text-muted-foreground text-center">
+                                  Stock :{" "}
+                                  {article.stock != null ? article.stock : "0"}
+                                </p>
+
+                                <p className="text-xs text-muted-foreground text-right">
+                                  {article.reference
+                                    ? `Réf : ${article.reference}`
+                                    : "\u00A0"}
+                                </p>
                               </div>
                             </div>
                             <div

@@ -158,9 +158,14 @@ export default function ImpressionRapportDevis() {
     );
   }
 
-  const { devis = [], bLGroupsList = [], totals = {}, commercant, from, to } = data;
+  const { devis = [], bLGroupsList = [], totals = {}, commercant, clients = [], from, to } = data;
   const t = totals;
   const filteredOrders = (numero) => bLGroupsList.filter((o) => o.devisNumero === numero);
+
+  const clientsLabel =
+    !clients || clients.length === 0
+      ? "Tous"
+      : clients.map((c) => c.nom).join(", ");
 
   return (
     <>
@@ -171,24 +176,28 @@ export default function ImpressionRapportDevis() {
           </div>
 
 
-          <div className="flex items-center justify-between gap-2 px-4 py-2 rounded-lg bg-muted/50  text-sm print-block">
-          <div>
-                 <span className="font-medium text-muted-foreground">Commerçant : </span>
-            <span className="font-semibold text-foreground">
-              {commercant === "all" ? "Tous" : commercant ?? "—"}
-            </span>
-          </div>
-       
-         {from && to && (
+          <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2 rounded-lg bg-muted/50 text-sm print-block">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
               <div>
-                <span className="font-medium text-muted-foreground ml-4">Période : </span>
+                <span className="font-medium text-muted-foreground">Commerçant : </span>
+                <span className="font-semibold text-foreground">
+                  {commercant === "all" ? "Tous" : commercant ?? "—"}
+                </span>
+              </div>
+              <div>
+                <span className="font-medium text-muted-foreground">Clients : </span>
+                <span className="font-semibold text-foreground">{clientsLabel}</span>
+              </div>
+            </div>
+
+            {from && to && (
+              <div>
+                <span className="font-medium text-muted-foreground">Période : </span>
                 <span className="font-semibold text-foreground">
                   {formatDate(from)} → {formatDate(to)}
                 </span>
               </div>
             )}
-       
-           
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 p-4 bg-muted/50 rounded-lg print-block">
 
