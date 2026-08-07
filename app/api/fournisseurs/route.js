@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../lib/prisma";
+import { authErrorResponse, requireAuth } from "@/lib/auth-utils";
 export const dynamic = "force-dynamic";
 
 export async function POST(req) {
   try {
+    // BUG-002 audit: creating fournisseurs had no handler auth
+    await requireAuth();
     const resopns = await req.json();
     const { nom, email, telephone, adresse, ice, telephoneSecondaire , dette } =
       resopns;
@@ -20,6 +23,8 @@ export async function POST(req) {
     });
     return NextResponse.json({ result });
   } catch (error) {
+    const authRes = authErrorResponse(error);
+    if (authRes) return authRes;
     console.log(error);
     return NextResponse.json(
       { message: "An unexpected error occurred." },
@@ -30,6 +35,8 @@ export async function POST(req) {
 
 export async function PUT(req) {
   try {
+    // BUG-002 audit: updating fournisseurs had no handler auth
+    await requireAuth();
     const resopns = await req.json();
     const {
       id,
@@ -56,6 +63,8 @@ export async function PUT(req) {
 
     return NextResponse.json({ result });
   } catch (error) {
+    const authRes = authErrorResponse(error);
+    if (authRes) return authRes;
     console.log(error);
     return NextResponse.json(
       { message: "An unexpected error occurred." },
@@ -65,66 +74,78 @@ export async function PUT(req) {
 }
 
 export async function GET(req) {
-  const { searchParams } = new URL(req.url);
-  const page = parseInt(searchParams.get("page") || "1");
-  const searchQuery = searchParams.get("query") || "";
-  const limitParam = searchParams.get("limit");
-  const minDetteParam = searchParams.get("minDette");
-  const maxDetteParam = searchParams.get("maxDette");
+  try {
+    // BUG-002 audit: listing fournisseurs / dette had no handler auth
+    await requireAuth();
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get("page") || "1");
+    const searchQuery = searchParams.get("query") || "";
+    const limitParam = searchParams.get("limit");
+    const minDetteParam = searchParams.get("minDette");
+    const maxDetteParam = searchParams.get("maxDette");
 
-  const filters = {};
+    const filters = {};
 
-  // Si limit est fourni (ex: rapport qui a besoin de tous les fournisseurs avec dette), l'utiliser
-  const fournisseursPerPage =
-    limitParam != null
-      ? Math.min(parseInt(limitParam, 10) || 10, 10000)
-      : 10;
+    // Si limit est fourni (ex: rapport qui a besoin de tous les fournisseurs avec dette), l'utiliser
+    const fournisseursPerPage =
+      limitParam != null
+        ? Math.min(parseInt(limitParam, 10) || 10, 10000)
+        : 10;
 
-  // Search filter by numero and client name
-  filters.OR = [
-    { nom: { contains: searchQuery, mode: "insensitive" } },
-    { adresse: { contains: searchQuery, mode: "insensitive" } },
-    { telephone: { contains: searchQuery } },
-    { email: { contains: searchQuery, mode: "insensitive" } },
-    { ice: { contains: searchQuery } },
-  ];
+    // Search filter by numero and client name
+    filters.OR = [
+      { nom: { contains: searchQuery, mode: "insensitive" } },
+      { adresse: { contains: searchQuery, mode: "insensitive" } },
+      { telephone: { contains: searchQuery } },
+      { email: { contains: searchQuery, mode: "insensitive" } },
+      { ice: { contains: searchQuery } },
+    ];
 
-  if (
-    minDetteParam != null &&
-    maxDetteParam != null &&
-    minDetteParam !== "" &&
-    maxDetteParam !== ""
-  ) {
-    const minD = Number(minDetteParam);
-    const maxD = Number(maxDetteParam);
-    if (!Number.isNaN(minD) && !Number.isNaN(maxD)) {
-      filters.dette = { gte: minD, lte: maxD };
+    if (
+      minDetteParam != null &&
+      maxDetteParam != null &&
+      minDetteParam !== "" &&
+      maxDetteParam !== ""
+    ) {
+      const minD = Number(minDetteParam);
+      const maxD = Number(maxDetteParam);
+      if (!Number.isNaN(minD) && !Number.isNaN(maxD)) {
+        filters.dette = { gte: minD, lte: maxD };
+      }
     }
+
+    // Fetch filtered commandes with pagination and related data
+    const [fournisseurs, totalFournisseurs, detteAgg] = await Promise.all([
+      prisma.fournisseurs.findMany({
+        where: filters,
+        skip: (page - 1) * fournisseursPerPage,
+        take: fournisseursPerPage,
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.fournisseurs.count({ where: filters }), // Get total count for pagination
+      prisma.fournisseurs.aggregate({
+        _max: { dette: true },
+        _min: { dette: true },
+      }),
+    ]);
+
+    // Calculate total pages for pagination
+    const totalPages = Math.ceil(totalFournisseurs / fournisseursPerPage);
+
+    // Return the response
+    return NextResponse.json({
+      fournisseurs,
+      totalPages,
+      minDette: detteAgg._min.dette ?? 0,
+      maxDette: detteAgg._max.dette ?? 0,
+    });
+  } catch (error) {
+    const authRes = authErrorResponse(error);
+    if (authRes) return authRes;
+    console.log(error);
+    return NextResponse.json(
+      { message: "An unexpected error occurred." },
+      { status: 500 }
+    );
   }
-
-  // Fetch filtered commandes with pagination and related data
-  const [fournisseurs, totalFournisseurs, detteAgg] = await Promise.all([
-    prisma.fournisseurs.findMany({
-      where: filters,
-      skip: (page - 1) * fournisseursPerPage,
-      take: fournisseursPerPage,
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.fournisseurs.count({ where: filters }), // Get total count for pagination
-    prisma.fournisseurs.aggregate({
-      _max: { dette: true },
-      _min: { dette: true },
-    }),
-  ]);
-
-  // Calculate total pages for pagination
-  const totalPages = Math.ceil(totalFournisseurs / fournisseursPerPage);
-
-  // Return the response
-  return NextResponse.json({
-    fournisseurs,
-    totalPages,
-    minDette: detteAgg._min.dette ?? 0,
-    maxDette: detteAgg._max.dette ?? 0,
-  });
 }

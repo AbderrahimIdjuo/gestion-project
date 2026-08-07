@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../../lib/prisma";
+import { authErrorResponse, requireAuth } from "@/lib/auth-utils";
 
 export async function GET(req, { params }) {
   try {
+    // BUG-002 audit: single-règlement GET had no handler-level auth
+    await requireAuth();
     const { id } = params;
 
     if (!id) {
@@ -51,6 +54,8 @@ export async function GET(req, { params }) {
 
     return NextResponse.json({ reglement });
   } catch (error) {
+    const authRes = authErrorResponse(error);
+    if (authRes) return authRes;
     console.error("Erreur lors de la récupération du règlement:", error);
     return NextResponse.json(
       { error: "Erreur lors de la récupération du règlement" },

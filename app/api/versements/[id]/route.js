@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../../lib/prisma";
+import { authErrorResponse, requireAuth } from "@/lib/auth-utils";
 export const dynamic = "force-dynamic";
 
 // PUT - Modifier un versement
 export async function PUT(req, { params }) {
   try {
+    // BUG-002 audit: updating versements / balances had no handler auth
+    await requireAuth();
     const { id } = params;
     const body = await req.json();
     const { montant, sourceCompteId, reference, note } = body;
@@ -206,6 +209,8 @@ export async function PUT(req, { params }) {
       data: result,
     });
   } catch (error) {
+    const authRes = authErrorResponse(error);
+    if (authRes) return authRes;
     console.error("Erreur lors de la modification du versement:", error);
     return NextResponse.json(
       {
@@ -219,6 +224,8 @@ export async function PUT(req, { params }) {
 // DELETE - Supprimer un versement
 export async function DELETE(req, { params }) {
   try {
+    // BUG-002 audit: deleting versements had no handler auth
+    await requireAuth();
     const { id } = params;
 
     if (!id) {
@@ -289,6 +296,8 @@ export async function DELETE(req, { params }) {
       data: result,
     });
   } catch (error) {
+    const authRes = authErrorResponse(error);
+    if (authRes) return authRes;
     console.error("Erreur lors de la suppression du versement:", error);
     return NextResponse.json(
       {

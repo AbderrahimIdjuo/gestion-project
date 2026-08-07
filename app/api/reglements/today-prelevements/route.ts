@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../../lib/prisma";
+import { authErrorResponse, requireAuth } from "@/lib/auth-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,8 @@ interface TodayPrelevementsResponse {
 
 export async function GET(): Promise<NextResponse<TodayPrelevementsResponse | { error: string }>> {
   try {
+    // BUG-002 audit: notification feed listed pending prélèvements without auth
+    await requireAuth();
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -84,6 +87,8 @@ export async function GET(): Promise<NextResponse<TodayPrelevementsResponse | { 
       count,
     });
   } catch (error) {
+    const authRes = authErrorResponse(error);
+    if (authRes) return authRes;
     console.error("Erreur lors de la récupération des prélèvements:", error);
     return NextResponse.json(
       { error: "Erreur lors de la récupération des prélèvements" },
