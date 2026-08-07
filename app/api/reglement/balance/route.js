@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../../lib/prisma";
+import { authErrorResponse, requireAuth } from "@/lib/auth-utils";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req) {
   try {
+    // BUG-002 audit: balance endpoint exposed compte pro / règlement sums without auth
+    await requireAuth();
     const { searchParams } = new URL(req.url);
     const fromPrelevement = searchParams.get("fromPrelevement");
     const toPrelevement = searchParams.get("toPrelevement");
@@ -58,6 +61,8 @@ export async function GET(req) {
       nombreReglements: reglements.length,
     });
   } catch (error) {
+    const authRes = authErrorResponse(error);
+    if (authRes) return authRes;
     console.error("Erreur lors du calcul de la balance:", error);
     return NextResponse.json(
       { error: "Erreur lors du calcul de la balance" },

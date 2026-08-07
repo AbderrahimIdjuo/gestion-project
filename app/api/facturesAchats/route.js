@@ -1,9 +1,12 @@
 "use server";
 import { NextResponse } from "next/server";
 import prisma from "../../../lib/prisma";
+import { authErrorResponse, requireAuth } from "@/lib/auth-utils";
 
 export async function POST(req) {
   try {
+    // BUG-002 audit: creating factures d'achats had no handler auth
+    await requireAuth();
     const response = await req.json();
     const { numero, date, total, fournisseurId, reglementId } = response;
 
@@ -41,6 +44,8 @@ export async function POST(req) {
       resultat,
     });
   } catch (error) {
+    const authRes = authErrorResponse(error);
+    if (authRes) return authRes;
     console.error("Error creating facture:", error);
     return NextResponse.json(
       {
@@ -54,6 +59,8 @@ export async function POST(req) {
 
 export async function GET(req) {
   try {
+    // BUG-002 audit: listing factures d'achats had no handler auth
+    await requireAuth();
     const { searchParams } = new URL(req.url);
     let page = parseInt(searchParams.get("page") || "1");
     const searchQuery = searchParams.get("query") || "";
@@ -135,6 +142,8 @@ export async function GET(req) {
       totalFactures,
     });
   } catch (error) {
+    const authRes = authErrorResponse(error);
+    if (authRes) return authRes;
     console.error("Error fetching factures:", error);
     return NextResponse.json(
       {

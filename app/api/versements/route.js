@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../lib/prisma";
+import { authErrorResponse, requireAuth } from "@/lib/auth-utils";
 export const dynamic = "force-dynamic";
 
 // POST - Créer un versement vers compte pro
 export async function POST(req) {
   try {
+    // BUG-002 audit: creating versements / moving funds required no auth
+    await requireAuth();
     const body = await req.json();
     const { montant, sourceCompteId, compteProId, reference, note } = body;
 
@@ -136,6 +139,8 @@ export async function POST(req) {
       data: result,
     });
   } catch (error) {
+    const authRes = authErrorResponse(error);
+    if (authRes) return authRes;
     console.error("Erreur lors de la création du versement:", error);
     return NextResponse.json(
       {
@@ -149,6 +154,8 @@ export async function POST(req) {
 // GET - Récupérer l'historique des versements avec pagination
 export async function GET(req) {
   try {
+    // BUG-002 audit: versement history was readable without auth
+    await requireAuth();
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
@@ -215,6 +222,8 @@ export async function GET(req) {
       },
     });
   } catch (error) {
+    const authRes = authErrorResponse(error);
+    if (authRes) return authRes;
     console.error("Erreur lors de la récupération des versements:", error);
     return NextResponse.json(
       {

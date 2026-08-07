@@ -1,10 +1,47 @@
 import { auth, clerkClient, currentUser } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 
 /**
  * Utility functions for authentication and role management
  */
 
 export type UserRole = "admin" | "commercant";
+
+/**
+ * Server-side authentication check for API routes / server actions.
+ * Defense in depth: use even when middleware already gates the path.
+ * @throws Error with message "Authentication required" when no session
+ */
+export async function requireAuth() {
+  const { userId } = await auth();
+
+  if (!userId) {
+    throw new Error("Authentication required");
+  }
+
+  return { userId };
+}
+
+/**
+ * Map auth/authorization errors from requireAuth / requireAdmin / requireRole
+ * to HTTP responses. Returns null when the error is unrelated to auth.
+ */
+export function authErrorResponse(error: unknown): NextResponse | null {
+  const message = error instanceof Error ? error.message : "";
+
+  if (message.includes("Authentication required")) {
+    return NextResponse.json(
+      { error: "Authentification requise" },
+      { status: 401 }
+    );
+  }
+
+  if (message.includes("Access denied")) {
+    return NextResponse.json({ error: message }, { status: 403 });
+  }
+
+  return null;
+}
 
 /**
  * Get the current user's role from Clerk metadata

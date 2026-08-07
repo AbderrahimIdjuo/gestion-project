@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { authErrorResponse, requireAuth } from "@/lib/auth-utils";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const prisma: PrismaClient = require("../../../../../lib/prisma").default;
 
@@ -10,6 +11,8 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
+    // BUG-002 audit: confirming/cancelling prélèvements mutated balances without auth
+    await requireAuth();
     const { id } = params;
     const body = await req.json();
     const { status, newDate } = body;
@@ -332,6 +335,8 @@ export async function POST(
       message: "Statut de prélèvement mis à jour avec succès",
     });
   } catch (error) {
+    const authRes = authErrorResponse(error);
+    if (authRes) return authRes;
     console.error(
       "Erreur lors de la mise à jour du statut de prélèvement:",
       error

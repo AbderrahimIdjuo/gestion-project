@@ -1,10 +1,13 @@
 import ExcelJS from "exceljs";
 import { NextResponse } from "next/server";
 import prisma from "../../../lib/prisma";
+import { authErrorResponse, requireAuth } from "@/lib/auth-utils";
 
 export async function POST(req) {
   console.log("the route is fired");
   try {
+    // BUG-002 audit: bulk import of fournisseurs was public (also missing from middleware list)
+    await requireAuth();
     const formData = await req.formData();
     const file = formData.get("file");
 
@@ -57,6 +60,8 @@ export async function POST(req) {
 
     return NextResponse.json({ message: "Import successful" }, { status: 200 });
   } catch (error) {
+    const authRes = authErrorResponse(error);
+    if (authRes) return authRes;
     console.error("Import error:", error);
     return NextResponse.json({ error: "Failed to import" }, { status: 500 });
   }

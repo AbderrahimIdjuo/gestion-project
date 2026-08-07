@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../lib/prisma";
-import { requireAdmin } from "@/lib/auth-utils";
+import { authErrorResponse, requireAdmin, requireAuth } from "@/lib/auth-utils";
 import {
   applyReglementMontantChangeToBonLivraisons,
   ReglementMontantInvalideError,
@@ -9,6 +9,8 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req) {
   try {
+    // BUG-002 audit: GET previously had no handler-level auth (middleware-only)
+    await requireAuth();
     const { searchParams } = new URL(req.url);
     let page = parseInt(searchParams.get("page") || "1");
     const searchQuery = searchParams.get("query") || "";
@@ -291,6 +293,9 @@ export async function GET(req) {
       totalReglements,
     });
   } catch (error) {
+    // Surface auth failures as 401/403 instead of a generic 500
+    const authRes = authErrorResponse(error);
+    if (authRes) return authRes;
     console.error("Erreur lors de la récupération des règlements:", error);
     return NextResponse.json(
       { error: "Erreur lors de la récupération des règlements" },

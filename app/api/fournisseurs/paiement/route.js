@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../../lib/prisma";
+import { authErrorResponse, requireAuth } from "@/lib/auth-utils";
 export const dynamic = "force-dynamic";
 
 export async function POST(req) {
   try {
+    // BUG-002 audit: supplier payments create règlements / move money — require auth
+    await requireAuth();
     const resopns = await req.json();
     const {
       type,
@@ -174,6 +177,8 @@ export async function POST(req) {
     );
     return NextResponse.json({ result });
   } catch (error) {
+    const authRes = authErrorResponse(error);
+    if (authRes) return authRes;
     console.log(error);
     return NextResponse.json(
       { message: "An unexpected error occurred." },

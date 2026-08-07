@@ -1,9 +1,12 @@
 "use server";
 import { NextResponse } from "next/server";
 import prisma from "../../../../lib/prisma";
+import { authErrorResponse, requireAuth } from "@/lib/auth-utils";
 
 export async function DELETE(req, { params }) {
   try {
+    // BUG-002 audit: deleting factures d'achats had no handler auth
+    await requireAuth();
     const { id } = params;
 
     // Vérifier si la facture existe
@@ -40,6 +43,8 @@ export async function DELETE(req, { params }) {
       message: "Facture supprimée avec succès",
     });
   } catch (error) {
+    const authRes = authErrorResponse(error);
+    if (authRes) return authRes;
     console.error("Error deleting facture:", error);
     return NextResponse.json(
       {
