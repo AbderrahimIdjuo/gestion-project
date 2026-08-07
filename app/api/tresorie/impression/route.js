@@ -34,14 +34,34 @@ export async function GET(req) {
   if (methodePaiement !== "all") {
     filters.methodePaiement = methodePaiement;
   }
-  // type de depense filter
-  if (typeDepense !== "all") {
-    if (typeDepense !== "charges") {
-      filters.typeDepense = typeDepense;
-    } else if (typeDepense === "charges") {
+  // type de depense filter (supports multiple values separated by "-", including sansType for null)
+  if (typeDepense && typeDepense !== "all") {
+    if (typeDepense === "charges") {
       filters.typeDepense = {
         in: ["fixe", "variante"],
       };
+    } else {
+      const typeDepenseArray = typeDepense.split("-").filter(Boolean);
+      const hasSansType = typeDepenseArray.includes("sansType");
+      const stringTypes = typeDepenseArray.filter(t => t !== "sansType");
+
+      if (hasSansType && stringTypes.length > 0) {
+        filters.AND = [
+          ...(filters.AND || []),
+          {
+            OR: [
+              { typeDepense: { in: stringTypes } },
+              { typeDepense: null },
+            ],
+          },
+        ];
+      } else if (hasSansType) {
+        filters.typeDepense = null;
+      } else if (stringTypes.length === 1) {
+        filters.typeDepense = stringTypes[0];
+      } else if (stringTypes.length > 1) {
+        filters.typeDepense = { in: stringTypes };
+      }
     }
   }
   // Date range filter

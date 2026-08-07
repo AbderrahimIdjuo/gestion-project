@@ -27,6 +27,7 @@ export function useDeleteBonLivraison() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["bonLivraison"]);
+      queryClient.invalidateQueries({ queryKey: ["produits"] });
     },
   });
 }

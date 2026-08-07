@@ -1,0 +1,142 @@
+/* Styles spécifiques pour l'impression du rapport des charges */
+@media print {
+  @page {
+    margin: 1cm;
+
+    size: A4 landscape; /* Orientation horizontale */
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-image: url("/images/LOGO-OUDAOUD.jpg");
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-position: center center;
+    opacity: 0.1;
+    z-index: -1;
+  }
+
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    background-color: white !important;
+  }
+
+  /* Hide everything except the print area */
+  body * {
+    visibility: hidden;
+  }
+
+  #print-area,
+  #print-area * {
+    visibility: visible;
+  }
+
+  #print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 0 !important;
+  }
+
+  /* Hide UI elements */
+  .print\\:hidden,
+  button,
+  nav,
+  .sidebar,
+  .navbar {
+    display: none !important;
+  }
+
+  table {
+    width: 100% !important;
+    height: 90% !important;
+    page-break-inside: auto;
+    border-collapse: collapse !important;
+    font-size: 8px;
+    table-layout: auto !important;
+  }
+
+  thead {
+    display: table-row-group !important;
+  }
+
+  tfoot {
+    display: table-row-group !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    page-break-before: avoid !important;
+  }
+
+  tfoot tr {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    page-break-before: avoid !important;
+  }
+
+  tr {
+    page-break-inside: avoid;
+  }
+
+  th,
+  td {
+    border: 1px solid #374151 !important;
+    border-color: #374151 !important;
+    padding: 4px 6px !important;
+  }
+
+  .print-block {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .main-table-container {
+    page-break-inside: auto;
+  }
+
+  .main-table-container tfoot {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    page-break-before: avoid !important;
+  }
+
+  #print-area {
+    padding-bottom: 80px !important;
+  }
+
+  .container {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+
+  h3 {
+    font-size: 14px !important;
+    margin-bottom: 8px !important;
+  }
+
+  .grid {
+    gap: 8px !important;
+  }
+
+  .overflow-x-auto {
+    overflow: visible !important;
+  }
+
+  .table-footer-print {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    page-break-before: avoid !important;
+  }
+
+  .table-footer-print tr {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    page-break-before: avoid !important;
+  }
+}

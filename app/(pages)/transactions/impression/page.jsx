@@ -139,7 +139,7 @@ export default function ImpressionTransactions() {
                     {typeLabel(params?.type)}
                   </p>
                 </div>
-                {params?.type === "depense" && params?.typeDepense && (
+                {params?.type?.includes("depense") && params?.typeDepense && params?.typeDepense !== "all" && (
                   <div className="flex gap-2 items-center">
                     <h3 className="mb-1 font-semibold text-gray-900">
                       Type de charges:
@@ -197,7 +197,7 @@ export default function ImpressionTransactions() {
                                 {t.compte?.replace("compte", "")}
                               </TableCell>
                               <TableCell className="px-1 py-2">
-                                {t.description.replace(
+                                {(t.description || "").replace(
                                   "paiement du fournisseur",
                                   "Bénéficiaire : "
                                 )}

@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/functions";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { isValid } from "date-fns";
+import { format, isValid } from "date-fns";
 import { Package } from "lucide-react";
 import { useState } from "react";
 import CustomTooltip from "./customTooltip";
@@ -79,12 +79,11 @@ export default function TopProductsCard({ from, to }) {
     queryFn: async () => {
       const response = await axios.get("/api/statistiques/topProduits", {
         params: {
-          from: from && isValid(from) ? from.toISOString() : null,
-          to: to && isValid(to) ? to.toISOString() : null,
+          from: from && isValid(from) ? format(from, "yyyy-MM-dd") : null,
+          to: to && isValid(to) ? format(to, "yyyy-MM-dd") : null,
           sortBy: sortBy,
         },
       });
-      console.log(response.data.produitsPlusAchetes);
       return response.data.produitsPlusAchetes;
     },
     refetchOnWindowFocus: false,

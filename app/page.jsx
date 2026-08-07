@@ -8,14 +8,8 @@ import { Navbar } from "@/components/navbar";
 import { Sidebar } from "@/components/sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/functions";
 import { SignIn, useUser } from "@clerk/nextjs";
 import { useQuery } from "@tanstack/react-query";
@@ -31,10 +25,13 @@ import {
   startOfMonth,
   startOfQuarter,
   startOfYear,
+  subMonths,
   subQuarters,
   subYears,
 } from "date-fns";
+import { fr } from "date-fns/locale";
 import {
+  CalendarDays,
   FileText,
   Landmark,
   Package,
@@ -42,9 +39,20 @@ import {
   TrendingUp,
   Truck,
   Users,
-  Wallet
+  Wallet,
 } from "lucide-react";
 import { useState } from "react";
+
+const PERIODES = [
+  { value: "ce-mois", label: "Ce mois" },
+  { value: "3-derniers-mois", label: "3 mois" },
+  { value: "6-derniers-mois", label: "6 mois" },
+  { value: "trimestre-actuel", label: "Trimestre" },
+  { value: "trimestre-precedent", label: "Trim. préc." },
+  { value: "cette-annee", label: "Cette année" },
+  { value: "annee-derniere", label: "Année préc." },
+  { value: "personnalisee", label: "Perso." },
+];
 
 export default function Page() {
   const { user, isSignedIn, isLoaded } = useUser();
@@ -66,34 +74,47 @@ export default function Page() {
           from: startOfMonth(now),
           to: endOfMonth(now),
         };
-      case "mois-dernier":
+      case "mois-dernier": {
         const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
         return {
           from: startOfMonth(lastMonth),
           to: endOfMonth(lastMonth),
+        };
+      }
+      case "3-derniers-mois":
+        return {
+          from: subMonths(startOfMonth(now), 2),
+          to: endOfMonth(now),
+        };
+      case "6-derniers-mois":
+        return {
+          from: subMonths(startOfMonth(now), 5),
+          to: endOfMonth(now),
         };
       case "trimestre-actuel":
         return {
           from: startOfQuarter(now),
           to: endOfQuarter(now),
         };
-      case "trimestre-precedent":
+      case "trimestre-precedent": {
         const prevQuarter = subQuarters(now, 1);
         return {
           from: startOfQuarter(prevQuarter),
           to: endOfQuarter(prevQuarter),
         };
+      }
       case "cette-annee":
         return {
           from: startOfYear(now),
           to: endOfYear(now),
         };
-      case "annee-derniere":
+      case "annee-derniere": {
         const lastYear = subYears(now, 1);
         return {
           from: startOfYear(lastYear),
           to: endOfYear(lastYear),
         };
+      }
       case "personnalisee":
         return {
           from: startDate ? new Date(startDate) : null,
@@ -106,7 +127,12 @@ export default function Page() {
         };
     }
   }
+
   const { from, to } = getDateRangeFromPeriode(periode);
+  const periodeLabel =
+    from && to && isValid(from) && isValid(to)
+      ? `${format(from, "d MMM yyyy", { locale: fr })} → ${format(to, "d MMM yyyy", { locale: fr })}`
+      : null;
   const statistiques = useQuery({
     queryKey: ["statistiques", startDate, endDate, periode],
     queryFn: async () => {
@@ -339,73 +365,65 @@ export default function Page() {
               <div className="h-full flex flex-col space-y-4 p-6">
                 <h1 className="text-3xl font-bold">Tableau de bord</h1>
 
-                {/* Filtre période - bloc dédié */}
-                <Card className="border border-slate-200/80 bg-slate-50/50 shadow-sm">
-                  <CardContent className="p-4 sm:p-5">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-6">
-                      <div className="flex min-w-0 flex-1 items-center gap-3 sm:max-w-xs">
-                        <Label
-                          htmlFor="periode"
-                          className="shrink-0 text-sm font-medium text-slate-700"
-                        >
-                          Période
-                        </Label>
-                        <Select
-                          value={periode}
-                          onValueChange={value => setPeriode(value)}
-                        >
-                          <SelectTrigger
-                            id="periode"
-                            className="h-10 w-full rounded-lg border-slate-200 bg-white font-medium text-slate-800 shadow-sm transition-colors hover:border-slate-300 focus:ring-2 focus:ring-purple-500 focus:ring-offset-1"
-                          >
-                            <SelectValue placeholder="Sélectionnez la période" />
-                          </SelectTrigger>
-                          <SelectContent className="rounded-lg border-slate-200 shadow-lg">
-                            <SelectItem value="ce-mois" className="rounded-md">
-                              Ce mois
-                            </SelectItem>
-                            <SelectItem value="3-derniers-mois" className="rounded-md">
-                              Les 3 derniers mois
-                            </SelectItem>
-                            <SelectItem value="6-derniers-mois" className="rounded-md">
-                              Les 6 derniers mois
-                            </SelectItem>
-                            <SelectItem value="cette-annee" className="rounded-md">
-                              Cette année
-                            </SelectItem>
-                            <SelectItem value="annee-derniere" className="rounded-md">
-                              L&apos;année dernière
-                            </SelectItem>
-                            <SelectItem value="trimestre-actuel" className="rounded-md">
-                              Trimestre actuel
-                            </SelectItem>
-                            <SelectItem value="trimestre-precedent" className="rounded-md">
-                              Trimestre précédent
-                            </SelectItem>
-                            <SelectItem value="personnalisee" className="rounded-md">
-                              Période personnalisée
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      {periode === "personnalisee" && (
-                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-                          <Label className="shrink-0 text-sm font-medium text-slate-700">
-                            Plage de dates
-                          </Label>
-                          <div className="min-w-0 flex-1">
-                            <CustomDateRangePicker
-                              startDate={startDate}
-                              setStartDate={setStartDate}
-                              endDate={endDate}
-                              setEndDate={setEndDate}
-                            />
-                          </div>
+                {/* Filtre période */}
+                <div className="rounded-2xl border border-slate-200/80 bg-gradient-to-r from-slate-50 via-white to-violet-50/40 p-4 shadow-sm sm:p-5">
+                  <div className="flex flex-col gap-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-100 text-violet-700">
+                          <CalendarDays className="h-4.5 w-4.5 h-[18px] w-[18px]" />
                         </div>
-                      )}
+                        <div>
+                          <p className="text-sm font-semibold text-slate-800">
+                            Période d&apos;analyse
+                          </p>
+                          {periodeLabel && (
+                            <p className="text-xs text-slate-500">
+                              {periodeLabel}
+                            </p>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </CardContent>
-                </Card>
+
+                    <div className="flex flex-wrap gap-2">
+                      {PERIODES.map(option => {
+                        const isActive = periode === option.value;
+                        return (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => setPeriode(option.value)}
+                            className={cn(
+                              "rounded-full px-3.5 py-1.5 text-sm font-medium transition-all duration-200",
+                              isActive
+                                ? "bg-violet-600 text-white shadow-md shadow-violet-200 ring-2 ring-violet-600/20"
+                                : "bg-white text-slate-600 border border-slate-200 hover:border-violet-300 hover:text-violet-700 hover:bg-violet-50/60"
+                            )}
+                          >
+                            {option.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {periode === "personnalisee" && (
+                      <div className="flex flex-col gap-2 rounded-xl border border-dashed border-violet-200 bg-white/80 p-3 sm:flex-row sm:items-center sm:gap-4">
+                        <Label className="shrink-0 text-sm font-medium text-slate-600">
+                          Plage de dates
+                        </Label>
+                        <div className="min-w-0 flex-1">
+                          <CustomDateRangePicker
+                            startDate={startDate}
+                            setStartDate={setStartDate}
+                            endDate={endDate}
+                            setEndDate={setEndDate}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
                 <div
                   className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
                   id="header-cards"

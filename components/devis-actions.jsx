@@ -47,15 +47,17 @@ export function DevisActions({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-72 rounded-md">
-          <DropdownMenuItem
-            onClick={() => router.push(`/ventes/devis/${devis.id}/update`)}
-            className="flex items-center gap-2 cursor-pointer group hover:!bg-purple-100"
-          >
-            <Pen className="h-4 w-4 text-purple-600 group-hover:text-purple-600" />
-            <span className="transition-colors duration-200 group-hover:text-purple-600 group-hover:bg-purple-100">
-              Modifier
-            </span>
-          </DropdownMenuItem>
+          {devis.statut !== "Terminer" && (
+            <DropdownMenuItem
+              onClick={() => router.push(`/ventes/devis/${devis.id}/update`)}
+              className="flex items-center gap-2 cursor-pointer group hover:!bg-purple-100"
+            >
+              <Pen className="h-4 w-4 text-purple-600 group-hover:text-purple-600" />
+              <span className="transition-colors duration-200 group-hover:text-purple-600 group-hover:bg-purple-100">
+                Modifier
+              </span>
+            </DropdownMenuItem>
+          )}
           {isAdmin && (
             <DropdownMenuItem
               onClick={() => {
@@ -71,19 +73,21 @@ export function DevisActions({
               </span>
             </DropdownMenuItem>
           )}
-          <DropdownMenuItem
-            onClick={() => {
-              setIsBankDialogOpen(true);
-              setMenuOpen(false);
-            }}
-            className="flex items-center gap-2 cursor-pointer group hover:!bg-blue-100"
-          >
-            <CircleDollarSign className="h-4 w-4 text-sky-600" />
+          {devis.statut !== "Terminer" && (
+            <DropdownMenuItem
+              onClick={() => {
+                setIsBankDialogOpen(true);
+                setMenuOpen(false);
+              }}
+              className="flex items-center gap-2 cursor-pointer group hover:!bg-blue-100"
+            >
+              <CircleDollarSign className="h-4 w-4 text-sky-600" />
 
-            <span className="transition-colors duration-200 group-hover:text-blue-600 group-hover:bg-blue-100">
-              paiement
-            </span>
-          </DropdownMenuItem>
+              <span className="transition-colors duration-200 group-hover:text-blue-600 group-hover:bg-blue-100">
+                paiement
+              </span>
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem
             onClick={() => {
               window.open(`/ventes/devis/imprimerFournitures`, "_blank");

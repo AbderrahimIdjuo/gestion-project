@@ -1,6 +1,6 @@
 "use client";
 import ComboBoxFournisseur from "@/components/comboBox-fournisseurs";
-import ComptesRapportDialog from "@/components/comptes-rapport-dialog";
+import TransactionsRapportDialog from "@/components/transactions-rapport-dialog";
 import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
 import CustomPagination from "@/components/customUi/customPagination";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
@@ -68,6 +68,7 @@ type Transaction = {
   id: string;
   createdAt: string;
   type: string;
+  typeDepense?: string | null;
   montant: number;
   compte: string;
   reference: string;
@@ -151,7 +152,7 @@ export default function Banques() {
     compte: [] as string[],
     type: [] as string[],
     methodePaiement: [] as string[],
-    typeDepense: "all",
+    typeDepense: [] as string[],
   });
   const queryClient = useQueryClient();
   const { user } = useUser();
@@ -159,17 +160,51 @@ export default function Banques() {
 
   // Fonctions pour gérer les filtres multiples
   const handleTypeChange = (type: string, checked: boolean) => {
-    setFilters(prev => ({
-      ...prev,
-      type: checked ? [...prev.type, type] : prev.type.filter(t => t !== type),
-    }));
+    setFilters(prev => {
+      const nextType = checked
+        ? [...prev.type, type]
+        : prev.type.filter(t => t !== type);
+      return {
+        ...prev,
+        type: nextType,
+        // Réinitialiser le sous-filtre dépenses si "depense" n'est plus sélectionné
+        typeDepense: nextType.includes("depense") ? prev.typeDepense : [],
+      };
+    });
   };
 
   const removeType = (type: string) => {
+    setFilters(prev => {
+      const nextType = prev.type.filter(t => t !== type);
+      return {
+        ...prev,
+        type: nextType,
+        typeDepense: nextType.includes("depense") ? prev.typeDepense : [],
+      };
+    });
+  };
+
+  const handleTypeDepenseChange = (typeDepense: string, checked: boolean) => {
     setFilters(prev => ({
       ...prev,
-      type: prev.type.filter(t => t !== type),
+      typeDepense: checked
+        ? [...prev.typeDepense, typeDepense]
+        : prev.typeDepense.filter(t => t !== typeDepense),
     }));
+  };
+
+  const removeTypeDepense = (typeDepense: string) => {
+    setFilters(prev => ({
+      ...prev,
+      typeDepense: prev.typeDepense.filter(t => t !== typeDepense),
+    }));
+  };
+
+  const typeDepenseLabelShort = (value: string) => {
+    if (value === "fixe") return "Fixe";
+    if (value === "variante") return "Variante";
+    if (value === "sansType") return "Sans type";
+    return value;
   };
 
   const handleMethodePaiementChange = (methode: string, checked: boolean) => {
@@ -249,7 +284,10 @@ export default function Banques() {
           query: debouncedQuery,
           type: filters.type.length > 0 ? filters.type.join("-") : "all",
           compte: filters.compte.length > 0 ? filters.compte.join("-") : "all",
-          typeDepense: filters.typeDepense,
+          typeDepense:
+            filters.typeDepense.length > 0
+              ? filters.typeDepense.join("-")
+              : "all",
           from: startDate,
           to: endDate,
           fournisseurId: selectedFournisseur?.id,
@@ -540,6 +578,117 @@ export default function Banques() {
                               </PopoverContent>
                             </Popover>
                           </div>
+                          {filters.type.includes("depense") && (
+                            <div className="grid items-center gap-3 my-2">
+                              <Label
+                                htmlFor="typeDepense"
+                                className="text-left text-black"
+                              >
+                                Type de dépenses :
+                              </Label>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    className="w-full justify-between text-left font-normal focus:ring-2 focus:ring-purple-500 bg-white"
+                                  >
+                                    <div className="flex flex-wrap gap-1">
+                                      {filters.typeDepense.length === 0 ? (
+                                        <span className="text-muted-foreground">
+                                          Tous
+                                        </span>
+                                      ) : (
+                                        filters.typeDepense.map(td => (
+                                          <Badge
+                                            key={td}
+                                            variant="secondary"
+                                            className="text-xs bg-orange-100 text-orange-800 hover:bg-orange-200"
+                                          >
+                                            {typeDepenseLabelShort(td)}
+                                            <X
+                                              className="ml-1 h-3 w-3 cursor-pointer hover:text-purple-600"
+                                              onClick={e => {
+                                                e.stopPropagation();
+                                                removeTypeDepense(td);
+                                              }}
+                                            />
+                                          </Badge>
+                                        ))
+                                      )}
+                                    </div>
+                                    <ChevronDown className="h-4 w-4 opacity-50" />
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent
+                                  className="w-full p-3"
+                                  align="start"
+                                >
+                                  <div className="space-y-3">
+                                    <div className="flex items-center space-x-2">
+                                      <Checkbox
+                                        id="typeDepense-fixe"
+                                        checked={filters.typeDepense.includes(
+                                          "fixe"
+                                        )}
+                                        onCheckedChange={checked =>
+                                          handleTypeDepenseChange(
+                                            "fixe",
+                                            checked as boolean
+                                          )
+                                        }
+                                      />
+                                      <Label
+                                        htmlFor="typeDepense-fixe"
+                                        className="text-sm font-medium cursor-pointer"
+                                      >
+                                        Fixe
+                                      </Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                      <Checkbox
+                                        id="typeDepense-variante"
+                                        checked={filters.typeDepense.includes(
+                                          "variante"
+                                        )}
+                                        onCheckedChange={checked =>
+                                          handleTypeDepenseChange(
+                                            "variante",
+                                            checked as boolean
+                                          )
+                                        }
+                                      />
+                                      <Label
+                                        htmlFor="typeDepense-variante"
+                                        className="text-sm font-medium cursor-pointer"
+                                      >
+                                        Variante
+                                      </Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                      <Checkbox
+                                        id="typeDepense-sansType"
+                                        checked={filters.typeDepense.includes(
+                                          "sansType"
+                                        )}
+                                        onCheckedChange={checked =>
+                                          handleTypeDepenseChange(
+                                            "sansType",
+                                            checked as boolean
+                                          )
+                                        }
+                                      />
+                                      <Label
+                                        htmlFor="typeDepense-sansType"
+                                        className="text-sm font-medium cursor-pointer"
+                                      >
+                                        Sans type
+                                      </Label>
+                                    </div>
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
+                            </div>
+                          )}
                           <div className="grid items-center gap-3 my-2">
                             <Label
                               htmlFor="methodePaiement"
@@ -792,6 +941,10 @@ export default function Banques() {
                             filters.methodePaiement.length > 0
                               ? filters.methodePaiement.join("-")
                               : "all",
+                          typeDepense:
+                            filters.typeDepense.length > 0
+                              ? filters.typeDepense.join("-")
+                              : "all",
                           from: startDate,
                           to: endDate,
                           fournisseurId: selectedFournisseur?.id,
@@ -805,7 +958,7 @@ export default function Banques() {
                       Imprimer
                     </Button>
                     <TransactionDialog />
-                    <ComptesRapportDialog />
+                    <TransactionsRapportDialog />
                   </div>
                 </div>
                 <div className="flex justify between gap-6 items-start">
@@ -882,17 +1035,38 @@ export default function Banques() {
                                     {formatCurrency(transaction.montant)}
                                   </TableCell>
                                   <TableCell className="font-medium py-2">
-                                    <span
-                                      className={`text-sm p-[1px] px-3 rounded-full  ${
-                                        handleTypeLableColor(transaction.type)
-                                          .color
-                                      }`}
-                                    >
-                                      {
-                                        handleTypeLableColor(transaction.type)
-                                          .lable
-                                      }
-                                    </span>
+                                    <div className="flex items-center gap-1.5">
+                                      <span
+                                        className={`text-sm p-[1px] px-3 rounded-full  ${
+                                          handleTypeLableColor(transaction.type)
+                                            .color
+                                        }`}
+                                      >
+                                        {
+                                          handleTypeLableColor(transaction.type)
+                                            .lable
+                                        }
+                                      </span>
+                                      {transaction.type === "depense" &&
+                                        transaction.typeDepense === "fixe" && (
+                                          <span
+                                            title="Charge fixe"
+                                            className="text-xs font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700"
+                                          >
+                                            F
+                                          </span>
+                                        )}
+                                      {transaction.type === "depense" &&
+                                        transaction.typeDepense ===
+                                          "variante" && (
+                                          <span
+                                            title="Charge variante"
+                                            className="text-xs font-bold px-1.5 py-0.5 rounded bg-sky-100 text-sky-700"
+                                          >
+                                            V
+                                          </span>
+                                        )}
+                                    </div>
                                   </TableCell>
 
                                   <TableCell

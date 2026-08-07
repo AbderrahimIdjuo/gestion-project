@@ -398,7 +398,15 @@ export function ClientInfoDialog({ client, isOpen, onClose }) {
                                 montant={reglement.montant}
                                 compte={reglement.compte}
                                 date={reglement.date}
-                                formatCurrency={formatCurrency}
+                                datePrelevement={reglement.datePrelevement}
+                                motif={reglement.motif || reglement.description}
+                                beneficiaire={
+                                  reglement.description?.includes("bénéficiaire")
+                                    ? reglement.description
+                                        .replace(/bénéficiaire\s*:/i, "")
+                                        .trim()
+                                    : "ste.OUDAOUDOX"
+                                }
                                 formatDate={formatDate}
                                 type="RECU"
                               />

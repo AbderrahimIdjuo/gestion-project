@@ -2,6 +2,7 @@
 
 import Spinner from "@/components/customUi/Spinner";
 import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
+import { LoadingDots } from "@/components/loading-dots";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -20,6 +21,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -53,8 +55,6 @@ import {
 import { ChevronDown, FileText, Printer, Search, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useInView } from "react-intersection-observer";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { LoadingDots } from "@/components/loading-dots";
 
 function formatDate(dateString) {
   if (!dateString) return "—";
@@ -62,7 +62,7 @@ function formatDate(dateString) {
   return d.toLocaleDateString("fr-FR");
 }
 
-const getStatutColor = (statut) => {
+const getStatutColor = statut => {
   switch (statut) {
     case "En attente":
       return "bg-amber-100 text-amber-700";
@@ -77,8 +77,9 @@ const getStatutColor = (statut) => {
   }
 };
 
-const statutPaiementBadge = (devis) => {
-  if (!devis?.statutPaiement) return { lable: "Impayé", color: "bg-slate-100 text-slate-600" };
+const statutPaiementBadge = devis => {
+  if (!devis?.statutPaiement)
+    return { lable: "Impayé", color: "bg-slate-100 text-slate-600" };
   switch (devis.statutPaiement) {
     case "paye":
       return { lable: "Payé", color: "bg-green-100 text-green-600" };
@@ -91,10 +92,13 @@ const statutPaiementBadge = (devis) => {
   }
 };
 
-const totalBlFourniture = (produits) =>
-  produits?.reduce((acc, p) => acc + (p.quantite || 0) * (p.prixUnite || 0), 0) ?? 0;
+const totalBlFourniture = produits =>
+  produits?.reduce(
+    (acc, p) => acc + (p.quantite || 0) * (p.prixUnite || 0),
+    0
+  ) ?? 0;
 
-const totalFourniture = (group) =>
+const totalFourniture = group =>
   group?.reduce((acc, item) => {
     const type = item?.bonLivraison?.type;
     if (type === "achats") return acc + totalBlFourniture(item.produits);
@@ -117,7 +121,10 @@ function getDateRangeFromPeriode(periode, startDate, endDate) {
       return { from: startOfQuarter(now), to: endOfQuarter(now) };
     case "trimestre-precedent": {
       const prevQuarter = subQuarters(now, 1);
-      return { from: startOfQuarter(prevQuarter), to: endOfQuarter(prevQuarter) };
+      return {
+        from: startOfQuarter(prevQuarter),
+        to: endOfQuarter(prevQuarter),
+      };
     }
     case "cette-annee":
       return { from: startOfYear(now), to: endOfYear(now) };
@@ -153,34 +160,34 @@ export default function DevisRapportDialog() {
   const { from, to } = getDateRangeFromPeriode(periode, startDate, endDate);
 
   const handleStatutPaiementChange = (value, checked) => {
-    setStatutPaiement((prev) =>
-      checked ? [...prev, value] : prev.filter((s) => s !== value)
+    setStatutPaiement(prev =>
+      checked ? [...prev, value] : prev.filter(s => s !== value)
     );
   };
   const handleStatutChange = (value, checked) => {
-    setStatut((prev) =>
-      checked ? [...prev, value] : prev.filter((s) => s !== value)
+    setStatut(prev =>
+      checked ? [...prev, value] : prev.filter(s => s !== value)
     );
   };
-  const removeStatutPaiement = (value) => {
-    setStatutPaiement((prev) => prev.filter((s) => s !== value));
+  const removeStatutPaiement = value => {
+    setStatutPaiement(prev => prev.filter(s => s !== value));
   };
-  const removeStatut = (value) => {
-    setStatut((prev) => prev.filter((s) => s !== value));
+  const removeStatut = value => {
+    setStatut(prev => prev.filter(s => s !== value));
   };
 
   const toggleClient = (client, checked) => {
-    setSelectedClients((prev) => {
+    setSelectedClients(prev => {
       if (checked) {
-        if (prev.some((c) => c.id === client.id)) return prev;
+        if (prev.some(c => c.id === client.id)) return prev;
         return [...prev, { id: client.id, nom: client.nom }];
       }
-      return prev.filter((c) => c.id !== client.id);
+      return prev.filter(c => c.id !== client.id);
     });
   };
 
-  const removeClient = (id) => {
-    setSelectedClients((prev) => prev.filter((c) => c.id !== id));
+  const removeClient = id => {
+    setSelectedClients(prev => prev.filter(c => c.id !== id));
   };
 
   const reset = () => {
@@ -229,13 +236,13 @@ export default function DevisRapportDialog() {
       });
       return response.data;
     },
-    getNextPageParam: (lastPage) => lastPage.nextCursor || null,
+    getNextPageParam: lastPage => lastPage.nextCursor || null,
     keepPreviousData: true,
     enabled: open && step === 1,
   });
 
   const clientsList =
-    clientsQuery.data?.pages.flatMap((page) => page.clients) || [];
+    clientsQuery.data?.pages.flatMap(page => page.clients) || [];
 
   useEffect(() => {
     if (clientsInView && clientsQuery.hasNextPage) {
@@ -243,7 +250,7 @@ export default function DevisRapportDialog() {
     }
   }, [clientsInView, clientsQuery.hasNextPage, clientsQuery.fetchNextPage]);
 
-  const selectedClientIds = selectedClients.map((c) => c.id);
+  const selectedClientIds = selectedClients.map(c => c.id);
 
   const rapportQuery = useQuery({
     queryKey: [
@@ -282,7 +289,7 @@ export default function DevisRapportDialog() {
   const bLGroupsList = rapportQuery.data?.bLGroupsList ?? [];
 
   const filteredOrders = useCallback(
-    (numero) => bLGroupsList.filter((o) => o.devisNumero === numero),
+    numero => bLGroupsList.filter(o => o.devisNumero === numero),
     [bLGroupsList]
   );
 
@@ -290,7 +297,7 @@ export default function DevisRapportDialog() {
     let montantTotalDevis = 0;
     let montantTotalPaye = 0;
     let totalMarge = 0;
-    devis.forEach((d) => {
+    devis.forEach(d => {
       montantTotalDevis += Number(d.total) || 0;
       montantTotalPaye += Number(d.totalPaye) || 0;
       const fourn = totalFourniture(filteredOrders(d.numero));
@@ -346,29 +353,274 @@ export default function DevisRapportDialog() {
 
         {step === 1 && (
           <div className="space-y-6">
-            <div
-              className={`grid gap-4 ${
-                periode === "personnalisee"
-                  ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
-                  : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-              }`}
-            >
-              <div className="grid gap-2">
-                <Label>Commerçant</Label>
-                <Select value={commercant} onValueChange={setCommercant}>
-                  <SelectTrigger className="bg-white">
-                    <SelectValue placeholder="Tous" />
+            <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {/* 1. Période */}
+              <div className="space-y-2">
+                <Label htmlFor="periode" className="text-sm font-medium">
+                  Période
+                </Label>
+                <Select value={periode} onValueChange={setPeriode}>
+                  <SelectTrigger
+                    id="periode"
+                    className="h-10 focus:ring-2 focus:ring-purple-500"
+                  >
+                    <SelectValue placeholder="Sélectionnez la période" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Tous</SelectItem>
-                    {(commercantsQuery.data || []).map((c) => (
-                      <SelectItem key={c.id} value={c.nom}>
-                        {c.nom}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="aujourd'hui">
+                      Aujourd&apos;hui
+                    </SelectItem>
+                    <SelectItem value="ce-mois">Ce mois</SelectItem>
+                    <SelectItem value="mois-dernier">
+                      Le mois dernier
+                    </SelectItem>
+                    <SelectItem value="trimestre-actuel">
+                      Trimestre actuel
+                    </SelectItem>
+                    <SelectItem value="trimestre-precedent">
+                      Trimestre précédent
+                    </SelectItem>
+                    <SelectItem value="cette-annee">Cette année</SelectItem>
+                    <SelectItem value="annee-derniere">
+                      L&apos;année dernière
+                    </SelectItem>
+                    <SelectItem value="personnalisee">
+                      Période personnalisée
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+              {periode === "personnalisee" && (
+                <div className="grid gap-2">
+                  <Label className="text-left text-black">Date</Label>
+                  <CustomDateRangePicker
+                    startDate={startDate}
+                    setStartDate={setStartDate}
+                    endDate={endDate}
+                    setEndDate={setEndDate}
+                  />
+                </div>
+              )}
+
+              {/* 2. Statut */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Statut</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-between text-left font-normal focus:ring-2 focus:ring-purple-500 bg-white"
+                    >
+                      <div className="flex flex-wrap gap-1">
+                        {statut.length === 0 ? (
+                          <span className="text-muted-foreground">
+                            Sélectionner les statuts
+                          </span>
+                        ) : (
+                          statut.map(v => {
+                            const opt = statutOptions.find(o => o.value === v);
+                            const label = opt?.label ?? v;
+                            return (
+                              <Badge
+                                key={v}
+                                variant="secondary"
+                                className={`text-xs ${
+                                  v === "En attente"
+                                    ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
+                                    : v === "Accepté"
+                                      ? "bg-green-100 text-green-800 hover:bg-green-200"
+                                      : v === "Annulé"
+                                        ? "bg-red-100 text-red-800 hover:bg-red-200"
+                                        : "bg-purple-100 text-purple-800 hover:bg-purple-200"
+                                }`}
+                              >
+                                {label}
+                                <X
+                                  className="ml-1 h-3 w-3 cursor-pointer hover:text-purple-600"
+                                  onClick={e => {
+                                    e.stopPropagation();
+                                    removeStatut(v);
+                                  }}
+                                />
+                              </Badge>
+                            );
+                          })
+                        )}
+                      </div>
+                      <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-3" align="start">
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-2 border-b pb-2">
+                        <Checkbox
+                          id="st-tous"
+                          checked={statut.length === statutOptions.length}
+                          onCheckedChange={checked => {
+                            if (checked === true) {
+                              setStatut(statutOptions.map(o => o.value));
+                            } else {
+                              setStatut([]);
+                            }
+                          }}
+                        />
+                        <Label
+                          htmlFor="st-tous"
+                          className="text-sm font-medium cursor-pointer"
+                        >
+                          Tous
+                        </Label>
+                      </div>
+                      {statutOptions.map(opt => (
+                        <div
+                          key={opt.value}
+                          className="flex items-center space-x-2"
+                        >
+                          <Checkbox
+                            id={`st-${opt.value}`}
+                            checked={statut.includes(opt.value)}
+                            onCheckedChange={checked =>
+                              handleStatutChange(opt.value, checked === true)
+                            }
+                          />
+                          <Label
+                            htmlFor={`st-${opt.value}`}
+                            className="text-sm font-medium cursor-pointer flex items-center gap-2"
+                          >
+                            <span
+                              className={`w-2 h-2 rounded-full ${
+                                opt.color === "amber"
+                                  ? "bg-amber-500"
+                                  : opt.color === "green"
+                                    ? "bg-green-500"
+                                    : opt.color === "red"
+                                      ? "bg-red-500"
+                                      : "bg-purple-500"
+                              }`}
+                            />
+                            {opt.label}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {/* 3. Statut de paiement */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">
+                  Statut de paiement
+                </Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-between text-left font-normal focus:ring-2 focus:ring-purple-500 bg-white"
+                    >
+                      <div className="flex flex-wrap gap-1">
+                        {statutPaiement.length === 0 ? (
+                          <span className="text-muted-foreground">
+                            Sélectionner les statuts
+                          </span>
+                        ) : (
+                          statutPaiement.map(v => {
+                            const opt = statutPaiementOptions.find(
+                              o => o.value === v
+                            );
+                            const label = opt?.label ?? v;
+                            return (
+                              <Badge
+                                key={v}
+                                variant="secondary"
+                                className={`text-xs ${
+                                  v === "paye"
+                                    ? "bg-green-100 text-green-800 hover:bg-green-200"
+                                    : v === "impaye"
+                                      ? "bg-slate-100 text-slate-800 hover:bg-slate-200"
+                                      : "bg-amber-100 text-amber-800 hover:bg-amber-200"
+                                }`}
+                              >
+                                {label}
+                                <X
+                                  className="ml-1 h-3 w-3 cursor-pointer hover:text-purple-600"
+                                  onClick={e => {
+                                    e.stopPropagation();
+                                    removeStatutPaiement(v);
+                                  }}
+                                />
+                              </Badge>
+                            );
+                          })
+                        )}
+                      </div>
+                      <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-3" align="start">
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-2 border-b pb-2">
+                        <Checkbox
+                          id="sp-tous"
+                          checked={
+                            statutPaiement.length ===
+                            statutPaiementOptions.length
+                          }
+                          onCheckedChange={checked => {
+                            if (checked === true) {
+                              setStatutPaiement(
+                                statutPaiementOptions.map(o => o.value)
+                              );
+                            } else {
+                              setStatutPaiement([]);
+                            }
+                          }}
+                        />
+                        <Label
+                          htmlFor="sp-tous"
+                          className="text-sm font-medium cursor-pointer"
+                        >
+                          Tous
+                        </Label>
+                      </div>
+                      {statutPaiementOptions.map(opt => (
+                        <div
+                          key={opt.value}
+                          className="flex items-center space-x-2"
+                        >
+                          <Checkbox
+                            id={`sp-${opt.value}`}
+                            checked={statutPaiement.includes(opt.value)}
+                            onCheckedChange={checked =>
+                              handleStatutPaiementChange(
+                                opt.value,
+                                checked === true
+                              )
+                            }
+                          />
+                          <Label
+                            htmlFor={`sp-${opt.value}`}
+                            className="text-sm font-medium cursor-pointer flex items-center gap-2"
+                          >
+                            <span
+                              className={`w-2 h-2 rounded-full ${
+                                opt.color === "green"
+                                  ? "bg-green-500"
+                                  : opt.color === "slate"
+                                    ? "bg-slate-500"
+                                    : "bg-amber-500"
+                              }`}
+                            />
+                            {opt.label}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {/* 4. Clients */}
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Clients</Label>
                 <Popover>
@@ -383,7 +635,7 @@ export default function DevisRapportDialog() {
                             Tous les clients
                           </span>
                         ) : (
-                          selectedClients.map((c) => (
+                          selectedClients.map(c => (
                             <Badge
                               key={c.id}
                               variant="secondary"
@@ -392,7 +644,7 @@ export default function DevisRapportDialog() {
                               {c.nom}
                               <X
                                 className="ml-1 h-3 w-3 cursor-pointer hover:text-purple-600"
-                                onClick={(e) => {
+                                onClick={e => {
                                   e.stopPropagation();
                                   removeClient(c.id);
                                 }}
@@ -404,14 +656,17 @@ export default function DevisRapportDialog() {
                       <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-3" align="start">
+                  <PopoverContent
+                    className="w-[var(--radix-popover-trigger-width)] p-3"
+                    align="start"
+                  >
                     <div className="space-y-3">
                       <div className="relative">
                         <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                           placeholder="Rechercher un client…"
                           value={clientSearchQuery}
-                          onChange={(e) => setClientSearchQuery(e.target.value)}
+                          onChange={e => setClientSearchQuery(e.target.value)}
                           className="pl-8 h-9 focus-visible:ring-purple-500"
                         />
                       </div>
@@ -438,7 +693,7 @@ export default function DevisRapportDialog() {
                             </p>
                           ) : (
                             <>
-                              {clientsList.map((client) => (
+                              {clientsList.map(client => (
                                 <div
                                   key={client.id}
                                   className="flex items-center space-x-2"
@@ -446,9 +701,9 @@ export default function DevisRapportDialog() {
                                   <Checkbox
                                     id={`client-${client.id}`}
                                     checked={selectedClients.some(
-                                      (c) => c.id === client.id
+                                      c => c.id === client.id
                                     )}
-                                    onCheckedChange={(checked) =>
+                                    onCheckedChange={checked =>
                                       toggleClient(client, checked === true)
                                     }
                                   />
@@ -474,237 +729,30 @@ export default function DevisRapportDialog() {
                   </PopoverContent>
                 </Popover>
               </div>
+
+              {/* 5. Commerçant */}
               <div className="space-y-2">
-                <Label htmlFor="periode" className="text-sm font-medium">
-                  Période (date de début)
-                </Label>
-                <Select value={periode} onValueChange={setPeriode}>
-                  <SelectTrigger id="periode" className="focus:ring-2 focus:ring-purple-500">
-                    <SelectValue placeholder="Sélectionnez la période" />
+                <Label className="text-sm font-medium">Commerçant</Label>
+                <Select value={commercant} onValueChange={setCommercant}>
+                  <SelectTrigger className="h-10 w-full bg-white focus:ring-2 focus:ring-purple-500">
+                    <SelectValue placeholder="Tous" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="aujourd'hui">Aujourd&apos;hui</SelectItem>
-                    <SelectItem value="ce-mois">Ce mois</SelectItem>
-                    <SelectItem value="mois-dernier">Le mois dernier</SelectItem>
-                    <SelectItem value="trimestre-actuel">Trimestre actuel</SelectItem>
-                    <SelectItem value="trimestre-precedent">Trimestre précédent</SelectItem>
-                    <SelectItem value="cette-annee">Cette année</SelectItem>
-                    <SelectItem value="annee-derniere">L&apos;année dernière</SelectItem>
-                    <SelectItem value="personnalisee">Période personnalisée</SelectItem>
+                    <SelectItem value="all">Tous</SelectItem>
+                    {(commercantsQuery.data || []).map(c => (
+                      <SelectItem key={c.id} value={c.nom}>
+                        {c.nom}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
-              {periode === "personnalisee" && (
-                <div className="grid gap-2">
-                  <Label className="text-left text-black">Date</Label>
-                  <CustomDateRangePicker
-                    startDate={startDate}
-                    setStartDate={setStartDate}
-                    endDate={endDate}
-                    setEndDate={setEndDate}
-                  />
-                </div>
-              )}
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+              {/* 6. Pourcentage */}
               <div className="space-y-2">
-                <Label className="text-sm font-medium">Statut de paiement</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-between text-left font-normal focus:ring-2 focus:ring-purple-500 bg-white"
-                    >
-                      <div className="flex flex-wrap gap-1">
-                        {statutPaiement.length === 0 ? (
-                          <span className="text-muted-foreground">
-                            Sélectionner les statuts
-                          </span>
-                        ) : (
-                          statutPaiement.map((v) => {
-                            const opt = statutPaiementOptions.find((o) => o.value === v);
-                            const label = opt?.label ?? v;
-                            return (
-                              <Badge
-                                key={v}
-                                variant="secondary"
-                                className={`text-xs ${
-                                  v === "paye"
-                                    ? "bg-green-100 text-green-800 hover:bg-green-200"
-                                    : v === "impaye"
-                                    ? "bg-slate-100 text-slate-800 hover:bg-slate-200"
-                                    : "bg-amber-100 text-amber-800 hover:bg-amber-200"
-                                }`}
-                              >
-                                {label}
-                                <X
-                                  className="ml-1 h-3 w-3 cursor-pointer hover:text-purple-600"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    removeStatutPaiement(v);
-                                  }}
-                                />
-                              </Badge>
-                            );
-                          })
-                        )}
-                      </div>
-                      <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-3" align="start">
-                    <div className="space-y-3">
-                      <div className="flex items-center space-x-2 border-b pb-2">
-                        <Checkbox
-                          id="sp-tous"
-                          checked={statutPaiement.length === statutPaiementOptions.length}
-                          onCheckedChange={(checked) => {
-                            if (checked === true) {
-                              setStatutPaiement(statutPaiementOptions.map((o) => o.value));
-                            } else {
-                              setStatutPaiement([]);
-                            }
-                          }}
-                        />
-                        <Label
-                          htmlFor="sp-tous"
-                          className="text-sm font-medium cursor-pointer"
-                        >
-                          Tous
-                        </Label>
-                      </div>
-                      {statutPaiementOptions.map((opt) => (
-                        <div key={opt.value} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`sp-${opt.value}`}
-                            checked={statutPaiement.includes(opt.value)}
-                            onCheckedChange={(checked) =>
-                              handleStatutPaiementChange(opt.value, checked === true)
-                            }
-                          />
-                          <Label
-                            htmlFor={`sp-${opt.value}`}
-                            className="text-sm font-medium cursor-pointer flex items-center gap-2"
-                          >
-                            <span
-                              className={`w-2 h-2 rounded-full ${
-                                opt.color === "green"
-                                  ? "bg-green-500"
-                                  : opt.color === "slate"
-                                  ? "bg-slate-500"
-                                  : "bg-amber-500"
-                              }`}
-                            />
-                            {opt.label}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Statut</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-between text-left font-normal focus:ring-2 focus:ring-purple-500 bg-white"
-                    >
-                      <div className="flex flex-wrap gap-1">
-                        {statut.length === 0 ? (
-                          <span className="text-muted-foreground">
-                            Sélectionner les statuts
-                          </span>
-                        ) : (
-                          statut.map((v) => {
-                            const opt = statutOptions.find((o) => o.value === v);
-                            const label = opt?.label ?? v;
-                            return (
-                              <Badge
-                                key={v}
-                                variant="secondary"
-                                className={`text-xs ${
-                                  v === "En attente"
-                                    ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
-                                    : v === "Accepté"
-                                    ? "bg-green-100 text-green-800 hover:bg-green-200"
-                                    : v === "Annulé"
-                                    ? "bg-red-100 text-red-800 hover:bg-red-200"
-                                    : "bg-purple-100 text-purple-800 hover:bg-purple-200"
-                                }`}
-                              >
-                                {label}
-                                <X
-                                  className="ml-1 h-3 w-3 cursor-pointer hover:text-purple-600"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    removeStatut(v);
-                                  }}
-                                />
-                              </Badge>
-                            );
-                          })
-                        )}
-                      </div>
-                      <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-3" align="start">
-                    <div className="space-y-3">
-                      <div className="flex items-center space-x-2 border-b pb-2">
-                        <Checkbox
-                          id="st-tous"
-                          checked={statut.length === statutOptions.length}
-                          onCheckedChange={(checked) => {
-                            if (checked === true) {
-                              setStatut(statutOptions.map((o) => o.value));
-                            } else {
-                              setStatut([]);
-                            }
-                          }}
-                        />
-                        <Label
-                          htmlFor="st-tous"
-                          className="text-sm font-medium cursor-pointer"
-                        >
-                          Tous
-                        </Label>
-                      </div>
-                      {statutOptions.map((opt) => (
-                        <div key={opt.value} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`st-${opt.value}`}
-                            checked={statut.includes(opt.value)}
-                            onCheckedChange={(checked) =>
-                              handleStatutChange(opt.value, checked === true)
-                            }
-                          />
-                          <Label
-                            htmlFor={`st-${opt.value}`}
-                            className="text-sm font-medium cursor-pointer flex items-center gap-2"
-                          >
-                            <span
-                              className={`w-2 h-2 rounded-full ${
-                                opt.color === "amber"
-                                  ? "bg-amber-500"
-                                  : opt.color === "green"
-                                  ? "bg-green-500"
-                                  : opt.color === "red"
-                                  ? "bg-red-500"
-                                  : "bg-purple-500"
-                              }`}
-                            />
-                            {opt.label}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div className="grid gap-2">
-                <Label className="text-sm font-medium">Pourcentage de bénéfice (%)</Label>
+                <Label className="text-sm font-medium">
+                  Pourcentage de bénéfice (%)
+                </Label>
                 <Input
                   type="number"
                   min="0"
@@ -712,7 +760,8 @@ export default function DevisRapportDialog() {
                   step="0.01"
                   placeholder="Ex: 25"
                   value={pourcentageBenefice}
-                  onChange={(e) => setPourcentageBenefice(e.target.value)}
+                  onChange={e => setPourcentageBenefice(e.target.value)}
+                  className="h-10 focus-visible:ring-purple-500"
                 />
               </div>
             </div>
@@ -750,61 +799,74 @@ export default function DevisRapportDialog() {
               </div>
             ) : (
               <>
-
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-8 gap-3 p-4 bg-muted/50 rounded-lg">
                   <div>
-                    <p className="text-xs font-medium text-muted-foreground">Commerçant</p>
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Commerçant
+                    </p>
                     <p className="text-lg font-semibold text-foreground">
                       {commercant === "all" ? "Tous" : commercant}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-muted-foreground">Clients</p>
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Clients
+                    </p>
                     <p className="text-sm font-semibold text-foreground line-clamp-2">
                       {selectedClients.length === 0
                         ? "Tous"
-                        : selectedClients.map((c) => c.nom).join(", ")}
+                        : selectedClients.map(c => c.nom).join(", ")}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-muted-foreground">Total devis</p>
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Total devis
+                    </p>
                     <p className="text-lg font-semibold text-fuchsia-600">
                       {formatCurrency(t?.montantTotalDevis ?? 0)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-muted-foreground">Total payé</p>
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Total payé
+                    </p>
                     <p className="text-lg font-semibold text-green-600">
                       {formatCurrency(t?.montantTotalPaye ?? 0)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-muted-foreground">Restant à payer</p>
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Restant à payer
+                    </p>
                     <p className="text-lg font-semibold text-amber-600">
                       {formatCurrency(t?.montantTotalRestant ?? 0)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-muted-foreground">Total marge</p>
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Total marge
+                    </p>
                     <p className="text-lg font-semibold text-blue-600">
                       {formatCurrency(t?.totalMarge ?? 0)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-muted-foreground">% bénéfice (saisi)</p>
+                    <p className="text-xs font-medium text-muted-foreground">
+                      % bénéfice (saisi)
+                    </p>
                     <p className="text-lg font-semibold">
                       {t?.pctBenefice != null ? `${t.pctBenefice}%` : "—"}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-muted-foreground">Bénéfice (marge × %)</p>
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Bénéfice (marge × %)
+                    </p>
                     <p className="text-lg font-semibold text-purple-600">
                       {formatCurrency(t?.beneficeFromMarge ?? 0)}
                     </p>
                   </div>
                 </div>
-
-
 
                 <div className="rounded-md border overflow-x-auto max-h-[50vh] overflow-y-auto">
                   <Table>
@@ -822,14 +884,17 @@ export default function DevisRapportDialog() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {devis.map((d) => {
+                      {devis.map(d => {
                         const fourn = totalFourniture(filteredOrders(d.numero));
                         const marge = (Number(d.total) || 0) - fourn;
-                        const reste = (Number(d.total) || 0) - (Number(d.totalPaye) || 0);
+                        const reste =
+                          (Number(d.total) || 0) - (Number(d.totalPaye) || 0);
                         return (
                           <TableRow key={d.id}>
                             <TableCell>{formatDate(d.date)}</TableCell>
-                            <TableCell className="font-medium">{d.numero}</TableCell>
+                            <TableCell className="font-medium">
+                              {d.numero}
+                            </TableCell>
                             <TableCell>{d.client?.nom ?? "—"}</TableCell>
                             <TableCell className="text-right">
                               {formatCurrency(d.total)}
@@ -846,7 +911,8 @@ export default function DevisRapportDialog() {
                             <TableCell>
                               <span
                                 className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                                  getStatutColor(d.statut) ?? "bg-gray-100 text-gray-700"
+                                  getStatutColor(d.statut) ??
+                                  "bg-gray-100 text-gray-700"
                                 }`}
                               >
                                 {d.statut ?? "—"}
@@ -889,7 +955,10 @@ export default function DevisRapportDialog() {
                         from: from?.toISOString?.() ?? null,
                         to: to?.toISOString?.() ?? null,
                       };
-                      localStorage.setItem("devis-rapport", JSON.stringify(payload));
+                      localStorage.setItem(
+                        "devis-rapport",
+                        JSON.stringify(payload)
+                      );
                       window.open("/ventes/devis/impressionRapport", "_blank");
                     }}
                     className="rounded-full"
