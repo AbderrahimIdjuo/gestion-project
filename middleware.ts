@@ -25,8 +25,27 @@ export default clerkMiddleware(async (auth, request) => {
     "/Employes",
     "/articls",
     "/dashboard",
+    "/reglement",
+    "/versements",
+    "/facturesAchats",
+    "/fournisseurs",
   ];
   const isProtectedRoute = protectedPrefixes.some((p) => pathname === p || pathname.startsWith(p + "/"));
+
+  // Financial / supplier APIs (matcher already includes /api/(.*))
+  const protectedApiPrefixes = [
+    "/api/reglement",
+    "/api/reglements",
+    "/api/versements",
+    "/api/facturesAchats",
+    "/api/fournisseurs",
+  ];
+  const isProtectedApi = protectedApiPrefixes.some((p) => pathname === p || pathname.startsWith(p + "/"));
+
+  // Not signed in on protected API → 401 (avoid leaking financial data)
+  if (!hasUser && isProtectedApi) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   // Not signed in on protected route → sign-in
   if (!hasUser && isProtectedRoute) {
@@ -74,6 +93,14 @@ export const config = {
     "/Employes/(.*)",
     "/articls",
     "/articls/(.*)",
+    "/reglement",
+    "/reglement/(.*)",
+    "/versements",
+    "/versements/(.*)",
+    "/facturesAchats",
+    "/facturesAchats/(.*)",
+    "/fournisseurs",
+    "/fournisseurs/(.*)",
     "/api/(.*)",
   ],
 };
