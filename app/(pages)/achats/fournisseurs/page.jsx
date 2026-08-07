@@ -32,6 +32,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { formatCurrency } from "@/lib/functions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import {
@@ -44,7 +45,6 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
-import { formatCurrency } from "@/lib/functions";
 
 export default function FournisseursPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -219,7 +219,9 @@ export default function FournisseursPage() {
                       </SheetTrigger>
                       <SheetContent className="border-l-purple-200 bg-white">
                         <SheetHeader>
-                          <SheetTitle className="text-black">Filtres</SheetTitle>
+                          <SheetTitle className="text-black">
+                            Filtres
+                          </SheetTitle>
                           <SheetDescription className="text-gray-600">
                             Ajustez la plage de dette pour afficher les
                             fournisseurs concernés.
@@ -256,6 +258,7 @@ export default function FournisseursPage() {
                         </div>
                       </SheetContent>
                     </Sheet>
+                    {/* 
                     <ImportFournisseurs>
                       <Button
                         variant="outline"
@@ -265,6 +268,7 @@ export default function FournisseursPage() {
                         Importer
                       </Button>
                     </ImportFournisseurs>
+                    */}
                     <FournisseurFormDialog />
                   </div>
                 </div>
