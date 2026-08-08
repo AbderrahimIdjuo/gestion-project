@@ -251,7 +251,8 @@ export function useBonLivraisonColumns({
                     Aperçu
                   </span>
                 </DropdownMenuItem>
-                {bonLivraison.statutPaiement !== "paye" && (
+                {bonLivraison.statutPaiement !== "paye" &&
+                  bonLivraison.fournisseur !== "STOCK(sortie)" && (
                   <DropdownMenuItem
                     onClick={() => {
                       console.log("bonLivraison", bonLivraison);

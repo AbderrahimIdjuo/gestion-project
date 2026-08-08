@@ -14,7 +14,7 @@ import { formatCurrency, formatDate, formatMontant } from "@/lib/functions";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Fragment, useEffect, useState } from "react";
-import "./page.css";
+import "@/styles/print-rapport.css";
 
 export default function ImpressionTransactions() {
   const [params, setParams] = useState();
@@ -128,11 +128,13 @@ export default function ImpressionTransactions() {
         {/* Document Content */}
         <div id="print-area" className="space-y-3">
           {/* Header */}
-          <EnteteDevis />
+          <div className="print-block">
+            <EnteteDevis />
+          </div>
 
           <div className="flex justify-between gap-8"></div>
           <div className="space-y-6">
-            <div className="space-y-2">
+            <div className="space-y-2 print-block">
               <h3 className="font-semibold text-lg text-gray-900 mb-2">
                 Devis
               </h3>
@@ -187,33 +189,33 @@ export default function ImpressionTransactions() {
                 )}
               </div>
             </div>
-            <div className="border rounded-lg">
-              <Table>
+            <div className="rounded-xl border shadow-sm overflow-x-auto main-table-container print-block">
+              <Table className="border-collapse">
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>#</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Numéro</TableHead>
-                    <TableHead>Client</TableHead>
-                    <TableHead className="text-right">Montant total</TableHead>
-                    <TableHead className="text-right">Fournitures</TableHead>
-                    <TableHead className="text-right">Marge</TableHead>
-                    <TableHead className="text-right">Payé</TableHead>
-                    <TableHead className="text-right">Reste</TableHead>
-                    <TableHead className="text-left">Statut</TableHead>
+                  <TableRow className="border-b">
+                    <TableHead className="border-r border-b">#</TableHead>
+                    <TableHead className="border-r border-b">Date</TableHead>
+                    <TableHead className="border-r border-b">Numéro</TableHead>
+                    <TableHead className="border-r border-b">Client</TableHead>
+                    <TableHead className="text-right border-r border-b">Montant total</TableHead>
+                    <TableHead className="text-right border-r border-b">Fournitures</TableHead>
+                    <TableHead className="text-right border-r border-b">Marge</TableHead>
+                    <TableHead className="text-right border-r border-b">Payé</TableHead>
+                    <TableHead className="text-right border-r border-b">Reste</TableHead>
+                    <TableHead className="text-left border-b">Statut</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {devis.isLoading ? (
                     [...Array(10)].map((_, index) => (
                       <TableRow
-                        className="h-[2rem] MuiTableRow-root"
+                        className="h-[2rem] MuiTableRow-root border-b"
                         role="checkbox"
                         tabIndex={-1}
                         key={index}
                       >
                         <TableCell
-                          className="!py-2 text-sm md:text-base"
+                          className="!py-2 text-sm md:text-base border-r"
                           align="left"
                         >
                           <Skeleton className="h-4 w-8" />
@@ -221,7 +223,7 @@ export default function ImpressionTransactions() {
                         {[...Array(9)].map((_, cellIndex) => (
                           <TableCell
                             key={cellIndex}
-                            className="!py-2 text-sm md:text-base"
+                            className={`!py-2 text-sm md:text-base ${cellIndex < 8 ? "border-r" : ""}`}
                             align="left"
                           >
                             <Skeleton className="h-4 w-full" />
@@ -234,40 +236,40 @@ export default function ImpressionTransactions() {
                       {devis?.data?.map((devis, index) => (
                         <>
                           <Fragment key={devis.id}>
-                            <TableRow>
-                              <TableCell className="!py-2">
+                            <TableRow className="border-b">
+                              <TableCell className="!py-2 border-r">
                                 {index + 1}
                               </TableCell>
-                              <TableCell className="!py-2">
+                              <TableCell className="!py-2 border-r">
                                 {formatDate(devis.date)}
                               </TableCell>
-                              <TableCell className={`font-medium !py-2`}>
+                              <TableCell className={`font-medium !py-2 border-r`}>
                                 <div>
                                   <span className="mr-2">{devis.numero}</span>
                                 </div>
                               </TableCell>
-                              <TableCell className="!py-2">
+                              <TableCell className="!py-2 border-r">
                                 {devis.client.nom.toUpperCase()}
                               </TableCell>
-                              <TableCell className="!py-2  text-right">
+                              <TableCell className="!py-2 text-right border-r">
                                 {formatMontant(devis.total)}
                               </TableCell>
-                              <TableCell className="!py-2 text-right">
+                              <TableCell className="!py-2 text-right border-r">
                                 {formatMontant(
                                   totalFourniture(filteredOrders(devis.numero))
                                 )}
                               </TableCell>
-                              <TableCell className="!py-2 text-right">
+                              <TableCell className="!py-2 text-right border-r">
                                 {calculateMarge(
                                   devis,
                                   totalFourniture(filteredOrders(devis.numero))
                                 )}
                               </TableCell>
-                              <TableCell className="!py-2 text-right">
+                              <TableCell className="!py-2 text-right border-r">
                                 {formatMontant(devis.totalPaye)}
                               </TableCell>
 
-                              <TableCell className="!py-2 text-right">
+                              <TableCell className="!py-2 text-right border-r">
                                 {formatMontant(
                                   devis.total.toFixed(2) -
                                     devis.totalPaye.toFixed(2)
@@ -280,25 +282,25 @@ export default function ImpressionTransactions() {
                           </Fragment>
                         </>
                       ))}
-                      <TableRow className="font-semibold bg-gray-50">
-                        <TableCell className="!py-2" colSpan={4}>
+                      <TableRow className="font-semibold bg-gray-50 border-b table-footer-print">
+                        <TableCell className="!py-2 border-r" colSpan={4}>
                           <strong>TOTAL</strong>
                         </TableCell>
-                        <TableCell className="!py-2 text-right">
+                        <TableCell className="!py-2 text-right border-r">
                           <strong>{formatMontant(totals.totalMontant)}</strong>
                         </TableCell>
-                        <TableCell className="!py-2 text-right">
+                        <TableCell className="!py-2 text-right border-r">
                           <strong>
                             {formatMontant(totals.totalFournitures)}
                           </strong>
                         </TableCell>
-                        <TableCell className="!py-2 text-right">
+                        <TableCell className="!py-2 text-right border-r">
                           <strong>{formatMontant(totals.totalMarge)}</strong>
                         </TableCell>
-                        <TableCell className="!py-2 text-right">
+                        <TableCell className="!py-2 text-right border-r">
                           <strong>{formatMontant(totals.totalPaye)}</strong>
                         </TableCell>
-                        <TableCell className="!py-2 text-right"></TableCell>
+                        <TableCell className="!py-2 text-right border-r"></TableCell>
                         <TableCell className="!py-2 text-left"></TableCell>
                       </TableRow>
                     </>
@@ -330,11 +332,8 @@ export default function ImpressionTransactions() {
             </div>
           </div>
         </div>
-        <div
-          className="flex items-center justify-end
-print:hidden mt-5"
-        >
-          <DirectPrintButton className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full">
+        <div className="fixed bottom-4 right-4 z-50 print:hidden">
+          <DirectPrintButton className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full shadow-lg">
             Imprimer
           </DirectPrintButton>
         </div>

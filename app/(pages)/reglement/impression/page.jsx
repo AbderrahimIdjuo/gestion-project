@@ -19,7 +19,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { useEffect, useState } from "react";
-import "./page.css";
+import "@/styles/print-rapport.css";
 
 export default function ImpressionReglements() {
   const [params, setParams] = useState(null);
@@ -115,10 +115,12 @@ export default function ImpressionReglements() {
         {/* Document Content */}
         <div id="print-area" className="space-y-4">
           {/* Header */}
-          <EnteteDevis />
+          <div className="print-block">
+            <EnteteDevis />
+          </div>
 
           <div className="space-y-4">
-            <div className="space-y-2">
+            <div className="space-y-2 print-block">
               <h3 className="font-semibold text-lg text-gray-900 mb-3">
                 Liste des Règlements
               </h3>
@@ -195,99 +197,100 @@ export default function ImpressionReglements() {
                   </div>
                 )}
               </div>
+            </div>
 
-              {/* Tableau des règlements */}
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Date création</TableHead>
-                      <TableHead>Date règlement</TableHead>
-                      <TableHead>Date prélèvement</TableHead>
-                      <TableHead>Fournisseur</TableHead>
-                      <TableHead>Montant</TableHead>
-                      <TableHead>Méthode</TableHead>
-                      <TableHead>Compte</TableHead>
-                      <TableHead>Statut</TableHead>
-                      <TableHead>Statut prélèvement</TableHead>
-                      <TableHead>Numéro chèque</TableHead>
-                      <TableHead>Facture</TableHead>
-                      <TableHead>Motif</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {reglements.data?.reglements?.length > 0 ? (
-                      reglements.data.reglements.map((reglement) => (
-                        <TableRow key={reglement.id}>
-                          <TableCell>
-                            {formatDate(reglement.dateReglement) || "—"}
-                          </TableCell>
-                          <TableCell>
-                            {formatDate(reglement.dateReglement) || "—"}
-                          </TableCell>
-                          <TableCell>
-                            {reglement.datePrelevement
-                              ? formatDate(reglement.datePrelevement)
-                              : "—"}
-                          </TableCell>
-                          <TableCell>{reglement.fournisseur.nom || "—"}</TableCell>
-                          <TableCell>
-                            {formatCurrency(reglement.montant)}
-                          </TableCell>
-                          <TableCell>
-                            {methodePaiementLabel({
-                              methodePaiement: reglement.methodePaiement,
-                            })}
-                          </TableCell>
-                          <TableCell>{reglement.compte || "—"}</TableCell>
-                          <TableCell>
-                            {getStatutLabel(reglement.statut)}
-                          </TableCell>
-                          <TableCell>
-                            {getStatusPrelevementLabel(
-                              reglement.statusPrelevement
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {reglement.cheque?.numero || "—"}
-                          </TableCell>
-                          <TableCell>
-                            {reglement.factureAchats?.numero || "—"}
-                          </TableCell>
-                          <TableCell>{reglement.motif || "—"}</TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={12} className="text-center">
-                          Aucun règlement trouvé
+            {/* Tableau des règlements */}
+            <div className="rounded-xl border shadow-sm overflow-x-auto main-table-container print-block">
+              <Table className="border-collapse">
+                <TableHeader>
+                  <TableRow className="border-b">
+                    <TableHead className="border-r border-b">Date création</TableHead>
+                    <TableHead className="border-r border-b">Date règlement</TableHead>
+                    <TableHead className="border-r border-b">Date prélèvement</TableHead>
+                    <TableHead className="border-r border-b">Fournisseur</TableHead>
+                    <TableHead className="text-right border-r border-b">Montant</TableHead>
+                    <TableHead className="border-r border-b">Méthode</TableHead>
+                    <TableHead className="border-r border-b">Compte</TableHead>
+                    <TableHead className="border-r border-b">Statut</TableHead>
+                    <TableHead className="border-r border-b">Statut prélèvement</TableHead>
+                    <TableHead className="border-r border-b">Numéro chèque</TableHead>
+                    <TableHead className="border-r border-b">Facture</TableHead>
+                    <TableHead className="border-b">Motif</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {reglements.data?.reglements?.length > 0 ? (
+                    reglements.data.reglements.map((reglement) => (
+                      <TableRow key={reglement.id} className="border-b">
+                        <TableCell className="border-r">
+                          {formatDate(reglement.dateReglement) || "—"}
                         </TableCell>
+                        <TableCell className="border-r">
+                          {formatDate(reglement.dateReglement) || "—"}
+                        </TableCell>
+                        <TableCell className="border-r">
+                          {reglement.datePrelevement
+                            ? formatDate(reglement.datePrelevement)
+                            : "—"}
+                        </TableCell>
+                        <TableCell className="border-r">{reglement.fournisseur.nom || "—"}</TableCell>
+                        <TableCell className="text-right border-r">
+                          {formatCurrency(reglement.montant)}
+                        </TableCell>
+                        <TableCell className="border-r">
+                          {methodePaiementLabel({
+                            methodePaiement: reglement.methodePaiement,
+                          })}
+                        </TableCell>
+                        <TableCell className="border-r">{reglement.compte || "—"}</TableCell>
+                        <TableCell className="border-r">
+                          {getStatutLabel(reglement.statut)}
+                        </TableCell>
+                        <TableCell className="border-r">
+                          {getStatusPrelevementLabel(
+                            reglement.statusPrelevement
+                          )}
+                        </TableCell>
+                        <TableCell className="border-r">
+                          {reglement.cheque?.numero || "—"}
+                        </TableCell>
+                        <TableCell className="border-r">
+                          {reglement.factureAchats?.numero || "—"}
+                        </TableCell>
+                        <TableCell>{reglement.motif || "—"}</TableCell>
                       </TableRow>
-                    )}
-                  </TableBody>
-                  <TableFooter>
+                    ))
+                  ) : (
                     <TableRow>
-                      <TableCell colSpan={4} className="font-bold text-right">
-                        Total:
+                      <TableCell colSpan={12} className="text-center">
+                        Aucun règlement trouvé
                       </TableCell>
-                      <TableCell className="font-bold">
-                        {formatCurrency(totalMontant)}
-                      </TableCell>
-                      <TableCell colSpan={7}></TableCell>
                     </TableRow>
-                  </TableFooter>
-                </Table>
-              </div>
+                  )}
+                </TableBody>
+                <TableFooter className="bg-gray-50 table-footer-print">
+                  <TableRow className="border-b">
+                    <TableCell colSpan={4} className="font-bold text-right border-r">
+                      Total:
+                    </TableCell>
+                    <TableCell className="font-bold text-right border-r">
+                      {formatCurrency(totalMontant)}
+                    </TableCell>
+                    <TableCell colSpan={7}></TableCell>
+                  </TableRow>
+                </TableFooter>
+              </Table>
             </div>
           </div>
         </div>
 
         {/* Print Button */}
-        <div className="mt-8 print:hidden">
-          <DirectPrintButton />
+        <div className="fixed bottom-4 right-4 z-50 print:hidden">
+          <DirectPrintButton className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full shadow-lg">
+            Imprimer
+          </DirectPrintButton>
         </div>
       </div>
     </>
   );
 }
-

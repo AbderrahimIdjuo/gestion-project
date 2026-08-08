@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/table";
 import { ajouterUneHeure, formatCurrency, formatDate } from "@/lib/functions";
 import { useEffect, useState } from "react";
-import "./page.css";
+import "@/styles/print-rapport.css";
 
 export default function ImpressionRapportCharges() {
   const [data, setData] = useState();

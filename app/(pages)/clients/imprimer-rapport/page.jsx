@@ -14,7 +14,7 @@ import {
 import { formatCurrency, formatDate } from "@/lib/functions";
 import { format } from "date-fns";
 import { useEffect, useState } from "react";
-import "./page.css";
+import "@/styles/print-rapport.css";
 
 // Composant pour afficher les détails des transactions
 function TransactionsDetails({ transactions }) {
@@ -64,12 +64,14 @@ export default function ImprimerRapport() {
 
   return (
     <>
-      <div className="container mx-auto p-8 max-w-5xl bg-white min-h-screen print:p-0 print:max-w-none mb-10">
+      <div className="container mx-auto p-8 w-[90vw] bg-white min-h-screen print:p-0 print:max-w-none mb-10">
         {/* Document Content */}
         <div id="print-area" className="space-y-3">
           {/* Header */}
-          <EnteteDevis />
-          <div className="space-y-2">
+          <div className="print-block">
+            <EnteteDevis />
+          </div>
+          <div className="space-y-2 print-block">
             <h3 className="font-semibold text-center text-lg text-gray-900 mb-2">
               CALCUL DU RESTE D&apos;AVANCES DES CLIENTS
             </h3>
@@ -93,29 +95,29 @@ export default function ImprimerRapport() {
               </div>
             </div>
           </div>
-          <div className="rounded-xl print:rounded-sm border shadow-sm overflow-x-auto">
-            <Table>
+          <div className="rounded-xl border shadow-sm overflow-x-auto main-table-container print-block">
+            <Table className="border-collapse">
               <TableHeader>
-                <TableRow>
-                  <TableHead className="w-30 text-center border-b border-t border-l text-black font-semibold">
+                <TableRow className="border-b">
+                  <TableHead className="w-30 text-center border-r border-b text-black font-semibold">
                     Client
                   </TableHead>
-                  <TableHead className="w-24 text-center px-1 border-b border-t border-l text-black font-semibold">
+                  <TableHead className="w-24 text-center px-1 border-r border-b text-black font-semibold">
                     N° Devis
                   </TableHead>
-                  <TableHead className="text-center px-1 border-b border-t border-l text-black font-semibold">
+                  <TableHead className="text-center px-1 border-r border-b text-black font-semibold">
                     Total
                   </TableHead>
-                  <TableHead className="text-center px-1 border-b border-t border-l text-black font-semibold">
+                  <TableHead className="text-center px-1 border-r border-b text-black font-semibold">
                     Paiements
                   </TableHead>
-                  <TableHead className="text-center px-1 border-b border-t border-l text-black font-semibold">
+                  <TableHead className="text-center px-1 border-r border-b text-black font-semibold">
                     Montant payé
                   </TableHead>
-                  <TableHead className="text-center px-1 border-b border-t border-l text-black font-semibold">
+                  <TableHead className="text-center px-1 border-r border-b text-black font-semibold">
                     Reste à payer
                   </TableHead>
-                  <TableHead className="text-center px-1 border text-black font-semibold">
+                  <TableHead className="text-center px-1 border-b text-black font-semibold">
                     Crédit
                   </TableHead>
                 </TableRow>
@@ -123,36 +125,36 @@ export default function ImprimerRapport() {
               <TableBody>
                 {data?.devis?.map(client =>
                   client.devis.map((devis, index) => (
-                    <TableRow key={`${client.nom}-${devis.numero}`}>
+                    <TableRow key={`${client.nom}-${devis.numero}`} className="border-b">
                       {index === 0 && (
                         <TableCell
                           rowSpan={client.devis.length}
-                          className="font-semibold  border-r border-b  border-l  pr-1"
+                          className="font-semibold border-r pr-1"
                         >
                           {client.nom}
                         </TableCell>
                       )}
-                      <TableCell className="border-b px-1">
+                      <TableCell className="border-r px-1">
                         {devis.numero}
                       </TableCell>
-                      <TableCell className="text-right border-b border-l px-1 ">
+                      <TableCell className="text-right border-r px-1">
                         {formatCurrency(devis.total)}
                       </TableCell>
-                      <TableCell className="text-center p-0 border-b border-l">
+                      <TableCell className="text-center p-0 border-r">
                         <TransactionsDetails
                           transactions={devis.transactions}
                         />
                       </TableCell>
-                      <TableCell className="text-right border-b border-l px-1">
+                      <TableCell className="text-right border-r px-1">
                         {formatCurrency(devis.totalPaye)}
                       </TableCell>
-                      <TableCell className="text-right border-b border-l px-1">
+                      <TableCell className="text-right border-r px-1">
                         {formatCurrency(devis.restePaye)}
                       </TableCell>
                       {index === 0 && (
                         <TableCell
                           rowSpan={client.devis.length}
-                          className="font-semibold text-rose-600 text-center px-1 border-r border-b  border-l"
+                          className="font-semibold text-rose-600 text-center px-1"
                         >
                           {formatCurrency(client.totalRestePaye)}
                         </TableCell>
@@ -161,11 +163,11 @@ export default function ImprimerRapport() {
                   ))
                 )}
               </TableBody>
-              <TableFooter className="bg-white">
-                <TableRow className="border-t border-gray-200">
+              <TableFooter className="bg-gray-50 table-footer-print">
+                <TableRow className="border-b">
                   <TableCell
                     colSpan={5}
-                    className="text-right text-sky-600 text-xl font-bold"
+                    className="text-right text-sky-600 text-xl font-bold border-r"
                   >
                     Total général :
                   </TableCell>
@@ -176,10 +178,10 @@ export default function ImprimerRapport() {
                     {formatCurrency(data?.totalGeneral)}
                   </TableCell>
                 </TableRow>
-                <TableRow className="border-t border-gray-200">
+                <TableRow className="border-b">
                   <TableCell
                     colSpan={5}
-                    className="text-right text-emerald-600 text-xl font-bold"
+                    className="text-right text-emerald-600 text-xl font-bold border-r"
                   >
                     Total payé :
                   </TableCell>
@@ -190,10 +192,10 @@ export default function ImprimerRapport() {
                     {formatCurrency(data?.totalMontantPaye)}
                   </TableCell>
                 </TableRow>
-                <TableRow className="border-t border-gray-200">
+                <TableRow className="border-b">
                   <TableCell
                     colSpan={5}
-                    className="text-right text-rose-600 text-xl font-bold"
+                    className="text-right text-rose-600 text-xl font-bold border-r"
                   >
                     Total des crédits :
                   </TableCell>
@@ -208,8 +210,8 @@ export default function ImprimerRapport() {
             </Table>
           </div>
         </div>
-        <div className="flex items-center justify-end print:hidden mt-5">
-          <DirectPrintButton className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full">
+        <div className="fixed bottom-4 right-4 z-50 print:hidden">
+          <DirectPrintButton className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full shadow-lg">
             Imprimer
           </DirectPrintButton>
         </div>

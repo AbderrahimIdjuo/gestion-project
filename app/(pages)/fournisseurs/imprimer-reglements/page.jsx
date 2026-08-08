@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/table";
 import { formatCurrency, formatDate } from "@/lib/functions";
 import { useEffect, useState } from "react";
+import "@/styles/print-rapport.css";
 
 export default function ImprimerReglements() {
   const [fournisseur, setFournisseur] = useState(null);
@@ -66,14 +67,16 @@ export default function ImprimerReglements() {
 
   return (
     <>
-      <div className="container mx-auto max-w-4xl bg-white min-h-screen print:p-0 print:max-w-none mb-10  p-6">
+      <div className="container mx-auto p-8 w-[90vw] bg-white min-h-screen print:p-0 print:max-w-none mb-10">
         {/* Document Content */}
-        <div id="print-area" className="space-y-4 ">
+        <div id="print-area" className="space-y-4">
           {/* Header */}
-          <EnteteDevis />
+          <div className="print-block">
+            <EnteteDevis />
+          </div>
 
           <div className="space-y-3">
-            <div className="space-y-2">
+            <div className="space-y-2 print-block">
               <h3 className="font-semibold text-lg text-gray-900 mb-3">
                 Règlements du Fournisseur
               </h3>
@@ -110,29 +113,29 @@ export default function ImprimerReglements() {
             </div>
 
             {/* Tableau des règlements */}
-            <div className="rounded-xl border shadow-sm overflow-x-auto">
-              <Table>
+            <div className="rounded-xl border shadow-sm overflow-x-auto main-table-container print-block">
+              <Table className="border-collapse">
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>#</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Compte</TableHead>
-                    <TableHead>Méthode de Paiement</TableHead>
-                    <TableHead className="text-right">Montant</TableHead>
+                  <TableRow className="border-b">
+                    <TableHead className="border-r border-b">#</TableHead>
+                    <TableHead className="border-r border-b">Date</TableHead>
+                    <TableHead className="border-r border-b">Compte</TableHead>
+                    <TableHead className="border-r border-b">Méthode de Paiement</TableHead>
+                    <TableHead className="text-right border-b">Montant</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {reglements?.length > 0 ? (
                     reglements.map((reglement, index) => (
-                      <TableRow key={reglement.id || index}>
-                        <TableCell>{index + 1}</TableCell>
-                        <TableCell>
+                      <TableRow key={reglement.id || index} className="border-b">
+                        <TableCell className="border-r">{index + 1}</TableCell>
+                        <TableCell className="border-r">
                           {formatDate(reglement.dateReglement || reglement.date)}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="border-r">
                           {reglement.compte?.replace("compte ", "")}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="border-r">
                           <span
                             className={`inline-block px-2 py-1 rounded text-xs font-medium`}
                           >
@@ -163,15 +166,15 @@ export default function ImprimerReglements() {
                     </TableRow>
                   )}
                 </TableBody>
-                <TableFooter className="bg-none">
-                  <TableRow>
+                <TableFooter className="bg-gray-50 table-footer-print">
+                  <TableRow className="border-b">
                     <TableCell
                       colSpan={4}
-                      className="text-right text-lg font-semibold p-2"
+                      className="text-right text-lg font-semibold p-2 border-r"
                     >
                       Total des Règlements :
                     </TableCell>
-                    <TableCell className="text-left text-lg font-semibold p-2">
+                    <TableCell className="text-right text-lg font-semibold p-2">
                       {formatCurrency(totalReglements)}
                     </TableCell>
                   </TableRow>
@@ -182,8 +185,8 @@ export default function ImprimerReglements() {
         </div>
 
         {/* Bouton d'impression (caché à l'impression) */}
-        <div className="flex items-center justify-end print:hidden mt-4">
-          <DirectPrintButton className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full">
+        <div className="fixed bottom-4 right-4 z-50 print:hidden">
+          <DirectPrintButton className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full shadow-lg">
             Imprimer
           </DirectPrintButton>
         </div>

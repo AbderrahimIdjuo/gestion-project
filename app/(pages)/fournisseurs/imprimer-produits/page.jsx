@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/functions";
 import { useEffect, useState } from "react";
+import "@/styles/print-rapport.css";
 
 export default function ImprimerProduits() {
   const [fournisseur, setFournisseur] = useState(null);
@@ -64,14 +65,16 @@ export default function ImprimerProduits() {
 
   return (
     <>
-      <div className="container mx-auto max-w-4xl bg-white min-h-screen print:p-0 print:max-w-none mb-10 p-6">
+      <div className="container mx-auto p-8 w-[90vw] bg-white min-h-screen print:p-0 print:max-w-none mb-10">
         {/* Document Content */}
         <div id="print-area" className="space-y-4">
           {/* Header */}
-          <EnteteDevis />
+          <div className="print-block">
+            <EnteteDevis />
+          </div>
 
           <div className="space-y-3">
-            <div className="space-y-2">
+            <div className="space-y-2 print-block">
               <h3 className="font-semibold text-lg text-gray-900 mb-3">
                 Liste des Produits Achetés
               </h3>
@@ -112,25 +115,25 @@ export default function ImprimerProduits() {
             </div>
 
             {/* Tableau des produits */}
-            <div className="rounded-xl border shadow-sm overflow-x-auto">
-              <Table>
+            <div className="rounded-xl border shadow-sm overflow-x-auto main-table-container print-block">
+              <Table className="border-collapse">
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>#</TableHead>
-                    <TableHead>Produit</TableHead>
-                    <TableHead className="text-center">Quantité</TableHead>
-                    <TableHead className="text-right">Montant</TableHead>
+                  <TableRow className="border-b">
+                    <TableHead className="border-r border-b">#</TableHead>
+                    <TableHead className="border-r border-b">Produit</TableHead>
+                    <TableHead className="text-center border-r border-b">Quantité</TableHead>
+                    <TableHead className="text-right border-b">Montant</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {produits?.length > 0 ? (
                     produits.map((produit, index) => (
-                      <TableRow key={produit.produitId || index}>
-                        <TableCell>{index + 1}</TableCell>
-                        <TableCell className="font-medium">
+                      <TableRow key={produit.produitId || index} className="border-b">
+                        <TableCell className="border-r">{index + 1}</TableCell>
+                        <TableCell className="font-medium border-r">
                           {produit.designation}
                         </TableCell>
-                        <TableCell className="text-center">
+                        <TableCell className="text-center border-r">
                           {produit.quantite || 0}
                         </TableCell>
                         <TableCell className="text-right">
@@ -149,15 +152,15 @@ export default function ImprimerProduits() {
                     </TableRow>
                   )}
                 </TableBody>
-                <TableFooter className="bg-none">
-                  <TableRow>
+                <TableFooter className="bg-gray-50 table-footer-print">
+                  <TableRow className="border-b">
                     <TableCell
                       colSpan={2}
-                      className="text-right text-lg font-semibold p-2"
+                      className="text-right text-lg font-semibold p-2 border-r"
                     >
                       Total :
                     </TableCell>
-                    <TableCell className="text-center text-lg font-semibold p-2">
+                    <TableCell className="text-center text-lg font-semibold p-2 border-r">
                       {totalQuantite}
                     </TableCell>
                     <TableCell className="text-right text-lg font-semibold p-2">
@@ -171,8 +174,8 @@ export default function ImprimerProduits() {
         </div>
 
         {/* Bouton d'impression (caché à l'impression) */}
-        <div className="flex items-center justify-end print:hidden mt-4">
-          <DirectPrintButton className="bg-blue-500 hover:bg-blue-600 !text-white rounded-full">
+        <div className="fixed bottom-4 right-4 z-50 print:hidden">
+          <DirectPrintButton className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full shadow-lg">
             Imprimer
           </DirectPrintButton>
         </div>
@@ -180,4 +183,3 @@ export default function ImprimerProduits() {
     </>
   );
 }
-

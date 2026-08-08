@@ -1,9 +1,8 @@
-/* Styles spécifiques pour l'impression du rapport des charges */
+/* Styles partagés pour l'impression des rapports (réf. impressionRapportCharges) */
 @media print {
   @page {
     margin: 1cm;
-
-    size: A4 landscape; /* Orientation horizontale */
+    size: A4 landscape;
   }
 
   body::before {
@@ -27,7 +26,6 @@
     background-color: white !important;
   }
 
-  /* Hide everything except the print area */
   body * {
     visibility: hidden;
   }
@@ -43,10 +41,10 @@
     top: 0;
     width: 100%;
     padding: 0 !important;
+    padding-bottom: 80px !important;
   }
 
-  /* Hide UI elements */
-  .print\\:hidden,
+  .print\:hidden,
   button,
   nav,
   .sidebar,
@@ -104,10 +102,6 @@
     break-inside: avoid !important;
     page-break-inside: avoid !important;
     page-break-before: avoid !important;
-  }
-
-  #print-area {
-    padding-bottom: 80px !important;
   }
 
   .container {

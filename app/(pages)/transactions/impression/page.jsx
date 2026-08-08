@@ -14,7 +14,7 @@ import { formatDate, typeDepenseLabel, typeLabel } from "@/lib/functions";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import React, { useEffect, useState } from "react";
-import "./page.css";
+import "@/styles/print-rapport.css";
 
 
 export default function ImpressionTransactions() {
@@ -95,11 +95,13 @@ export default function ImpressionTransactions() {
         {/* Document Content */}
         <div id="print-area" className="space-y-3">
           {/* Header */}
-          <EnteteDevis />
+          <div className="print-block">
+            <EnteteDevis />
+          </div>
 
           <div className="flex justify-between gap-8"></div>
           <div className="space-y-6">
-            <div className="space-y-2">
+            <div className="space-y-2 print-block">
               <h3 className="font-semibold text-lg text-gray-900 mb-2">
                 Transactions
               </h3>
@@ -151,17 +153,17 @@ export default function ImpressionTransactions() {
                 )}
               </div>
             </div>
-            <div className="rounded-xl border shadow-sm overflow-x-auto main-table-container">
-              <Table>
+            <div className="rounded-xl border shadow-sm overflow-x-auto main-table-container print-block">
+              <Table className="border-collapse">
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Label</TableHead>
-                    <TableHead className="text-right pr-4">Montant</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Méthode</TableHead>
-                    <TableHead>Compte</TableHead>
-                    <TableHead>Description</TableHead>
+                  <TableRow className="border-b">
+                    <TableHead className="border-r border-b">Date</TableHead>
+                    <TableHead className="border-r border-b">Label</TableHead>
+                    <TableHead className="text-right border-r border-b">Montant</TableHead>
+                    <TableHead className="border-r border-b">Type</TableHead>
+                    <TableHead className="border-r border-b">Méthode</TableHead>
+                    <TableHead className="border-r border-b">Compte</TableHead>
+                    <TableHead className="border-b">Description</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -171,21 +173,21 @@ export default function ImpressionTransactions() {
                         <React.Fragment key={typeIndex}>
                           {/* Transactions du groupe */}
                           {typeGroup.transactions.map(t => (
-                            <TableRow key={t.id}>
-                              <TableCell className="px-1 py-2">
+                            <TableRow key={t.id} className="border-b">
+                              <TableCell className="px-1 py-2 border-r">
                                 {" "}
                                 {formatDate(t.date) || formatDate(t.createdAt)}
                               </TableCell>
-                              <TableCell className="px-1 py-2">
+                              <TableCell className="px-1 py-2 border-r">
                                 {t.lable}
                               </TableCell>
-                              <TableCell className="px-1 py-2 text-right pr-4">
+                              <TableCell className="px-1 py-2 text-right pr-4 border-r">
                                 {t.montant} DH
                               </TableCell>
-                              <TableCell className="px-1 py-2">
+                              <TableCell className="px-1 py-2 border-r">
                                 {typeLabel(t.type)}
                               </TableCell>
-                              <TableCell className="px-1 py-2">
+                              <TableCell className="px-1 py-2 border-r">
                                 {" "}
                                 {t.methodePaiement === "espece"
                                   ? "Espèce"
@@ -193,7 +195,7 @@ export default function ImpressionTransactions() {
                                   ? "Chèque"
                                   : t.methodePaiement}
                               </TableCell>
-                              <TableCell className="px-1 py-2">
+                              <TableCell className="px-1 py-2 border-r">
                                 {t.compte?.replace("compte", "")}
                               </TableCell>
                               <TableCell className="px-1 py-2">
@@ -206,7 +208,7 @@ export default function ImpressionTransactions() {
                           ))}
                           {/* Total du groupe de type en bas */}
                           <TableRow
-                            className={`${
+                            className={`border-b ${
                               typeGroup.type === "depense"
                                 ? "bg-rose-50"
                                 : typeGroup.type === "recette"
@@ -239,11 +241,11 @@ export default function ImpressionTransactions() {
                     </TableRow>
                   )}
                 </TableBody>
-                <TableFooter className="bg-none">
-                  <TableRow>
+                <TableFooter className="bg-gray-50 table-footer-print">
+                  <TableRow className="border-b">
                     <TableCell
                       colSpan={6}
-                      className="text-right text-lg font-semibold p-2"
+                      className="text-right text-lg font-semibold p-2 border-r"
                     >
                       Total :
                     </TableCell>
@@ -259,11 +261,8 @@ export default function ImpressionTransactions() {
             </div>
           </div>
         </div>
-        <div
-          className="flex items-center justify-end print:hidden
-print:hidden mt-5"
-        >
-          <DirectPrintButton className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full">
+        <div className="fixed bottom-4 right-4 z-50 print:hidden">
+          <DirectPrintButton className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full shadow-lg">
             Imprimer
           </DirectPrintButton>
         </div>

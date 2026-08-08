@@ -15,7 +15,7 @@ import { formatCurrency } from "@/lib/functions";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import "./page.css";
+import "@/styles/print-rapport.css";
 
 function formatDate(dateString) {
   if (!dateString) return "—";
@@ -52,7 +52,7 @@ function RapportSkeleton() {
   return (
     <div className="space-y-4 py-4">
       {/* Barre Commerçant + Période */}
-      <div className="flex items-center justify-between gap-2 px-4 py-2 rounded-lg bg-muted/50 border">
+      <div className="flex items-center justify-between gap-2 px-4 py-2 rounded-lg bg-gray-50 border">
         <div className="flex items-center gap-2">
           <Skeleton className="h-4 w-24" />
           <Skeleton className="h-4 w-28" />
@@ -64,7 +64,7 @@ function RapportSkeleton() {
       </div>
 
       {/* Grille 6 stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 p-4 bg-muted/50 rounded-lg">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 p-4 bg-gray-50 rounded-lg">
         {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="space-y-2">
             <Skeleton className="h-3 w-20" />
@@ -74,12 +74,12 @@ function RapportSkeleton() {
       </div>
 
       {/* Tableau : en-têtes + lignes */}
-      <div className="rounded-md border overflow-hidden">
-        <Table>
+      <div className="rounded-xl border shadow-sm overflow-hidden main-table-container">
+        <Table className="border-collapse">
           <TableHeader>
-            <TableRow>
+            <TableRow className="border-b">
               {Array.from({ length: 9 }).map((_, i) => (
-                <TableHead key={i}>
+                <TableHead key={i} className={i < 8 ? "border-r border-b" : "border-b"}>
                   <Skeleton className="h-4 w-14" />
                 </TableHead>
               ))}
@@ -87,9 +87,9 @@ function RapportSkeleton() {
           </TableHeader>
           <TableBody>
             {Array.from({ length: 8 }).map((_, rowIndex) => (
-              <TableRow key={rowIndex}>
+              <TableRow key={rowIndex} className="border-b">
                 {Array.from({ length: 9 }).map((_, colIndex) => (
-                  <TableCell key={colIndex}>
+                  <TableCell key={colIndex} className={colIndex < 8 ? "border-r" : ""}>
                     <Skeleton
                       className={`h-5 ${
                         colIndex === 0 ? "w-20" : colIndex === 1 ? "w-16" : colIndex === 2 ? "w-28" : "w-20"
@@ -138,7 +138,7 @@ export default function ImpressionRapportDevis() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-8 w-[90vw] max-w-6xl bg-white min-h-screen">
+      <div className="container mx-auto p-8 w-[90vw] bg-white min-h-screen">
         <div className="print-block mb-6">
           <EnteteDevis />
         </div>
@@ -150,7 +150,7 @@ export default function ImpressionRapportDevis() {
 
   if (!data) {
     return (
-      <div className="container mx-auto p-8 max-w-6xl">
+      <div className="container mx-auto p-8 w-[90vw]">
         <p className="text-muted-foreground">
           Aucun rapport à afficher. Générez un rapport devis puis cliquez sur Imprimer.
         </p>
@@ -169,14 +169,13 @@ export default function ImpressionRapportDevis() {
 
   return (
     <>
-      <div className="mx-auto p-8 w-[90vw] max-w-7xl bg-white min-h-screen print:p-0 print:max-w-none mb-10">
+      <div className="container mx-auto p-8 w-[90vw] bg-white min-h-screen print:p-0 print:max-w-none mb-10">
         <div id="print-area" className="space-y-4 py-4">
           <div className="print-block">
             <EnteteDevis />
           </div>
 
-
-          <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2 rounded-lg bg-muted/50 text-sm print-block">
+          <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2 rounded-lg bg-gray-50 text-sm print-block">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
               <div>
                 <span className="font-medium text-muted-foreground">Commerçant : </span>
@@ -199,7 +198,7 @@ export default function ImpressionRapportDevis() {
               </div>
             )}
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 p-4 bg-muted/50 rounded-lg print-block">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 p-4 bg-gray-50 rounded-lg print-block">
 
             <div>
               <p className="text-xs font-medium text-muted-foreground">Total devis</p>
@@ -239,21 +238,19 @@ export default function ImpressionRapportDevis() {
             </div>
           </div>
 
-
-
-          <div className="rounded-md border overflow-x-auto max-h-[50vh] overflow-y-auto main-table-container print-block">
+          <div className="rounded-xl border shadow-sm overflow-x-auto main-table-container print-block">
             <Table className="border-collapse">
               <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>N°</TableHead>
-                  <TableHead>Client</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
-                  <TableHead className="text-right">Payé</TableHead>
-                  <TableHead className="text-right">Reste</TableHead>
-                  <TableHead className="text-right">Marge</TableHead>
-                  <TableHead>Statut</TableHead>
-                  <TableHead>Statut paiement</TableHead>
+                <TableRow className="border-b">
+                  <TableHead className="border-r border-b">Date</TableHead>
+                  <TableHead className="border-r border-b">N°</TableHead>
+                  <TableHead className="border-r border-b">Client</TableHead>
+                  <TableHead className="text-right border-r border-b">Total</TableHead>
+                  <TableHead className="text-right border-r border-b">Payé</TableHead>
+                  <TableHead className="text-right border-r border-b">Reste</TableHead>
+                  <TableHead className="text-right border-r border-b">Marge</TableHead>
+                  <TableHead className="border-r border-b">Statut</TableHead>
+                  <TableHead className="border-b">Statut paiement</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -263,21 +260,21 @@ export default function ImpressionRapportDevis() {
                     const marge = (Number(d.total) || 0) - fourn;
                     const reste = (Number(d.total) || 0) - (Number(d.totalPaye) || 0);
                     return (
-                      <TableRow key={d.id}>
-                        <TableCell>{formatDate(d.date)}</TableCell>
-                        <TableCell className="font-medium">{d.numero}</TableCell>
-                        <TableCell>{d.client?.nom ?? "—"}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(d.total)}</TableCell>
-                        <TableCell className="text-right text-foreground">
+                      <TableRow key={d.id} className="border-b">
+                        <TableCell className="border-r">{formatDate(d.date)}</TableCell>
+                        <TableCell className="font-medium border-r">{d.numero}</TableCell>
+                        <TableCell className="border-r">{d.client?.nom ?? "—"}</TableCell>
+                        <TableCell className="text-right border-r">{formatCurrency(d.total)}</TableCell>
+                        <TableCell className="text-right text-foreground border-r">
                           {formatCurrency(d.totalPaye)}
                         </TableCell>
-                        <TableCell className="text-right text-foreground">
+                        <TableCell className="text-right text-foreground border-r">
                           {formatCurrency(reste)}
                         </TableCell>
-                        <TableCell className="text-right text-foreground">
+                        <TableCell className="text-right text-foreground border-r">
                           {formatCurrency(marge)}
                         </TableCell>
-                        <TableCell>{d.statut ?? "—"}</TableCell>
+                        <TableCell className="border-r">{d.statut ?? "—"}</TableCell>
                         <TableCell>{statutPaiementBadge(d)?.lable ?? "—"}</TableCell>
                       </TableRow>
                     );
