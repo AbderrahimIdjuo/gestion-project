@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
+import { authErrorResponse, requireAuth } from "@/lib/auth-utils";
 import prisma from "../../../../lib/prisma";
 export const dynamic = "force-dynamic";
 
 export async function POST(req) {
   try {
+    await requireAuth();
+
     const resopns = await req.json();
     const {
       type,
@@ -175,6 +178,8 @@ export async function POST(req) {
     return NextResponse.json({ result });
   } catch (error) {
     console.log(error);
+    const authRes = authErrorResponse(error);
+    if (authRes) return authRes;
     return NextResponse.json(
       { message: "An unexpected error occurred." },
       { status: 500 }

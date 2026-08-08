@@ -1,10 +1,47 @@
 import { auth, clerkClient, currentUser } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 
 /**
  * Utility functions for authentication and role management
  */
 
 export type UserRole = "admin" | "commercant";
+
+export class AuthHttpError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "AuthHttpError";
+    this.status = status;
+  }
+}
+
+/**
+ * Convert AuthHttpError to a JSON NextResponse, or null if not an auth error.
+ */
+export function authErrorResponse(error: unknown) {
+  if (error instanceof AuthHttpError) {
+    return NextResponse.json(
+      { error: error.message },
+      { status: error.status }
+    );
+  }
+  // Backward-compatible with previous throw new Error("Authentication required")
+  if (error instanceof Error) {
+    if (error.message === "Authentication required") {
+      return NextResponse.json({ error: error.message }, { status: 401 });
+    }
+    if (
+      error.message.startsWith("Access denied") ||
+      error.message.includes("Admin role required") ||
+      error.message.includes("Required role")
+    ) {
+      return NextResponse.json({ error: error.message }, { status: 403 });
+    }
+  }
+  return null;
+}
 
 /**
  * Get the current user's role from Clerk metadata
@@ -58,7 +95,7 @@ export async function updateUserRole(
 ): Promise<void> {
   // Verify the current user is an admin
   if (!(await isAdmin())) {
-    throw new Error("Only administrators can update user roles");
+    throw new AuthHttpError("Only administrators can update user roles", 403);
   }
 
   const client = await clerkClient();
@@ -76,7 +113,7 @@ export async function updateUserRole(
 export async function getAllUsersWithRoles() {
   // Verify the current user is an admin
   if (!(await isAdmin())) {
-    throw new Error("Only administrators can view all users");
+    throw new AuthHttpError("Only administrators can view all users", 403);
   }
 
   const client = await clerkClient();
@@ -94,20 +131,31 @@ export async function getAllUsersWithRoles() {
 }
 
 /**
+ * Require a signed-in user (any role).
+ */
+export async function requireAuth() {
+  const { userId } = await auth();
+
+  if (!userId) {
+    throw new AuthHttpError("Authentication required", 401);
+  }
+
+  return { userId };
+}
+
+/**
  * Server-side role check for API routes
  * Use this in API routes to ensure only users with specific roles can access them
  */
 export async function requireRole(requiredRole: UserRole) {
-  const { userId } = await auth();
-
-  if (!userId) {
-    throw new Error("Authentication required");
-  }
-
+  const { userId } = await requireAuth();
   const userRole = await getUserRole();
 
   if (userRole !== "admin" && userRole !== requiredRole) {
-    throw new Error(`Access denied. Required role: ${requiredRole}`);
+    throw new AuthHttpError(
+      `Access denied. Required role: ${requiredRole}`,
+      403
+    );
   }
 
   return { userId, userRole };
@@ -118,16 +166,11 @@ export async function requireRole(requiredRole: UserRole) {
  * Use this in API routes to ensure only admins can access them
  */
 export async function requireAdmin() {
-  const { userId } = await auth();
-
-  if (!userId) {
-    throw new Error("Authentication required");
-  }
-
+  const { userId } = await requireAuth();
   const userRole = await getUserRole();
 
   if (userRole !== "admin") {
-    throw new Error("Access denied. Admin role required.");
+    throw new AuthHttpError("Access denied. Admin role required.", 403);
   }
 
   return { userId, userRole };

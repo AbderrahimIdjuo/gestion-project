@@ -2,17 +2,92 @@ import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 /**
+ * Public API routes (no Clerk session required).
+ * Webhooks verify their own signatures; auth adapters must stay reachable.
+ */
+function isPublicApiRoute(pathname: string): boolean {
+  return (
+    pathname.startsWith("/api/webhook") ||
+    pathname.startsWith("/api/auth")
+  );
+}
+
+/**
+ * Destructive / sensitive mutation paths that require admin role.
+ * Role is read from session claims when present (configure Clerk JWT
+ * to include publicMetadata.role for middleware-level checks).
+ */
+function isAdminMutation(pathname: string, method: string): boolean {
+  const m = method.toUpperCase();
+  if (m === "GET" || m === "HEAD" || m === "OPTIONS") return false;
+
+  const adminPrefixes = [
+    "/api/admin",
+    "/api/users",
+    "/api/import-",
+    "/api/importLogo",
+    "/api/solde-comptes",
+  ];
+
+  return adminPrefixes.some(
+    (p) => pathname === p || pathname.startsWith(p + "/") || pathname.startsWith(p)
+  );
+}
+
+function getRoleFromClaims(authResult: {
+  sessionClaims?: Record<string, unknown> | null;
+}): string | null {
+  const claims = authResult.sessionClaims;
+  if (!claims) return null;
+
+  const metadata = (claims.metadata ?? claims.publicMetadata) as
+    | Record<string, unknown>
+    | undefined;
+  const role = metadata?.role;
+  return typeof role === "string" ? role : null;
+}
+
+/**
  * Lightweight middleware: runs ONLY on routes listed in config.matcher.
- * No Clerk API calls, no DB, no fetch. Role checks (admin-only pages)
- * should be done in layout/page or via Clerk JWT session claims.
+ * No Clerk Backend API calls, no DB. Role checks use JWT session claims
+ * when available; route handlers still call requireAdmin() as defense in depth.
  */
 export default clerkMiddleware(async (auth, request) => {
   const { pathname } = request.nextUrl;
+  const method = request.method;
   const authResult = await auth();
-
   const hasUser = !!authResult.userId;
 
-  // Protected route prefixes (must stay in sync with matcher)
+  // --- API protection ---
+  if (pathname.startsWith("/api/")) {
+    if (isPublicApiRoute(pathname)) {
+      return NextResponse.next();
+    }
+
+    if (!hasUser) {
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 }
+      );
+    }
+
+    // Admin gate for sensitive mutations (when role is in session claims)
+    if (isAdminMutation(pathname, method)) {
+      const role = getRoleFromClaims(authResult);
+      // If claims expose role and user is not admin → 403.
+      // If claims omit role, allow through; route handlers must call requireAdmin().
+      if (role !== null && role !== "admin") {
+        return NextResponse.json(
+          { error: "Access denied. Admin role required." },
+          { status: 403 }
+        );
+      }
+    }
+
+    return NextResponse.next();
+  }
+
+  // --- Page protection ---
   const protectedPrefixes = [
     "/admin",
     "/commercant",
@@ -25,16 +100,26 @@ export default clerkMiddleware(async (auth, request) => {
     "/Employes",
     "/articls",
     "/dashboard",
+    "/reglement",
+    "/versements",
+    "/facturesAchats",
+    "/fournisseurs",
   ];
-  const isProtectedRoute = protectedPrefixes.some((p) => pathname === p || pathname.startsWith(p + "/"));
+  const isProtectedRoute = protectedPrefixes.some(
+    (p) => pathname === p || pathname.startsWith(p + "/")
+  );
 
-  // Not signed in on protected route → sign-in
   if (!hasUser && isProtectedRoute) {
     return NextResponse.redirect(new URL("/sign-in", request.url));
   }
 
-  // Signed in on auth pages → dashboard
-  if (hasUser && (pathname === "/sign-in" || pathname.startsWith("/sign-in/") || pathname === "/sign-up" || pathname.startsWith("/sign-up/"))) {
+  if (
+    hasUser &&
+    (pathname === "/sign-in" ||
+      pathname.startsWith("/sign-in/") ||
+      pathname === "/sign-up" ||
+      pathname.startsWith("/sign-up/"))
+  ) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
@@ -43,7 +128,6 @@ export default clerkMiddleware(async (auth, request) => {
 
 /**
  * Run middleware on these paths so Clerk auth() works in pages and API routes.
- * API routes that use auth() or requireAdmin() need the matcher to include /api.
  */
 export const config = {
   matcher: [
@@ -74,6 +158,14 @@ export const config = {
     "/Employes/(.*)",
     "/articls",
     "/articls/(.*)",
+    "/reglement",
+    "/reglement/(.*)",
+    "/versements",
+    "/versements/(.*)",
+    "/facturesAchats",
+    "/facturesAchats/(.*)",
+    "/fournisseurs",
+    "/fournisseurs/(.*)",
     "/api/(.*)",
   ],
 };

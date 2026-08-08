@@ -1,8 +1,11 @@
 import { put } from "@vercel/blob";
 import { NextResponse } from "next/server";
+import { authErrorResponse, requireAdmin } from "@/lib/auth-utils";
 
 export async function POST(request) {
   try {
+    await requireAdmin();
+
     const formData = await request.formData();
     const file = formData.get("file");
 
@@ -18,6 +21,8 @@ export async function POST(request) {
     return NextResponse.json(blob);
   } catch (error) {
     console.error("Error uploading file:", error);
+    const authRes = authErrorResponse(error);
+    if (authRes) return authRes;
     return NextResponse.json(
       { error: "Failed to upload file" },
       { status: 500 }

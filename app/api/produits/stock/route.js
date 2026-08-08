@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { authErrorResponse, requireAdmin } from "@/lib/auth-utils";
 import prisma from "../../../../lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -9,6 +10,8 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(req) {
   try {
+    await requireAdmin();
+
     const body = await req.json();
     const items = body?.items;
     if (!Array.isArray(items) || items.length === 0) {
@@ -40,6 +43,8 @@ export async function POST(req) {
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error("POST /api/produits/stock:", error);
+    const authRes = authErrorResponse(error);
+    if (authRes) return authRes;
     return NextResponse.json({ message: "Erreur serveur." }, { status: 500 });
   }
 }

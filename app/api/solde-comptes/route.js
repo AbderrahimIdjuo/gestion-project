@@ -1,15 +1,17 @@
 import { NextResponse } from "next/server";
+import { authErrorResponse, requireAdmin } from "@/lib/auth-utils";
 import prisma from "../../../lib/prisma";
 export const dynamic = "force-dynamic";
 
 export async function PUT(req) {
   try {
+    await requireAdmin();
+
     const resopns = await req.json();
-    const {id , solde } = resopns;
-    console.log("solde type", typeof solde);
+    const { id, solde } = resopns;
 
     const result = await prisma.comptesBancaires.update({
-      where: { id},
+      where: { id },
       data: {
         solde: parseFloat(solde),
       },
@@ -17,6 +19,9 @@ export async function PUT(req) {
 
     return NextResponse.json({ result });
   } catch (error) {
+    const authRes = authErrorResponse(error);
+    if (authRes) return authRes;
+
     if (error.code === "P2002") {
       return NextResponse.json(
         {
