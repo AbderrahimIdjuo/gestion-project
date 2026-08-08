@@ -1,8 +1,10 @@
 /**
- * Centralized route-protection constants for Clerk middleware.
+ * Centralized route-protection constants for Clerk middleware (BUG-002 audit).
  *
- * Keep page prefixes and matcher entries in sync via buildMiddlewareMatcher().
- * Financial/supplier API inventory is listed explicitly for audits (BUG-002).
+ * Runtime checks (isProtectedPagePath / isProtectedApiPath) are imported by
+ * middleware.ts. The middleware `config.matcher` MUST remain an inline string
+ * array in middleware.ts — Next.js ignores matchers imported from other modules.
+ * Keep PROTECTED_PAGE_PREFIXES in sync with that matcher manually.
  */
 
 /** Page path prefixes that require a signed-in user (redirect → /sign-in). */
@@ -52,10 +54,7 @@ export const PUBLIC_API_PREFIXES = [
 ] as const;
 
 /** Auth UI paths (signed-in users are redirected away from these). */
-export const AUTH_PAGE_PATHS = [
-  "/sign-in",
-  "/sign-up",
-] as const;
+export const AUTH_PAGE_PATHS = ["/sign-in", "/sign-up"] as const;
 
 /** True when pathname equals prefix or is a nested path under it. */
 export function matchesPrefix(
@@ -78,17 +77,3 @@ export function isProtectedApiPath(pathname: string): boolean {
 export function isProtectedPagePath(pathname: string): boolean {
   return matchesPrefix(pathname, PROTECTED_PAGE_PREFIXES);
 }
-
-/**
- * Static matcher list reference for docs/audits.
- * The live middleware config.matcher MUST stay inline in middleware.ts
- * (Next.js build ignores imported matcher arrays).
- */
-export const MIDDLEWARE_MATCHER_REFERENCE: string[] = [
-  "/",
-  "/sign-in",
-  "/sign-in/(.*)",
-  "/sign-up",
-  "/sign-up/(.*)",
-  // …plus every PROTECTED_PAGE_PREFIXES entry and `/api/(.*)` — see middleware.ts
-];
