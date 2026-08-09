@@ -348,7 +348,7 @@ export async function PATCH(req) {
         const nouveauStatusPrelevement = statusPrelevement;
 
         // Gestion de la mise à jour du solde du compte bancaire et des transactions selon le changement de statut
-        // Cas 1: Passage à "confirme" (déduction du montant du compte + création de transaction)
+        // Cas 1: Passage à "confirme" (déduction du montant du compte + dette + création de transaction)
         if (
           nouveauStatusPrelevement === "confirme" &&
           ancienStatusPrelevement !== "confirme"
@@ -359,6 +359,10 @@ export async function PATCH(req) {
             data: {
               solde: { decrement: reglementExistant.montant },
             },
+          });
+          await tx.fournisseurs.update({
+            where: { id: reglementExistant.fournisseurId },
+            data: { dette: { decrement: reglementExistant.montant } },
           });
           const fournisseur = await tx.fournisseurs.findUnique({
             where: { id: reglementExistant.fournisseurId },
@@ -388,7 +392,7 @@ export async function PATCH(req) {
             },
           });
         }
-        // Cas 2: Passage de "confirme" à un autre statut : remboursement compte + suppression transaction
+        // Cas 2: Passage de "confirme" à un autre statut : remboursement compte + dette + suppression transaction
         if (
           ancienStatusPrelevement === "confirme" &&
           nouveauStatusPrelevement !== "confirme"
@@ -398,6 +402,10 @@ export async function PATCH(req) {
             data: {
               solde: { increment: reglementExistant.montant },
             },
+          });
+          await tx.fournisseurs.update({
+            where: { id: reglementExistant.fournisseurId },
+            data: { dette: { increment: reglementExistant.montant } },
           });
           await tx.transactions.deleteMany({
             where: {
@@ -834,9 +842,11 @@ export async function PUT(req) {
       }
 
       // Mettre à jour le compte bancaire si le montant ou le compte change
+      // (uniquement si le prélèvement était déjà confirmé — solde réellement débité)
       if (
-        montant !== reglementExistant.montant ||
-        compte !== reglementExistant.compte
+        reglementExistant.statusPrelevement === "confirme" &&
+        (montant !== reglementExistant.montant ||
+          compte !== reglementExistant.compte)
       ) {
         // Remettre l'ancien montant dans l'ancien compte
         await tx.comptesBancaires.updateMany({
@@ -982,16 +992,18 @@ export async function PUT(req) {
         blAllocations: reglementExistant.blAllocations,
       });
 
-      // Ajuster la dette fournisseur : ancien règlement diminuait la dette de ancienMontantReglement, le nouveau de nouveauMontantReglement
-      const deltaDette = ancienMontantReglement - nouveauMontantReglement;
-      if (deltaDette !== 0) {
-        await tx.fournisseurs.update({
-          where: { id: reglementExistant.fournisseurId },
-          data:
-            deltaDette > 0
-              ? { dette: { increment: deltaDette } }
-              : { dette: { decrement: -deltaDette } },
-        });
+      // Ajuster la dette fournisseur uniquement si elle avait été appliquée (prélèvement confirmé)
+      if (reglementExistant.statusPrelevement === "confirme") {
+        const deltaDette = ancienMontantReglement - nouveauMontantReglement;
+        if (deltaDette !== 0) {
+          await tx.fournisseurs.update({
+            where: { id: reglementExistant.fournisseurId },
+            data:
+              deltaDette > 0
+                ? { dette: { increment: deltaDette } }
+                : { dette: { decrement: -deltaDette } },
+          });
+        }
       }
 
       return {
@@ -1057,13 +1069,18 @@ export async function DELETE(req) {
         throw new Error("Règlement non trouvé");
       }
 
-      // Remettre l'argent dans le compte bancaire
-      await tx.comptesBancaires.updateMany({
-        where: { compte: reglement.compte },
-        data: {
-          solde: { increment: reglement.montant },
-        },
-      });
+      const isConfirmed = reglement.statusPrelevement === "confirme";
+
+      // Remettre l'argent dans le compte bancaire uniquement si le prélèvement
+      // avait été confirmé (solde réellement débité)
+      if (isConfirmed) {
+        await tx.comptesBancaires.updateMany({
+          where: { compte: reglement.compte },
+          data: {
+            solde: { increment: reglement.montant },
+          },
+        });
+      }
 
       // Supprimer les transactions associées au règlement (ReglementId, ou reference / chequeId pour rétrocompatibilité)
       await tx.transactions.deleteMany({
@@ -1135,11 +1152,14 @@ export async function DELETE(req) {
         }
       }
 
-      // Augmenter la dette du fournisseur (annuler l'effet du règlement supprimé)
-      await tx.fournisseurs.update({
-        where: { id: reglement.fournisseurId },
-        data: { dette: { increment: reglement.montant } },
-      });
+      // Restaurer la dette uniquement si elle avait été diminuée à la création
+      // (espèce/versement) ou à la confirmation du prélèvement
+      if (isConfirmed) {
+        await tx.fournisseurs.update({
+          where: { id: reglement.fournisseurId },
+          data: { dette: { increment: reglement.montant } },
+        });
+      }
 
       // Supprimer le règlement (cascade supprime blAllocations et le chèque)
       await tx.reglement.delete({

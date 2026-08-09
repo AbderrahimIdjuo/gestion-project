@@ -21,15 +21,36 @@ export default function ImpressionTransactions() {
   const [params, setParams] = useState();
 
   function methodePaiementLabel(methodePaiement) {
-    if (methodePaiement === "versement") {
-      return "Versement";
-    } else if (methodePaiement === "cheque") {
-      return "Chèque";
-    } else if (methodePaiement === "espece") {
-      return "Espèce";
-    } else {
+    if (!methodePaiement || methodePaiement === "all") {
       return "Tous";
     }
+    if (methodePaiement.includes("-")) {
+      return methodePaiement
+        .split("-")
+        .map(m => methodePaiementLabel(m))
+        .join(", ");
+    }
+    if (methodePaiement === "versement") return "Versement";
+    if (methodePaiement === "cheque") return "Chèque";
+    if (methodePaiement === "espece") return "Espèce";
+    if (methodePaiement === "traite") return "Traite";
+    return methodePaiement;
+  }
+
+  function formatTypeLabel(type) {
+    if (!type || type === "all") return "Tous";
+    if (type.includes("-")) {
+      return type.split("-").map(t => typeLabel(t)).join(", ");
+    }
+    return typeLabel(type);
+  }
+
+  function formatCompteLabel(compte) {
+    if (!compte || compte === "all") return "Tous";
+    if (compte.includes("-")) {
+      return compte.split("-").join(", ");
+    }
+    return compte;
   }
 
   // Fonction pour grouper les transactions par type
@@ -63,7 +84,6 @@ export default function ImpressionTransactions() {
     const storedData = localStorage.getItem("params");
     if (storedData) {
       setParams(JSON.parse(storedData));
-      console.log("params", JSON.parse(storedData));
     }
   }, []);
 
@@ -75,6 +95,7 @@ export default function ImpressionTransactions() {
       });
       return response.data.transactions;
     },
+    enabled: !!params,
   });
 
   const total = () => {
@@ -87,7 +108,7 @@ export default function ImpressionTransactions() {
     }, 0);
   };
 
-  const fromDay = new Date(params?.from);
+  const fromDay = params?.from ? new Date(params.from) : null;
 
   return (
     <>
@@ -110,11 +131,13 @@ export default function ImpressionTransactions() {
                   <h3 className="mb-1 font-semibold text-gray-900">
                     Période :
                   </h3>
-                  {params?.form && params?.to ? (
+                  {params?.from && params?.to ? (
                     <p className="text-sm text-gray-600">
-                      {`${fromDay.getDate()}-${
-                        fromDay.getMonth() + 1
-                      }-${fromDay.getFullYear()}`}{" "}
+                      {fromDay
+                        ? `${fromDay.getDate()}-${
+                            fromDay.getMonth() + 1
+                          }-${fromDay.getFullYear()}`
+                        : "—"}{" "}
                       • {formatDate(params?.to)}
                     </p>
                   ) : (
@@ -124,7 +147,7 @@ export default function ImpressionTransactions() {
                 <div className="flex gap-2 items-center">
                   <h3 className="mb-1 font-semibold text-gray-900">Compte :</h3>
                   <p className="text-sm text-gray-600">
-                    {params?.compte === "all" ? "Tous" : params?.compte}
+                    {formatCompteLabel(params?.compte)}
                   </p>
                 </div>
                 <div className="flex gap-2 items-center">
@@ -138,7 +161,7 @@ export default function ImpressionTransactions() {
                 <div className="flex gap-2 items-center">
                   <h3 className="mb-1 font-semibold text-gray-900">Type :</h3>
                   <p className="text-sm text-gray-600">
-                    {typeLabel(params?.type)}
+                    {formatTypeLabel(params?.type)}
                   </p>
                 </div>
                 {params?.type?.includes("depense") && params?.typeDepense && params?.typeDepense !== "all" && (

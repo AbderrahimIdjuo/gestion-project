@@ -153,19 +153,26 @@ export default function AddBonLivraison({ lastBonLivraison, commande }) {
 
   const handleCreateBL = useMutation({
     mutationFn: async () => {
+      const blTotal = montantTotal || total().toFixed(2);
+      const resolvedMontantPaye =
+        statutPaiement === "paye"
+          ? parseFloat(blTotal)
+          : statutPaiement === "enPartie"
+            ? montantPaye
+            : 0;
       const data = {
         numero: generateBLNumber(),
         date,
         reference,
         fournisseurId: selectedFournisseur.id,
         fournisseurNom: selectedFournisseur.nom,
-        total: montantTotal || total().toFixed(2),
+        total: blTotal,
         type,
-        totalPaye: 0,
+        totalPaye: resolvedMontantPaye,
         bLGroups,
         statutPaiement,
         compte,
-        montantPaye,
+        montantPaye: resolvedMontantPaye,
       };
       console.log("data : ", data);
       const loadingToast = toast.loading("Ajout du bon de livraison...");

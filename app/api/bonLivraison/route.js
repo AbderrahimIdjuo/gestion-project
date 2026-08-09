@@ -164,7 +164,12 @@ export async function POST(req) {
         // Mettre à jour la dette du fournisseur : achats → + montant impayé, retour → - montant du BL
         const totalNum = parseFloat(total);
         if (type === "achats") {
-          const montantImpaye = montantPaye ? totalNum - parseFloat(montantPaye) : totalNum;
+          const montantImpaye =
+            statutPaiement === "paye"
+              ? 0
+              : statutPaiement === "enPartie"
+                ? totalNum - (parseFloat(montantPaye) || 0)
+                : totalNum;
           await prisma.fournisseurs.update({
             where: { id: fournisseurId },
             data: { dette: { increment: montantImpaye } },

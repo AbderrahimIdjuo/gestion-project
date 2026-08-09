@@ -70,13 +70,8 @@ export async function POST(req) {
           },
         });
 
-        // Diminuer la dette du fournisseur pour tout nouveau règlement
-        await prisma.fournisseurs.update({
-          where: { id: fournisseurId },
-          data: { dette: { decrement: montant } },
-        });
-
-        // creation de la transaction uniquement si méthode de paiement est "espece" ou "versement"
+        // Solde + dette uniquement si le paiement est déjà effectif (espèce/versement → confirme).
+        // Pour chèque/traite, les deux sont appliqués à la confirmation du prélèvement.
         if (methodePaiement === "espece" || methodePaiement === "versement") {
           await prisma.transactions.create({
             data: {
@@ -106,6 +101,11 @@ export async function POST(req) {
             data: {
               solde: { decrement: montant },
             },
+          });
+
+          await prisma.fournisseurs.update({
+            where: { id: fournisseurId },
+            data: { dette: { decrement: montant } },
           });
         }
 

@@ -94,8 +94,8 @@ export async function POST(
       const ancienStatusPrelevement = reglementExistant.statusPrelevement;
       const nouveauStatusPrelevement = status;
 
-      // Gestion de la mise à jour du solde du compte bancaire et des transactions selon le changement de statut
-      // Cas 1: Passage à "confirme" (déduction du montant du compte + création de transaction)
+      // Gestion de la mise à jour du solde du compte bancaire, de la dette et des transactions selon le changement de statut
+      // Cas 1: Passage à "confirme" (déduction du montant du compte + dette + création de transaction)
       if (
         nouveauStatusPrelevement === "confirme" &&
         ancienStatusPrelevement !== "confirme"
@@ -106,6 +106,11 @@ export async function POST(
           data: {
             solde: { decrement: reglementExistant.montant },
           },
+        });
+
+        await tx.fournisseurs.update({
+          where: { id: reglementExistant.fournisseurId },
+          data: { dette: { decrement: reglementExistant.montant } },
         });
 
         // Créer une transaction pour enregistrer le prélèvement confirmé
@@ -133,7 +138,7 @@ export async function POST(
           },
         });
       }
-      // Cas 2: Passage de "confirme" à un autre statut : remboursement + suppression transaction
+      // Cas 2: Passage de "confirme" à un autre statut : remboursement + dette + suppression transaction
       if (
         ancienStatusPrelevement === "confirme" &&
         nouveauStatusPrelevement !== "confirme"
@@ -143,6 +148,10 @@ export async function POST(
           data: {
             solde: { increment: reglementExistant.montant },
           },
+        });
+        await tx.fournisseurs.update({
+          where: { id: reglementExistant.fournisseurId },
+          data: { dette: { increment: reglementExistant.montant } },
         });
         await tx.transactions.deleteMany({
           where: {

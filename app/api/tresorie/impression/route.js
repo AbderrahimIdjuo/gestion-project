@@ -6,11 +6,11 @@ export async function GET(req) {
   const searchQuery = searchParams.get("query") || "";
   const compte = searchParams.get("compte") || "all";
   const type = searchParams.get("type") || "all";
-  const from = searchParams.get("from"); // Start date
-  const to = searchParams.get("to"); // End date
+  const from = searchParams.get("from");
+  const to = searchParams.get("to");
   const fournisseurId = searchParams.get("fournisseurId");
-  const methodePaiement = searchParams.get("methodePaiement");
-  const typeDepense = searchParams.get("typeDepense");
+  const methodePaiement = searchParams.get("methodePaiement") || "all";
+  const typeDepense = searchParams.get("typeDepense") || "all";
 
   const filters = {};
 
@@ -20,20 +20,31 @@ export async function GET(req) {
     { description: { contains: searchQuery, mode: "insensitive" } },
     { lable: { contains: searchQuery, mode: "insensitive" } },
   ];
-  // Type filter
-  if (type !== "all") {
-    filters.type = type;
+
+  // Type filter (supports multiple values separated by "-")
+  if (type && type !== "all") {
+    const typeArray = type.split("-").filter(Boolean);
+    if (typeArray.length > 0) {
+      filters.type = { in: typeArray };
+    }
   }
 
-  // Compt filter
-  if (compte !== "all") {
-    filters.compte = compte;
+  // Compte filter (supports multiple values separated by "-")
+  if (compte && compte !== "all") {
+    const compteArray = compte.split("-").filter(Boolean);
+    if (compteArray.length > 0) {
+      filters.compte = { in: compteArray };
+    }
   }
 
-  // methode de paiement filter
-  if (methodePaiement !== "all") {
-    filters.methodePaiement = methodePaiement;
+  // Methode de paiement filter (supports multiple values separated by "-")
+  if (methodePaiement && methodePaiement !== "all") {
+    const methodePaiementArray = methodePaiement.split("-").filter(Boolean);
+    if (methodePaiementArray.length > 0) {
+      filters.methodePaiement = { in: methodePaiementArray };
+    }
   }
+
   // type de depense filter (supports multiple values separated by "-", including sansType for null)
   if (typeDepense && typeDepense !== "all") {
     if (typeDepense === "charges") {
@@ -64,17 +75,18 @@ export async function GET(req) {
       }
     }
   }
+
   // Date range filter
   if (from && to) {
     const startDate = new Date(from);
-    startDate.setHours(0, 0, 0, 0); // Set to beginning of the day
+    startDate.setHours(0, 0, 0, 0);
 
     const endDate = new Date(to);
-    endDate.setHours(23, 59, 59, 999); // Set to end of the day
+    endDate.setHours(23, 59, 59, 999);
 
     filters.date = {
-      gte: startDate, // Greater than or equal to start of "from" day
-      lte: endDate, // Less than or equal to end of "to" day
+      gte: startDate,
+      lte: endDate,
     };
   }
 
@@ -83,10 +95,12 @@ export async function GET(req) {
     filters.reference = fournisseurId;
   }
 
-  // Fetch filtered transactions with pagination
   const transactions = await prisma.transactions.findMany({
     where: filters,
-    orderBy: { updatedAt: "desc" },
+    orderBy: { date: "desc" },
+    include: {
+      cheque: true,
+    },
   });
 
   return NextResponse.json({ transactions });

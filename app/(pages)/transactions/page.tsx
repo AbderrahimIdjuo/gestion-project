@@ -929,6 +929,7 @@ export default function Banques() {
                       variant="outline"
                       onClick={() => {
                         const params = {
+                          query: debouncedQuery || "",
                           type:
                             filters.type.length > 0
                               ? filters.type.join("-")
@@ -945,9 +946,9 @@ export default function Banques() {
                             filters.typeDepense.length > 0
                               ? filters.typeDepense.join("-")
                               : "all",
-                          from: startDate,
-                          to: endDate,
-                          fournisseurId: selectedFournisseur?.id,
+                          from: startDate || undefined,
+                          to: endDate || undefined,
+                          fournisseurId: selectedFournisseur?.id || undefined,
                         };
                         localStorage.setItem("params", JSON.stringify(params));
                         window.open("/transactions/impression", "_blank");

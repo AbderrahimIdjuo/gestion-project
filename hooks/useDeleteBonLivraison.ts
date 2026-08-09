@@ -28,6 +28,10 @@ export function useDeleteBonLivraison() {
     onSuccess: () => {
       queryClient.invalidateQueries(["bonLivraison"]);
       queryClient.invalidateQueries({ queryKey: ["produits"] });
+      queryClient.invalidateQueries({ queryKey: ["fournisseurs"] });
+      queryClient.invalidateQueries({ queryKey: ["comptesBancaires"] });
+      queryClient.invalidateQueries({ queryKey: ["tresorie"] });
+      queryClient.invalidateQueries({ queryKey: ["reglements"] });
     },
   });
 }
