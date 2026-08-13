@@ -3,15 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useUser } from "@clerk/nextjs";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import {
-  CircleDollarSign,
-  Info,
-  Landmark,
-  List,
-  Tags,
-  TrendingDown,
-  Users,
-} from "lucide-react";
+import { Landmark, List, Tags, TrendingDown, Users } from "lucide-react";
 import Link from "next/link";
 
 function SittingsSideBar({ page }) {
@@ -58,13 +50,15 @@ function SittingsSideBar({ page }) {
               isActive={page === "categories"}
             />
           </Link>
-          <Link href="/parametres/banques">
-            <NavItem
-              icon={<Landmark className="h-4 w-4" />}
-              label="Comptes Bancaires"
-              isActive={page === "banques"}
-            />
-          </Link>
+          {isAdmin && (
+            <Link href="/parametres/banques">
+              <NavItem
+                icon={<Landmark className="h-4 w-4" />}
+                label="Comptes Bancaires"
+                isActive={page === "banques"}
+              />
+            </Link>
+          )}
           {/* <Link href="/parametres/modesPaiement">
             <NavItem
               icon={<CircleDollarSign className="h-4 w-4" />}
@@ -72,17 +66,19 @@ function SittingsSideBar({ page }) {
               isActive={page === "modesPaiement"}
             />
           </Link> */}
-          <Link href="/parametres/typeTaches">
-            <NavItem
-              icon={<List className="h-4 w-4" />}
-              label="Type de tâches"
-              isActive={page === "typeTaches"}
-            />
-          </Link>
+          {isAdmin && (
+            <Link href="/parametres/typeTaches">
+              <NavItem
+                icon={<List className="h-4 w-4" />}
+                label="Type de tâches"
+                isActive={page === "typeTaches"}
+              />
+            </Link>
+          )}
           <Link href="/parametres/charges">
             <NavItem
               icon={<TrendingDown className="h-4 w-4" />}
-              label="Charges récurrentes"
+              label="Charges fixes"
               isActive={page === "charges"}
             />
           </Link>

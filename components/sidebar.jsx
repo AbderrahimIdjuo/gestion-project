@@ -116,7 +116,7 @@ const menuItems = [
         href: "/parametres/categories",
       },
       {
-        label: "Charges récurrentes",
+        label: "Charges fixes",
         href: "/parametres/charges",
       },
       { label: "Comptes bancaires", href: "/parametres/banques" },
@@ -155,15 +155,15 @@ export function Sidebar() {
 
   // Filtrer les éléments du menu en fonction du rôle de l'utilisateur
   const getFilteredMenuItems = () => {
-    // Masquer toute la section Paramètres pour les non-admins
     const role = user?.publicMetadata?.role;
     const isAdmin = role === "admin";
+    const commercantSettingsHrefs = [
+      "/parametres/categories",
+      "/parametres/charges",
+    ];
 
     return menuItems
       .filter(item => {
-        if (item.href === "/parametres") {
-          return isAdmin;
-        }
         if (item.href === "/Employes") {
           return isAdmin;
         }
@@ -171,9 +171,10 @@ export function Sidebar() {
       })
       .map(item => {
       if (item.subItems) {
-        // Filtrer les sous-éléments pour les paramètres
         const filteredSubItems = item.subItems.filter(subItem => {
-          // Masquer "Utilisateurs" si l'utilisateur n'est pas admin
+          if (item.href === "/parametres" && !isAdmin) {
+            return commercantSettingsHrefs.includes(subItem.href);
+          }
           if (subItem.href === "/parametres/users-management") {
             return isAdmin;
           }

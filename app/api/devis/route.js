@@ -288,7 +288,9 @@ export async function GET(req) {
   const limitParam = searchParams.get("limit"); // pour le rapport (tous les devis)
   const filters = {};
 
-  const devisPerPage = limitParam ? Math.min(Number(limitParam) || 10000, 10000) : 10;
+  const devisPerPage = limitParam
+    ? Math.min(Number(limitParam) || 10000, 10000)
+    : 10;
   const skip = limitParam ? 0 : (page - 1) * devisPerPage;
 
   // Search filter by numero, client name, and commercant
@@ -327,7 +329,7 @@ export async function GET(req) {
   if (clientIdsParam && clientIdsParam !== "all") {
     const clientIds = clientIdsParam
       .split(",")
-      .map((id) => id.trim())
+      .map(id => id.trim())
       .filter(Boolean);
     if (clientIds.length > 0) {
       filters.clientId = { in: clientIds };
@@ -460,35 +462,35 @@ export async function GET(req) {
   });
 }
 
-export async function DELETE(req) {
-  try {
-    // Parse the JSON body
-    const { ids } = await req.json();
+// export async function DELETE(req) {
+//   try {
+//     // Parse the JSON body
+//     const { ids } = await req.json();
 
-    // Validate the input
-    if (!ids || !Array.isArray(ids)) {
-      return NextResponse.json(
-        { error: "Invalid or missing IDs" },
-        { status: 400 }
-      );
-    }
+//     // Validate the input
+//     if (!ids || !Array.isArray(ids)) {
+//       return NextResponse.json(
+//         { error: "Invalid or missing IDs" },
+//         { status: 400 }
+//       );
+//     }
 
-    // Perform the deletion
-    const result = await prisma.articls.deleteMany({
-      where: {
-        id: {
-          in: ids,
-        },
-      },
-    });
+//     // Perform the deletion
+//     const result = await prisma.articls.deleteMany({
+//       where: {
+//         id: {
+//           in: ids,
+//         },
+//       },
+//     });
 
-    // Return success response
-    return NextResponse.json({ message: `${result.count} records deleted.` });
-  } catch (error) {
-    console.error("Error deleting records:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
-  }
-}
+//     // Return success response
+//     return NextResponse.json({ message: `${result.count} records deleted.` });
+//   } catch (error) {
+//     console.error("Error deleting records:", error);
+//     return NextResponse.json(
+//       { error: "Internal server error" },
+//       { status: 500 }
+//     );
+//   }
+// }

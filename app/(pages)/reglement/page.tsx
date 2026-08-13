@@ -591,10 +591,6 @@ function ReglementContent() {
 
   const deleteReglement = useMutation({
     mutationFn: async () => {
-      if (!isAdmin) {
-        toast.error("Accès refusé: seul l'admin peut supprimer un règlement.");
-        return;
-      }
       const loadingToast = toast.loading("Suppression...");
       try {
         await axios.delete("/api/reglement", {
@@ -1855,23 +1851,21 @@ function ReglementContent() {
                                             align="end"
                                             className="w-72 rounded-md"
                                           >
-                                            {isAdmin && (
-                                              <DropdownMenuItem
-                                                onClick={() => {
-                                                  setUpdateDialog(true);
-                                                  setReglementForTable(
-                                                    reglementTable
-                                                  );
-                                                  setOpenMenuId(null);
-                                                }}
-                                                className="flex items-center gap-2 cursor-pointer group hover:!bg-purple-100"
-                                              >
-                                                <Pen className="h-4 w-4 text-purple-600 group-hover:text-purple-600" />
-                                                <span className="transition-colors duration-200 group-hover:text-purple-600 group-hover:bg-purple-100">
-                                                  Modifier
-                                                </span>
-                                              </DropdownMenuItem>
-                                            )}
+                                            <DropdownMenuItem
+                                              onClick={() => {
+                                                setUpdateDialog(true);
+                                                setReglementForTable(
+                                                  reglementTable
+                                                );
+                                                setOpenMenuId(null);
+                                              }}
+                                              className="flex items-center gap-2 cursor-pointer group hover:!bg-purple-100"
+                                            >
+                                              <Pen className="h-4 w-4 text-purple-600 group-hover:text-purple-600" />
+                                              <span className="transition-colors duration-200 group-hover:text-purple-600 group-hover:bg-purple-100">
+                                                Modifier
+                                              </span>
+                                            </DropdownMenuItem>
                                             {!reglement.factureAchatsId &&
                                               !reglement.factureAchats &&
                                               reglementTable.compte?.toLowerCase() ===
@@ -1912,8 +1906,7 @@ function ReglementContent() {
                                               </DropdownMenuItem>
                                             )}
                                             
-                                            {isAdmin && (
-                                              <>
+                                            <>
                                               <DropdownMenuSeparator />
                                               <DropdownMenuItem
                                                 onClick={() => {
@@ -1930,9 +1923,7 @@ function ReglementContent() {
                                                   Supprimer
                                                 </span>
                                               </DropdownMenuItem>
-                                              </>
-                                              
-                                            )}
+                                            </>
                                           </DropdownMenuContent>
                                         </DropdownMenu>
                                       </TableCell>

@@ -105,7 +105,7 @@ export default function ChargesProduits() {
             <div className="flex-1 overflow-auto">
               <div className="space-y-6 p-6">
                 <div className="flex justify-between items-center">
-                  <h1 className="text-3xl font-bold">Charges récurrentes</h1>
+                  <h1 className="text-3xl font-bold">Charges fixes</h1>
                 </div>
                 <div className="flex justify between gap-6 items-start">
                   <div className="hidden md:block">

@@ -502,7 +502,7 @@ export default function TransactionDialog() {
                       }}
                     />
                     <Label htmlFor="terms">
-                      Ajouter à la liste des charges récurrentes
+                      Ajouter à la liste des Charges fixes
                     </Label>
                   </div>
                 )}

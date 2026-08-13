@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../lib/prisma";
-import { requireAdmin } from "@/lib/auth-utils";
+import { requireAdmin, requireRole } from "@/lib/auth-utils";
 import {
   applyReglementMontantChangeToBonLivraisons,
   ReglementMontantInvalideError,
@@ -750,7 +750,7 @@ export async function PATCH(req) {
 
 export async function PUT(req) {
   try {
-    await requireAdmin();
+    await requireRole("commercant");
     const body = await req.json();
     const {
       id,
@@ -1043,7 +1043,7 @@ export async function PUT(req) {
 
 export async function DELETE(req) {
   try {
-    await requireAdmin();
+    await requireRole("commercant");
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
 

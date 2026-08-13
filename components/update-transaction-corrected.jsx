@@ -433,7 +433,7 @@ export default function UpdateTransactionDialog({
                   onCheckedChange={setIsCharge}
                 />
                 <Label htmlFor="switch">
-                  {isCharge ? "Charges récurrentes" : "Charges variantes"}
+                  {isCharge ? "Charges fixes" : "Charges variantes"}
                 </Label>
               </div>
               {isCharge ? (

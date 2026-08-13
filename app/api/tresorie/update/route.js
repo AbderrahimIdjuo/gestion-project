@@ -69,10 +69,14 @@ async function syncLinkedReglementOnTransactionEdit(tx, params) {
   }
 
   const nouveauCompteFinal = compte || reglementExistant.compte;
+  // Effets financiers (solde, dette, BL) uniquement si le prélèvement est confirmé.
+  const isConfirmed =
+    reglementExistant.statusPrelevement === "confirme";
 
   if (
-    nouveauMontantReglement !== ancienMontantReglement ||
-    nouveauCompteFinal !== reglementExistant.compte
+    isConfirmed &&
+    (nouveauMontantReglement !== ancienMontantReglement ||
+      nouveauCompteFinal !== reglementExistant.compte)
   ) {
     await tx.comptesBancaires.updateMany({
       where: { compte: reglementExistant.compte },
@@ -111,24 +115,26 @@ async function syncLinkedReglementOnTransactionEdit(tx, params) {
     },
   });
 
-  await applyReglementMontantChangeToBonLivraisons(tx, {
-    reglementId: reglementExistant.id,
-    fournisseurId: reglementExistant.fournisseurId,
-    ancienMontantReglement,
-    nouveauMontantReglement,
-    reference: reglementExistant.reference,
-    blAllocations: reglementExistant.blAllocations,
-  });
-
-  const deltaDette = ancienMontantReglement - nouveauMontantReglement;
-  if (deltaDette !== 0) {
-    await tx.fournisseurs.update({
-      where: { id: reglementExistant.fournisseurId },
-      data:
-        deltaDette > 0
-          ? { dette: { increment: deltaDette } }
-          : { dette: { decrement: -deltaDette } },
+  if (isConfirmed) {
+    await applyReglementMontantChangeToBonLivraisons(tx, {
+      reglementId: reglementExistant.id,
+      fournisseurId: reglementExistant.fournisseurId,
+      ancienMontantReglement,
+      nouveauMontantReglement,
+      reference: reglementExistant.reference,
+      blAllocations: reglementExistant.blAllocations,
     });
+
+    const deltaDette = ancienMontantReglement - nouveauMontantReglement;
+    if (deltaDette !== 0) {
+      await tx.fournisseurs.update({
+        where: { id: reglementExistant.fournisseurId },
+        data:
+          deltaDette > 0
+            ? { dette: { increment: deltaDette } }
+            : { dette: { decrement: -deltaDette } },
+      });
+    }
   }
 
   return chequeId;
