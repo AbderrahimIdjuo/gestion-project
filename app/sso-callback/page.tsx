@@ -19,8 +19,8 @@ export default function SSOCallbackPage() {
           // Pas de rôle → rediriger vers no-access
           router.push("/no-access");
         } else {
-          // A un rôle → rediriger vers dashboard
-          router.push("/dashboard");
+          // A un rôle → rediriger vers l'accueil (shell Navbar/Sidebar)
+          router.push("/");
         }
       } else {
         // Pas connecté → rediriger vers sign-in

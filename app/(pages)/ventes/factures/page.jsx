@@ -1,6 +1,5 @@
 "use client";
 
-import CreateFactureDialog from "@/components/create-facture-dialog";
 import CreateFactureFromMultipleVersementsDialog from "@/components/create-facture-from-multiple-versements-dialog";
 import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
 import CustomPagination from "@/components/customUi/customPagination";
@@ -31,12 +30,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import UpdateFactureDialog from "@/components/update-facture-dialog";
+import { useUser } from "@clerk/nextjs";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Filter, Pen, Plus, Printer, Search, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
-import { useUser } from "@clerk/nextjs";
 
 function formatDate(dateString) {
   return dateString?.split("T")[0].split("-").reverse().join("-");
@@ -257,14 +256,15 @@ export default function Factures() {
                       <Plus className="mr-2 h-4 w-4" />
                       Ajouter une facture
                     </Button>
-                    <Button
+                    {/* Facteur provisoir est une facture sans versements  */}
+                    {/* <Button
                       onClick={() => setFactureDialogMode("provisoire")}
                       variant="outline"
                       className="rounded-full whitespace-nowrap border-purple-500 text-purple-600 hover:bg-purple-50"
                     >
                       <Plus className="mr-2 h-4 w-4" />
                       Facture provisoire
-                    </Button>
+                    </Button> */}
                   </div>
                 </div>
 
@@ -351,23 +351,23 @@ export default function Factures() {
                                       <span className="sr-only">Imprimer</span>
                                     </Button>
                                   </CustomTooltip>
-                                  {isAdmin && (
-                                    <CustomTooltip message="Supprimer">
-                                      <Button
-                                        name="delete btn"
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
-                                        onClick={() => {
-                                          setIsDialogOpen(true);
-                                          setCurrFacture(facture);
-                                        }}
-                                      >
-                                        <Trash2 className="h-4 w-4" />
-                                        <span className="sr-only">Supprimer</span>
-                                      </Button>
-                                    </CustomTooltip>
-                                  )}
+
+                                  <CustomTooltip message="Supprimer">
+                                    <Button
+                                      name="delete btn"
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
+                                      onClick={() => {
+                                        setIsDialogOpen(true);
+                                        setCurrFacture(facture);
+                                      }}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                      <span className="sr-only">Supprimer</span>
+                                    </Button>
+                                  </CustomTooltip>
+
                                   <CustomTooltip message="Modifier">
                                     <Button
                                       name="update btn"
@@ -445,7 +445,7 @@ export default function Factures() {
       />
       <CreateFactureFromMultipleVersementsDialog
         open={factureDialogMode !== null}
-        onOpenChange={(open) => !open && setFactureDialogMode(null)}
+        onOpenChange={open => !open && setFactureDialogMode(null)}
         modeProvisoire={factureDialogMode === "provisoire"}
       />
     </>

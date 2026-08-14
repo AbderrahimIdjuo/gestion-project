@@ -2,6 +2,63 @@ import { NextResponse } from "next/server";
 import prisma from "../../../../lib/prisma";
 import { requireAdmin } from "@/lib/auth-utils";
 
+const PAIEMENT_DEVIS_VERSEMENT_NOTE = "paiement devis";
+const VERSEMENT_DATE_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+
+function refundTransactionOnCompte(tx, t) {
+  if (!t?.compte || !t?.montant) return Promise.resolve();
+  if (t.type === "depense") {
+    return tx.comptesBancaires.updateMany({
+      where: { compte: t.compte },
+      data: { solde: { increment: t.montant } },
+    });
+  }
+  if (t.type === "recette") {
+    return tx.comptesBancaires.updateMany({
+      where: { compte: t.compte },
+      data: { solde: { decrement: t.montant } },
+    });
+  }
+  return Promise.resolve();
+}
+
+/**
+ * Paiement devis sur compte pro crée un versement (sourceCompteId null)
+ * dont le solde a déjà été appliqué via la transaction. On le supprime
+ * sans toucher le solde une seconde fois.
+ */
+async function deleteMatchingPaiementDevisVersement(
+  tx,
+  { clientNom, montant, date, excludeIds }
+) {
+  if (!clientNom || !montant) return null;
+
+  const dateFilter = date
+    ? {
+        date: {
+          gte: new Date(new Date(date).getTime() - VERSEMENT_DATE_WINDOW_MS),
+          lte: new Date(new Date(date).getTime() + VERSEMENT_DATE_WINDOW_MS),
+        },
+      }
+    : {};
+
+  const versement = await tx.versement.findFirst({
+    where: {
+      note: PAIEMENT_DEVIS_VERSEMENT_NOTE,
+      reference: clientNom,
+      montant,
+      ...(excludeIds.length > 0 ? { id: { notIn: excludeIds } } : {}),
+      ...dateFilter,
+    },
+    orderBy: { date: "desc" },
+  });
+
+  if (!versement) return null;
+
+  await tx.versement.delete({ where: { id: versement.id } });
+  return versement.id;
+}
+
 export async function DELETE(_, { params }) {
   try {
     await requireAdmin();
@@ -20,18 +77,82 @@ export async function DELETE(_, { params }) {
     }
     throw error;
   }
+
   const id = params.id;
-  const devi = await prisma.devis.delete({
-    where: { id },
-  });
-  console.log("from devis/id", devi);
-  //supprimer les transactions liées aux devis
-  await prisma.transactions.deleteMany({
-    where: {
-      reference: devi.numero,
-    },
-  });
-  return NextResponse.json(devi);
+
+  try {
+    const result = await prisma.$transaction(
+      async tx => {
+        const existing = await tx.devis.findUnique({
+          where: { id },
+          include: {
+            client: { select: { nom: true } },
+          },
+        });
+
+        if (!existing) {
+          throw new Error("Devis non trouvé");
+        }
+
+        const linkedTransactions = await tx.transactions.findMany({
+          where: { reference: existing.numero },
+        });
+
+        const isTerminer = existing.statut === "Terminer";
+        const usedVersementIds = [];
+
+        for (const t of linkedTransactions) {
+          // Devis terminé : on conserve les soldes (paiements déjà encaissés)
+          if (!isTerminer) {
+            await refundTransactionOnCompte(tx, t);
+          }
+
+          const versementId = await deleteMatchingPaiementDevisVersement(tx, {
+            clientNom: existing.client?.nom,
+            montant: t.montant,
+            date: t.date,
+            excludeIds: usedVersementIds,
+          });
+          if (versementId) {
+            usedVersementIds.push(versementId);
+          }
+        }
+
+        const chequeIds = linkedTransactions
+          .map(t => t.chequeId)
+          .filter(Boolean);
+
+        if (linkedTransactions.length > 0) {
+          await tx.transactions.deleteMany({
+            where: { reference: existing.numero },
+          });
+        }
+
+        if (chequeIds.length > 0) {
+          await tx.cheques.deleteMany({
+            where: { id: { in: chequeIds } },
+          });
+        }
+
+        return tx.devis.delete({ where: { id } });
+      },
+      { timeout: 60_000 }
+    );
+
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error("Error deleting devis:", error);
+    if (error?.message === "Devis non trouvé") {
+      return NextResponse.json(
+        { error: "Devis non trouvé" },
+        { status: 404 }
+      );
+    }
+    return NextResponse.json(
+      { error: "Erreur lors de la suppression du devis" },
+      { status: 500 }
+    );
+  }
 }
 
 export async function GET(_, { params }) {

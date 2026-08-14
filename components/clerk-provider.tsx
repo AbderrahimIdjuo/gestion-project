@@ -11,6 +11,8 @@ export function ClerkProviderWrapper({
   return (
     <ClerkProvider
       localization={frFR}
+      signInFallbackRedirectUrl="/"
+      signUpFallbackRedirectUrl="/"
       appearance={{
         elements: {
           formButtonPrimary: "bg-blue-600 hover:bg-blue-700",

@@ -6,6 +6,43 @@ const prisma: PrismaClient = require("../../../../../lib/prisma").default;
 
 export const dynamic = "force-dynamic";
 
+class HttpError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "HttpError";
+    this.status = status;
+  }
+}
+
+const reglementResponseInclude = {
+  fournisseur: {
+    select: {
+      id: true,
+      nom: true,
+      email: true,
+      telephone: true,
+      adresse: true,
+      ice: true,
+    },
+  },
+  cheque: {
+    select: {
+      id: true,
+      numero: true,
+      dateReglement: true,
+      datePrelevement: true,
+    },
+  },
+  factureAchats: {
+    select: {
+      id: true,
+      numero: true,
+    },
+  },
+};
+
 export async function POST(
   req: Request,
   { params }: { params: { id: string } }
@@ -44,18 +81,9 @@ export async function POST(
       );
     }
 
-    // Check if règlement exists (avec allocations BL pour mise à jour en cas d'annulation)
     const reglementExistant = await prisma.reglement.findUnique({
       where: { id },
-      include: {
-        fournisseur: {
-          select: {
-            id: true,
-            nom: true,
-          },
-        },
-        blAllocations: { orderBy: { id: "asc" } },
-      },
+      select: { id: true, datePrelevement: true },
     });
 
     if (!reglementExistant) {
@@ -91,8 +119,58 @@ export async function POST(
 
     // Utiliser une transaction pour garantir la cohérence
     const updatedReglement = await prisma.$transaction(async tx => {
-      const ancienStatusPrelevement = reglementExistant.statusPrelevement;
+      // Lock the row so parallel confirms cannot both apply Cas 1
+      await tx.$queryRaw`SELECT id FROM "Reglement" WHERE id = ${id} FOR UPDATE`;
+
+      const reglementLocked = await tx.reglement.findUnique({
+        where: { id },
+        include: {
+          fournisseur: {
+            select: {
+              id: true,
+              nom: true,
+            },
+          },
+          blAllocations: { orderBy: { id: "asc" } },
+        },
+      });
+
+      if (!reglementLocked) {
+        throw new HttpError("Règlement non trouvé", 404);
+      }
+
+      if (!reglementLocked.datePrelevement) {
+        throw new HttpError(
+          "Impossible de changer le statut : le règlement n'a pas de date de prélèvement",
+          400
+        );
+      }
+
+      const ancienStatusPrelevement = reglementLocked.statusPrelevement;
       const nouveauStatusPrelevement = status;
+
+      // Claim the status transition atomically; abort if another request already moved it
+      const claimed = await tx.reglement.updateMany({
+        where: {
+          id,
+          statusPrelevement: ancienStatusPrelevement,
+        },
+        data: updateData,
+      });
+
+      if (claimed.count === 0) {
+        const latest = await tx.reglement.findUnique({
+          where: { id },
+          include: reglementResponseInclude,
+        });
+        if (latest && latest.statusPrelevement === nouveauStatusPrelevement) {
+          return latest;
+        }
+        throw new HttpError(
+          "Le statut de prélèvement a déjà été modifié",
+          409
+        );
+      }
 
       // Gestion de la mise à jour du solde du compte bancaire, de la dette et des transactions selon le changement de statut
       // Cas 1: Passage à "confirme" (déduction du montant du compte + dette + création de transaction)
@@ -102,37 +180,38 @@ export async function POST(
       ) {
         // Déduire le montant du compte bancaire car le prélèvement est confirmé
         await tx.comptesBancaires.updateMany({
-          where: { compte: reglementExistant.compte },
+          where: { compte: reglementLocked.compte },
           data: {
-            solde: { decrement: reglementExistant.montant },
+            solde: { decrement: reglementLocked.montant },
           },
         });
 
         await tx.fournisseurs.update({
-          where: { id: reglementExistant.fournisseurId },
-          data: { dette: { decrement: reglementExistant.montant } },
+          where: { id: reglementLocked.fournisseurId },
+          data: { dette: { decrement: reglementLocked.montant } },
         });
 
         // Créer une transaction pour enregistrer le prélèvement confirmé
         await tx.transactions.create({
           data: {
-            reference: reglementExistant.id,
+            ReglementId: reglementLocked.id,
+            reference: reglementLocked.id,
             type: "depense",
-            montant: reglementExistant.montant,
-            compte: reglementExistant.compte,
-            fournisseurId: reglementExistant.fournisseurId,
+            montant: reglementLocked.montant,
+            compte: reglementLocked.compte,
+            fournisseurId: reglementLocked.fournisseurId,
             lable: "paiement fournisseur",
-            description: "bénéficiaire :" + reglementExistant.fournisseur.nom,
-            methodePaiement: reglementExistant.methodePaiement,
+            description: "bénéficiaire :" + reglementLocked.fournisseur.nom,
+            methodePaiement: reglementLocked.methodePaiement,
             date:
-              reglementExistant.datePrelevement ||
-              reglementExistant.dateReglement ||
+              reglementLocked.datePrelevement ||
+              reglementLocked.dateReglement ||
               new Date(),
-            datePrelevement: reglementExistant.datePrelevement || null,
-            motif: reglementExistant.motif || null,
-            cheque: reglementExistant.chequeId
+            datePrelevement: reglementLocked.datePrelevement || null,
+            motif: reglementLocked.motif || null,
+            cheque: reglementLocked.chequeId
               ? {
-                  connect: { id: reglementExistant.chequeId },
+                  connect: { id: reglementLocked.chequeId },
                 }
               : undefined,
           },
@@ -144,20 +223,20 @@ export async function POST(
         nouveauStatusPrelevement !== "confirme"
       ) {
         await tx.comptesBancaires.updateMany({
-          where: { compte: reglementExistant.compte },
+          where: { compte: reglementLocked.compte },
           data: {
-            solde: { increment: reglementExistant.montant },
+            solde: { increment: reglementLocked.montant },
           },
         });
         await tx.fournisseurs.update({
-          where: { id: reglementExistant.fournisseurId },
-          data: { dette: { increment: reglementExistant.montant } },
+          where: { id: reglementLocked.fournisseurId },
+          data: { dette: { increment: reglementLocked.montant } },
         });
         await tx.transactions.deleteMany({
           where: {
             OR: [
-              { ReglementId: reglementExistant.id },
-              { reference: reglementExistant.id, type: "depense" },
+              { ReglementId: reglementLocked.id },
+              { reference: reglementLocked.id, type: "depense" },
             ],
           },
         });
@@ -168,8 +247,8 @@ export async function POST(
         nouveauStatusPrelevement === "annule" &&
         ancienStatusPrelevement !== "annule"
       ) {
-        if (reglementExistant.blAllocations && reglementExistant.blAllocations.length > 0) {
-          for (const alloc of reglementExistant.blAllocations) {
+        if (reglementLocked.blAllocations && reglementLocked.blAllocations.length > 0) {
+          for (const alloc of reglementLocked.blAllocations) {
             const bl = await tx.bonLivraison.findUnique({
               where: { id: alloc.bonLivraisonId },
             });
@@ -194,14 +273,14 @@ export async function POST(
             }
           }
           await tx.reglementBlAllocation.deleteMany({ where: { reglementId: id } });
-        } else if (reglementExistant.reference) {
+        } else if (reglementLocked.reference) {
           const bonLivraison = await tx.bonLivraison.findUnique({
-            where: { id: reglementExistant.reference },
+            where: { id: reglementLocked.reference },
           });
           if (bonLivraison) {
             const nouveauTotalPaye = Math.max(
               0,
-              (bonLivraison.totalPaye ?? 0) - reglementExistant.montant
+              (bonLivraison.totalPaye ?? 0) - reglementLocked.montant
             );
             let nouveauStatutPaiement = bonLivraison.statutPaiement;
             if (nouveauTotalPaye <= 0) {
@@ -212,7 +291,7 @@ export async function POST(
               nouveauStatutPaiement = "paye";
             }
             await tx.bonLivraison.update({
-              where: { id: reglementExistant.reference },
+              where: { id: reglementLocked.reference },
               data: {
                 totalPaye: nouveauTotalPaye,
                 statutPaiement: nouveauStatutPaiement,
@@ -227,8 +306,8 @@ export async function POST(
         ancienStatusPrelevement === "annule" &&
         nouveauStatusPrelevement !== "annule"
       ) {
-        if (reglementExistant.blAllocations && reglementExistant.blAllocations.length > 0) {
-          for (const alloc of reglementExistant.blAllocations) {
+        if (reglementLocked.blAllocations && reglementLocked.blAllocations.length > 0) {
+          for (const alloc of reglementLocked.blAllocations) {
             const bl = await tx.bonLivraison.findUnique({
               where: { id: alloc.bonLivraisonId },
             });
@@ -245,16 +324,16 @@ export async function POST(
               });
             }
           }
-        } else if (reglementExistant.reference) {
+        } else if (reglementLocked.reference) {
           const bonLivraison = await tx.bonLivraison.findUnique({
-            where: { id: reglementExistant.reference },
+            where: { id: reglementLocked.reference },
           });
           if (bonLivraison) {
-            const nouveauTotalPaye = (bonLivraison.totalPaye ?? 0) + reglementExistant.montant;
+            const nouveauTotalPaye = (bonLivraison.totalPaye ?? 0) + reglementLocked.montant;
             let nouveauStatutPaiement = "enPartie";
             if (nouveauTotalPaye >= bonLivraison.total) nouveauStatutPaiement = "paye";
             await tx.bonLivraison.update({
-              where: { id: reglementExistant.reference },
+              where: { id: reglementLocked.reference },
               data: {
                 totalPaye: nouveauTotalPaye,
                 statutPaiement: nouveauStatutPaiement,
@@ -264,13 +343,13 @@ export async function POST(
         } else {
           const bonLivraisonList = await tx.bonLivraison.findMany({
             where: {
-              fournisseurId: reglementExistant.fournisseurId,
+              fournisseurId: reglementLocked.fournisseurId,
               statutPaiement: { in: ["impaye", "enPartie"] },
               type: "achats",
             },
             orderBy: { date: "asc" },
           });
-          let montantRestant = reglementExistant.montant;
+          let montantRestant = reglementLocked.montant;
           for (const bl of bonLivraisonList) {
             if (montantRestant <= 0) break;
             const resteAPayer = bl.total - (bl.totalPaye ?? 0);
@@ -296,7 +375,7 @@ export async function POST(
             if (montantAlloue > 0) {
               await tx.reglementBlAllocation.create({
                 data: {
-                  reglementId: reglementExistant.id,
+                  reglementId: reglementLocked.id,
                   bonLivraisonId: bl.id,
                   montant: montantAlloue,
                 },
@@ -306,36 +385,9 @@ export async function POST(
         }
       }
 
-      // Update the règlement
-      return await tx.reglement.update({
+      return await tx.reglement.findUniqueOrThrow({
         where: { id },
-        data: updateData,
-        include: {
-          fournisseur: {
-            select: {
-              id: true,
-              nom: true,
-              email: true,
-              telephone: true,
-              adresse: true,
-              ice: true,
-            },
-          },
-          cheque: {
-            select: {
-              id: true,
-              numero: true,
-              dateReglement: true,
-              datePrelevement: true,
-            },
-          },
-          factureAchats: {
-            select: {
-              id: true,
-              numero: true,
-            },
-          },
-        },
+        include: reglementResponseInclude,
       });
     });
 
@@ -350,6 +402,12 @@ export async function POST(
     );
     const authRes = authErrorResponse(error);
     if (authRes) return authRes;
+    if (error instanceof HttpError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status }
+      );
+    }
     return NextResponse.json(
       {
         error: "Erreur lors de la mise à jour du statut de prélèvement",

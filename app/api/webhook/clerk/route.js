@@ -52,7 +52,8 @@ export async function POST(req) {
 
     try {
       // Set default role to "commercant" for new users
-      await clerkClient.users.updateUser(userId, {
+      const client = await clerkClient();
+      await client.users.updateUser(userId, {
         publicMetadata: {
           role: "commercant",
         },

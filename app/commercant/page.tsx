@@ -16,7 +16,7 @@ export default async function CommercantPage() {
 
   // Allow both commercant and admin roles to access this page
   if (userRole !== "commercant" && userRole !== "admin") {
-    redirect("/dashboard");
+    redirect("/");
   }
 
   return (

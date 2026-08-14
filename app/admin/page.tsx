@@ -21,7 +21,7 @@ export default async function AdminPage() {
   const userRole = user?.publicMetadata?.role as string;
 
   if (userRole !== "admin") {
-    redirect("/dashboard");
+    redirect("/");
   }
 
   return (

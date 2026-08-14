@@ -34,6 +34,26 @@ function isAdminMutation(pathname: string, method: string): boolean {
   );
 }
 
+/**
+ * Admin-only pages. Commercant may still use /parametres/categories
+ * and /parametres/charges (sidebar allowlist).
+ */
+function isAdminPage(pathname: string): boolean {
+  const adminPagePrefixes = [
+    "/admin",
+    "/Employes",
+    "/parametres/banques",
+    "/parametres/typeTaches",
+    "/parametres/users-management",
+    "/parametres/infoEntreprise",
+    "/parametres/modesPaiement",
+  ];
+
+  return adminPagePrefixes.some(
+    (p) => pathname === p || pathname.startsWith(p + "/")
+  );
+}
+
 function getRoleFromClaims(authResult: {
   sessionClaims?: Record<string, unknown> | null;
 }): string | null {
@@ -87,6 +107,12 @@ export default clerkMiddleware(async (auth, request) => {
     return NextResponse.next();
   }
 
+  // Canonical app home is `/` (Navbar + Sidebar). `/dashboard` is a leftover
+  // route without the shell — send everyone to `/` before other page checks.
+  if (pathname === "/dashboard" || pathname.startsWith("/dashboard/")) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+
   // --- Page protection ---
   const protectedPrefixes = [
     "/admin",
@@ -99,7 +125,6 @@ export default clerkMiddleware(async (auth, request) => {
     "/parametres",
     "/Employes",
     "/articls",
-    "/dashboard",
     "/reglement",
     "/versements",
     "/facturesAchats",
@@ -120,7 +145,16 @@ export default clerkMiddleware(async (auth, request) => {
       pathname === "/sign-up" ||
       pathname.startsWith("/sign-up/"))
   ) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+
+  // Admin-only pages: when JWT exposes role, block non-admins here.
+  // Layouts still call requireAdminPage() (currentUser) as defense in depth.
+  if (hasUser && isAdminPage(pathname)) {
+    const role = getRoleFromClaims(authResult);
+    if (role !== null && role !== "admin") {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
   }
 
   return NextResponse.next();

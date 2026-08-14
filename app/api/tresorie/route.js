@@ -139,6 +139,11 @@ export async function DELETE(req) {
       where: { id },
       include: {
         cheque: true,
+        reglement: {
+          include: {
+            blAllocations: { orderBy: { id: "asc" } },
+          },
+        },
       },
     });
 
@@ -211,6 +216,124 @@ export async function DELETE(req) {
       { error: "Erreur lors de la suppression de la transaction" },
       { status: 500 }
     );
+  }
+}
+
+function statutPaiementFromTotal(totalPaye, total) {
+  if (totalPaye <= 0) return "impaye";
+  if (totalPaye < total) return "enPartie";
+  return "paye";
+}
+
+async function reverseBonLivraisonPaiement(tx, blId, montant) {
+  const bl = await tx.bonLivraison.findUnique({ where: { id: blId } });
+  if (!bl) return;
+
+  const nouveauTotalPaye = Math.max(0, (bl.totalPaye ?? 0) - montant);
+  await tx.bonLivraison.update({
+    where: { id: blId },
+    data: {
+      totalPaye: nouveauTotalPaye,
+      statutPaiement: statutPaiementFromTotal(nouveauTotalPaye, bl.total),
+    },
+  });
+}
+
+async function reversePaiementFournisseur(tx, transaction) {
+  const { reference, montant, fournisseurId, ReglementId, reglement } =
+    transaction;
+
+  let linkedReglement = reglement ?? null;
+  if (!linkedReglement) {
+    const reglementId = ReglementId || reference;
+    if (reglementId) {
+      linkedReglement = await tx.reglement.findUnique({
+        where: { id: reglementId },
+        include: { blAllocations: { orderBy: { id: "asc" } } },
+      });
+    }
+  }
+
+  if (linkedReglement) {
+    if (linkedReglement.blAllocations?.length > 0) {
+      for (const alloc of linkedReglement.blAllocations) {
+        await reverseBonLivraisonPaiement(
+          tx,
+          alloc.bonLivraisonId,
+          alloc.montant
+        );
+      }
+    } else if (linkedReglement.reference) {
+      await reverseBonLivraisonPaiement(
+        tx,
+        linkedReglement.reference,
+        linkedReglement.montant
+      );
+    }
+
+    if (
+      linkedReglement.statusPrelevement === "confirme" &&
+      linkedReglement.fournisseurId
+    ) {
+      await tx.fournisseurs.update({
+        where: { id: linkedReglement.fournisseurId },
+        data: { dette: { increment: linkedReglement.montant } },
+      });
+    }
+
+    const chequeId = linkedReglement.chequeId;
+    await tx.reglement.delete({ where: { id: linkedReglement.id } });
+    if (chequeId) {
+      await tx.cheques.delete({ where: { id: chequeId } }).catch(() => {});
+    }
+    return;
+  }
+
+  // Ancien format : reference = fournisseurId, sans règlement lié
+  const cibleFournisseurId = fournisseurId || reference;
+  if (!cibleFournisseurId) return;
+
+  const bonLivraisonList = await tx.bonLivraison.findMany({
+    where: {
+      fournisseurId: cibleFournisseurId,
+      statutPaiement: { in: ["paye", "enPartie"] },
+      type: "achats",
+    },
+    orderBy: { date: "desc" },
+  });
+
+  let montantRestant = montant;
+  for (const bl of bonLivraisonList) {
+    if (montantRestant <= 0) break;
+
+    const montantPayeSurCeBL = bl.totalPaye ?? 0;
+    if (montantRestant >= montantPayeSurCeBL) {
+      montantRestant -= montantPayeSurCeBL;
+      await tx.bonLivraison.update({
+        where: { id: bl.id },
+        data: {
+          totalPaye: 0,
+          statutPaiement: "impaye",
+        },
+      });
+    } else {
+      const nouveauTotalPaye = montantPayeSurCeBL - montantRestant;
+      await tx.bonLivraison.update({
+        where: { id: bl.id },
+        data: {
+          totalPaye: nouveauTotalPaye,
+          statutPaiement: statutPaiementFromTotal(nouveauTotalPaye, bl.total),
+        },
+      });
+      montantRestant = 0;
+    }
+  }
+
+  if (fournisseurId) {
+    await tx.fournisseurs.update({
+      where: { id: fournisseurId },
+      data: { dette: { increment: montant } },
+    });
   }
 }
 
@@ -330,61 +453,8 @@ async function handleSpecialLabels(tx, transaction) {
     }
   }
 
-  // Paiement fournisseur - inverser la logique de création
+  // Paiement fournisseur — résoudre via ReglementId / reference (id règlement), pas fournisseurId
   if (lable === "paiement fournisseur") {
-    // Récupérer les BL payés par ce fournisseur, triés par date décroissante (plus récents d'abord)
-    const bonLivraisonList = await tx.bonLivraison.findMany({
-      where: {
-        fournisseurId: reference,
-        statutPaiement: {
-          in: ["paye", "enPartie"],
-        },
-        type: "achats",
-      },
-      orderBy: {
-        date: "desc", // Commencer par les plus récents
-      },
-    });
-
-    let montantRestant = montant; // Montant à "déduire" des BL
-
-    for (const bl of bonLivraisonList) {
-      if (montantRestant <= 0) break; // Plus rien à déduire
-
-      const montantPayeSurCeBL = bl.totalPaye;
-
-      if (montantRestant >= montantPayeSurCeBL) {
-        // Déduire entièrement ce BL
-        montantRestant -= montantPayeSurCeBL;
-
-        await tx.bonLivraison.update({
-          where: { id: bl.id },
-          data: {
-            totalPaye: 0,
-            statutPaiement: "impaye",
-          },
-        });
-      } else {
-        // Déduire partiellement ce BL
-        const nouveauTotalPaye = montantPayeSurCeBL - montantRestant;
-
-        await tx.bonLivraison.update({
-          where: { id: bl.id },
-          data: {
-            totalPaye: nouveauTotalPaye,
-            statutPaiement: nouveauTotalPaye > 0 ? "enPartie" : "impaye",
-          },
-        });
-
-        montantRestant = 0;
-        break;
-      }
-    }
-
-    // Mettre à jour la dette du fournisseur (commenté pour l'instant)
-    // await tx.fournisseurs.update({
-    //   where: { id: reference },
-    //   data: { dette: { increment: montant } },
-    // });
+    await reversePaiementFournisseur(tx, transaction);
   }
 }

@@ -1,4 +1,5 @@
 import { auth, clerkClient, currentUser } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
 import { NextResponse } from "next/server";
 
 /**
@@ -171,6 +172,25 @@ export async function requireAdmin() {
 
   if (userRole !== "admin") {
     throw new AuthHttpError("Access denied. Admin role required.", 403);
+  }
+
+  return { userId, userRole };
+}
+
+/**
+ * Server-side admin check for pages and layouts.
+ * Redirects to sign-in if unauthenticated, or home if not admin.
+ */
+export async function requireAdminPage() {
+  const { userId } = await auth();
+
+  if (!userId) {
+    redirect("/sign-in");
+  }
+
+  const userRole = await getUserRole();
+  if (userRole !== "admin") {
+    redirect("/");
   }
 
   return { userId, userRole };

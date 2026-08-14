@@ -14,7 +14,7 @@ export default async function AdminUsersPage() {
   const userRole = user?.publicMetadata?.role as string;
 
   if (userRole !== "admin") {
-    redirect("/dashboard");
+    redirect("/");
   }
 
   const users = await getAllUsersWithRoles();
