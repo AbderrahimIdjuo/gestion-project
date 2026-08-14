@@ -209,11 +209,7 @@ export async function POST(
               new Date(),
             datePrelevement: reglementLocked.datePrelevement || null,
             motif: reglementLocked.motif || null,
-            cheque: reglementLocked.chequeId
-              ? {
-                  connect: { id: reglementLocked.chequeId },
-                }
-              : undefined,
+            chequeId: reglementLocked.chequeId,
           },
         });
       }

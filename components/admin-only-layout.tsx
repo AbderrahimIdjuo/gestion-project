@@ -1,5 +1,5 @@
 import { requireAdminPage } from "@/lib/auth-utils";
-import type { ReactNode } from "react";
+import type { ReactElement, ReactNode } from "react";
 
 /**
  * Server layout guard for admin-only page segments.
@@ -9,7 +9,7 @@ export default async function AdminOnlyLayout({
   children,
 }: {
   children: ReactNode;
-}) {
+}): Promise<ReactElement> {
   await requireAdminPage();
-  return children;
+  return <>{children}</>;
 }
