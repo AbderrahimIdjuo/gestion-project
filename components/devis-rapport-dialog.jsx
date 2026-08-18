@@ -97,8 +97,8 @@ const totalFourniture = group =>
 
 export default function DevisRapportDialog({
   embedded = false,
-  onBack,
-  onClose,
+  onBack = undefined,
+  onClose = undefined,
 }) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(1);

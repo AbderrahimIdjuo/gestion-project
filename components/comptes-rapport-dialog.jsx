@@ -42,8 +42,8 @@ import { useEffect, useState } from "react";
 
 export default function ComptesRapportContent({
   embedded = false,
-  onBack,
-  onClose,
+  onBack = undefined,
+  onClose = undefined,
 }) {
   const [open, setOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);

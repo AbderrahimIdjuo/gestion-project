@@ -63,8 +63,8 @@ function TransactionsDetails({ transactions }) {
 
 export default function ClientsRapportDialog({
   embedded = false,
-  onBack,
-  onClose,
+  onBack = undefined,
+  onClose = undefined,
 }) {
   const [open, setOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);

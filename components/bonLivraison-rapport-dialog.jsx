@@ -65,8 +65,8 @@ function descriptionReglement(item) {
 }
 export default function BonLivraisonRapportDialog({
   embedded = false,
-  onBack,
-  onClose,
+  onBack = undefined,
+  onClose = undefined,
 }) {
   const [comboKey, setComboKey] = useState(0); // aide a remount de comboboxFournisseur
   const [open, setOpen] = useState(false);
