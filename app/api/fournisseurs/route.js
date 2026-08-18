@@ -109,6 +109,11 @@ export async function GET(req) {
       skip: (page - 1) * fournisseursPerPage,
       take: fournisseursPerPage,
       orderBy: { createdAt: "desc" },
+      include: {
+        _count: {
+          select: { bonLivraisons: true },
+        },
+      },
     }),
     prisma.fournisseurs.count({ where: filters }), // Get total count for pagination
     prisma.fournisseurs.aggregate({

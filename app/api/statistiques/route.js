@@ -38,6 +38,7 @@ export async function GET(req) {
     nbrClients,
     nbrFournisseurs,
     nbrProduits,
+    nbrArticls,
     nbrCommandes,
     nbrBonLivraison,
     nbrDevis,
@@ -54,6 +55,7 @@ export async function GET(req) {
     prisma.clients.count(),
     prisma.fournisseurs.count(),
     prisma.produits.count(),
+    prisma.items.count(),
     prisma.commandeFourniture.count({
       where: {
         date: filters.date,
@@ -148,6 +150,7 @@ export async function GET(req) {
     nbrClients,
     nbrFournisseurs,
     nbrProduits,
+    nbrArticls,
     nbrCommandes,
     nbrBonLivraison,
     nbrDevis,

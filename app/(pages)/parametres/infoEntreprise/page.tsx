@@ -49,7 +49,7 @@ export default function InfoEntreprise() {
                     Informations de la société
                   </h1>
                 </div>
-                <div className="flex justify between gap-6 items-start">
+                <div className="flex justify-between gap-6 items-start">
                   <SittingsSideBar page={"infoEntreprise"} />
                   <div className="flex-col flex gap-3 w-[80%]">
                     <div className="flex justify-end">

@@ -34,13 +34,11 @@ export default function HistoriquePaiement() {
   };
   useEffect(() => {
     const devisDetails = localStorage.getItem("devis");
-    console.log("devisDetails", JSON.parse(devisDetails));
     if (devisDetails) {
       setDevis(JSON.parse(devisDetails));
     }
 
     const transactionsDetails = localStorage.getItem("transactions");
-    console.log("transactionsDetails", JSON.parse(transactionsDetails));
     if (transactionsDetails) {
       setTransactions(JSON.parse(transactionsDetails));
     }

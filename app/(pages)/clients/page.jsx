@@ -24,7 +24,8 @@ import {
 } from "@/components/ui/table";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { Search, Trash2, Upload } from "lucide-react";
+import { Pen, Search, Trash2, Upload } from "lucide-react";
+import { TableRowActions } from "@/components/table-row-actions";
 import { useEffect, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -36,6 +37,7 @@ export default function ClientsPage() {
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [totalPages, setTotalPages] = useState();
   const [isInfosDialogOpen, setIsInfosDialogOpen] = useState(false);
+  const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -135,7 +137,7 @@ export default function ClientsPage() {
                     </div>
                   </div>
                   <div className="flex gap-2 items-center ">
-                    <ImportClients>
+                    {/* <ImportClients>
                       <Button
                         variant="outline"
                         className="border-purple-500 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900 rounded-full"
@@ -143,7 +145,7 @@ export default function ClientsPage() {
                         <Upload className="mr-2 h-4 w-4" />
                         Importer
                       </Button>
-                    </ImportClients>
+                    </ImportClients> */}
                     <ClientFormDialog />
                     <ClientsRapportDialog />
                   </div>
@@ -191,7 +193,6 @@ export default function ClientsPage() {
                             <TableCell className="!py-2">
                               <div className="flex gap-2 justify-end">
                                 <Skeleton className="h-7 w-7 rounded-full" />
-                                <Skeleton className="h-7 w-7 rounded-full" />
                               </div>
                             </TableCell>
                           </TableRow>
@@ -238,22 +239,28 @@ export default function ClientsPage() {
                               {formatCurrency(client.dette)}
                             </TableCell> */}
                             <TableCell className="text-right !py-2">
-                              <div className="flex justify-end gap-2">
-                                <ModifyClientDialog currClient={client} />
-                                <Button
-                                  name="delete btn"
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
-                                  onClick={() => {
-                                    setIsDialogOpen(true);
-                                    setcurrClient(client);
-                                  }}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                  <span className="sr-only">Supprimer</span>
-                                </Button>
-                              </div>
+                              <TableRowActions
+                                items={[
+                                  {
+                                    icon: Pen,
+                                    label: "Modifier",
+                                    color: "purple",
+                                    onClick: () => {
+                                      setcurrClient(client);
+                                      setIsUpdateDialogOpen(true);
+                                    },
+                                  },
+                                  {
+                                    icon: Trash2,
+                                    label: "Supprimer",
+                                    color: "red",
+                                    onClick: () => {
+                                      setIsDialogOpen(true);
+                                      setcurrClient(client);
+                                    },
+                                  },
+                                ]}
+                              />
                             </TableCell>
                           </TableRow>
                         ))
@@ -307,6 +314,12 @@ export default function ClientsPage() {
         }}
         itemType="client"
       ></DeleteConfirmationDialog>
+      <ModifyClientDialog
+        currClient={currClient}
+        open={isUpdateDialogOpen}
+        onOpenChange={setIsUpdateDialogOpen}
+        hideTrigger
+      />
       <ClientInfoDialog
         client={currClient}
         isOpen={isInfosDialogOpen}

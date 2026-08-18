@@ -1,7 +1,7 @@
 "use client";
 
 import ComboBoxFournisseur from "@/components/comboBox-fournisseurs";
-import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
+import PeriodeFilter from "@/components/customUi/periode-filter";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -37,27 +37,37 @@ import {
 } from "@/components/ui/table";
 import Spinner from "@/components/customUi/Spinner";
 import { formatCurrency } from "@/lib/functions";
+import { getDateRangeFromPeriode, getPeriodeLabel } from "@/lib/periode";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import {
-    endOfDay,
-    endOfMonth,
-    endOfQuarter,
-    endOfYear,
-    startOfDay,
-    startOfMonth,
-    startOfQuarter,
-    startOfYear,
-    subQuarters,
-    subYears,
-} from "date-fns";
 import { Calendar, ChevronDown, Filter, LayoutList, FileText, Printer, Tag, User, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 function formatDate(dateString) {
   return dateString?.split("T")[0].split("-").reverse().join("-");
 }
-export default function BonLivraisonRapportDialog() {
+
+function labelMethodePaiement(methode) {
+  if (!methode) return "";
+  if (methode === "versement") return "Versement";
+  if (methode === "cheque") return "Chèque";
+  if (methode === "espece") return "Espèce";
+  if (methode === "traite") return "Traite";
+  return methode;
+}
+
+function descriptionReglement(item) {
+  const parts = [];
+  const methode = labelMethodePaiement(item.methodePaiement);
+  if (methode) parts.push(methode);
+  if (item.compte) parts.push(item.compte);
+  return parts.join(" · ");
+}
+export default function BonLivraisonRapportDialog({
+  embedded = false,
+  onBack,
+  onClose,
+}) {
   const [comboKey, setComboKey] = useState(0); // aide a remount de comboboxFournisseur
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState();
@@ -71,68 +81,8 @@ export default function BonLivraisonRapportDialog() {
     statutPaiement: ["impaye", "enPartie"],
     modeAffichage: "parBL", // "parBL" | "parMontant"
   });
-  function getDateRangeFromPeriode(periode) {
-    const now = new Date();
-
-    switch (periode) {
-      case "aujourd'hui":
-        return {
-          from: startOfDay(now),
-          to: endOfDay(now),
-        };
-      case "ce-mois":
-        return {
-          from: startOfMonth(now),
-          to: endOfMonth(now),
-        };
-      case "mois-dernier":
-        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        return {
-          from: startOfMonth(lastMonth),
-          to: endOfMonth(lastMonth),
-        };
-      case "trimestre-actuel":
-        return {
-          from: startOfQuarter(now),
-          to: endOfQuarter(now),
-        };
-      case "trimestre-precedent":
-        const prevQuarter = subQuarters(now, 1);
-        return {
-          from: startOfQuarter(prevQuarter),
-          to: endOfQuarter(prevQuarter),
-        };
-      case "cette-annee":
-        return {
-          from: startOfYear(now),
-          to: endOfYear(now),
-        };
-      case "annee-derniere":
-        const lastYear = subYears(now, 1);
-        return {
-          from: startOfYear(lastYear),
-          to: endOfYear(lastYear),
-        };
-      case "personnalisee":
-        return {
-          from: startDate ? startOfDay(new Date(startDate)) : null,
-          to: endDate ? endOfDay(new Date(endDate)) : null,
-        };
-      default:
-        return {
-          from: null,
-          to: null,
-        };
-    }
-  }
   const handleSubmit = e => {
     e.preventDefault();
-    console.log("Rapport soumis:", { ...formData, date });
-    // Ici vous pouvez ajouter la logique pour sauvegarder le rapport
-    setOpen(false);
-    // Reset form
-    setFormData({ titre: "", type: "", description: "", priorite: "" });
-    setDate(undefined);
   };
 
   const handleInputChange = (field, value) => {
@@ -145,16 +95,6 @@ export default function BonLivraisonRapportDialog() {
     { Label: "Retour", Value: "retour", Color: "bg-red-500" },
   ];
 
-  const periodeLabels = {
-    "aujourd'hui": "Aujourd'hui",
-    "ce-mois": "Ce mois",
-    "mois-dernier": "Le mois dernier",
-    "trimestre-actuel": "Trimestre actuel",
-    "trimestre-precedent": "Trimestre précédent",
-    "cette-annee": "Cette année",
-    "annee-derniere": "L'année dernière",
-    personnalisee: "Période personnalisée",
-  };
   const modeAffichageLabels = { parBL: "Par BL", parMontant: "Par montant" };
   const statutLabels = { paye: "Payé", impaye: "Impayé", enPartie: "En partie" };
 
@@ -187,7 +127,11 @@ export default function BonLivraisonRapportDialog() {
     }));
   };
 
-  const { from, to } = getDateRangeFromPeriode(formData.periode);
+  const { from, to } = getDateRangeFromPeriode(
+    formData.periode,
+    startDate,
+    endDate
+  );
 
   // Un intervalle valide : période prédéfinie (from/to toujours définis) ou personnalisée avec les deux dates
   const hasValidDateRange = Boolean(
@@ -380,10 +324,19 @@ export default function BonLivraisonRapportDialog() {
   }
 
   useEffect(() => {
-    if (!open) {
+    if (!embedded && !open) {
       reset();
     }
-  }, [open]);
+  }, [open, embedded]);
+
+  const handleCancel = () => {
+    if (embedded && onClose) {
+      onClose();
+    } else {
+      setOpen(false);
+      reset();
+    }
+  };
 
   // Fonction pour fusionner et trier les BL et règlements par date
   const mergeAndSortTransactions = () => {
@@ -521,6 +474,8 @@ export default function BonLivraisonRapportDialog() {
         motif: reg.motif ?? null,
         datePrelevement: reg.datePrelevement ?? null,
         numeroCheque: numeroCheque,
+        methodePaiement: reg.methodePaiement ?? null,
+        compte: reg.compte ?? null,
         montant: -(reg.montant || 0),
         itemType: "reglement",
         fournisseurId: reg.fournisseurId ?? reg.fournisseur?.id,
@@ -662,16 +617,20 @@ export default function BonLivraisonRapportDialog() {
                     <TableCell className="py-2 font-medium">
                       {item.itemType === "reglement" ? (
                         <span className="flex flex-col gap-0.5 text-sm">
+                          <span>
+                            {descriptionReglement(item) || item.motif || item.reference}
+                          </span>
                           {item.datePrelevement && (
                             <span className="text-muted-foreground">
                               Prélèvement : {formatDate(item.datePrelevement)}
                             </span>
                           )}
-                          {item.numeroCheque ? (
+                          {item.numeroCheque && (
                             <span>N° chèque : {item.numeroCheque}</span>
-                          ) : (
-                            item.motif ? item.motif : item.reference
                           )}
+                          {item.motif && descriptionReglement(item) ? (
+                            <span className="text-muted-foreground">{item.motif}</span>
+                          ) : null}
                         </span>
                       ) : (
                         item.reference
@@ -871,15 +830,8 @@ export default function BonLivraisonRapportDialog() {
     );
   }
 
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 text-white font-semibold transition-all duration-300 transform hover:scale-105 rounded-full">
-          <FileText className="mr-2 h-4 w-4" />
-          Rapport
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[80vw] max-h-[80vh] overflow-y-auto">
+  const content = (
+    <>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl font-bold bg-gradient-to-r from-fuchsia-600 to-violet-600 bg-clip-text text-transparent">
             <FileText className="h-5 w-5 text-purple-600" />
@@ -1053,67 +1005,32 @@ export default function BonLivraisonRapportDialog() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="periode" className="text-sm font-medium">
-                  Période
-                </Label>
-                <Select
-                  value={formData.periode}
-                  onValueChange={value => handleInputChange("periode", value)}
-                >
-                  <SelectTrigger className="focus:ring-2 focus:ring-purple-500">
-                    <SelectValue placeholder="Sélectionnez la période" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="aujourd'hui">
-                      Aujourd&apos;hui
-                    </SelectItem>
-                    <SelectItem value="ce-mois">Ce mois</SelectItem>
-                    <SelectItem value="mois-dernier">
-                      Le mois dernier
-                    </SelectItem>
-                    <SelectItem value="trimestre-actuel">
-                      Trimestre actuel
-                    </SelectItem>
-                    <SelectItem value="trimestre-precedent">
-                      Trimestre précédent
-                    </SelectItem>
-                    <SelectItem value="cette-annee">Cette année</SelectItem>
-                    <SelectItem value="annee-derniere">
-                      L&apos;année dernière
-                    </SelectItem>
-                    <SelectItem value="personnalisee">
-                      Période personnalisée
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {formData.periode === "personnalisee" && (
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="statut"
-                    className="col-span-1 text-left text-black"
-                  >
-                    Date :
-                  </Label>
-
-                  <CustomDateRangePicker
-                    startDate={startDate}
-                    setStartDate={setStartDate}
-                    endDate={endDate}
-                    setEndDate={setEndDate}
-                  />
-                </div>
-              )}
+              <PeriodeFilter
+                periode={formData.periode}
+                onPeriodeChange={value => handleInputChange("periode", value)}
+                startDate={startDate}
+                setStartDate={setStartDate}
+                endDate={endDate}
+                setEndDate={setEndDate}
+                includeToutes={false}
+                id="periode-bl-rapport"
+              />
             </div>
             <div className="flex justify-end gap-3 mt-6 print:hidden">
+              {embedded && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onBack}
+                  className="rounded-full"
+                >
+                  Retour
+                </Button>
+              )}
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => {
-                  setOpen(false);
-                  reset();
-                }}
+                onClick={handleCancel}
                 className="rounded-full"
               >
                 Annuler
@@ -1163,7 +1080,7 @@ export default function BonLivraisonRapportDialog() {
                       <p className="text-sm font-medium text-gray-800 truncate">
                         {formData.periode === "personnalisee" && startDate && endDate
                           ? `${formatDate(startDate?.toISOString?.() ?? startDate)} — ${formatDate(endDate?.toISOString?.() ?? endDate)}`
-                          : periodeLabels[formData.periode] ?? formData.periode}
+                          : getPeriodeLabel(formData.periode)}
                       </p>
                     </div>
                   </div>
@@ -1269,6 +1186,23 @@ export default function BonLivraisonRapportDialog() {
               </div>
             </div>
           )}
+    </>
+  );
+
+  if (embedded) {
+    return content;
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 text-white font-semibold transition-all duration-300 transform hover:scale-105 rounded-full">
+          <FileText className="mr-2 h-4 w-4" />
+          Rapport
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[80vw] max-h-[80vh] overflow-y-auto">
+        {content}
       </DialogContent>
     </Dialog>
   );

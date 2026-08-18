@@ -2,8 +2,10 @@
 
 import CreateFactureFromMultipleVersementsDialog from "@/components/create-facture-from-multiple-versements-dialog";
 import CreateFactureFromVersementDialog from "@/components/create-facture-from-versement-dialog";
-import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
 import CustomPagination from "@/components/customUi/customPagination";
+import PeriodeFilter, {
+  usePeriodeFilter,
+} from "@/components/customUi/periode-filter";
 import { PriceRangeSlider } from "@/components/customUi/customSlider";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import { LoadingDots } from "@/components/loading-dots";
@@ -139,10 +141,9 @@ function VersementsContent() {
   const [filters, setFilters] = useState({
     compteSource: [] as string[],
     statut: "all" as "all" | "complet" | "en_partie" | "sans_facture",
-    dateDebut: undefined as Date | undefined,
-    dateFin: undefined as Date | undefined,
     montant: [0, 0] as [number, number],
   });
+  const versementPeriode = usePeriodeFilter("all");
   const [maxMontant, setMaxMontant] = useState<number>(0);
   const queryClient = useQueryClient();
 
@@ -345,15 +346,15 @@ function VersementsContent() {
       }
 
       // Filtre par date
-      if (filters.dateDebut || filters.dateFin) {
+      if (versementPeriode.from || versementPeriode.to) {
         const versementDate = new Date(versement.date);
-        if (filters.dateDebut) {
-          const startDate = new Date(filters.dateDebut);
+        if (versementPeriode.from) {
+          const startDate = new Date(versementPeriode.from);
           startDate.setHours(0, 0, 0, 0);
           if (versementDate < startDate) return false;
         }
-        if (filters.dateFin) {
-          const endDate = new Date(filters.dateFin);
+        if (versementPeriode.to) {
+          const endDate = new Date(versementPeriode.to);
           endDate.setHours(23, 59, 59, 999);
           if (versementDate > endDate) return false;
         }
@@ -638,21 +639,16 @@ function VersementsContent() {
                             </Select>
                           </div>
 
-                          {/* Filtre par date */}
-                          <div className="grid gap-2">
-                            <Label
-                              htmlFor="date"
-                              className="text-left text-black"
-                            >
-                              Date de versement :
-                            </Label>
-                            <CustomDateRangePicker
-                              startDate={filters.dateDebut}
-                              setStartDate={(date: Date | undefined) => setFilters({ ...filters, dateDebut: date })}
-                              endDate={filters.dateFin}
-                              setEndDate={(date: Date | undefined) => setFilters({ ...filters, dateFin: date })}
-                            />
-                          </div>
+                          <PeriodeFilter
+                            periode={versementPeriode.periode}
+                            onPeriodeChange={versementPeriode.setPeriode}
+                            startDate={versementPeriode.startDate}
+                            setStartDate={versementPeriode.setStartDate}
+                            endDate={versementPeriode.endDate}
+                            setEndDate={versementPeriode.setEndDate}
+                            label="Date de versement :"
+                            id="periode-versement"
+                          />
 
                           {/* Filtre par montant */}
                           <div className="grid grid-cols-4 grid-rows-2 items-start">

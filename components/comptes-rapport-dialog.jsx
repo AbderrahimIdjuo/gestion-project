@@ -1,6 +1,8 @@
 "use client";
 import CompteBancairesSelectMenu from "@/components/compteBancairesSelectMenu";
-import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
+import PeriodeFilter from "@/components/customUi/periode-filter";
+import TransactionsChronologicalTable from "@/components/transactions-chronological-table";
+import TransactionsTypeTotalsHeader from "@/components/transactions-type-totals-header";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -10,14 +12,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -28,21 +22,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatCurrency, formatDate } from "@/lib/functions";
+import {
+  calculateCompteRapportTotals,
+  calculateTransactionsTypeTotals,
+  formatCurrency,
+  formatDate,
+  getCompteRapportDesignation,
+  isCompteCaisse,
+  isCompteRapportDepenseCell,
+  isCompteRapportRecette,
+  periodNetChange,
+  sortCompteRapportTransactions,
+} from "@/lib/functions";
+import { getDateRangeFromPeriode } from "@/lib/periode";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import {
-  endOfDay,
-  endOfMonth,
-  endOfQuarter,
-  endOfYear,
-  startOfDay,
-  startOfMonth,
-  startOfQuarter,
-  startOfYear,
-  subQuarters,
-  subYears,
-} from "date-fns";
 import { FileText } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -66,65 +60,7 @@ export default function ComptesRapportContent({
     setCurrentStep(1);
   };
 
-  function getDateRangeFromPeriode(periode) {
-    const now = new Date();
-
-    switch (periode) {
-      case "aujourd'hui":
-        return {
-          from: startOfDay(now),
-          to: endOfDay(now),
-        };
-      case "ce-mois":
-        return {
-          from: startOfMonth(now),
-          to: endOfMonth(now),
-        };
-      case "mois-dernier": {
-        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        return {
-          from: startOfMonth(lastMonth),
-          to: endOfMonth(lastMonth),
-        };
-      }
-      case "trimestre-actuel":
-        return {
-          from: startOfQuarter(now),
-          to: endOfQuarter(now),
-        };
-      case "trimestre-precedent": {
-        const prevQuarter = subQuarters(now, 1);
-        return {
-          from: startOfQuarter(prevQuarter),
-          to: endOfQuarter(prevQuarter),
-        };
-      }
-      case "cette-annee":
-        return {
-          from: startOfYear(now),
-          to: endOfYear(now),
-        };
-      case "annee-derniere": {
-        const lastYear = subYears(now, 1);
-        return {
-          from: startOfYear(lastYear),
-          to: endOfYear(lastYear),
-        };
-      }
-      case "personnalisee":
-        return {
-          from: startDate ? new Date(startDate) : null,
-          to: endDate ? new Date(endDate) : null,
-        };
-      default:
-        return {
-          from: null,
-          to: null,
-        };
-    }
-  }
-
-  const { from, to } = getDateRangeFromPeriode(periode);
+  const { from, to } = getDateRangeFromPeriode(periode, startDate, endDate);
   const { data: Data, isLoading } = useQuery({
     queryKey: ["transactions-rapport", compte, periode, startDate, endDate],
     queryFn: async () => {
@@ -141,34 +77,7 @@ export default function ComptesRapportContent({
     enabled: currentStep === 2,
   });
 
-  const solde = () => {
-    if (compte === "caisse") {
-      return Data?.transactions.reduce((acc, t) => {
-        if (t.type === "recette") {
-          return acc + t.montant;
-        } else if (t.type === "depense") {
-          return acc - t.montant;
-        } else if (t.type === "vider" || t.type === "transfert") {
-          return acc - t.montant;
-        }
-        return acc;
-      }, 0);
-    } else if (
-      compte === "compte personnel" ||
-      compte === "compte professionel"
-    ) {
-      return Data?.transactions.reduce((acc, t) => {
-        if (t.type === "recette") {
-          return acc + t.montant;
-        } else if (t.type === "depense") {
-          return acc - t.montant;
-        } else if (t.type === "vider" || t.type === "transfert") {
-          return acc + t.montant;
-        }
-        return acc;
-      }, 0);
-    }
-  };
+  const solde = () => periodNetChange(Data?.transactions, compte);
 
   const soldeColor = soldeValue => {
     if (soldeValue > 0) {
@@ -192,53 +101,14 @@ export default function ComptesRapportContent({
     return soldeActuel() - solde();
   };
 
-  const calculateTotals = transactions => {
-    if (!transactions || transactions.length === 0)
-      return { totalRecettes: 0, totalDepenses: 0, solde: 0 };
+  const isAllComptes = compte === "all";
+  const totals = calculateCompteRapportTotals(Data?.transactions, compte);
+  const typeTotals = calculateTransactionsTypeTotals(Data?.transactions);
 
-    const totals = transactions.reduce(
-      (acc, transaction) => {
-        if (transaction.type === "recette") {
-          acc.totalRecettes += transaction.montant;
-        } else if (
-          transaction.type === "depense" ||
-          transaction.type === "vider" ||
-          transaction.type === "transfert"
-        ) {
-          acc.totalDepenses += transaction.montant;
-        }
-        return acc;
-      },
-      { totalRecettes: 0, totalDepenses: 0 }
-    );
-
-    totals.solde = totals.totalRecettes - totals.totalDepenses;
-    return totals;
-  };
-
-  const sortTransactionsWithBalance = transactions => {
-    if (!transactions || transactions.length === 0) return [];
-
-    const sorted = [...transactions].sort((a, b) => {
-      const dateA = new Date(a.date || a.createdAt);
-      const dateB = new Date(b.date || b.createdAt);
-      return dateA - dateB;
-    });
-
-    let runningBalance = soldeInitial() || 0;
-    return sorted.map(transaction => {
-      if (transaction.type === "recette") {
-        runningBalance += transaction.montant;
-      } else if (
-        transaction.type === "depense" ||
-        transaction.type === "vider" ||
-        transaction.type === "transfert"
-      ) {
-        runningBalance -= transaction.montant;
-      }
-      return { ...transaction, runningBalance };
-    });
-  };
+  const canCreate =
+    !!compte &&
+    !!periode &&
+    (periode !== "personnalisee" || (!!startDate && !!endDate));
 
   const handleCancel = () => {
     if (embedded && onClose) {
@@ -266,69 +136,23 @@ export default function ComptesRapportContent({
       </DialogHeader>
       {currentStep === 1 && (
         <div className="space-y-6">
-          <div
-            className={`grid grid-cols-2  gap-4 ${
-              periode === "personnalisee" && "grid-cols-3"
-            }`}
-          >
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <CompteBancairesSelectMenu
                 compte={compte}
                 setCompte={setCompte}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="periode" className="text-sm font-medium">
-                Période
-              </Label>
-              <Select
-                value={periode}
-                onValueChange={value => setPeriode(value)}
-              >
-                <SelectTrigger className="focus:ring-2 focus:ring-purple-500">
-                  <SelectValue placeholder="Sélectionnez la période" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="aujourd'hui">
-                    Aujourd&apos;hui
-                  </SelectItem>
-                  <SelectItem value="ce-mois">Ce mois</SelectItem>
-                  <SelectItem value="mois-dernier">
-                    Le mois dernier
-                  </SelectItem>
-                  <SelectItem value="trimestre-actuel">
-                    Trimestre actuel
-                  </SelectItem>
-                  <SelectItem value="trimestre-precedent">
-                    Trimestre précédent
-                  </SelectItem>
-                  <SelectItem value="cette-annee">Cette année</SelectItem>
-                  <SelectItem value="annee-derniere">
-                    L&apos;année dernière
-                  </SelectItem>
-                  <SelectItem value="personnalisee">
-                    Période personnalisée
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {periode === "personnalisee" && (
-              <div className="space-y-2">
-                <Label
-                  htmlFor="statut"
-                  className="col-span-1 text-left text-black"
-                >
-                  Date :
-                </Label>
-
-                <CustomDateRangePicker
-                  startDate={startDate}
-                  setStartDate={setStartDate}
-                  endDate={endDate}
-                  setEndDate={setEndDate}
-                />
-              </div>
-            )}
+            <PeriodeFilter
+              periode={periode}
+              onPeriodeChange={setPeriode}
+              startDate={startDate}
+              setStartDate={setStartDate}
+              endDate={endDate}
+              setEndDate={setEndDate}
+              includeToutes={false}
+              id="periode-comptes-rapport"
+            />
           </div>
 
           <div className="flex justify-end gap-3 mt-6 print:hidden">
@@ -353,6 +177,7 @@ export default function ComptesRapportContent({
             <Button
               className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full"
               variant="outline"
+              disabled={!canCreate}
               onClick={() => {
                 setCurrentStep(2);
               }}
@@ -369,7 +194,9 @@ export default function ComptesRapportContent({
             <div className="flex flex-row gap-2 items-center">
               <h3 className="font-semibold text-gray-900">
                 Compte :{" "}
-                <span className="text-sm text-gray-600">{compte}</span>
+                <span className="text-sm text-gray-600">
+                  {isAllComptes ? "Tous les comptes" : compte}
+                </span>
               </h3>
             </div>
             <div className="flex flex-row gap-2 items-center">
@@ -379,26 +206,52 @@ export default function ComptesRapportContent({
               </h3>
             </div>
           </div>
+          {isAllComptes ? (
+            <>
+              <TransactionsTypeTotalsHeader totals={typeTotals} />
+              <TransactionsChronologicalTable
+                transactions={Data?.transactions}
+                isLoading={isLoading}
+                totals={typeTotals}
+              />
+            </>
+          ) : (
+            <>
           <div className="bg-gray-50 p-4 rounded-lg mb-6 print-block">
-            <div className="grid grid-cols-3 gap-4 text-center">
+            <div className="grid grid-cols-4 gap-4 text-center">
               <div>
                 <h3 className="text-sm font-semibold text-gray-600 mb-1">
                   Total Des Recettes
                 </h3>
                 <p className="text-lg font-bold text-green-600">
-                  {formatCurrency(
-                    calculateTotals(Data?.transactions).totalRecettes
-                  )}
+                  {formatCurrency(totals.totalRecettes)}
                 </p>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-600 mb-1">
+                  Total Des Transferts
+                </h3>
+                {isCompteCaisse(compte) ? (
+                  <p className="text-lg font-bold text-blue-600">
+                    {formatCurrency(totals.totalTransferts)}
+                  </p>
+                ) : (
+                  <div className="space-y-0.5">
+                    <p className="text-sm font-bold text-green-600">
+                      Entrant : {formatCurrency(totals.totalTransfertsEntrants)}
+                    </p>
+                    <p className="text-sm font-bold text-red-600">
+                      Sortant : {formatCurrency(totals.totalTransfertsSortants)}
+                    </p>
+                  </div>
+                )}
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-gray-600 mb-1">
                   Total Des Dépenses
                 </h3>
                 <p className="text-lg font-bold text-red-600">
-                  {formatCurrency(
-                    calculateTotals(Data?.transactions).totalDepenses
-                  )}
+                  {formatCurrency(totals.totalDepenses)}
                 </p>
               </div>
               <div>
@@ -422,10 +275,10 @@ export default function ComptesRapportContent({
                     Désignation
                   </TableHead>
                   <TableHead className="text-right border-r border-b">
-                    MNT Recettes
+                    MNT Entrant
                   </TableHead>
                   <TableHead className="text-right border-r border-b">
-                    MNT Dépenses
+                    Montant Sortant
                   </TableHead>
                   <TableHead className="text-right border-b">Solde</TableHead>
                 </TableRow>
@@ -471,31 +324,26 @@ export default function ComptesRapportContent({
                         {formatCurrency(soldeInitial() || 0)}
                       </TableCell>
                     </TableRow>
-                    {sortTransactionsWithBalance(Data.transactions).map(
-                      transaction => (
+                    {sortCompteRapportTransactions(
+                      Data.transactions,
+                      soldeInitial() || 0,
+                      compte
+                    ).map(transaction => (
                         <TableRow key={transaction.id} className="border-b">
                           <TableCell className="px-1 py-2 border-r">
                             {formatDate(transaction.date) ||
                               formatDate(transaction.createdAt)}
                           </TableCell>
                           <TableCell className="px-1 py-2 border-r">
-                            {transaction.type === "vider"
-                              ? "Vider la caisse"
-                              : transaction.type === "transfert"
-                                ? "Versement vers le compte pro"
-                                : transaction.description === ""
-                                  ? transaction.lable
-                                  : transaction.description}
+                            {getCompteRapportDesignation(transaction, compte)}
                           </TableCell>
                           <TableCell className="px-1 py-2 text-right pr-4 border-r">
-                            {transaction.type === "recette"
+                            {isCompteRapportRecette(transaction, compte)
                               ? formatCurrency(transaction.montant)
                               : ""}
                           </TableCell>
                           <TableCell className="px-1 py-2 text-right pr-4 border-r">
-                            {transaction.type === "depense" ||
-                            transaction.type === "vider" ||
-                            transaction.type === "transfert"
+                            {isCompteRapportDepenseCell(transaction, compte)
                               ? formatCurrency(transaction.montant)
                               : ""}
                           </TableCell>
@@ -507,8 +355,7 @@ export default function ComptesRapportContent({
                             {formatCurrency(transaction.runningBalance)}
                           </TableCell>
                         </TableRow>
-                      )
-                    )}
+                      ))}
                   </>
                 ) : (
                   <TableRow>
@@ -525,20 +372,18 @@ export default function ComptesRapportContent({
                   </TableCell>
                   <TableCell className="p-2 border-r"></TableCell>
                   <TableCell className="text-right text-lg font-semibold p-2 text-green-600 border-r">
-                    {formatCurrency(
-                      calculateTotals(Data?.transactions).totalRecettes
-                    )}
+                    {formatCurrency(totals.totalEntrant)}
                   </TableCell>
                   <TableCell className="text-right text-lg font-semibold p-2 text-red-600 border-r">
-                    {formatCurrency(
-                      calculateTotals(Data?.transactions).totalDepenses
-                    )}
+                    {formatCurrency(totals.totalSortant)}
                   </TableCell>
                   <TableCell className="p-2"></TableCell>
                 </TableRow>
               </TableFooter>
             </Table>
           </div>
+            </>
+          )}
           <div className="flex justify-end gap-3 mt-6 print:hidden">
             <Button
               type="button"
@@ -554,16 +399,23 @@ export default function ComptesRapportContent({
               className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full"
               variant="outline"
               onClick={() => {
-                const data = {
-                  transactions: Data?.transactions,
-                  solde: solde(),
-                  compte,
-                  from,
-                  to,
-                  totalTransactions: solde(),
-                  soldeActuel: soldeActuel(),
-                  soldeInitial: soldeInitial(),
-                };
+                const data = isAllComptes
+                  ? {
+                      transactions: Data?.transactions,
+                      compte,
+                      from,
+                      to,
+                    }
+                  : {
+                      transactions: Data?.transactions,
+                      solde: solde(),
+                      compte,
+                      from,
+                      to,
+                      totalTransactions: solde(),
+                      soldeActuel: soldeActuel(),
+                      soldeInitial: soldeInitial(),
+                    };
                 localStorage.setItem(
                   "transaction-rapport",
                   JSON.stringify(data)

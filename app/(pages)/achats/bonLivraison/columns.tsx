@@ -108,6 +108,13 @@ export function useBonLivraisonColumns({
       accessorKey: "statutPaiement",
       header: "Statut Paiement",
       cell: ({ row }) => {
+        const bonLivraison = row.original;
+        if (
+          bonLivraison.type === "retour" ||
+          bonLivraison.fournisseur === "STOCK(sortie)"
+        ) {
+          return null;
+        }
         const statutPaiement = row.getValue("statutPaiement") as string | null;
         let colorClass = "";
         let label = "";
@@ -224,7 +231,7 @@ export function useBonLivraisonColumns({
                   <Pen className="h-4 w-4 text-purple-600" />
                   <span>Modifier</span>
                 </DropdownMenuItem>
-                {isAdmin && (
+                {isAdmin && bonLivraison.statutPaiement === "impaye" && (
                   <DropdownMenuItem
                     onClick={() => {
                       setCurrentBL(bonLivraison);
@@ -251,7 +258,8 @@ export function useBonLivraisonColumns({
                     Aperçu
                   </span>
                 </DropdownMenuItem>
-                {bonLivraison.statutPaiement !== "paye" &&
+                {bonLivraison.type !== "retour" &&
+                  bonLivraison.statutPaiement !== "paye" &&
                   bonLivraison.fournisseur !== "STOCK(sortie)" && (
                   <DropdownMenuItem
                     onClick={() => {
@@ -270,11 +278,11 @@ export function useBonLivraisonColumns({
                 )}
                 <DropdownMenuItem
                   onClick={() => {
-                    window.open(`/achats/bonLivraison/imprimer`, "_blank");
                     localStorage.setItem(
                       "bonLivraison",
                       JSON.stringify(bonLivraison)
                     );
+                    window.open(`/achats/bonLivraison/imprimer`, "_blank");
                   }}
                   className="flex items-center gap-2 cursor-pointer group hover:!bg-fuchsia-100"
                 >

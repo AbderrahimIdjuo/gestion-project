@@ -235,9 +235,6 @@ export async function DELETE(request, { params }) {
   }
 
   const id = params.id;
-  const url = new URL(request.url);
-  const fournisseurId = url.searchParams.get("fournisseurId");
-  const type = url.searchParams.get("type");
 
   try {
     const result = await prisma.$transaction(
@@ -260,11 +257,18 @@ export async function DELETE(request, { params }) {
           throw new Error("Bon de livraison non trouvé");
         }
 
+        // Source of truth: persisted DB statutPaiement only (ignore query/body)
+        if (existing.statutPaiement !== "impaye") {
+          throw new Error(
+            "Seuls les bons de livraison impayés peuvent être supprimés"
+          );
+        }
+
         // Inverser l'effet stock avant suppression (cascade efface les groupes)
         await reverseStockEffectsOnDelete(tx, existing);
 
-        const resolvedFournisseurId = fournisseurId || existing.fournisseurId;
-        const resolvedType = type || existing.type;
+        const resolvedFournisseurId = existing.fournisseurId;
+        const resolvedType = existing.type;
         const totalNum = parseFloat(existing.total) || 0;
 
         // 1) Transactions créées à la création du BL (reference = BL.id)
@@ -330,6 +334,18 @@ export async function DELETE(request, { params }) {
       return NextResponse.json(
         { error: "Bon de livraison non trouvé" },
         { status: 404 }
+      );
+    }
+    if (
+      error?.message ===
+      "Seuls les bons de livraison impayés peuvent être supprimés"
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Seuls les bons de livraison impayés peuvent être supprimés",
+        },
+        { status: 409 }
       );
     }
     return NextResponse.json(

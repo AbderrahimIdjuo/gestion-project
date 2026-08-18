@@ -17,6 +17,23 @@ import "@/styles/print-rapport.css";
 import "./page.css";
 
 // Même style que le dialogue rapport : couleurs par statut
+function labelMethodePaiement(methode) {
+  if (!methode) return "";
+  if (methode === "versement") return "Versement";
+  if (methode === "cheque") return "Chèque";
+  if (methode === "espece") return "Espèce";
+  if (methode === "traite") return "Traite";
+  return methode;
+}
+
+function descriptionReglement(item) {
+  const parts = [];
+  const methode = labelMethodePaiement(item.methodePaiement);
+  if (methode) parts.push(methode);
+  if (item.compte) parts.push(item.compte);
+  return parts.join(" · ");
+}
+
 function getStatutStyle(statut) {
   if (statut === "paye")
     return { label: "Payé", colorClass: "bg-green-100 text-green-700" };
@@ -197,19 +214,32 @@ export default function ImprimerRapport() {
                 <TableCell className="py-2 border-r">
                   {item.date ? formatDateString(item.date) : "—"}
                 </TableCell>
-                <TableCell className="py-2 font-medium col-description border-r" title={item.itemType === "reglement" && (item.numeroCheque || item.motif) ? (item.numeroCheque || item.motif) : item.reference}>
+                <TableCell
+                  className="py-2 font-medium col-description border-r"
+                  title={
+                    item.itemType === "reglement"
+                      ? [descriptionReglement(item), item.numeroCheque, item.motif]
+                          .filter(Boolean)
+                          .join(" — ") || item.reference
+                      : item.reference
+                  }
+                >
                   {item.itemType === "reglement" ? (
                     <span className="flex flex-col gap-0.5 text-sm">
+                      <span>
+                        {descriptionReglement(item) || item.motif || item.reference}
+                      </span>
                       {item.datePrelevement && (
                         <span className="text-muted-foreground">
                           Prélèvement : {formatDateString(item.datePrelevement)}
                         </span>
                       )}
-                      {item.numeroCheque ? (
+                      {item.numeroCheque && (
                         <span>N° chèque : {item.numeroCheque}</span>
-                      ) : (
-                        item.motif ? item.motif : item.reference
                       )}
+                      {item.motif && descriptionReglement(item) ? (
+                        <span className="text-muted-foreground">{item.motif}</span>
+                      ) : null}
                     </span>
                   ) : (
                     item.reference

@@ -59,11 +59,12 @@ export default function PreviewBonLivraisonDialog({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto print:shadow-none print:max-h-none print:overflow-visible">
-          <DialogHeader>
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden print:shadow-none print:max-h-none print:overflow-visible">
+          <DialogHeader className="shrink-0">
             <DialogTitle></DialogTitle>
           </DialogHeader>
-          <div className="container mx-auto p-8 max-w-4xl bg-white min-h-screen print:p-0 print:max-w-none mb-10">
+          <div className="flex-1 min-h-0 overflow-y-auto print:overflow-visible">
+          <div className="container mx-auto px-4 py-2 max-w-4xl bg-white print:p-0 print:max-w-none">
             {/* Document Content */}
             <div id="print-area" className="space-y-6 print:mt-10">
               {/* Header */}
@@ -223,7 +224,8 @@ export default function PreviewBonLivraisonDialog({
               </div>
             </div>
           </div>
-          <div className="flex justify-end gap-3 mt-6 print:hidden">
+          </div>
+          <div className="flex justify-end gap-3 pt-4 shrink-0 print:hidden">
             <Button
               className="rounded-full"
               variant="outline"
@@ -235,11 +237,11 @@ export default function PreviewBonLivraisonDialog({
               className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full"
               variant="outline"
               onClick={() => {
-                window.open(`/achats/bonLivraison/imprimer`, "_blank");
                 localStorage.setItem(
                   "bonLivraison",
                   JSON.stringify(bonLivraison)
                 );
+                window.open(`/achats/bonLivraison/imprimer`, "_blank");
               }}
             >
               <Printer className="mr-2 h-4 w-4" /> Imprimer

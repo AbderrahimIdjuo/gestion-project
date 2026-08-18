@@ -11,7 +11,7 @@ import { CircleX, Pen } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Select,
   SelectContent,
@@ -28,8 +28,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-export function ModifyClientDialog({ currClient }) {
-  const [open, setOpen] = useState(false);
+export function ModifyClientDialog({
+  currClient,
+  open: controlledOpen,
+  onOpenChange,
+  hideTrigger = false,
+}) {
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : uncontrolledOpen;
+  const setOpen = isControlled ? onOpenChange : setUncontrolledOpen;
   const clientSchema = z.object({
     nom: z.string().min(1, "Veuillez insérer le nom du client"),
     titre: z.enum(["M", "Mme", "Mlle", "Sté"]).optional(),
@@ -49,6 +57,7 @@ export function ModifyClientDialog({ currClient }) {
     handleSubmit,
     watch,
     setValue,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(clientSchema),
@@ -64,6 +73,20 @@ export function ModifyClientDialog({ currClient }) {
      // dette: currClient?.dette,
     },
   });
+  useEffect(() => {
+    if (open && currClient) {
+      reset({
+        nom: currClient?.nom?.toUpperCase(),
+        titre: currClient?.titre,
+        email: currClient?.email,
+        telephone: currClient?.telephone,
+        adresse: currClient?.adresse,
+        mobile: currClient?.mobile,
+        ice: currClient?.ice ?? "",
+        note: currClient?.note ?? "",
+      });
+    }
+  }, [open, currClient, reset]);
   const queryClient = useQueryClient();
   const handleErrors = (errors) => {
     console.log("Validation errors: ", errors);
@@ -95,16 +118,18 @@ export function ModifyClientDialog({ currClient }) {
   const titres = ["M", "Mme", "Mlle", "Sté"];
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
-        >
-          <Pen className="h-4 w-4" />
-          <span className="sr-only">Modifier</span>
-        </Button>
-      </DialogTrigger>
+      {!hideTrigger && (
+        <DialogTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
+          >
+            <Pen className="h-4 w-4" />
+            <span className="sr-only">Modifier</span>
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
         <form onSubmit={handleSubmit(onSubmit, handleErrors)}>
           <DialogHeader>

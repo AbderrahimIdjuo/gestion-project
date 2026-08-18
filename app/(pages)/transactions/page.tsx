@@ -1,8 +1,10 @@
 "use client";
 import ComboBoxFournisseur from "@/components/comboBox-fournisseurs";
 import TransactionsRapportDialog from "@/components/transactions-rapport-dialog";
-import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
 import CustomPagination from "@/components/customUi/customPagination";
+import PeriodeFilter, {
+  usePeriodeFilter,
+} from "@/components/customUi/periode-filter";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import {
   Dialog,
@@ -43,6 +45,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import UpdateTransactionDialog from "@/components/update-transaction";
+import { TableRowActions } from "@/components/table-row-actions";
 import {
   formatCurrency,
   formatDate,
@@ -140,8 +143,16 @@ export default function Banques() {
   const [page, setPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>();
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [startDate, setStartDate] = useState<Date>();
-  const [endDate, setEndDate] = useState<Date>();
+  const {
+    periode,
+    setPeriode,
+    startDate,
+    setStartDate,
+    endDate,
+    setEndDate,
+    from: filterFrom,
+    to: filterTo,
+  } = usePeriodeFilter("all");
   const [selectedFournisseur, setSelectedFournisseur] =
     useState<Fournisseur | null>();
   const [updateDialog, setUpdateDialog] = useState(false);
@@ -259,6 +270,7 @@ export default function Banques() {
     filters.typeDepense,
     filters.methodePaiement,
     filters.compte,
+    periode,
     startDate,
     endDate,
     selectedFournisseur,
@@ -273,6 +285,7 @@ export default function Banques() {
       filters.typeDepense,
       filters.methodePaiement,
       filters.compte,
+      periode,
       startDate,
       endDate,
       selectedFournisseur,
@@ -288,8 +301,8 @@ export default function Banques() {
             filters.typeDepense.length > 0
               ? filters.typeDepense.join("-")
               : "all",
-          from: startDate,
-          to: endDate,
+          from: filterFrom || undefined,
+          to: filterTo || undefined,
           fournisseurId: selectedFournisseur?.id,
           methodePaiement:
             filters.methodePaiement.length > 0
@@ -902,20 +915,14 @@ export default function Banques() {
                               </PopoverContent>
                             </Popover>
                           </div>
-                          <div className="grid gap-2">
-                            <Label
-                              htmlFor="date"
-                              className="text-left text-black"
-                            >
-                              Date :
-                            </Label>
-                            <CustomDateRangePicker
-                              startDate={startDate}
-                              setStartDate={setStartDate}
-                              endDate={endDate}
-                              setEndDate={setEndDate}
-                            />
-                          </div>
+                          <PeriodeFilter
+                            periode={periode}
+                            onPeriodeChange={setPeriode}
+                            startDate={startDate}
+                            setStartDate={setStartDate}
+                            endDate={endDate}
+                            setEndDate={setEndDate}
+                          />
                           <div className="w-full space-y-2">
                             <ComboBoxFournisseur
                               fournisseur={selectedFournisseur}
@@ -946,11 +953,14 @@ export default function Banques() {
                             filters.typeDepense.length > 0
                               ? filters.typeDepense.join("-")
                               : "all",
-                          from: startDate || undefined,
-                          to: endDate || undefined,
+                          from: filterFrom || undefined,
+                          to: filterTo || undefined,
                           fournisseurId: selectedFournisseur?.id || undefined,
                         };
-                        localStorage.setItem("params", JSON.stringify(params));
+                        localStorage.setItem(
+                          "transactions-params",
+                          JSON.stringify(params)
+                        );
                         window.open("/transactions/impression", "_blank");
                       }}
                       className="border-purple-500 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900 rounded-full"
@@ -962,7 +972,7 @@ export default function Banques() {
                     <TransactionsRapportDialog />
                   </div>
                 </div>
-                <div className="flex justify between gap-6 items-start">
+                <div className="flex justify-between gap-6 items-start">
                   <div className="w-full col-span-1 sm:col-span-2 md:col-span-3">
                     {/* Table */}
                     <div className="rounded-lg border overflow-x-auto mb-3">
@@ -1093,40 +1103,30 @@ export default function Banques() {
                                   </TableCell>
 
                                   <TableCell className="text-right py-2">
-                                    <div className="flex justify-end gap-2">
-                                      {isAdmin && (
-                                        <>
-                                          <Button
-                                            onClick={() => {
+                                    {isAdmin && (
+                                      <TableRowActions
+                                        items={[
+                                          {
+                                            icon: Pen,
+                                            label: "Modifier",
+                                            color: "purple",
+                                            onClick: () => {
                                               setUpdateDialog(true);
                                               setTransaction(transaction);
-                                            }}
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
-                                          >
-                                            <Pen className="h-4 w-4" />
-                                            <span className="sr-only">
-                                              modifier
-                                            </span>
-                                          </Button>
-                                          <Button
-                                            onClick={() => {
+                                            },
+                                          },
+                                          {
+                                            icon: Trash2,
+                                            label: "Supprimer",
+                                            color: "red",
+                                            onClick: () => {
                                               setDeleteDialog(true);
                                               setTransaction(transaction);
-                                            }}
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
-                                          >
-                                            <Trash2 className="h-4 w-4" />
-                                            <span className="sr-only">
-                                              Supprimer
-                                            </span>
-                                          </Button>
-                                        </>
-                                      )}
-                                    </div>
+                                            },
+                                          },
+                                        ]}
+                                      />
+                                    )}
                                   </TableCell>
                                 </TableRow>
                               )

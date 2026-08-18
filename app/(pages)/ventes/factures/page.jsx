@@ -1,10 +1,11 @@
 "use client";
 
 import CreateFactureFromMultipleVersementsDialog from "@/components/create-facture-from-multiple-versements-dialog";
-import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
 import CustomPagination from "@/components/customUi/customPagination";
+import PeriodeFilter, {
+  usePeriodeFilter,
+} from "@/components/customUi/periode-filter";
 import { PriceRangeSlider } from "@/components/customUi/customSlider";
-import CustomTooltip from "@/components/customUi/customTooltip";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import { LoadingDots } from "@/components/loading-dots";
 import { Navbar } from "@/components/navbar";
@@ -29,11 +30,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import PreviewFactureDialog from "@/components/preview-facture";
 import UpdateFactureDialog from "@/components/update-facture-dialog";
+import { TableRowActions } from "@/components/table-row-actions";
 import { useUser } from "@clerk/nextjs";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { Filter, Pen, Plus, Printer, Search, Trash2 } from "lucide-react";
+import { Eye, Filter, Pen, Plus, Printer, Search, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -44,11 +47,20 @@ export default function Factures() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false); // Delete dialog
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [currFacture, setCurrFacture] = useState("");
   const [maxMontant, setMaxMontant] = useState();
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [startDate, setStartDate] = useState();
-  const [endDate, setEndDate] = useState();
+  const {
+    periode,
+    setPeriode,
+    startDate,
+    setStartDate,
+    endDate,
+    setEndDate,
+    from: filterFrom,
+    to: filterTo,
+  } = usePeriodeFilter("all");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState();
   const [factureDialogMode, setFactureDialogMode] = useState(null); // null | 'versements' | 'provisoire'
@@ -87,6 +99,7 @@ export default function Factures() {
       filters.statut,
       debouncedQuery,
       page,
+      periode,
       startDate,
       endDate,
       filters.montant,
@@ -100,8 +113,8 @@ export default function Factures() {
           query: debouncedQuery,
           page,
           statut: filters.statut,
-          from: startDate, // Utilisation directe
-          to: endDate, // Utilisation directe
+          from: filterFrom || undefined, // Utilisation directe
+          to: filterTo || undefined, // Utilisation directe
           minTotal: filters.montant[0],
           maxTotal: filters.montant[1],
           categorie: encodeURIComponent(filters.categorie),
@@ -209,17 +222,21 @@ export default function Factures() {
                         <div className="grid gap-4 py-4">
                           <div className="grid grid-cols-4 items-center gap-4 my-2">
                             <Label
-                              htmlFor="statut"
+                              htmlFor="periode"
                               className="col-span-1 text-left text-black"
                             >
-                              Date :
+                              Période :
                             </Label>
                             <div className="col-span-3">
-                              <CustomDateRangePicker
+                              <PeriodeFilter
+                                periode={periode}
+                                onPeriodeChange={setPeriode}
                                 startDate={startDate}
                                 setStartDate={setStartDate}
                                 endDate={endDate}
                                 setEndDate={setEndDate}
+                                label=""
+                                id="periode-factures"
                               />
                             </div>
                           </div>
@@ -305,8 +322,6 @@ export default function Factures() {
                               <TableCell className="!py-2">
                                 <div className="flex gap-2 justify-end">
                                   <Skeleton className="h-7 w-7 rounded-full" />
-                                  <Skeleton className="h-7 w-7 rounded-full" />
-                                  <Skeleton className="h-7 w-7 rounded-full" />
                                 </div>
                               </TableCell>
                             </TableRow>
@@ -328,14 +343,31 @@ export default function Factures() {
                                 {facture.client.nom}
                               </TableCell>
                               <TableCell className="text-right !py-2">
-                                <div className="flex justify-end gap-2">
-                                  <CustomTooltip message="imprimer">
-                                    <Button
-                                      name="delete btn"
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-8 w-8 rounded-full hover:bg-green-100 hover:text-green-600"
-                                      onClick={() => {
+                                <TableRowActions
+                                  items={[
+                                    {
+                                      icon: Pen,
+                                      label: "Modifier",
+                                      color: "purple",
+                                      onClick: () => {
+                                        setIsUpdateDialogOpen(true);
+                                        setCurrFacture(facture);
+                                      },
+                                    },
+                                    {
+                                      icon: Eye,
+                                      label: "Aperçu",
+                                      color: "blue",
+                                      onClick: () => {
+                                        setCurrFacture(facture);
+                                        setIsPreviewOpen(true);
+                                      },
+                                    },
+                                    {
+                                      icon: Printer,
+                                      label: "Imprimer",
+                                      color: "amber",
+                                      onClick: () => {
                                         localStorage.setItem(
                                           "facture",
                                           JSON.stringify(facture)
@@ -345,45 +377,19 @@ export default function Factures() {
                                           "_blank"
                                         );
                                         setCurrFacture(facture);
-                                      }}
-                                    >
-                                      <Printer className="h-4 w-4" />
-                                      <span className="sr-only">Imprimer</span>
-                                    </Button>
-                                  </CustomTooltip>
-
-                                  <CustomTooltip message="Supprimer">
-                                    <Button
-                                      name="delete btn"
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
-                                      onClick={() => {
+                                      },
+                                    },
+                                    {
+                                      icon: Trash2,
+                                      label: "Supprimer",
+                                      color: "red",
+                                      onClick: () => {
                                         setIsDialogOpen(true);
                                         setCurrFacture(facture);
-                                      }}
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                      <span className="sr-only">Supprimer</span>
-                                    </Button>
-                                  </CustomTooltip>
-
-                                  <CustomTooltip message="Modifier">
-                                    <Button
-                                      name="update btn"
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
-                                      onClick={() => {
-                                        setIsUpdateDialogOpen(true);
-                                        setCurrFacture(facture);
-                                      }}
-                                    >
-                                      <Pen className="h-4 w-4" />
-                                      <span className="sr-only">Modifier</span>
-                                    </Button>
-                                  </CustomTooltip>
-                                </div>
+                                      },
+                                    },
+                                  ]}
+                                />
                               </TableCell>
                             </TableRow>
                           ))
@@ -442,6 +448,11 @@ export default function Factures() {
         facture={currFacture}
         isOpen={isUpdateDialogOpen}
         onClose={() => setIsUpdateDialogOpen(false)}
+      />
+      <PreviewFactureDialog
+        facture={currFacture}
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
       />
       <CreateFactureFromMultipleVersementsDialog
         open={factureDialogMode !== null}

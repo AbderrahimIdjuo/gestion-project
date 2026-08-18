@@ -15,6 +15,7 @@ import {
   CircleDollarSign,
   TruckIcon,
   Files,
+  Eye,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -27,6 +28,7 @@ export function DevisActions({
   setCurrentDevi,
   bLGroups,
   isAdmin = false,
+  onPreview,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isBankDialogOpen, setIsBankDialogOpen] = useState(false);
@@ -58,7 +60,8 @@ export function DevisActions({
               </span>
             </DropdownMenuItem>
           )}
-          {isAdmin && (
+          {isAdmin &&
+            (devis.statut === "En attente" || devis.statut === "Annulé") && (
             <DropdownMenuItem
               onClick={() => {
                 setDeleteDialogOpen(true);
@@ -73,26 +76,38 @@ export function DevisActions({
               </span>
             </DropdownMenuItem>
           )}
+          <DropdownMenuItem
+            onClick={() => {
+              onPreview?.();
+              setMenuOpen(false);
+            }}
+            className="flex items-center gap-2 cursor-pointer group hover:!bg-blue-100"
+          >
+            <Eye className="h-4 w-4 text-sky-600" />
+            <span className="transition-colors duration-200 group-hover:text-blue-600 group-hover:bg-blue-100">
+              Aperçu
+            </span>
+          </DropdownMenuItem>
           {devis.statut !== "Terminer" && (
             <DropdownMenuItem
               onClick={() => {
                 setIsBankDialogOpen(true);
                 setMenuOpen(false);
               }}
-              className="flex items-center gap-2 cursor-pointer group hover:!bg-blue-100"
+              className="flex items-center gap-2 cursor-pointer group hover:!bg-green-100"
             >
-              <CircleDollarSign className="h-4 w-4 text-sky-600" />
+              <CircleDollarSign className="h-4 w-4 text-green-600" />
 
-              <span className="transition-colors duration-200 group-hover:text-blue-600 group-hover:bg-blue-100">
+              <span className="transition-colors duration-200 group-hover:text-green-600 group-hover:bg-green-100">
                 paiement
               </span>
             </DropdownMenuItem>
           )}
           <DropdownMenuItem
             onClick={() => {
-              window.open(`/ventes/devis/imprimerFournitures`, "_blank");
               localStorage.setItem("devi", JSON.stringify(devis));
               localStorage.setItem("bLGroups", JSON.stringify(bLGroups));
+              window.open(`/ventes/devis/imprimerFournitures`, "_blank");
             }}
             className="flex items-center gap-2 cursor-pointer group hover:!bg-fuchsia-100"
           >
@@ -105,8 +120,8 @@ export function DevisActions({
 
           <DropdownMenuItem
             onClick={() => {
-              window.open(`/ventes/devis/${devis.id}/pdf`, "_blank");
               localStorage.setItem("devi", JSON.stringify(devis));
+              window.open(`/ventes/devis/${devis.id}/pdf`, "_blank");
             }}
             className="flex items-center gap-2 cursor-pointer group hover:!bg-amber-100"
           >

@@ -1,6 +1,6 @@
 "use client";
 import ComptesRapportContent from "@/components/comptes-rapport-dialog";
-import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
+import PeriodeFilter from "@/components/customUi/periode-filter";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -10,14 +10,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -29,20 +21,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatCurrency, formatDate } from "@/lib/functions";
+import { getDateRangeFromPeriode } from "@/lib/periode";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import {
-  endOfDay,
-  endOfMonth,
-  endOfQuarter,
-  endOfYear,
-  startOfDay,
-  startOfMonth,
-  startOfQuarter,
-  startOfYear,
-  subQuarters,
-  subYears,
-} from "date-fns";
 import { Building2, FileText, Landmark, Wallet } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -67,71 +48,7 @@ const REPORT_TYPES = [
   },
 ];
 
-function getDateRangeFromPeriode(periode, startDate, endDate) {
-  const now = new Date();
-
-  switch (periode) {
-    case "aujourd'hui":
-      return { from: startOfDay(now), to: endOfDay(now) };
-    case "ce-mois":
-      return { from: startOfMonth(now), to: endOfMonth(now) };
-    case "mois-dernier": {
-      const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      return { from: startOfMonth(lastMonth), to: endOfMonth(lastMonth) };
-    }
-    case "trimestre-actuel":
-      return { from: startOfQuarter(now), to: endOfQuarter(now) };
-    case "trimestre-precedent": {
-      const prevQuarter = subQuarters(now, 1);
-      return {
-        from: startOfQuarter(prevQuarter),
-        to: endOfQuarter(prevQuarter),
-      };
-    }
-    case "cette-annee":
-      return { from: startOfYear(now), to: endOfYear(now) };
-    case "annee-derniere": {
-      const lastYear = subYears(now, 1);
-      return { from: startOfYear(lastYear), to: endOfYear(lastYear) };
-    }
-    case "personnalisee":
-      return {
-        from: startDate ? new Date(startDate) : null,
-        to: endDate ? new Date(endDate) : null,
-      };
-    default:
-      return { from: null, to: null };
-  }
-}
-
-function PeriodeSelect({ periode, setPeriode }) {
-  return (
-    <div className="space-y-2">
-      <Label htmlFor="periode" className="text-sm font-medium">
-        Période
-      </Label>
-      <Select value={periode} onValueChange={value => setPeriode(value)}>
-        <SelectTrigger className="focus:ring-2 focus:ring-purple-500">
-          <SelectValue placeholder="Sélectionnez la période" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="aujourd'hui">Aujourd&apos;hui</SelectItem>
-          <SelectItem value="ce-mois">Ce mois</SelectItem>
-          <SelectItem value="mois-dernier">Le mois dernier</SelectItem>
-          <SelectItem value="trimestre-actuel">Trimestre actuel</SelectItem>
-          <SelectItem value="trimestre-precedent">
-            Trimestre précédent
-          </SelectItem>
-          <SelectItem value="cette-annee">Cette année</SelectItem>
-          <SelectItem value="annee-derniere">L&apos;année dernière</SelectItem>
-          <SelectItem value="personnalisee">Période personnalisée</SelectItem>
-        </SelectContent>
-      </Select>
-    </div>
-  );
-}
-
-function ChargesRapportContent({ typeDepense, onBack, onClose }) {
+export function ChargesRapportContent({ typeDepense, onBack, onClose }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [startDate, setStartDate] = useState();
   const [endDate, setEndDate] = useState();
@@ -200,24 +117,16 @@ function ChargesRapportContent({ typeDepense, onBack, onClose }) {
 
       {currentStep === 1 && (
         <div className="space-y-6">
-          <div
-            className={`grid gap-4 ${
-              periode === "personnalisee" ? "grid-cols-2" : "grid-cols-1"
-            }`}
-          >
-            <PeriodeSelect periode={periode} setPeriode={setPeriode} />
-            {periode === "personnalisee" && (
-              <div className="space-y-2">
-                <Label className="text-left text-black">Date :</Label>
-                <CustomDateRangePicker
-                  startDate={startDate}
-                  setStartDate={setStartDate}
-                  endDate={endDate}
-                  setEndDate={setEndDate}
-                />
-              </div>
-            )}
-          </div>
+          <PeriodeFilter
+            periode={periode}
+            onPeriodeChange={setPeriode}
+            startDate={startDate}
+            setStartDate={setStartDate}
+            endDate={endDate}
+            setEndDate={setEndDate}
+            includeToutes={false}
+            id="periode-charges-rapport"
+          />
 
           <div className="flex justify-end gap-3 mt-6 print:hidden">
             <Button

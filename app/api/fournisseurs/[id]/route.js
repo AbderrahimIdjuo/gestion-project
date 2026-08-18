@@ -32,6 +32,23 @@ export async function DELETE(_, { params }) {
     await requireAdmin();
 
     const id = params.id;
+    if (!id) {
+      return NextResponse.json({ error: "ID requis" }, { status: 400 });
+    }
+
+    const linkedBlCount = await prisma.bonLivraison.count({
+      where: { fournisseurId: id },
+    });
+
+    if (linkedBlCount > 0) {
+      return NextResponse.json(
+        {
+          error:
+            "Impossible de supprimer ce fournisseur car il est lié à un ou plusieurs bons de livraison.",
+        },
+        { status: 409 }
+      );
+    }
 
     const fournisseur = await prisma.fournisseurs.delete({
       where: { id },

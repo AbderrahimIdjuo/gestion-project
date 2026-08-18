@@ -141,6 +141,17 @@ export async function addtransaction(data) {
     typeDepense,
   } = data;
   const result = await prisma.$transaction(async prisma => {
+    if (type === "vider") {
+      const caisseAccount = await prisma.comptesBancaires.findFirst({
+        where: { compte: "caisse" },
+      });
+      const soldeCaisse = Number(caisseAccount?.solde ?? 0);
+      if (montant > soldeCaisse) {
+        throw new Error(
+          `Le montant ne peut pas dépasser le solde de la caisse (${soldeCaisse} DH).`
+        );
+      }
+    }
     if (lable === "paiement devis") {
       const devis = await prisma.devis.findUnique({
         where: { numero: numero },
@@ -191,8 +202,13 @@ export async function addtransaction(data) {
         reference: numero,
         type,
         montant,
-        compte: type === "vider" ? "caisse" : compte,
-        lable,
+        compte,
+        lable:
+          type === "vider"
+            ? lable && String(lable).trim()
+              ? lable
+              : "Vider la caisse"
+            : lable,
         description,
         methodePaiement,
         clientId,

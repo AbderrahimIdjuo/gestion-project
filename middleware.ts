@@ -14,19 +14,29 @@ function isPublicApiRoute(pathname: string): boolean {
 
 /**
  * Destructive / sensitive mutation paths that require admin role.
- * Role is read from session claims when present (configure Clerk JWT
- * to include publicMetadata.role for middleware-level checks).
+ * Role is read from session claims (Clerk JWT template must include
+ * publicMetadata.role — see CLERK_SETUP.md). Missing role is not blocked
+ * here; route handlers still call requireAdmin() via currentUser().
+ *
+ * DELETE /api/devis and /api/devis/:id are admin-only (handler already
+ * calls requireAdmin). Other devis methods stay available to commercants.
  */
 function isAdminMutation(pathname: string, method: string): boolean {
   const m = method.toUpperCase();
   if (m === "GET" || m === "HEAD" || m === "OPTIONS") return false;
+
+  if (
+    m === "DELETE" &&
+    (pathname === "/api/devis" || pathname.startsWith("/api/devis/"))
+  ) {
+    return true;
+  }
 
   const adminPrefixes = [
     "/api/admin",
     "/api/users",
     "/api/import-",
     "/api/importLogo",
-    "/api/solde-comptes",
   ];
 
   return adminPrefixes.some(
@@ -63,14 +73,15 @@ function getRoleFromClaims(authResult: {
   const metadata = (claims.metadata ?? claims.publicMetadata) as
     | Record<string, unknown>
     | undefined;
-  const role = metadata?.role;
-  return typeof role === "string" ? role : null;
+  const role = metadata?.role ?? claims.role;
+  return typeof role === "string" && role.trim() !== "" ? role : null;
 }
 
 /**
  * Lightweight middleware: runs ONLY on routes listed in config.matcher.
  * No Clerk Backend API calls, no DB. Role checks use JWT session claims
- * when available; route handlers still call requireAdmin() as defense in depth.
+ * (publicMetadata.role must be in the session token). Route handlers still
+ * call requireAdmin() as defense in depth.
  */
 export default clerkMiddleware(async (auth, request) => {
   const { pathname } = request.nextUrl;
@@ -91,11 +102,11 @@ export default clerkMiddleware(async (auth, request) => {
       );
     }
 
-    // Admin gate for sensitive mutations (when role is in session claims)
+    // Admin gate: if the JWT exposes a non-admin role, block here.
+    // If the claim is missing (session token not customized yet), let the
+    // request through — handlers still call requireAdmin() via currentUser().
     if (isAdminMutation(pathname, method)) {
       const role = getRoleFromClaims(authResult);
-      // If claims expose role and user is not admin → 403.
-      // If claims omit role, allow through; route handlers must call requireAdmin().
       if (role !== null && role !== "admin") {
         return NextResponse.json(
           { error: "Access denied. Admin role required." },

@@ -154,8 +154,9 @@ export default function UpdateDevisPage({ params }) {
   };
   const calculateSubTotal = () => {
     const subtotal = items.reduce((sum, item) => {
-      const amount = item.quantite * item.prixUnite;
-      return sum + amount;
+      const quantity = Number(item.quantite) || 0;
+      const unitPrice = Number(item.prixUnite) || 0;
+      return sum + quantity * unitPrice;
     }, 0);
     const discountAmount =
       watch("typeReduction") === "%"

@@ -9,7 +9,6 @@ import { LoadingDots } from "@/components/loading-dots";
 import { Navbar } from "@/components/navbar";
 import { Sidebar } from "@/components/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -21,6 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { UpdateEmployeDialog } from "@/components/update-employe-dialog";
+import { TableRowActions } from "@/components/table-row-actions";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Pen, Search, Trash2 } from "lucide-react";
@@ -205,7 +205,6 @@ export default function EmployesPage() {
                                 <TableCell className="!py-2">
                                   <div className="flex gap-2 justify-end">
                                     <Skeleton className="h-7 w-7 rounded-full" />
-                                    <Skeleton className="h-7 w-7 rounded-full" />
                                   </div>
                                 </TableCell>
                               </TableRow>
@@ -265,35 +264,28 @@ export default function EmployesPage() {
                                   )}
                                 </TableCell>
                                 <TableCell className="text-right !py-2">
-                                  <div className="flex justify-end gap-2">
-                                    <CustomTooltip message="Modifier">
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
-                                        onClick={() => {
+                                  <TableRowActions
+                                    items={[
+                                      {
+                                        icon: Pen,
+                                        label: "Modifier",
+                                        color: "purple",
+                                        onClick: () => {
                                           setcurrEmploye(employe);
                                           setIsUpdateDialogOpen(true);
-                                        }}
-                                      >
-                                        <Pen className="h-4 w-4" />
-                                      </Button>
-                                    </CustomTooltip>
-                                    <CustomTooltip message="Supprimer">
-                                      <Button
-                                        name="delete btn"
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
-                                        onClick={() => {
+                                        },
+                                      },
+                                      {
+                                        icon: Trash2,
+                                        label: "Supprimer",
+                                        color: "red",
+                                        onClick: () => {
                                           setIsDialogOpen(true);
                                           setcurrEmploye(employe);
-                                        }}
-                                      >
-                                        <Trash2 className="h-4 w-4" />
-                                      </Button>
-                                    </CustomTooltip>
-                                  </div>
+                                        },
+                                      },
+                                    ]}
+                                  />
                                 </TableCell>
                               </TableRow>
                             ))

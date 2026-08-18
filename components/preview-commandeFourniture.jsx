@@ -24,15 +24,21 @@ import { EnteteDevis } from "@/components/Entete-devis";
 function formatDate(dateString) {
   return dateString?.split("T")[0].split("-").reverse().join("-");
 }
-export default function PreviewCommandeFournitureDialog({ commande }) {
-  const [open, setOpen] = useState(false);
+export default function PreviewCommandeFournitureDialog({
+  commande,
+  open: controlledOpen,
+  onOpenChange,
+  hideTrigger = false,
+}) {
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : uncontrolledOpen;
+  const setOpen = isControlled ? onOpenChange : setUncontrolledOpen;
+
+  if (!commande || typeof commande !== "object") return null;
 
   // Extract order data
   const { echeance, fournisseur, groups, numero } = commande;
-
-  const handlePrint = () => {
-    window.print();
-  };
 
   function calculerTotalProduits(produits) {
     return produits.reduce((total, produit) => {
@@ -42,22 +48,25 @@ export default function PreviewCommandeFournitureDialog({ commande }) {
 
   return (
     <>
-      <CustomTooltip message="Aperçu">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setOpen(true)}
-          className="h-8 w-8 rounded-full hover:bg-blue-100 hover:text-blue-600"
-        >
-          <Eye className="h-4 w-4" />
-        </Button>
-      </CustomTooltip>
+      {!hideTrigger && (
+        <CustomTooltip message="Aperçu">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setOpen(true)}
+            className="h-8 w-8 rounded-full hover:bg-blue-100 hover:text-blue-600"
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+        </CustomTooltip>
+      )}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto print:shadow-none print:max-h-none print:overflow-visible">
-          <DialogHeader>
+        <DialogContent className="max-w-6xl max-h-[90vh] flex flex-col overflow-hidden print:shadow-none print:max-h-none print:overflow-visible">
+          <DialogHeader className="shrink-0">
             <DialogTitle></DialogTitle>
           </DialogHeader>
-          <div className="container mx-auto p-8 max-w-4xl bg-white min-h-screen print:p-0 print:max-w-none mb-10">
+          <div className="flex-1 min-h-0 overflow-y-auto print:overflow-visible">
+          <div className="container mx-auto px-4 py-2 max-w-6xl bg-white print:p-0 print:max-w-none">
             {/* Document Content */}
             <div id="print-area" className="space-y-6 print:mt-10">
               {/* Header */}
@@ -170,7 +179,7 @@ export default function PreviewCommandeFournitureDialog({ commande }) {
                   </div>
                 ))}
 
-                {groups.length === 0 && (
+                {(!groups || groups.length === 0) && (
                   <div className="text-center py-8 text-muted-foreground">
                     aucun produit trouvé
                   </div>
@@ -178,7 +187,8 @@ export default function PreviewCommandeFournitureDialog({ commande }) {
               </div>
             </div>
           </div>
-          <div className="flex justify-end gap-3 mt-6 print:hidden">
+          </div>
+          <div className="flex justify-end gap-3 pt-4 shrink-0 print:hidden">
             <Button
               className="rounded-full"
               variant="outline"
@@ -190,7 +200,11 @@ export default function PreviewCommandeFournitureDialog({ commande }) {
               className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full"
               variant="outline"
               onClick={() => {
-                handlePrint();
+                localStorage.setItem(
+                  "commandeFournitures",
+                  JSON.stringify(commande)
+                );
+                window.open(`/achats/commandes/imprimer`, "_blank");
               }}
             >
               <Printer className="mr-2 h-4 w-4" /> Imprimer

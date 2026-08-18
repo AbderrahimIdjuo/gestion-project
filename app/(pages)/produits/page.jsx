@@ -3,14 +3,15 @@
 import { AjouterStockProduitsDialog } from "@/components/ajouter-stock-produits-dialog";
 import CustomPagination from "@/components/customUi/customPagination";
 import { PriceRangeSlider } from "@/components/customUi/customSlider";
-import CustomTooltip from "@/components/customUi/customTooltip";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
+import HistoriqueProduitDialog from "@/components/historique-produit-dialog";
 import ImportProduits from "@/components/importer-produits";
 import { LoadingDots } from "@/components/loading-dots";
 import { ModifyProductDialog } from "@/components/modify-product-dialog";
 import { Navbar } from "@/components/navbar";
 import { ProductFormDialog } from "@/components/product-form-dialog";
 import { Sidebar } from "@/components/sidebar";
+import { TableRowActions } from "@/components/table-row-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,7 +41,7 @@ import {
 } from "@/components/ui/table";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { Filter, Search, Trash2, Upload } from "lucide-react";
+import { Filter, Pen, Search, Trash2, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -55,6 +56,8 @@ export default function ProduitsPage() {
   const [maxStock, setMaxStock] = useState();
   const [minStock, setMinStock] = useState();
   const [currProduct, setCurrProduct] = useState(null);
+  const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
+  const [historiqueProduct, setHistoriqueProduct] = useState(null);
   const [filters, setFilters] = useState({
     categorie: "all",
     statut: "all",
@@ -388,14 +391,17 @@ export default function ProduitsPage() {
                               <TableCell className="!py-2">
                                 <div className="flex gap-2 justify-end">
                                   <Skeleton className="h-7 w-7 rounded-full" />
-                                  <Skeleton className="h-7 w-7 rounded-full" />
                                 </div>
                               </TableCell>
                             </TableRow>
                           ))
                         ) : produits.data?.produits.length > 0 ? (
                           produits.data?.produits.map(product => (
-                            <TableRow key={product.id}>
+                            <TableRow
+                              key={product.id}
+                              className="cursor-pointer hover:bg-purple-50/60"
+                              onClick={() => setHistoriqueProduct(product)}
+                            >
                               <TableCell className="font-medium !py-2">
                                 {product.reference}
                               </TableCell>
@@ -420,24 +426,32 @@ export default function ProduitsPage() {
                                   }
                                 )}
                               </TableCell>
-                              <TableCell className="text-right !py-2">
-                                <div className="flex justify-end gap-2">
-                                  <ModifyProductDialog currProduct={product} />
-
-                                  <CustomTooltip message="Supprimer">
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
-                                      onClick={() => {
+                              <TableCell
+                                className="text-right !py-2"
+                                onClick={e => e.stopPropagation()}
+                              >
+                                <TableRowActions
+                                  items={[
+                                    {
+                                      icon: Pen,
+                                      label: "Modifier",
+                                      color: "purple",
+                                      onClick: () => {
+                                        setCurrProduct(product);
+                                        setIsUpdateDialogOpen(true);
+                                      },
+                                    },
+                                    {
+                                      icon: Trash2,
+                                      label: "Supprimer",
+                                      color: "red",
+                                      onClick: () => {
                                         setDeleteDialogOpen(true);
                                         setCurrProduct(product);
-                                      }}
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </CustomTooltip>
-                                </div>
+                                      },
+                                    },
+                                  ]}
+                                />
                               </TableCell>
                             </TableRow>
                           ))
@@ -484,6 +498,17 @@ export default function ProduitsPage() {
                     setDeleteDialogOpen(false);
                     deleteProduct();
                   }}
+                />
+                <ModifyProductDialog
+                  currProduct={currProduct}
+                  open={isUpdateDialogOpen}
+                  onOpenChange={setIsUpdateDialogOpen}
+                  hideTrigger
+                />
+                <HistoriqueProduitDialog
+                  product={historiqueProduct}
+                  isOpen={!!historiqueProduct}
+                  onClose={() => setHistoriqueProduct(null)}
                 />
               </div>
             </div>

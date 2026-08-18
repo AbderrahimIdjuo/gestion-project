@@ -54,7 +54,7 @@ export default function Banques() {
                 <div className="flex justify-between items-center">
                   <h1 className="text-3xl font-bold">Comptes Bancaires</h1>
                 </div>
-                <div className="flex justify between gap-6 items-start">
+                <div className="flex justify-between gap-6 items-start">
                   <div className="hidden md:block">
                     <SittingsSideBar page={"banques"} />
                   </div>

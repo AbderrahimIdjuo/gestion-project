@@ -14,7 +14,6 @@ import {
     LayoutDashboard,
     Package,
     ReceiptText,
-    Ruler,
     ScrollText,
     Settings,
     Truck,
@@ -25,7 +24,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 
 const menuItems = [
-  //  { icon: TestTubeDiagonal, label: "Test", href: "/test" },
   { icon: LayoutDashboard, label: "Dashboard", href: "/" },
   {
     icon: Users,
@@ -86,21 +84,6 @@ const menuItems = [
     icon: FileText,
     label: "Factures Achats",
     href: "/facturesAchats",
-  },
-  {
-    icon: Ruler,
-    label: "Débitage",
-    href: "/debitage",
-    subItems: [
-      {
-        label: "Marbre",
-        href: "/debitage/marbre",
-      },
-      {
-        label: "Verre",
-        href: "/debitage/verre",
-      },
-    ],
   },
   {
     icon: Settings,

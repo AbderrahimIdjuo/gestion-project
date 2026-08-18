@@ -1,21 +1,18 @@
 "use client";
 import { EnteteDevis } from "@/components/Entete-devis";
+import TransactionsChronologicalTable from "@/components/transactions-chronological-table";
+import TransactionsTypeTotalsHeader from "@/components/transactions-type-totals-header";
 import { DirectPrintButton } from "@/components/ui/print-button";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { formatDate, typeDepenseLabel, typeLabel } from "@/lib/functions";
+  calculateTransactionsTypeTotals,
+  formatDate,
+  typeDepenseLabel,
+  typeLabel,
+} from "@/lib/functions";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import "@/styles/print-rapport.css";
-
 
 export default function ImpressionTransactions() {
   const [params, setParams] = useState();
@@ -53,35 +50,8 @@ export default function ImpressionTransactions() {
     return compte;
   }
 
-  // Fonction pour grouper les transactions par type
-  const groupTransactionsByType = transactions => {
-    if (!transactions || transactions.length === 0) return [];
-
-    const grouped = transactions.reduce((acc, transaction) => {
-      const type = transaction.type || "inconnu";
-      if (!acc[type]) {
-        acc[type] = [];
-      }
-      acc[type].push(transaction);
-      return acc;
-    }, {});
-
-    return Object.entries(grouped).map(([type, transactions]) => ({
-      type,
-      transactions,
-      total: transactions.reduce((sum, transaction) => {
-        if (type === "recette") {
-          return sum + transaction.montant;
-        } else if (type === "depense" || type === "vider") {
-          return sum - transaction.montant;
-        }
-        return sum;
-      }, 0),
-    }));
-  };
-
   useEffect(() => {
-    const storedData = localStorage.getItem("params");
+    const storedData = localStorage.getItem("transactions-params");
     if (storedData) {
       setParams(JSON.parse(storedData));
     }
@@ -98,16 +68,7 @@ export default function ImpressionTransactions() {
     enabled: !!params,
   });
 
-  const total = () => {
-    return transactions?.reduce((acc, t) => {
-      if (t.type === "recette") {
-        return acc + t.montant;
-      } else if (t.type === "depense") {
-        return acc - t.montant;
-      } else return acc;
-    }, 0);
-  };
-
+  const typeTotals = calculateTransactionsTypeTotals(transactions);
   const fromDay = params?.from ? new Date(params.from) : null;
 
   return (
@@ -164,123 +125,27 @@ export default function ImpressionTransactions() {
                     {formatTypeLabel(params?.type)}
                   </p>
                 </div>
-                {params?.type?.includes("depense") && params?.typeDepense && params?.typeDepense !== "all" && (
-                  <div className="flex gap-2 items-center">
-                    <h3 className="mb-1 font-semibold text-gray-900">
-                      Type de charges:
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      {typeDepenseLabel(params?.typeDepense)}
-                    </p>
-                  </div>
-                )}
+                {params?.type?.includes("depense") &&
+                  params?.typeDepense &&
+                  params?.typeDepense !== "all" && (
+                    <div className="flex gap-2 items-center">
+                      <h3 className="mb-1 font-semibold text-gray-900">
+                        Type de charges:
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        {typeDepenseLabel(params?.typeDepense)}
+                      </p>
+                    </div>
+                  )}
               </div>
             </div>
-            <div className="rounded-xl border shadow-sm overflow-x-auto main-table-container print-block">
-              <Table className="border-collapse">
-                <TableHeader>
-                  <TableRow className="border-b">
-                    <TableHead className="border-r border-b">Date</TableHead>
-                    <TableHead className="border-r border-b">Label</TableHead>
-                    <TableHead className="text-right border-r border-b">Montant</TableHead>
-                    <TableHead className="border-r border-b">Type</TableHead>
-                    <TableHead className="border-r border-b">Méthode</TableHead>
-                    <TableHead className="border-r border-b">Compte</TableHead>
-                    <TableHead className="border-b">Description</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {transactions?.length > 0 ? (
-                    groupTransactionsByType(transactions).map(
-                      (typeGroup, typeIndex) => (
-                        <React.Fragment key={typeIndex}>
-                          {/* Transactions du groupe */}
-                          {typeGroup.transactions.map(t => (
-                            <TableRow key={t.id} className="border-b">
-                              <TableCell className="px-1 py-2 border-r">
-                                {" "}
-                                {formatDate(t.date) || formatDate(t.createdAt)}
-                              </TableCell>
-                              <TableCell className="px-1 py-2 border-r">
-                                {t.lable}
-                              </TableCell>
-                              <TableCell className="px-1 py-2 text-right pr-4 border-r">
-                                {t.montant} DH
-                              </TableCell>
-                              <TableCell className="px-1 py-2 border-r">
-                                {typeLabel(t.type)}
-                              </TableCell>
-                              <TableCell className="px-1 py-2 border-r">
-                                {" "}
-                                {t.methodePaiement === "espece"
-                                  ? "Espèce"
-                                  : t.methodePaiement === "cheque"
-                                  ? "Chèque"
-                                  : t.methodePaiement}
-                              </TableCell>
-                              <TableCell className="px-1 py-2 border-r">
-                                {t.compte?.replace("compte", "")}
-                              </TableCell>
-                              <TableCell className="px-1 py-2">
-                                {(t.description || "").replace(
-                                  "paiement du fournisseur",
-                                  "Bénéficiaire : "
-                                )}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                          {/* Total du groupe de type en bas */}
-                          <TableRow
-                            className={`border-b ${
-                              typeGroup.type === "depense"
-                                ? "bg-rose-50"
-                                : typeGroup.type === "recette"
-                                ? "bg-emerald-50"
-                                : "bg-sky-50"
-                            }`}
-                          >
-                            <TableCell
-                              colSpan={7}
-                              className={`font-semibold text-lg py-3 ${
-                                typeGroup.type === "depense"
-                                  ? "text-rose-700"
-                                  : typeGroup.type === "recette"
-                                  ? "text-emerald-700"
-                                  : "text-sky-700"
-                              }`}
-                            >
-                              Total {typeLabel(typeGroup.type)} :{" "}
-                              {typeGroup.total} DH
-                            </TableCell>
-                          </TableRow>
-                        </React.Fragment>
-                      )
-                    )
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center">
-                        Aucune transaction trouvée
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-                <TableFooter className="bg-gray-50 table-footer-print">
-                  <TableRow className="border-b">
-                    <TableCell
-                      colSpan={6}
-                      className="text-right text-lg font-semibold p-2 border-r"
-                    >
-                      Total :
-                    </TableCell>
-                    <TableCell
-                      colSpan={1}
-                      className="text-left text-lg font-semibold p-2"
-                    >
-                      {total()} DH
-                    </TableCell>
-                  </TableRow>
-                </TableFooter>
-              </Table>
+            <TransactionsTypeTotalsHeader totals={typeTotals} />
+            <div className="main-table-container print-block">
+              <TransactionsChronologicalTable
+                transactions={transactions}
+                totals={typeTotals}
+                footerClassName="bg-gray-50 table-footer-print"
+              />
             </div>
           </div>
         </div>

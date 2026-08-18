@@ -2,8 +2,10 @@
 
 import AddBonLivraison from "@/components/add-bonLivraison";
 import BonLivraisonRapportDialog from "@/components/bonLivraison-rapport-dialog";
-import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
 import CustomPagination from "@/components/customUi/customPagination";
+import PeriodeFilter, {
+  usePeriodeFilter,
+} from "@/components/customUi/periode-filter";
 import { PriceRangeSlider } from "@/components/customUi/customSlider";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import { LoadingDots } from "@/components/loading-dots";
@@ -76,8 +78,16 @@ export default function BonLivraison() {
   const [searchQuery, setSearchQuery] = useState("");
   const [maxMontant, setMaxMontant] = useState<number | undefined>(undefined);
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [startDate, setStartDate] = useState<string | null>(null);
-  const [endDate, setEndDate] = useState<string | null>(null);
+  const {
+    periode,
+    setPeriode,
+    startDate,
+    setStartDate,
+    endDate,
+    setEndDate,
+    from: filterFrom,
+    to: filterTo,
+  } = usePeriodeFilter("all");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState<number | null>(null);
   const [lastBonLivraison, setLastBonLivraison] = useState();
@@ -196,6 +206,7 @@ export default function BonLivraison() {
     filters.type,
     filters.statutPaiement,
     filters.montant,
+    periode,
     startDate,
     endDate,
   ]);
@@ -210,6 +221,7 @@ export default function BonLivraison() {
       filters.type,
       debouncedQuery,
       page,
+      periode,
       startDate,
       endDate,
       filters.montant,
@@ -221,8 +233,8 @@ export default function BonLivraison() {
           query: debouncedQuery,
           page,
           type: filters.type,
-          from: startDate,
-          to: endDate,
+          from: filterFrom || undefined,
+          to: filterTo || undefined,
           minTotal: filters.montant[0],
           maxTotal: filters.montant[1],
           statutPaiement:
@@ -331,17 +343,21 @@ export default function BonLivraison() {
                         <div className="grid gap-4 py-4">
                           <div className="grid grid-cols-4 items-center gap-4 my-2">
                             <Label
-                              htmlFor="statut"
+                              htmlFor="periode"
                               className="col-span-1 text-left text-black"
                             >
-                              Date :
+                              Période :
                             </Label>
                             <div className="col-span-3">
-                              <CustomDateRangePicker
+                              <PeriodeFilter
+                                periode={periode}
+                                onPeriodeChange={setPeriode}
                                 startDate={startDate}
                                 setStartDate={setStartDate}
                                 endDate={endDate}
                                 setEndDate={setEndDate}
+                                label=""
+                                id="periode-bl"
                               />
                             </div>
                           </div>

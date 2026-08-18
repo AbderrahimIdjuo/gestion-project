@@ -1,5 +1,7 @@
 "use client";
 import { EnteteDevis } from "@/components/Entete-devis";
+import TransactionsChronologicalTable from "@/components/transactions-chronological-table";
+import TransactionsTypeTotalsHeader from "@/components/transactions-type-totals-header";
 import { DirectPrintButton } from "@/components/ui/print-button";
 import {
   Table,
@@ -10,7 +12,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ajouterUneHeure, formatCurrency, formatDate } from "@/lib/functions";
+import {
+  ajouterUneHeure,
+  calculateCompteRapportTotals,
+  calculateTransactionsTypeTotals,
+  formatCurrency,
+  formatDate,
+  getCompteRapportDesignation,
+  isCompteCaisse,
+  isCompteRapportDepenseCell,
+  isCompteRapportRecette,
+  sortCompteRapportTransactions,
+} from "@/lib/functions";
 import { useEffect, useState } from "react";
 import "@/styles/print-rapport.css";
 import "./page.css";
@@ -25,54 +38,12 @@ export default function ImpressionRapport() {
     }
   }, []);
 
-  // Fonction pour calculer les totaux et le solde
-  const calculateTotals = transactions => {
-    if (!transactions || transactions.length === 0)
-      return { totalRecettes: 0, totalDepenses: 0, solde: 0 };
-
-    const totals = transactions.reduce(
-      (acc, transaction) => {
-        if (transaction.type === "recette") {
-          acc.totalRecettes += transaction.montant;
-        } else if (
-          transaction.type === "depense" ||
-          transaction.type === "vider"
-        ) {
-          acc.totalDepenses += transaction.montant;
-        }
-        return acc;
-      },
-      { totalRecettes: 0, totalDepenses: 0 }
-    );
-
-    totals.solde = totals.totalRecettes - totals.totalDepenses;
-    return totals;
-  };
-
-  // Fonction pour trier les transactions par date et calculer le solde cumulé
-  const sortTransactionsWithBalance = transactions => {
-    if (!transactions || transactions.length === 0) return [];
-
-    const sorted = [...transactions].sort((a, b) => {
-      const dateA = new Date(a.date || a.createdAt);
-      const dateB = new Date(b.date || b.createdAt);
-      return dateA - dateB;
-    });
-
-    // Commencer avec le solde initial de la caisse
-    let runningBalance = data?.soldeInitial || 0;
-    return sorted.map(transaction => {
-      if (transaction.type === "recette") {
-        runningBalance += transaction.montant;
-      } else if (
-        transaction.type === "depense" ||
-        transaction.type === "vider"
-      ) {
-        runningBalance -= transaction.montant;
-      }
-      return { ...transaction, runningBalance };
-    });
-  };
+  const isAllComptes = data?.compte === "all";
+  const totals = calculateCompteRapportTotals(
+    data?.transactions,
+    data?.compte
+  );
+  const typeTotals = calculateTransactionsTypeTotals(data?.transactions);
 
   const soldeColor = solde => {
     if (solde > 0) {
@@ -98,7 +69,9 @@ export default function ImpressionRapport() {
               <div className="flex flex-row gap-2 items-center">
                 <h3 className="font-semibold text-gray-900">
                   Compte :{" "}
-                  <span className="text-sm text-gray-600">{data?.compte}</span>
+                  <span className="text-sm text-gray-600">
+                    {isAllComptes ? "Tous les comptes" : data?.compte}
+                  </span>
                 </h3>
               </div>
               <div className="flex flex-row gap-2 items-center">
@@ -111,27 +84,55 @@ export default function ImpressionRapport() {
                 </h3>
               </div>
             </div>
+            {isAllComptes ? (
+              <>
+                <TransactionsTypeTotalsHeader totals={typeTotals} />
+                <div className="main-table-container print-block">
+                  <TransactionsChronologicalTable
+                    transactions={data?.transactions}
+                    totals={typeTotals}
+                    footerClassName="bg-gray-50 table-footer-print"
+                  />
+                </div>
+              </>
+            ) : (
+              <>
             {/* Section de résumé */}
             <div className="bg-gray-50 p-4 rounded-lg mb-6 print-block">
-              <div className="grid grid-cols-3 gap-4 text-center">
+              <div className="grid grid-cols-4 gap-4 text-center">
                 <div>
                   <h3 className="text-sm font-semibold text-gray-600 mb-1">
                     Total Des Recettes
                   </h3>
                   <p className="text-lg font-bold text-green-600">
-                    {formatCurrency(
-                      calculateTotals(data?.transactions).totalRecettes
-                    )}
+                    {formatCurrency(totals.totalRecettes)}
                   </p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-600 mb-1">
+                    Total Des Transferts
+                  </h3>
+                  {isCompteCaisse(data?.compte) ? (
+                    <p className="text-lg font-bold text-blue-600">
+                      {formatCurrency(totals.totalTransferts)}
+                    </p>
+                  ) : (
+                    <div className="space-y-0.5">
+                      <p className="text-sm font-bold text-green-600">
+                        Entrant : {formatCurrency(totals.totalTransfertsEntrants)}
+                      </p>
+                      <p className="text-sm font-bold text-red-600">
+                        Sortant : {formatCurrency(totals.totalTransfertsSortants)}
+                      </p>
+                    </div>
+                  )}
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-gray-600 mb-1">
                     Total Des Dépenses
                   </h3>
                   <p className="text-lg font-bold text-red-600">
-                    {formatCurrency(
-                      calculateTotals(data?.transactions).totalDepenses
-                    )}
+                    {formatCurrency(totals.totalDepenses)}
                   </p>
                 </div>
                 <div>
@@ -157,10 +158,10 @@ export default function ImpressionRapport() {
                       Désignation
                     </TableHead>
                     <TableHead className="text-right border-r border-b">
-                      MNT Recettes
+                      MNT Entrant
                     </TableHead>
                     <TableHead className="text-right border-r border-b">
-                      MNT Dépenses
+                      Montant Sortant
                     </TableHead>
                     <TableHead className="text-right border-b">Solde</TableHead>
                   </TableRow>
@@ -183,24 +184,35 @@ export default function ImpressionRapport() {
                         </TableCell>
                       </TableRow>
                       {/* Transactions */}
-                      {sortTransactionsWithBalance(data.transactions).map(
-                        transaction => (
+                      {sortCompteRapportTransactions(
+                        data.transactions,
+                        data?.soldeInitial || 0,
+                        data?.compte
+                      ).map(transaction => (
                           <TableRow key={transaction.id} className="border-b">
                             <TableCell className="px-1 py-2 border-r">
                               {formatDate(transaction.date) ||
                                 formatDate(transaction.createdAt)}
                             </TableCell>
                             <TableCell className="px-1 py-2 border-r">
-                              {transaction.description}
+                              {getCompteRapportDesignation(
+                                transaction,
+                                data?.compte
+                              )}
                             </TableCell>
                             <TableCell className="px-1 py-2 text-right pr-4 border-r">
-                              {transaction.type === "recette"
+                              {isCompteRapportRecette(
+                                transaction,
+                                data?.compte
+                              )
                                 ? formatCurrency(transaction.montant)
                                 : ""}
                             </TableCell>
                             <TableCell className="px-1 py-2 text-right pr-4 border-r">
-                              {transaction.type === "depense" ||
-                              transaction.type === "vider"
+                              {isCompteRapportDepenseCell(
+                                transaction,
+                                data?.compte
+                              )
                                 ? formatCurrency(transaction.montant)
                                 : ""}
                             </TableCell>
@@ -212,8 +224,7 @@ export default function ImpressionRapport() {
                               {formatCurrency(transaction.runningBalance)}
                             </TableCell>
                           </TableRow>
-                        )
-                      )}
+                        ))}
                     </>
                   ) : (
                     <TableRow>
@@ -230,14 +241,10 @@ export default function ImpressionRapport() {
                     </TableCell>
                     <TableCell className="p-2 border-r"></TableCell>
                     <TableCell className="text-right text-lg font-semibold p-2 text-green-600 border-r">
-                      {formatCurrency(
-                        calculateTotals(data?.transactions).totalRecettes
-                      )}
+                      {formatCurrency(totals.totalEntrant)}
                     </TableCell>
                     <TableCell className="text-right text-lg font-semibold p-2 text-red-600 border-r">
-                      {formatCurrency(
-                        calculateTotals(data?.transactions).totalDepenses
-                      )}
+                      {formatCurrency(totals.totalSortant)}
                     </TableCell>
                     <TableCell className="p-2"></TableCell>
                   </TableRow>
@@ -274,6 +281,8 @@ export default function ImpressionRapport() {
                 </TableFooter>
               </Table>
             </div>
+              </>
+            )}
           </div>
         </div>
         {/* Bouton d'impression fixé en bas de la page */}

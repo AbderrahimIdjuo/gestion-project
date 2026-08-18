@@ -6,7 +6,12 @@ export async function POST(req) {
     const response = await req.json();
     const {
       bLGroups,
+      type,
     } = response;
+
+    if (type === "retour") {
+      return NextResponse.json({ skipped: true });
+    }
 
     const result = await prisma.$transaction(async (prisma) => {
       // Mettre a jour les prixUnite des produits 

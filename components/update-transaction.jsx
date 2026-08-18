@@ -92,6 +92,13 @@ export default function UpdateTransactionDialog({
             message: "Le montant à vider doit être supérieur à 0.",
           });
         }
+        if (!data.compte || data.compte.trim() === "") {
+          ctx.addIssue({
+            path: ["compte"],
+            code: z.ZodIssueCode.custom,
+            message: "Le compte de destination est requis.",
+          });
+        }
       }
     });
 
@@ -534,13 +541,19 @@ export default function UpdateTransactionDialog({
                     <SelectValue placeholder="Séléctionner..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {comptes.data?.map(element => (
-                      <SelectItem key={element.id} value={element.compte}>
-                        <div className="flex items-center gap-2">
-                          {element.compte}
-                        </div>
-                      </SelectItem>
-                    ))}
+                    {comptes.data
+                      ?.filter(element =>
+                        transaction?.type === "vider"
+                          ? element.compte !== "caisse"
+                          : true
+                      )
+                      .map(element => (
+                        <SelectItem key={element.id} value={element.compte}>
+                          <div className="flex items-center gap-2">
+                            {element.compte}
+                          </div>
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
                 {errors.compte && (

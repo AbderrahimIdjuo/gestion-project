@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../../lib/prisma";
+import { isCompteCaisse, isCompteProfessionnel } from "@/lib/functions";
 
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
@@ -34,10 +35,57 @@ export async function GET(req) {
     };
   }
 
-  const transactions = await prisma.transactions.findMany({
-    where: filters,
-    orderBy: { date: "asc" },
-  });
+  let transactions;
+
+  if (isCompteProfessionnel(compte)) {
+    const [accountTransactions, transfers] = await Promise.all([
+      prisma.transactions.findMany({
+        where: filters,
+        orderBy: { date: "asc" },
+      }),
+      prisma.transactions.findMany({
+        where: {
+          type: "transfert",
+          ...(filters.date ? { date: filters.date } : {}),
+        },
+        orderBy: { date: "asc" },
+      }),
+    ]);
+
+    const ids = new Set(accountTransactions.map(t => t.id));
+    transactions = [
+      ...accountTransactions,
+      ...transfers.filter(t => !ids.has(t.id)),
+    ];
+  } else if (isCompteCaisse(compte)) {
+    const includeAllVider = !filters.type || filters.type === "vider";
+    const [accountTransactions, viders] = await Promise.all([
+      prisma.transactions.findMany({
+        where: filters,
+        orderBy: { date: "asc" },
+      }),
+      includeAllVider
+        ? prisma.transactions.findMany({
+            where: {
+              type: "vider",
+              ...(filters.date ? { date: filters.date } : {}),
+            },
+            orderBy: { date: "asc" },
+          })
+        : Promise.resolve([]),
+    ]);
+
+    const ids = new Set(accountTransactions.map(t => t.id));
+    transactions = [
+      ...accountTransactions,
+      ...viders.filter(t => !ids.has(t.id)),
+    ];
+  } else {
+    transactions = await prisma.transactions.findMany({
+      where: filters,
+      orderBy: { date: "asc" },
+    });
+  }
 
   const comptes = await prisma.comptesBancaires.findMany();
 

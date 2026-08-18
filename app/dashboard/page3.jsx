@@ -1,31 +1,13 @@
 "use client";
 import { BasicCard } from "@/components/customUi/BasicCardDashBoard";
-import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
+import PeriodeFilter from "@/components/customUi/periode-filter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/functions";
+import { getDateRangeFromPeriode } from "@/lib/periode";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import {
-  endOfMonth,
-  endOfQuarter,
-  endOfYear,
-  isValid,
-  startOfMonth,
-  startOfQuarter,
-  startOfYear,
-  subMonths,
-  subQuarters,
-  subYears,
-} from "date-fns";
+import { isValid } from "date-fns";
 import {
   CircleDollarSign,
   HandCoins,
@@ -41,58 +23,9 @@ import { useState } from "react";
 export default function DashboardPage() {
   const [startDate, setStartDate] = useState();
   const [endDate, setEndDate] = useState();
-  const [periode, setPeriode] = useState("");
+  const [periode, setPeriode] = useState("ce-mois");
 
-  function getDateRangeFromPeriode(periode) {
-    const now = new Date();
-
-    switch (periode) {
-      case "ce-mois":
-        return {
-          from: startOfMonth(now),
-          to: endOfMonth(now),
-        };
-      case "3-derniers-mois":
-        return {
-          from: subMonths(startOfMonth(now), 2),
-          to: endOfMonth(now),
-        };
-      case "6-derniers-mois":
-        return {
-          from: subMonths(startOfMonth(now), 5),
-          to: endOfMonth(now),
-        };
-      case "cette-annee":
-        return {
-          from: startOfYear(now),
-          to: endOfYear(now),
-        };
-      case "annee-derniere":
-        const lastYear = subYears(now, 1);
-        return {
-          from: startOfYear(lastYear),
-          to: endOfYear(lastYear),
-        };
-      case "trimestre-actuel":
-        return {
-          from: startOfQuarter(now),
-          to: endOfQuarter(now),
-        };
-      case "trimestre-precedent":
-        const prevQuarter = subQuarters(now, 1);
-        return {
-          from: startOfQuarter(prevQuarter),
-          to: endOfQuarter(prevQuarter),
-        };
-      default:
-        return {
-          from: new Date(startDate) ?? null,
-          to: new Date(endDate) ?? null,
-        };
-    }
-  }
-
-  const { from, to } = getDateRangeFromPeriode(periode);
+  const { from, to } = getDateRangeFromPeriode(periode, startDate, endDate);
   const statistiques = useQuery({
     queryKey: ["statistiques", startDate, endDate, periode],
     queryFn: async () => {
@@ -112,61 +45,15 @@ export default function DashboardPage() {
       <div className="h-full flex flex-col space-y-4">
         <h1 className="text-3xl font-bold">Tableau de bord</h1>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <div className="grid grid-cols-4 items-center gap-2">
-            <Label htmlFor="periode" className="text-sm font-medium col-span-1">
-              Période :
-            </Label>
-            <div className="col-span-3">
-              <Select
-                value={periode}
-                onValueChange={value => setPeriode(value)}
-              >
-                <SelectTrigger className="focus:ring-2 focus:ring-purple-500">
-                  <SelectValue placeholder="Sélectionnez la période" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ce-mois">Ce mois</SelectItem>
-                  <SelectItem value="3-derniers-mois">
-                    Les 3 derniers mois
-                  </SelectItem>
-                  <SelectItem value="6-derniers-mois">
-                    Les 6 derniers mois
-                  </SelectItem>
-                  <SelectItem value="cette-annee">Cette année</SelectItem>
-                  <SelectItem value="annee-derniere">
-                    L&apos;année dernière
-                  </SelectItem>
-                  <SelectItem value="trimestre-actuel">
-                    Trimestre actuel
-                  </SelectItem>
-                  <SelectItem value="trimestre-precedent">
-                    Trimestre précédent
-                  </SelectItem>
-                  <SelectItem value="personnalisee">
-                    Période personnalisée
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          {periode === "personnalisee" && (
-            <div className="grid grid-cols-4 items-center gap-2">
-              <Label
-                htmlFor="statut"
-                className="col-span-1 text-left text-black"
-              >
-                Date :
-              </Label>
-              <div className="col-span-3">
-                <CustomDateRangePicker
-                  startDate={startDate}
-                  setStartDate={setStartDate}
-                  endDate={endDate}
-                  setEndDate={setEndDate}
-                />
-              </div>
-            </div>
-          )}
+          <PeriodeFilter
+            periode={periode}
+            onPeriodeChange={setPeriode}
+            startDate={startDate}
+            setStartDate={setStartDate}
+            endDate={endDate}
+            setEndDate={setEndDate}
+            id="periode-dashboard-page3"
+          />
         </div>
         <div
           className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"

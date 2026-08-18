@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../lib/prisma";
 import { requireAdmin } from "@/lib/auth-utils";
+import { reverseViderTransaction } from "@/lib/deleteTransaction";
 
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
@@ -31,10 +32,23 @@ export async function GET(req) {
   }
 
   // Compte filter (supports multiple values separated by "-")
+  // type "vider" : compte = destination, la source est toujours la caisse
   if (compte && compte !== "all") {
     const compteArray = compte.split("-");
     if (compteArray.length > 0) {
-      filters.compte = { in: compteArray };
+      const includesCaisse = compteArray.some(
+        c => (c || "").toLowerCase().trim() === "caisse"
+      );
+      if (includesCaisse) {
+        filters.AND = [
+          ...(filters.AND || []),
+          {
+            OR: [{ compte: { in: compteArray } }, { type: "vider" }],
+          },
+        ];
+      } else {
+        filters.compte = { in: compteArray };
+      }
     }
   }
 
@@ -164,13 +178,7 @@ export async function DELETE(req) {
       // Gérer les différents types de transactions
       switch (deletedTransaction.type) {
         case "vider":
-          // Remettre l'argent dans la caisse
-          await tx.comptesBancaires.updateMany({
-            where: { compte: "caisse" },
-            data: {
-              solde: { increment: deletedTransaction.montant },
-            },
-          });
+          await reverseViderTransaction(tx, deletedTransaction);
           break;
 
         case "recette":

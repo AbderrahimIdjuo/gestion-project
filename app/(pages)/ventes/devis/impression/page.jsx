@@ -56,7 +56,7 @@ export default function ImpressionTransactions() {
   }
 
   useEffect(() => {
-    const storedData = localStorage.getItem("params");
+    const storedData = localStorage.getItem("devis-params");
     if (storedData) {
       setParams(JSON.parse(storedData));
       console.log("params", JSON.parse(storedData));

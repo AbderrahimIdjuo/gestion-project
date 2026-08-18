@@ -7,13 +7,22 @@ export async function PUT(req) {
   try {
     await requireAdmin();
 
-    const resopns = await req.json();
-    const { id, solde } = resopns;
+    const body = await req.json();
+    const { id, solde } = body;
+    const parsedSolde =
+      typeof solde === "number" ? solde : parseFloat(solde);
+
+    if (!id || Number.isNaN(parsedSolde)) {
+      return NextResponse.json(
+        { message: "Identifiant ou solde invalide." },
+        { status: 400 }
+      );
+    }
 
     const result = await prisma.comptesBancaires.update({
       where: { id },
       data: {
-        solde: parseFloat(solde),
+        solde: parsedSolde,
       },
     });
 

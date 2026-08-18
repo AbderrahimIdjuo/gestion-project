@@ -25,7 +25,7 @@ export default function ImpressionReglements() {
   const [params, setParams] = useState(null);
 
   useEffect(() => {
-    const storedData = localStorage.getItem("params");
+    const storedData = localStorage.getItem("reglement-params");
     if (storedData) {
       setParams(JSON.parse(storedData));
       console.log("params", JSON.parse(storedData));

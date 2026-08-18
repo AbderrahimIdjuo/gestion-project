@@ -94,6 +94,15 @@ export async function DELETE(_, { params }) {
           throw new Error("Devis non trouvé");
         }
 
+        const statut = existing.statut;
+        if (statut === "Accepté" || statut === "Terminer") {
+          const err = new Error(
+            "Impossible de supprimer un devis accepté ou terminé"
+          );
+          err.code = "STATUT_NON_SUPPRIMABLE";
+          throw err;
+        }
+
         const linkedTransactions = await tx.transactions.findMany({
           where: { reference: existing.numero },
         });
@@ -148,6 +157,18 @@ export async function DELETE(_, { params }) {
         { status: 404 }
       );
     }
+    if (
+      error?.code === "STATUT_NON_SUPPRIMABLE" ||
+      error?.message === "Impossible de supprimer un devis accepté ou terminé"
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Impossible de supprimer un devis accepté ou terminé. Seuls les devis en attente ou annulés peuvent être supprimés.",
+        },
+        { status: 403 }
+      );
+    }
     return NextResponse.json(
       { error: "Erreur lors de la suppression du devis" },
       { status: 500 }
@@ -176,8 +197,31 @@ export async function PATCH(req, { params }) {
     // Récupérer le devis actuel pour connaître son statut
     const currentDevi = await prisma.devis.findUnique({
       where: { id },
-      select: { statut: true },
+      select: { statut: true, statutPaiement: true },
     });
+
+    if (!currentDevi) {
+      return NextResponse.json(
+        { error: "Devis non trouvé" },
+        { status: 404 }
+      );
+    }
+
+    const fromLocked =
+      currentDevi.statut === "Accepté" || currentDevi.statut === "Terminer";
+    const toRestricted = statut === "En attente" || statut === "Annulé";
+    const notImpaye =
+      currentDevi.statutPaiement && currentDevi.statutPaiement !== "impaye";
+
+    if (fromLocked && toRestricted && notImpaye) {
+      return NextResponse.json(
+        {
+          error:
+            "Impossible de passer un devis accepté ou terminé en attente ou annulé s'il n'est pas impayé.",
+        },
+        { status: 403 }
+      );
+    }
 
     // Préparer les données à mettre à jour
     const updateData = { statut };

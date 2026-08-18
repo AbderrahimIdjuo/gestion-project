@@ -1,10 +1,67 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../../lib/prisma";
 import { requireAdmin } from "@/lib/auth-utils";
+import { isCompteProfessionnel } from "@/lib/functions";
 import {
   applyReglementMontantChangeToBonLivraisons,
   ReglementMontantInvalideError,
 } from "@/lib/reglement-montant-bl-sync";
+
+async function findComptePro(tx) {
+  return tx.comptesBancaires.findFirst({
+    where: {
+      OR: [
+        { compte: { equals: "compte professionnel", mode: "insensitive" } },
+        { compte: "compte professionel" },
+      ],
+    },
+  });
+}
+
+async function syncViderVersement(tx, params) {
+  const { oldCompte, newCompte, oldMontant, newMontant } = params;
+  const oldIsPro = isCompteProfessionnel(oldCompte);
+  const newIsPro = isCompteProfessionnel(newCompte);
+
+  const caisseAccount = await tx.comptesBancaires.findFirst({
+    where: { compte: "caisse" },
+  });
+  const compteProAccount = await findComptePro(tx);
+
+  if (oldIsPro && caisseAccount && compteProAccount) {
+    const versement = await tx.versement.findFirst({
+      where: {
+        sourceCompteId: caisseAccount.id,
+        compteProId: compteProAccount.id,
+        montant: oldMontant,
+        note: "Vider la caisse vers compte pro",
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    if (versement) {
+      if (newIsPro) {
+        await tx.versement.update({
+          where: { id: versement.id },
+          data: { montant: newMontant },
+        });
+        return;
+      }
+      await tx.versement.delete({ where: { id: versement.id } });
+    }
+  }
+
+  if (newIsPro && !oldIsPro && caisseAccount && compteProAccount) {
+    await tx.versement.create({
+      data: {
+        montant: newMontant,
+        sourceCompteId: caisseAccount.id,
+        compteProId: compteProAccount.id,
+        note: "Vider la caisse vers compte pro",
+      },
+    });
+  }
+}
 
 /**
  * Même logique métier que PUT /api/reglement (chèque, soldes banque, BL comme paiement fournisseur, dette).
@@ -274,7 +331,51 @@ export async function PUT(req) {
           !skipTransactionBankAdjust &&
           (montantDifference !== 0 || compteChanged)
         ) {
-          if (compteChanged) {
+          if (existingTransaction.type === "vider") {
+            if (montantDifference !== 0) {
+              await tx.comptesBancaires.updateMany({
+                where: { compte: "caisse" },
+                data: {
+                  solde: {
+                    increment: existingTransaction.montant - montant,
+                  },
+                },
+              });
+            }
+
+            if (compteChanged && existingTransaction.compte) {
+              await tx.comptesBancaires.updateMany({
+                where: { compte: existingTransaction.compte },
+                data: {
+                  solde: { decrement: existingTransaction.montant },
+                },
+              });
+              if (compte) {
+                await tx.comptesBancaires.updateMany({
+                  where: { compte },
+                  data: {
+                    solde: { increment: montant },
+                  },
+                });
+              }
+            } else if (montantDifference !== 0 && existingTransaction.compte) {
+              await tx.comptesBancaires.updateMany({
+                where: { compte: existingTransaction.compte },
+                data: {
+                  solde: { increment: montantDifference },
+                },
+              });
+            }
+
+            if (existingTransaction.compte) {
+              await syncViderVersement(tx, {
+                oldCompte: existingTransaction.compte,
+                newCompte: compte,
+                oldMontant: existingTransaction.montant,
+                newMontant: montant,
+              });
+            }
+          } else if (compteChanged) {
             // Si le compte a changé, ajuster les deux comptes
             console.log(
               `Changement de compte: ${existingTransaction.compte} → ${compte}`

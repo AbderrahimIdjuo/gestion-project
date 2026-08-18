@@ -146,7 +146,7 @@ export default function CategoriesProduits() {
                     Catégories des produits
                   </h1>
                 </div>
-                <div className="flex justify between gap-6 items-start">
+                <div className="flex justify-between gap-6 items-start">
                   <div className="hidden md:block">
                     <SittingsSideBar page={"categories"} />
                   </div>

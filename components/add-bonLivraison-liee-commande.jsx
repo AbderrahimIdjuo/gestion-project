@@ -190,7 +190,12 @@ export default function AddBonLivraison({ lastBonLivraison, commande }) {
       setIsDialogOpen(false);
       resetDialog();
       queryClient.invalidateQueries({ queryKey: ["bonLivraison"] });
-      await axios.post("/api/bonLivraison/updatePrixUnite", { bLGroups }); // Mettre à jour les prix des produits séparément pour diminuer le temps de la requête
+      if (type !== "retour") {
+        await axios.post("/api/bonLivraison/updatePrixUnite", {
+          bLGroups,
+          type,
+        });
+      }
     },
   });
 

@@ -29,8 +29,16 @@ import { CircleX } from "lucide-react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { CategoriesSelectMenu } from "@/components/select-categories-produits";
 
-export function ModifyProductDialog({ currProduct }) {
-  const [open, setOpen] = useState(false);
+export function ModifyProductDialog({
+  currProduct,
+  open: controlledOpen,
+  onOpenChange,
+  hideTrigger = false,
+}) {
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : uncontrolledOpen;
+  const setOpen = isControlled ? onOpenChange : setUncontrolledOpen;
   const queryClient = useQueryClient();
   const productSchema = z.object({
     id: z.string(),
@@ -111,15 +119,18 @@ export function ModifyProductDialog({ currProduct }) {
   return (
     <>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
-          >
-            <Pen className="h-4 w-4" />
-          </Button>
-        </DialogTrigger>
+        {!hideTrigger && (
+          <DialogTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
+              onClick={e => e.stopPropagation()}
+            >
+              <Pen className="h-4 w-4" />
+            </Button>
+          </DialogTrigger>
+        )}
         <DialogContent className="sm:max-w-[400px] max-h-[90vh] overflow-y-auto">
           <form onSubmit={handleSubmit(onSubmit)}>
             <DialogHeader>

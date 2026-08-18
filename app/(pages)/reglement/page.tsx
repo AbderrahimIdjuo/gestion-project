@@ -2,8 +2,10 @@
 
 import ComboBoxFournisseur from "@/components/comboBox-fournisseurs";
 import CreatefactureAchatsDialog from "@/components/create-facture-societe-dialog";
-import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
 import CustomPagination from "@/components/customUi/customPagination";
+import PeriodeFilter, {
+  usePeriodeFilter,
+} from "@/components/customUi/periode-filter";
 import { PriceRangeSlider } from "@/components/customUi/customSlider";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import { LoadingDots } from "@/components/loading-dots";
@@ -339,10 +341,8 @@ function ReglementContent() {
   const [page, setPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>();
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [startDate, setStartDate] = useState<Date>();
-  const [endDate, setEndDate] = useState<Date>();
-  const [startDatePrelevement, setStartDatePrelevement] = useState<Date>();
-  const [endDatePrelevement, setEndDatePrelevement] = useState<Date>();
+  const reglementPeriode = usePeriodeFilter("all");
+  const prelevementPeriode = usePeriodeFilter("all");
   const [maxMontant, setMaxMontant] = useState<number>(0);
   const [selectedFournisseur, setSelectedFournisseur] =
     useState<Fournisseur | null>();
@@ -375,8 +375,7 @@ function ReglementContent() {
   const [selectedReglementForCheque, setSelectedReglementForCheque] =
     useState<Reglement | null>(null);
   const [balanceDialogOpen, setBalanceDialogOpen] = useState(false);
-  const [balanceStartDate, setBalanceStartDate] = useState<string | undefined>();
-  const [balanceEndDate, setBalanceEndDate] = useState<string | undefined>();
+  const balancePeriode = usePeriodeFilter("ce-mois");
   const [balanceStep, setBalanceStep] = useState<"period" | "results">("period");
   const [versementDialogOpen, setVersementDialogOpen] = useState(false);
   const [versementMontant, setVersementMontant] = useState<string>("");
@@ -411,10 +410,12 @@ function ReglementContent() {
     filters.compte,
     filters.statusPrelevement,
     filters.montant,
-    startDate,
-    endDate,
-    startDatePrelevement,
-    endDatePrelevement,
+    reglementPeriode.periode,
+    reglementPeriode.startDate,
+    reglementPeriode.endDate,
+    prelevementPeriode.periode,
+    prelevementPeriode.startDate,
+    prelevementPeriode.endDate,
     selectedFournisseur,
   ]);
 
@@ -428,10 +429,12 @@ function ReglementContent() {
       filters.compte,
       filters.statusPrelevement,
       filters.montant,
-      startDate,
-      endDate,
-      startDatePrelevement,
-      endDatePrelevement,
+      reglementPeriode.periode,
+      reglementPeriode.startDate,
+      reglementPeriode.endDate,
+      prelevementPeriode.periode,
+      prelevementPeriode.startDate,
+      prelevementPeriode.endDate,
       selectedFournisseur,
     ],
     queryFn: async () => {
@@ -452,10 +455,10 @@ function ReglementContent() {
             filters.statusPrelevement.length > 0
               ? filters.statusPrelevement.join(",")
               : undefined,
-          from: startDate,
-          to: endDate,
-          fromPrelevement: startDatePrelevement,
-          toPrelevement: endDatePrelevement,
+          from: reglementPeriode.from || undefined,
+          to: reglementPeriode.to || undefined,
+          fromPrelevement: prelevementPeriode.from || undefined,
+          toPrelevement: prelevementPeriode.to || undefined,
           minMontant: filters.montant[0] > 0 ? filters.montant[0] : undefined,
           maxMontant:
             filters.montant[1] < maxMontant ? filters.montant[1] : undefined,
@@ -657,18 +660,21 @@ function ReglementContent() {
 
   // Query pour la balance
   const balanceQuery = useQuery({
-    queryKey: ["balance", balanceStartDate, balanceEndDate],
+    queryKey: ["balance", balancePeriode.from, balancePeriode.to],
     queryFn: async () => {
-      if (!balanceStartDate || !balanceEndDate) return null;
+      if (!balancePeriode.from || !balancePeriode.to) return null;
       const response = await axios.get("/api/reglement/balance", {
         params: {
-          fromPrelevement: balanceStartDate,
-          toPrelevement: balanceEndDate,
+          fromPrelevement: balancePeriode.from,
+          toPrelevement: balancePeriode.to,
         },
       });
       return response.data;
     },
-    enabled: balanceStep === "results" && !!balanceStartDate && !!balanceEndDate,
+    enabled:
+      balanceStep === "results" &&
+      !!balancePeriode.from &&
+      !!balancePeriode.to,
   });
 
   // Query pour récupérer le compte professionnel
@@ -1027,8 +1033,9 @@ function ReglementContent() {
                       onClick={() => {
                         setBalanceDialogOpen(true);
                         setBalanceStep("period");
-                        setBalanceStartDate(undefined);
-                        setBalanceEndDate(undefined);
+                        balancePeriode.setPeriode("ce-mois");
+                        balancePeriode.setStartDate(undefined);
+                        balancePeriode.setEndDate(undefined);
                       }}
                       className="border-purple-500 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900 rounded-full"
                     >
@@ -1361,34 +1368,26 @@ function ReglementContent() {
                               </PopoverContent>
                             </Popover>
                           </div>
-                          <div className="grid gap-2">
-                            <Label
-                              htmlFor="date"
-                              className="text-left text-black"
-                            >
-                              Date de règlement :
-                            </Label>
-                            <CustomDateRangePicker
-                              startDate={startDate}
-                              setStartDate={setStartDate}
-                              endDate={endDate}
-                              setEndDate={setEndDate}
-                            />
-                          </div>
-                          <div className="grid gap-2">
-                            <Label
-                              htmlFor="datePrelevement"
-                              className="text-left text-black"
-                            >
-                              Date de prélèvement :
-                            </Label>
-                            <CustomDateRangePicker
-                              startDate={startDatePrelevement}
-                              setStartDate={setStartDatePrelevement}
-                              endDate={endDatePrelevement}
-                              setEndDate={setEndDatePrelevement}
-                            />
-                          </div>
+                          <PeriodeFilter
+                            periode={reglementPeriode.periode}
+                            onPeriodeChange={reglementPeriode.setPeriode}
+                            startDate={reglementPeriode.startDate}
+                            setStartDate={reglementPeriode.setStartDate}
+                            endDate={reglementPeriode.endDate}
+                            setEndDate={reglementPeriode.setEndDate}
+                            label="Date de règlement :"
+                            id="periode-reglement"
+                          />
+                          <PeriodeFilter
+                            periode={prelevementPeriode.periode}
+                            onPeriodeChange={prelevementPeriode.setPeriode}
+                            startDate={prelevementPeriode.startDate}
+                            setStartDate={prelevementPeriode.setStartDate}
+                            endDate={prelevementPeriode.endDate}
+                            setEndDate={prelevementPeriode.setEndDate}
+                            label="Date de prélèvement :"
+                            id="periode-prelevement"
+                          />
                         
                           <div className="grid grid-cols-4 grid-rows-2 items-start">
                             <Label
@@ -1451,10 +1450,10 @@ function ReglementContent() {
                             filters.statusPrelevement.length > 0
                               ? filters.statusPrelevement.join(",")
                               : undefined,
-                          from: startDate,
-                          to: endDate,
-                          fromPrelevement: startDatePrelevement,
-                          toPrelevement: endDatePrelevement,
+                          from: reglementPeriode.from || undefined,
+                          to: reglementPeriode.to || undefined,
+                          fromPrelevement: prelevementPeriode.from || undefined,
+                          toPrelevement: prelevementPeriode.to || undefined,
                           minMontant:
                             filters.montant[0] > 0
                               ? filters.montant[0]
@@ -1465,7 +1464,10 @@ function ReglementContent() {
                               : undefined,
                           fournisseurId: selectedFournisseur?.id,
                         };
-                        localStorage.setItem("params", JSON.stringify(params));
+                        localStorage.setItem(
+                          "reglement-params",
+                          JSON.stringify(params)
+                        );
                         window.open("/reglement/impression", "_blank");
                       }}
                       className="border-purple-500 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900 rounded-full"
@@ -1517,7 +1519,7 @@ function ReglementContent() {
                     </PopoverContent>
                   </Popover>
                 </div>
-                <div className="flex justify between gap-6 items-start">
+                <div className="flex justify-between gap-6 items-start">
                   <div className="w-full col-span-1 sm:col-span-2 md:col-span-3">
                     {/* Table */}
                     <div className="rounded-lg border overflow-x-auto mb-3">
@@ -2190,8 +2192,9 @@ function ReglementContent() {
           setBalanceDialogOpen(open);
           if (!open) {
             setBalanceStep("period");
-            setBalanceStartDate(undefined);
-            setBalanceEndDate(undefined);
+            balancePeriode.setPeriode("ce-mois");
+            balancePeriode.setStartDate(undefined);
+            balancePeriode.setEndDate(undefined);
           }
         }}
       >
@@ -2207,17 +2210,17 @@ function ReglementContent() {
 
           {balanceStep === "period" ? (
             <div className="space-y-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="balanceDate" className="text-left text-black">
-                  Période de prélèvement :
-                </Label>
-                <CustomDateRangePicker
-                  startDate={balanceStartDate}
-                  setStartDate={setBalanceStartDate}
-                  endDate={balanceEndDate}
-                  setEndDate={setBalanceEndDate}
-                />
-              </div>
+              <PeriodeFilter
+                periode={balancePeriode.periode}
+                onPeriodeChange={balancePeriode.setPeriode}
+                startDate={balancePeriode.startDate}
+                setStartDate={balancePeriode.setStartDate}
+                endDate={balancePeriode.endDate}
+                setEndDate={balancePeriode.setEndDate}
+                label="Période de prélèvement :"
+                includeToutes={false}
+                id="periode-balance"
+              />
             </div>
           ) : (
             <div className="space-y-4 py-4">
@@ -2296,8 +2299,9 @@ function ReglementContent() {
                   variant="outline"
                   onClick={() => {
                     setBalanceDialogOpen(false);
-                    setBalanceStartDate(undefined);
-                    setBalanceEndDate(undefined);
+                    balancePeriode.setPeriode("ce-mois");
+                    balancePeriode.setStartDate(undefined);
+                    balancePeriode.setEndDate(undefined);
                   }}
                 >
                   Annuler
@@ -2305,13 +2309,13 @@ function ReglementContent() {
                 <Button
                   className="rounded-full bg-purple-500 hover:bg-purple-600 text-white"
                   onClick={() => {
-                    if (balanceStartDate && balanceEndDate) {
+                    if (balancePeriode.from && balancePeriode.to) {
                       setBalanceStep("results");
                     } else {
                       toast.error("Veuillez sélectionner une période");
                     }
                   }}
-                  disabled={!balanceStartDate || !balanceEndDate}
+                  disabled={!balancePeriode.from || !balancePeriode.to}
                 >
                   Suivant
                 </Button>
@@ -2323,8 +2327,9 @@ function ReglementContent() {
                   variant="outline"
                   onClick={() => {
                     setBalanceStep("period");
-                    setBalanceStartDate(undefined);
-                    setBalanceEndDate(undefined);
+                    balancePeriode.setPeriode("ce-mois");
+                    balancePeriode.setStartDate(undefined);
+                    balancePeriode.setEndDate(undefined);
                   }}
                 >
                   Retour
@@ -2335,8 +2340,9 @@ function ReglementContent() {
                   onClick={() => {
                     setBalanceDialogOpen(false);
                     setBalanceStep("period");
-                    setBalanceStartDate(undefined);
-                    setBalanceEndDate(undefined);
+                    balancePeriode.setPeriode("ce-mois");
+                    balancePeriode.setStartDate(undefined);
+                    balancePeriode.setEndDate(undefined);
                   }}
                 >
                   Fermer

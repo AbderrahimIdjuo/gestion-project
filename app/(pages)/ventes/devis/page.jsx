@@ -1,12 +1,15 @@
 "use client";
 
-import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
 import CustomPagination from "@/components/customUi/customPagination";
+import PeriodeFilter, {
+  usePeriodeFilter,
+} from "@/components/customUi/periode-filter";
 import { PriceRangeSlider } from "@/components/customUi/customSlider";
 import { AddButton } from "@/components/customUi/styledButton";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import { DevisActions } from "@/components/devis-actions";
 import DevisRapportDialog from "@/components/devis-rapport-dialog";
+import PreviewDevisDialog from "@/components/preview-devis";
 import { LoadingDots } from "@/components/loading-dots";
 import { Navbar } from "@/components/navbar";
 import { Sidebar } from "@/components/sidebar";
@@ -104,13 +107,19 @@ export default function DevisPage() {
   const [currentDevi, setCurrentDevi] = useState();
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
+  const [previewDevis, setPreviewDevis] = useState(null);
   const [maxMontant, setMaxMontant] = useState();
-  const [startDate, setStartDate] = useState();
-  const [endDate, setEndDate] = useState();
-  const [dateStartFrom, setDateStartFrom] = useState();
-  const [dateStartTo, setDateStartTo] = useState();
-  const [dateEndFrom, setDateEndFrom] = useState();
-  const [dateEndTo, setDateEndTo] = useState();
+  const {
+    periode,
+    setPeriode,
+    startDate,
+    setStartDate,
+    endDate,
+    setEndDate,
+    from,
+    to,
+  } = usePeriodeFilter("all");
   const [transactions, setTransactions] = useState();
   const [BlGroups, setBlGroups] = useState();
   const [expandedDevis, setExpandedDevis] = useState(null);
@@ -272,12 +281,9 @@ export default function DevisPage() {
     filters.statutPaiement,
     filters.commercant,
     filters.montant,
+    periode,
     startDate,
     endDate,
-    dateStartFrom,
-    dateStartTo,
-    dateEndFrom,
-    dateEndTo,
   ]);
   const devis = useQuery({
     queryKey: [
@@ -285,12 +291,9 @@ export default function DevisPage() {
       filters.statut,
       debouncedQuery,
       page,
+      periode,
       startDate,
       endDate,
-      dateStartFrom,
-      dateStartTo,
-      dateEndFrom,
-      dateEndTo,
       filters.montant,
       filters.statutPaiement,
       filters.commercant,
@@ -301,12 +304,8 @@ export default function DevisPage() {
           query: debouncedQuery,
           page,
           statut: filters.statut.length > 0 ? filters.statut.join("-") : "all",
-          from: startDate,
-          to: endDate,
-          dateStartFrom: dateStartFrom,
-          dateStartTo: dateStartTo,
-          dateEndFrom: dateEndFrom,
-          dateEndTo: dateEndTo,
+          from: from || undefined,
+          to: to || undefined,
           minTotal: filters.montant[0],
           maxTotal: filters.montant[1],
           statutPaiement:
@@ -384,7 +383,9 @@ export default function DevisPage() {
         // console.log("devi supprimée avec succès !");
       } catch (error) {
         console.error("Erreur lors de la suppression :", error);
-        toast.error("Échec de la suppression");
+        toast.error(
+          error?.response?.data?.error || "Échec de la suppression"
+        );
         throw error; // Relancez l'erreur pour que `onError` soit déclenché
       } finally {
         toast.dismiss(loadingToast);
@@ -407,7 +408,9 @@ export default function DevisPage() {
         toast.success("Statut mis à jour avec succès!");
       } catch (error) {
         console.error("Erreur lors de la mise à jour du statut :", error);
-        toast.error("Échec de la mise à jour du statut");
+        toast.error(
+          error?.response?.data?.error || "Échec de la mise à jour du statut"
+        );
         throw error;
       }
     },
@@ -818,54 +821,16 @@ export default function DevisPage() {
                               </SelectContent>
                             </Select>
                           </div>
-                          <div className="grid grid-cols-4 grid-rows-2 items-center">
-                            <Label
-                              htmlFor="statut"
-                              className="text-left text-black col-span-4"
-                            >
-                              Date de création:
-                            </Label>
-                            <div className="col-span-4">
-                              <CustomDateRangePicker
-                                startDate={startDate}
-                                setStartDate={setStartDate}
-                                endDate={endDate}
-                                setEndDate={setEndDate}
-                              />
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-4 grid-rows-2 items-center">
-                            <Label
-                              htmlFor="dateStart"
-                              className="col-span-4 text-left text-black"
-                            >
-                              Date de début :
-                            </Label>
-                            <div className="col-span-4">
-                              <CustomDateRangePicker
-                                startDate={dateStartFrom}
-                                setStartDate={setDateStartFrom}
-                                endDate={dateStartTo}
-                                setEndDate={setDateStartTo}
-                              />
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-4 grid-rows-2 items-center">
-                            <Label
-                              htmlFor="dateEnd"
-                              className="col-span-4 text-left text-black"
-                            >
-                              Date de fin :
-                            </Label>
-                            <div className="col-span-4">
-                              <CustomDateRangePicker
-                                startDate={dateEndFrom}
-                                setStartDate={setDateEndFrom}
-                                endDate={dateEndTo}
-                                setEndDate={setDateEndTo}
-                              />
-                            </div>
-                          </div>
+                          <PeriodeFilter
+                            periode={periode}
+                            onPeriodeChange={setPeriode}
+                            startDate={startDate}
+                            setStartDate={setStartDate}
+                            endDate={endDate}
+                            setEndDate={setEndDate}
+                            label="Période :"
+                            id="periode-devis"
+                          />
                           <div className="grid grid-cols-4 grid-rows-2 items-start">
                             <Label
                               htmlFor="montant"
@@ -905,17 +870,16 @@ export default function DevisPage() {
                             filters.statutPaiement.length > 0
                               ? filters.statutPaiement.join("-")
                               : "all",
-                          from: startDate,
-                          to: endDate,
-                          dateStartFrom: dateStartFrom,
-                          dateStartTo: dateStartTo,
-                          dateEndFrom: dateEndFrom,
-                          dateEndTo: dateEndTo,
+                          from: from || undefined,
+                          to: to || undefined,
                           minTotal: filters.montant[0],
                           maxTotal: filters.montant[1],
                           commercant: filters.commercant,
                         };
-                        localStorage.setItem("params", JSON.stringify(params));
+                        localStorage.setItem(
+                          "devis-params",
+                          JSON.stringify(params)
+                        );
                         window.open("/ventes/devis/impression", "_blank");
                       }}
                       className="border-purple-500 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900 rounded-full"
@@ -1112,30 +1076,18 @@ export default function DevisPage() {
                                 )}
                                 {visibleColumns.numero && (
                                   <TableCell
-                                    onClick={() => {
-                                      toggleExpand(devis.id);
-                                      if (devis.totalPaye !== 0) {
-                                        if (currentDevi?.id === devis.id) {
-                                          setInfo(!info);
-                                        } else setInfo(true);
-                                        setCurrentDevi(devis);
-                                      }
-                                    }}
-                                    className={`font-medium !py-2  ${
-                                      devis.total > 0 &&
-                                      (devis.totalPaye === devis.total ||
-                                        devis.totalPaye > devis.total) &&
-                                      "cursor-pointer hover:text-green-400"
-                                    } 
-                                
-                                ${
-                                  devis.totalPaye !== 0 &&
-                                  devis.totalPaye < devis.total &&
-                                  "cursor-pointer hover:text-orange-400"
-                                }`}
+                                    className="font-medium !py-2"
                                   >
                                     <div className="flex items-center gap-2">
-                                      <span>{devis.numero}</span>
+                                      <span
+                                        className="cursor-pointer hover:text-purple-600"
+                                        onClick={() => {
+                                          setPreviewDevis(devis);
+                                          setPreviewDialogOpen(true);
+                                        }}
+                                      >
+                                        {devis.numero}
+                                      </span>
                                       <span
                                         className={`px-2 py-1 rounded-full text-xs font-semibold uppercase ${
                                           statutPaiement(devis)?.color
@@ -1266,7 +1218,25 @@ export default function DevisPage() {
                                     <Select
                                       value={devis.statut}
                                       onValueChange={value => {
-                                        // Ouvrir le dialogue de confirmation au lieu d'appliquer directement
+                                        const fromLocked =
+                                          devis.statut === "Accepté" ||
+                                          devis.statut === "Terminer";
+                                        const toRestricted =
+                                          value === "En attente" ||
+                                          value === "Annulé";
+                                        const paiementImpaye =
+                                          !devis.statutPaiement ||
+                                          devis.statutPaiement === "impaye";
+                                        if (
+                                          fromLocked &&
+                                          toRestricted &&
+                                          !paiementImpaye
+                                        ) {
+                                          toast.error(
+                                            "Impossible de passer un devis accepté ou terminé en attente ou annulé s'il n'est pas impayé."
+                                          );
+                                          return;
+                                        }
                                         setPendingStatutChange({
                                           id: devis.id,
                                           statut: value,
@@ -1291,10 +1261,25 @@ export default function DevisPage() {
                                       <SelectContent>
                                         {status
                                           .filter(s => s.value !== "all")
-                                          .map((statut, index) => (
+                                          .map((statut, index) => {
+                                            const fromLocked =
+                                              devis.statut === "Accepté" ||
+                                              devis.statut === "Terminer";
+                                            const toRestricted =
+                                              statut.value === "En attente" ||
+                                              statut.value === "Annulé";
+                                            const paiementImpaye =
+                                              !devis.statutPaiement ||
+                                              devis.statutPaiement === "impaye";
+                                            const disabled =
+                                              fromLocked &&
+                                              toRestricted &&
+                                              !paiementImpaye;
+                                            return (
                                             <SelectItem
                                               key={index}
                                               value={statut.value}
+                                              disabled={disabled}
                                             >
                                               <span className="flex items-center gap-2">
                                                 <span
@@ -1303,7 +1288,8 @@ export default function DevisPage() {
                                                 {statut.lable}
                                               </span>
                                             </SelectItem>
-                                          ))}
+                                            );
+                                          })}
                                       </SelectContent>
                                     </Select>
                                   </TableCell>
@@ -1315,6 +1301,10 @@ export default function DevisPage() {
                                     setCurrentDevi={setCurrentDevi}
                                     bLGroups={filteredOrders(devis.numero)}
                                     isAdmin={isAdmin}
+                                    onPreview={() => {
+                                      setPreviewDevis(devis);
+                                      setPreviewDialogOpen(true);
+                                    }}
                                   />
                                 </TableCell>
                               </TableRow>
@@ -1340,10 +1330,6 @@ export default function DevisPage() {
                                             size="sm"
                                             className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full"
                                             onClick={() => {
-                                              window.open(
-                                                `/ventes/devis/${devis.id}/historiquePaiements`,
-                                                "_blank"
-                                              );
                                               localStorage.setItem(
                                                 "devis",
                                                 JSON.stringify(devis)
@@ -1355,6 +1341,10 @@ export default function DevisPage() {
                                                     devis.numero
                                                   )
                                                 )
+                                              );
+                                              window.open(
+                                                `/ventes/devis/${devis.id}/historiquePaiements`,
+                                                "_blank"
                                               );
                                             }}
                                           >
@@ -1498,6 +1488,11 @@ export default function DevisPage() {
           </div>
         </div>
       </div>
+      <PreviewDevisDialog
+        devis={previewDevis}
+        isOpen={previewDialogOpen}
+        onClose={() => setPreviewDialogOpen(false)}
+      />
       <DeleteConfirmationDialog
         recordName={currentDevi?.numero}
         isOpen={deleteDialogOpen}

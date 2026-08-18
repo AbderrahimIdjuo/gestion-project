@@ -1,7 +1,7 @@
 "use client";
 
 import Spinner from "@/components/customUi/Spinner";
-import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
+import PeriodeFilter from "@/components/customUi/periode-filter";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,18 +32,6 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import {
-  endOfDay,
-  endOfMonth,
-  endOfQuarter,
-  endOfYear,
-  startOfDay,
-  startOfMonth,
-  startOfQuarter,
-  startOfYear,
-  subQuarters,
-  subYears,
-} from "date-fns";
-import {
   Building2,
   Calendar,
   CreditCard,
@@ -55,6 +43,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { getDateRangeFromPeriode } from "@/lib/periode";
 
 export default function InfosFournisseurDialog({
   fournisseur,
@@ -83,61 +72,6 @@ export default function InfosFournisseurDialog({
 
   // Affichage du rapport à la demande uniquement (produits et règlements se chargent à l'ouverture)
   const [rapportRequested, setRapportRequested] = useState(false);
-
-  function getDateRangeFromPeriode(periode, customStartDate, customEndDate) {
-    const now = new Date();
-
-    switch (periode) {
-      case "aujourd'hui":
-        return {
-          from: startOfDay(now),
-          to: endOfDay(now),
-        };
-      case "ce-mois":
-        return {
-          from: startOfMonth(now),
-          to: endOfMonth(now),
-        };
-      case "mois-dernier":
-        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        return {
-          from: startOfMonth(lastMonth),
-          to: endOfMonth(lastMonth),
-        };
-      case "trimestre-actuel":
-        return {
-          from: startOfQuarter(now),
-          to: endOfQuarter(now),
-        };
-      case "trimestre-precedent":
-        const prevQuarter = subQuarters(now, 1);
-        return {
-          from: startOfQuarter(prevQuarter),
-          to: endOfQuarter(prevQuarter),
-        };
-      case "cette-annee":
-        return {
-          from: startOfYear(now),
-          to: endOfYear(now),
-        };
-      case "annee-derniere":
-        const lastYear = subYears(now, 1);
-        return {
-          from: startOfYear(lastYear),
-          to: endOfYear(lastYear),
-        };
-      case "personnalisee":
-        return {
-          from: customStartDate ? new Date(customStartDate) : null,
-          to: customEndDate ? new Date(customEndDate) : null,
-        };
-      default:
-        return {
-          from: null,
-          to: null,
-        };
-    }
-  }
 
   // Mettre à jour les dates quand la période des produits change
   useEffect(() => {
@@ -710,54 +644,16 @@ export default function InfosFournisseurDialog({
                       </PrintReportButton>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="periode-produits" className="text-sm font-medium">
-                      Période
-                    </Label>
-                    <Select value={periodeProduits} onValueChange={setPeriodeProduits}>
-                      <SelectTrigger className="focus:ring-2 focus:ring-purple-500">
-                        <SelectValue placeholder="Sélectionnez la période" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="aujourd'hui">
-                          Aujourd&apos;hui
-                        </SelectItem>
-                        <SelectItem value="ce-mois">Ce mois</SelectItem>
-                        <SelectItem value="mois-dernier">
-                          Le mois dernier
-                        </SelectItem>
-                        <SelectItem value="trimestre-actuel">
-                          Trimestre actuel
-                        </SelectItem>
-                        <SelectItem value="trimestre-precedent">
-                          Trimestre précédent
-                        </SelectItem>
-                        <SelectItem value="cette-annee">Cette année</SelectItem>
-                        <SelectItem value="annee-derniere">
-                          L&apos;année dernière
-                        </SelectItem>
-                        <SelectItem value="personnalisee">
-                          Période personnalisée
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {periodeProduits === "personnalisee" && (
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="date-produits"
-                        className="text-sm font-medium"
-                      >
-                        Date :
-                      </Label>
-                      <CustomDateRangePicker
-                        startDate={startDateProduits}
-                        setStartDate={setStartDateProduits}
-                        endDate={endDateProduits}
-                        setEndDate={setEndDateProduits}
-                      />
-                    </div>
-                  )}
+                  <PeriodeFilter
+                    periode={periodeProduits}
+                    onPeriodeChange={setPeriodeProduits}
+                    startDate={startDateProduits}
+                    setStartDate={setStartDateProduits}
+                    endDate={endDateProduits}
+                    setEndDate={setEndDateProduits}
+                    includeToutes={false}
+                    id="periode-produits"
+                  />
                 </div>
               </CardHeader>
               <CardContent className="p-0">
@@ -851,54 +747,16 @@ export default function InfosFournisseurDialog({
                       Imprimer
                     </PrintReportButton>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="periode-reglements" className="text-sm font-medium">
-                      Période
-                    </Label>
-                    <Select value={periodeReglements} onValueChange={setPeriodeReglements}>
-                      <SelectTrigger className="focus:ring-2 focus:ring-purple-500">
-                        <SelectValue placeholder="Sélectionnez la période" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="aujourd'hui">
-                          Aujourd&apos;hui
-                        </SelectItem>
-                        <SelectItem value="ce-mois">Ce mois</SelectItem>
-                        <SelectItem value="mois-dernier">
-                          Le mois dernier
-                        </SelectItem>
-                        <SelectItem value="trimestre-actuel">
-                          Trimestre actuel
-                        </SelectItem>
-                        <SelectItem value="trimestre-precedent">
-                          Trimestre précédent
-                        </SelectItem>
-                        <SelectItem value="cette-annee">Cette année</SelectItem>
-                        <SelectItem value="annee-derniere">
-                          L&apos;année dernière
-                        </SelectItem>
-                        <SelectItem value="personnalisee">
-                          Période personnalisée
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {periodeReglements === "personnalisee" && (
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="date-reglements"
-                        className="text-sm font-medium"
-                      >
-                        Date :
-                      </Label>
-                      <CustomDateRangePicker
-                        startDate={startDateReglements}
-                        setStartDate={setStartDateReglements}
-                        endDate={endDateReglements}
-                        setEndDate={setEndDateReglements}
-                      />
-                    </div>
-                  )}
+                  <PeriodeFilter
+                    periode={periodeReglements}
+                    onPeriodeChange={setPeriodeReglements}
+                    startDate={startDateReglements}
+                    setStartDate={setStartDateReglements}
+                    endDate={endDateReglements}
+                    setEndDate={setEndDateReglements}
+                    includeToutes={false}
+                    id="periode-reglements"
+                  />
                 </div>
               </CardHeader>
               <CardContent className="p-0">
@@ -1069,37 +927,16 @@ export default function InfosFournisseurDialog({
               ) : (
                 <div className="space-y-4">
                 <div className="px-4 pt-4 space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="periode-rapport" className="text-sm font-medium">
-                      Période
-                    </Label>
-                    <Select value={periodeRapport} onValueChange={setPeriodeRapport}>
-                      <SelectTrigger className="focus:ring-2 focus:ring-purple-500 max-w-[220px]">
-                        <SelectValue placeholder="Sélectionnez la période" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="aujourd'hui">Aujourd&apos;hui</SelectItem>
-                        <SelectItem value="ce-mois">Ce mois</SelectItem>
-                        <SelectItem value="mois-dernier">Le mois dernier</SelectItem>
-                        <SelectItem value="trimestre-actuel">Trimestre actuel</SelectItem>
-                        <SelectItem value="trimestre-precedent">Trimestre précédent</SelectItem>
-                        <SelectItem value="cette-annee">Cette année</SelectItem>
-                        <SelectItem value="annee-derniere">L&apos;année dernière</SelectItem>
-                        <SelectItem value="personnalisee">Période personnalisée</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {periodeRapport === "personnalisee" && (
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Date</Label>
-                      <CustomDateRangePicker
-                        startDate={startDateRapport}
-                        setStartDate={setStartDateRapport}
-                        endDate={endDateRapport}
-                        setEndDate={setEndDateRapport}
-                      />
-                    </div>
-                  )}
+                  <PeriodeFilter
+                    periode={periodeRapport}
+                    onPeriodeChange={setPeriodeRapport}
+                    startDate={startDateRapport}
+                    setStartDate={setStartDateRapport}
+                    endDate={endDateRapport}
+                    setEndDate={setEndDateRapport}
+                    includeToutes={false}
+                    id="periode-rapport"
+                  />
                 </div>
               <div className="rounded-xl overflow-x-auto max-h-[500px] overflow-y-auto mt-4">
                 {rapportItems.length > 0 ? (

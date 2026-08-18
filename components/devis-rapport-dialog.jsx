@@ -1,7 +1,7 @@
 "use client";
 
 import Spinner from "@/components/customUi/Spinner";
-import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
+import PeriodeFilter from "@/components/customUi/periode-filter";
 import { LoadingDots } from "@/components/loading-dots";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -38,20 +38,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/functions";
+import { getDateRangeFromPeriode } from "@/lib/periode";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import {
-  endOfDay,
-  endOfMonth,
-  endOfQuarter,
-  endOfYear,
-  startOfDay,
-  startOfMonth,
-  startOfQuarter,
-  startOfYear,
-  subQuarters,
-  subYears,
-} from "date-fns";
 import { ChevronDown, FileText, Printer, Search, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useInView } from "react-intersection-observer";
@@ -106,43 +95,11 @@ const totalFourniture = group =>
     return acc;
   }, 0) ?? 0;
 
-function getDateRangeFromPeriode(periode, startDate, endDate) {
-  const now = new Date();
-  switch (periode) {
-    case "aujourd'hui":
-      return { from: startOfDay(now), to: endOfDay(now) };
-    case "ce-mois":
-      return { from: startOfMonth(now), to: endOfMonth(now) };
-    case "mois-dernier": {
-      const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      return { from: startOfMonth(lastMonth), to: endOfMonth(lastMonth) };
-    }
-    case "trimestre-actuel":
-      return { from: startOfQuarter(now), to: endOfQuarter(now) };
-    case "trimestre-precedent": {
-      const prevQuarter = subQuarters(now, 1);
-      return {
-        from: startOfQuarter(prevQuarter),
-        to: endOfQuarter(prevQuarter),
-      };
-    }
-    case "cette-annee":
-      return { from: startOfYear(now), to: endOfYear(now) };
-    case "annee-derniere": {
-      const lastYear = subYears(now, 1);
-      return { from: startOfYear(lastYear), to: endOfYear(lastYear) };
-    }
-    case "personnalisee":
-      return {
-        from: startDate ? new Date(startDate) : null,
-        to: endDate ? new Date(endDate) : null,
-      };
-    default:
-      return { from: null, to: null };
-  }
-}
-
-export default function DevisRapportDialog() {
+export default function DevisRapportDialog({
+  embedded = false,
+  onBack,
+  onClose,
+}) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(1);
   const [commercant, setCommercant] = useState("all");
@@ -205,8 +162,17 @@ export default function DevisRapportDialog() {
   };
 
   useEffect(() => {
-    if (!open) reset();
-  }, [open]);
+    if (!embedded && !open) reset();
+  }, [open, embedded]);
+
+  const handleCancel = () => {
+    if (embedded && onClose) {
+      onClose();
+    } else {
+      setOpen(false);
+      reset();
+    }
+  };
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -221,7 +187,7 @@ export default function DevisRapportDialog() {
       const res = await axios.get("/api/employes/managersList");
       return res.data.employes || [];
     },
-    enabled: open,
+    enabled: embedded || open,
   });
 
   const clientsQuery = useInfiniteQuery({
@@ -238,7 +204,7 @@ export default function DevisRapportDialog() {
     },
     getNextPageParam: lastPage => lastPage.nextCursor || null,
     keepPreviousData: true,
-    enabled: open && step === 1,
+    enabled: (embedded || open) && step === 1,
   });
 
   const clientsList =
@@ -282,7 +248,7 @@ export default function DevisRapportDialog() {
       const res = await axios.get("/api/devis", { params });
       return res.data;
     },
-    enabled: step === 2 && open && !!periode,
+    enabled: step === 2 && (embedded || open) && !!periode,
   });
 
   const devis = rapportQuery.data?.devis ?? [];
@@ -330,15 +296,8 @@ export default function DevisRapportDialog() {
     { value: "Terminer", label: "Terminer", color: "purple" },
   ];
 
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 text-white font-semibold transition-all duration-300 transform hover:scale-105 rounded-full">
-          <FileText className="mr-2 h-4 w-4" />
-          Rapport devis
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[90vw] max-h-[900vh] overflow-y-auto print:shadow-none print:max-h-none print:overflow-visible">
+  const content = (
+    <>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl font-bold bg-gradient-to-r from-fuchsia-600 to-violet-600 bg-clip-text text-transparent">
             <FileText className="h-5 w-5 text-purple-600" />
@@ -355,52 +314,16 @@ export default function DevisRapportDialog() {
           <div className="space-y-6">
             <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {/* 1. Période */}
-              <div className="space-y-2">
-                <Label htmlFor="periode" className="text-sm font-medium">
-                  Période
-                </Label>
-                <Select value={periode} onValueChange={setPeriode}>
-                  <SelectTrigger
-                    id="periode"
-                    className="h-10 focus:ring-2 focus:ring-purple-500"
-                  >
-                    <SelectValue placeholder="Sélectionnez la période" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="aujourd'hui">
-                      Aujourd&apos;hui
-                    </SelectItem>
-                    <SelectItem value="ce-mois">Ce mois</SelectItem>
-                    <SelectItem value="mois-dernier">
-                      Le mois dernier
-                    </SelectItem>
-                    <SelectItem value="trimestre-actuel">
-                      Trimestre actuel
-                    </SelectItem>
-                    <SelectItem value="trimestre-precedent">
-                      Trimestre précédent
-                    </SelectItem>
-                    <SelectItem value="cette-annee">Cette année</SelectItem>
-                    <SelectItem value="annee-derniere">
-                      L&apos;année dernière
-                    </SelectItem>
-                    <SelectItem value="personnalisee">
-                      Période personnalisée
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {periode === "personnalisee" && (
-                <div className="grid gap-2">
-                  <Label className="text-left text-black">Date</Label>
-                  <CustomDateRangePicker
-                    startDate={startDate}
-                    setStartDate={setStartDate}
-                    endDate={endDate}
-                    setEndDate={setEndDate}
-                  />
-                </div>
-              )}
+              <PeriodeFilter
+                periode={periode}
+                onPeriodeChange={setPeriode}
+                startDate={startDate}
+                setStartDate={setStartDate}
+                endDate={endDate}
+                setEndDate={setEndDate}
+                includeToutes={false}
+                id="periode-devis-rapport"
+              />
 
               {/* 2. Statut */}
               <div className="space-y-2">
@@ -766,10 +689,20 @@ export default function DevisRapportDialog() {
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-6 print:hidden">
+              {embedded && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onBack}
+                  className="rounded-full"
+                >
+                  Retour
+                </Button>
+              )}
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setOpen(false)}
+                onClick={handleCancel}
                 className="rounded-full"
               >
                 Annuler
@@ -968,7 +901,7 @@ export default function DevisRapportDialog() {
                   </Button>
                   <Button
                     className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full"
-                    onClick={() => setOpen(false)}
+                    onClick={handleCancel}
                   >
                     Fermer
                   </Button>
@@ -977,6 +910,23 @@ export default function DevisRapportDialog() {
             )}
           </div>
         )}
+    </>
+  );
+
+  if (embedded) {
+    return content;
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 text-white font-semibold transition-all duration-300 transform hover:scale-105 rounded-full">
+          <FileText className="mr-2 h-4 w-4" />
+          Rapport devis
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[90vw] max-h-[900vh] overflow-y-auto print:shadow-none print:max-h-none print:overflow-visible">
+        {content}
       </DialogContent>
     </Dialog>
   );

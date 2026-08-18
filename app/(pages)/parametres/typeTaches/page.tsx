@@ -107,7 +107,7 @@ export default function TypeTaches() {
                 <div className="flex justify-between items-center">
                   <h1 className="text-3xl font-bold">Tâches des employés </h1>
                 </div>
-                <div className="flex justify between gap-6 items-start">
+                <div className="flex justify-between gap-6 items-start">
                   <div className="hidden md:block">
                     <SittingsSideBar page={"typeTaches"} />
                   </div>

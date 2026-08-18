@@ -43,6 +43,7 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
+import { TableRowActions } from "@/components/table-row-actions";
 import { useEffect, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -157,7 +158,10 @@ export default function FournisseursPage() {
       );
       queryClient.invalidateQueries(["fournisseurs"]);
     } catch (e) {
-      console.log(e);
+      toast.error(
+        e?.response?.data?.error ||
+          "Impossible de supprimer ce fournisseur."
+      );
     }
   };
   const getInitials = name => {
@@ -320,7 +324,6 @@ export default function FournisseursPage() {
                               <TableCell className="!py-2">
                                 <div className="flex gap-2 justify-end">
                                   <Skeleton className="h-7 w-7 rounded-full" />
-                                  <Skeleton className="h-7 w-7 rounded-full" />
                                 </div>
                               </TableCell>
                             </TableRow>
@@ -374,47 +377,40 @@ export default function FournisseursPage() {
                                 {formatCurrency(fournisseur.dette ?? 0)}
                               </TableCell>
                               <TableCell className="text-right !py-2">
-                                <div className="flex justify-end gap-2">
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
-                                    onClick={() => {
-                                      setIsUpdateDialogOpen(true);
-                                      setCurrFournisseur(fournisseur);
-                                    }}
-                                  >
-                                    <Pen className="h-4 w-4" />
-                                    <span className="sr-only">Modifier</span>
-                                  </Button>
-
-                                  <Button
-                                    name="delete btn"
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
-                                    onClick={() => {
-                                      setCurrFournisseur(fournisseur);
-                                      setIsDialogOpen(true);
-                                    }}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                    <span className="sr-only">Supprimer</span>
-                                  </Button>
-                                  <Button
-                                    name="paiement btn"
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 rounded-full hover:bg-green-100 hover:text-green-600"
-                                    onClick={() => {
-                                      setPaiementDialogOpen(true);
-                                      setCurrFournisseur(fournisseur);
-                                    }}
-                                  >
-                                    <CircleDollarSign className="h-4 w-4" />
-                                    <span className="sr-only">paiement </span>
-                                  </Button>
-                                </div>
+                                <TableRowActions
+                                  items={[
+                                    {
+                                      icon: Pen,
+                                      label: "Modifier",
+                                      color: "purple",
+                                      onClick: () => {
+                                        setIsUpdateDialogOpen(true);
+                                        setCurrFournisseur(fournisseur);
+                                      },
+                                    },
+                                    {
+                                      icon: CircleDollarSign,
+                                      label: "Paiement",
+                                      color: "blue",
+                                      onClick: () => {
+                                        setPaiementDialogOpen(true);
+                                        setCurrFournisseur(fournisseur);
+                                      },
+                                    },
+                                    {
+                                      icon: Trash2,
+                                      label: "Supprimer",
+                                      color: "red",
+                                      hidden:
+                                        (fournisseur._count?.bonLivraisons ??
+                                          0) !== 0,
+                                      onClick: () => {
+                                        setCurrFournisseur(fournisseur);
+                                        setIsDialogOpen(true);
+                                      },
+                                    },
+                                  ]}
+                                />
                               </TableCell>
                             </TableRow>
                           ))

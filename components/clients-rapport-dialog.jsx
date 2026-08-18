@@ -1,6 +1,6 @@
 "use client";
 
-import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
+import PeriodeFilter from "@/components/customUi/periode-filter";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -9,14 +9,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -27,21 +19,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/functions";
+import { getDateRangeFromPeriode } from "@/lib/periode";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import {
-  endOfDay,
-  endOfMonth,
-  endOfQuarter,
-  endOfYear,
-  format,
-  startOfDay,
-  startOfMonth,
-  startOfQuarter,
-  startOfYear,
-  subQuarters,
-  subYears,
-} from "date-fns";
+import { format } from "date-fns";
 import { FileText, Printer } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -80,68 +61,18 @@ function TransactionsDetails({ transactions }) {
   );
 }
 
-export default function ClientsRapportDialog() {
+export default function ClientsRapportDialog({
+  embedded = false,
+  onBack,
+  onClose,
+}) {
   const [open, setOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [startDate, setStartDate] = useState();
   const [endDate, setEndDate] = useState();
   const [periode, setPeriode] = useState();
   const [transactions, setTransactions] = useState();
-  function getDateRangeFromPeriode(periode) {
-    const now = new Date();
-
-    switch (periode) {
-      case "aujourd'hui":
-        return {
-          from: startOfDay(now),
-          to: endOfDay(now),
-        };
-      case "ce-mois":
-        return {
-          from: startOfMonth(now),
-          to: endOfMonth(now),
-        };
-      case "mois-dernier":
-        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        return {
-          from: startOfMonth(lastMonth),
-          to: endOfMonth(lastMonth),
-        };
-      case "trimestre-actuel":
-        return {
-          from: startOfQuarter(now),
-          to: endOfQuarter(now),
-        };
-      case "trimestre-precedent":
-        const prevQuarter = subQuarters(now, 1);
-        return {
-          from: startOfQuarter(prevQuarter),
-          to: endOfQuarter(prevQuarter),
-        };
-      case "cette-annee":
-        return {
-          from: startOfYear(now),
-          to: endOfYear(now),
-        };
-      case "annee-derniere":
-        const lastYear = subYears(now, 1);
-        return {
-          from: startOfYear(lastYear),
-          to: endOfYear(lastYear),
-        };
-      case "personnalisee":
-        return {
-          from: startDate ? new Date(startDate) : null,
-          to: endDate ? new Date(endDate) : null,
-        };
-      default:
-        return {
-          from: null,
-          to: null,
-        };
-    }
-  }
-  const { from, to } = getDateRangeFromPeriode(periode);
+  const { from, to } = getDateRangeFromPeriode(periode, startDate, endDate);
   const { data: devis } = useQuery({
     queryKey: ["clients-rapport", periode, startDate, endDate],
     queryFn: async () => {
@@ -206,10 +137,19 @@ export default function ClientsRapportDialog() {
     setPeriode();
   };
   useEffect(() => {
-    if (!open) {
+    if (!embedded && !open) {
       reset();
     }
-  }, [open]);
+  }, [open, embedded]);
+
+  const handleCancel = () => {
+    if (embedded && onClose) {
+      onClose();
+    } else {
+      setOpen(false);
+      reset();
+    }
+  };
   // Fonction pour calculer les totaux des montants payés et restes à payer
   function calculerTotaux(devisList) {
     if (!Array.isArray(devisList)) {
@@ -229,15 +169,8 @@ export default function ClientsRapportDialog() {
 
   const totaux = calculerTotaux(devis);
 
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 text-white font-semibold transition-all duration-300 transform hover:scale-105 rounded-full">
-          <FileText className="mr-2 h-4 w-4" />
-          Rapport
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[80vw] max-h-[80vh] overflow-y-auto">
+  const content = (
+    <>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl font-bold bg-gradient-to-r from-fuchsia-600 to-violet-600 bg-clip-text text-transparent">
             <FileText className="h-5 w-5 text-purple-600" />
@@ -247,67 +180,33 @@ export default function ClientsRapportDialog() {
         {currentStep === 1 && (
           <div className="space-y-6">
             <div className="grid grid-cols-2  gap-4 ">
-              <div className="space-y-2">
-                <Label htmlFor="periode" className="text-sm font-medium">
-                  Période
-                </Label>
-                <Select
-                  value={periode}
-                  onValueChange={value => setPeriode(value)}
-                >
-                  <SelectTrigger className="focus:ring-2 focus:ring-purple-500">
-                    <SelectValue placeholder="Sélectionnez la période" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="aujourd'hui">
-                      Aujourd&apos;hui
-                    </SelectItem>
-                    <SelectItem value="ce-mois">Ce mois</SelectItem>
-                    <SelectItem value="mois-dernier">
-                      Le mois dernier
-                    </SelectItem>
-                    <SelectItem value="trimestre-actuel">
-                      Trimestre actuel
-                    </SelectItem>
-                    <SelectItem value="trimestre-precedent">
-                      Trimestre précédent
-                    </SelectItem>
-                    <SelectItem value="cette-annee">Cette année</SelectItem>
-                    <SelectItem value="annee-derniere">
-                      L&apos;année dernière
-                    </SelectItem>
-                    <SelectItem value="personnalisee">
-                      Période personnalisée
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {periode === "personnalisee" && (
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="statut"
-                    className="col-span-1 text-left text-black"
-                  >
-                    Date :
-                  </Label>
-
-                  <CustomDateRangePicker
-                    startDate={startDate}
-                    setStartDate={setStartDate}
-                    endDate={endDate}
-                    setEndDate={setEndDate}
-                  />
-                </div>
-              )}
+              <PeriodeFilter
+              periode={periode}
+              onPeriodeChange={setPeriode}
+              startDate={startDate}
+              setStartDate={setStartDate}
+              endDate={endDate}
+              setEndDate={setEndDate}
+              includeToutes={false}
+              id="periode-clients-rapport"
+            />
             </div>
 
             <div className="flex justify-end gap-3 mt-6 print:hidden">
+              {embedded && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onBack}
+                  className="rounded-full"
+                >
+                  Retour
+                </Button>
+              )}
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => {
-                  setOpen(false);
-                }}
+                onClick={handleCancel}
                 className="rounded-full"
               >
                 Annuler
@@ -439,7 +338,7 @@ export default function ClientsRapportDialog() {
               <Button
                 className="rounded-full"
                 variant="outline"
-                onClick={() => setOpen(false)}
+                onClick={handleCancel}
               >
                 fermer
               </Button>
@@ -457,8 +356,8 @@ export default function ClientsRapportDialog() {
                     from,
                     to,
                   };
-                  window.open(`/clients/imprimer-rapport`, "_blank");
                   localStorage.setItem("clients-rapport", JSON.stringify(data));
+                  window.open(`/clients/imprimer-rapport`, "_blank");
                 }}
               >
                 <Printer className="mr-2 h-4 w-4" /> Imprimer
@@ -466,6 +365,23 @@ export default function ClientsRapportDialog() {
             </div>
           </div>
         )}
+    </>
+  );
+
+  if (embedded) {
+    return content;
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 text-white font-semibold transition-all duration-300 transform hover:scale-105 rounded-full">
+          <FileText className="mr-2 h-4 w-4" />
+          Rapport
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[80vw] max-h-[80vh] overflow-y-auto">
+        {content}
       </DialogContent>
     </Dialog>
   );

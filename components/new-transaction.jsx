@@ -25,11 +25,12 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { formatCurrency } from "@/lib/functions";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 
@@ -39,6 +40,7 @@ export default function TransactionDialog() {
   const [isCharge, setIsCharge] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
   const [date, setDate] = useState(null);
+  const soldeCaisseRef = useRef(0);
   const newTransactionSchema = z
     .object({
       type: z.enum(["recette", "depense", "vider"]),
@@ -83,6 +85,19 @@ export default function TransactionDialog() {
             path: ["montant"],
             code: z.ZodIssueCode.custom,
             message: "Le montant à vider doit être supérieur à 0.",
+          });
+        } else if (data.montant > soldeCaisseRef.current) {
+          ctx.addIssue({
+            path: ["montant"],
+            code: z.ZodIssueCode.custom,
+            message: `Le montant ne peut pas dépasser le solde de la caisse (${formatCurrency(soldeCaisseRef.current)}).`,
+          });
+        }
+        if (!data.compte || data.compte.trim() === "") {
+          ctx.addIssue({
+            path: ["compte"],
+            code: z.ZodIssueCode.custom,
+            message: "Le compte de destination est requis.",
           });
         }
       }
@@ -138,7 +153,7 @@ export default function TransactionDialog() {
         await addtransaction(data);
         toast.success("Paiement éffectué avec succès");
       } catch (error) {
-        toast.error("Échec de l'opération!");
+        toast.error(error?.message || "Échec de l'opération!");
         throw error;
       } finally {
         toast.dismiss(loadingToast);
@@ -148,6 +163,7 @@ export default function TransactionDialog() {
       queryClient.invalidateQueries(["transactions"]);
       queryClient.invalidateQueries({ queryKey: ["factures"] });
       queryClient.invalidateQueries({ queryKey: ["statistiques"] });
+      queryClient.invalidateQueries({ queryKey: ["comptes"] });
     },
   });
   const typeDepense = type => {
@@ -179,7 +195,14 @@ export default function TransactionDialog() {
       const comptes = response.data.comptes;
       return comptes;
     },
+    enabled: open,
   });
+  const soldeCaisse = Number(
+    comptes.data?.find(
+      c => (c.compte || "").toLowerCase().trim() === "caisse"
+    )?.solde ?? 0
+  );
+  soldeCaisseRef.current = soldeCaisse;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -510,6 +533,21 @@ export default function TransactionDialog() {
             )}
             {watch("type") === "vider" && (
               <>
+                <div className="flex items-center justify-between rounded-lg border border-blue-200 bg-blue-50 px-3 py-2.5">
+                  <span className="text-sm font-medium text-blue-800">
+                    Solde de la caisse
+                  </span>
+                  <span className="text-sm font-semibold text-blue-900">
+                    {comptes.isLoading
+                      ? "..."
+                      : formatCurrency(soldeCaisse)}
+                  </span>
+                </div>
+                {soldeCaisse <= 0 && !comptes.isLoading && (
+                  <p className="text-sm text-red-600">
+                    La caisse est vide, impossible de la vider.
+                  </p>
+                )}
                 <div className="w-full">
                   <Label htmlFor="client">Date : </Label>
                   <CustomDatePicker date={date} onDateChange={setDate} />
@@ -521,11 +559,22 @@ export default function TransactionDialog() {
                     className="w-full focus-visible:ring-purple-500"
                     id="montant-vider"
                     type="number"
+                    min={0}
+                    max={soldeCaisse}
+                    step="0.01"
                     placeholder="Entrez le montant"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Maximum : {formatCurrency(soldeCaisse)}
+                  </p>
+                  {errors.montant && (
+                    <p className="text-red-500 text-sm">
+                      {errors.montant.message}
+                    </p>
+                  )}
                 </div>
                 <div className="grid w-full items-center gap-1.5">
-                  <Label htmlFor="compte">Compte bancaire</Label>
+                  <Label htmlFor="compte">Compte de destination</Label>
                   <Select
                     value={watch("compte")}
                     name="compte"
@@ -546,6 +595,19 @@ export default function TransactionDialog() {
                         ))}
                     </SelectContent>
                   </Select>
+                  {errors.compte && (
+                    <p className="text-red-500 text-sm">
+                      {errors.compte.message}
+                    </p>
+                  )}
+                </div>
+                <div className="grid w-full items-center gap-1.5">
+                  <Label htmlFor="description-vider">Description</Label>
+                  <Textarea
+                    {...register("description")}
+                    id="description-vider"
+                    className="col-span-3 focus-visible:ring-purple-500"
+                  />
                 </div>
               </>
             )}
@@ -567,7 +629,10 @@ export default function TransactionDialog() {
               }}
               className="bg-[#00e701] hover:bg-[#00e701] shadow-lg hover:scale-105 text-white text-md rounded-full font-bold transition-all duration-300 transform"
               type="submit"
-              disabled={isSubmitting}
+              disabled={
+                isSubmitting ||
+                (watch("type") === "vider" && soldeCaisse <= 0)
+              }
             >
               {isSubmitting ? "En cours..." : "Confirmer"}
             </Button>

@@ -38,8 +38,16 @@ import { fr } from "date-fns/locale";
 import { useForm, Controller } from "react-hook-form";
 import { format } from "date-fns";
 
-export default function UpdateCommandeFournisseur({ commande }) {
-  const [open, setOpen] = useState(false);
+export default function UpdateCommandeFournisseur({
+  commande,
+  open: controlledOpen,
+  onOpenChange,
+  hideTrigger = false,
+}) {
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : uncontrolledOpen;
+  const setOpen = isControlled ? onOpenChange : setUncontrolledOpen;
   const [orderGroups, setOrderGroups] = useState([]);
   const [selectedFournisseur, setSelectedFournisseur] = useState(null);
   const [selectedDevis, setSelectedDevis] = useState({});
@@ -52,7 +60,7 @@ export default function UpdateCommandeFournisseur({ commande }) {
   const selectedDate = watch("date");
 
   const formatCommandeGroups = (groups) => {
-    return groups.map((group) => ({
+    return (groups || []).map((group) => ({
       id: group.id,
       devisNumber: group.devisNumero,
       items: group.produits.map((produit) => ({
@@ -206,17 +214,21 @@ export default function UpdateCommandeFournisseur({ commande }) {
     },
   });
 
+  if (!commande) return null;
+
   return (
     <div>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
-        onClick={() => setOpen(true)}
-      >
-        <Pen className="h-4 w-4" />
-        <span className="sr-only">Modifier</span>
-      </Button>
+      {!hideTrigger && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 rounded-full hover:bg-purple-100 hover:text-purple-600"
+          onClick={() => setOpen(true)}
+        >
+          <Pen className="h-4 w-4" />
+          <span className="sr-only">Modifier</span>
+        </Button>
+      )}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-[100vw] max-h-[100vh] overflow-y-auto">

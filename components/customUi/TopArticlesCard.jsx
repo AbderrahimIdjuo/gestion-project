@@ -89,13 +89,13 @@ export default function TopArticlesCard({ from, to }) {
   });
   if (isLoading) {
     return (
-      <Card className="w-full shadow-md border-0">
+      <Card className="w-full rounded-3xl border-0 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
         <CardHeader className="grid grid-cols-3 items-center justify-between space-y-0 pb-2 pt-4 mb-2">
-          <CardTitle className="text-lg font-medium">
+          <CardTitle className="text-base font-semibold text-slate-800">
             Articles les plus vendus
           </CardTitle>
           <div className="flex items-center justify-end gap-3 col-span-2 w-full">
-            <span className="font-medium">Trier par</span>
+            <span className="text-sm font-medium text-slate-500">Trier par</span>
             <Skeleton className="h-9 w-[120px]" />
           </div>
         </CardHeader>
@@ -124,9 +124,9 @@ export default function TopArticlesCard({ from, to }) {
 
   if (!topArticles || topArticles.length === 0) {
     return (
-      <Card className="w-full shadow-md border-0">
+      <Card className="w-full rounded-3xl border-0 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pt-4">
-          <CardTitle className="text-lg font-medium">
+          <CardTitle className="text-base font-semibold text-slate-800">
             Articles les plus vendus
           </CardTitle>
           <ScrollText className="h-6 w-6 text-muted-foreground" />
@@ -141,16 +141,16 @@ export default function TopArticlesCard({ from, to }) {
   }
 
   return (
-    <Card className="w-full shadow-md border-0">
+    <Card className="w-full rounded-3xl border-0 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
       <CardHeader className="grid grid-cols-3 items-center justify-between space-y-0 pb-2 pt-4 mb-2">
-        <CardTitle className="text-lg font-medium">
+        <CardTitle className="text-base font-semibold text-slate-800">
           Articles les plus vendus
         </CardTitle>
         <div className="flex items-center justify-end gap-3 col-span-2 w-full">
-          <span className="font-medium">Trier par</span>
+          <span className="text-sm font-medium text-slate-500">Trier par</span>
 
           <Select value={sortBy} onValueChange={value => setSortBy(value)}>
-            <SelectTrigger className="max-w-[120px] focus:ring-2 focus:ring-purple-500">
+            <SelectTrigger className="max-w-[120px] rounded-xl focus:ring-2 focus:ring-purple-500">
               <SelectValue placeholder="Trier par" />
             </SelectTrigger>
             <SelectContent>
@@ -167,7 +167,7 @@ export default function TopArticlesCard({ from, to }) {
             return (
               <div
                 key={article.id}
-                className={`flex items-center justify-between p-2 rounded-lg transition-colors ${
+                className={`flex items-center justify-between rounded-2xl p-3 transition-colors ${
                   index < 5
                     ? `${rankColor.bgLight} border ${rankColor.border}`
                     : rankColor.bgLight

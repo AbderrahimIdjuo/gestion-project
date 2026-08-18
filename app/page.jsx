@@ -1,41 +1,30 @@
 "use client";
 
-import { BasicCard } from "@/components/customUi/BasicCardDashBoard";
+import {
+  BasicCard,
+  KpiCard,
+} from "@/components/customUi/BasicCardDashBoard";
 import TopArticlesCard from "@/components/customUi/TopArticlesCard";
 import TopProductsCard from "@/components/customUi/TopProductsCard";
-import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
+import DashboardRapportsDialog from "@/components/dashboard-rapports-dialog";
+import PeriodeFilter from "@/components/customUi/periode-filter";
 import { Navbar } from "@/components/navbar";
 import { Sidebar } from "@/components/sidebar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/functions";
+import { getDateRangeFromPeriode } from "@/lib/periode";
 import { SignIn, useUser } from "@clerk/nextjs";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import {
-  endOfDay,
-  endOfMonth,
-  endOfQuarter,
-  endOfYear,
-  format,
-  isValid,
-  startOfDay,
-  startOfMonth,
-  startOfQuarter,
-  startOfYear,
-  subMonths,
-  subQuarters,
-  subYears,
-} from "date-fns";
+import { format, isValid } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
   CalendarDays,
   FileText,
+  Grid2X2,
   Landmark,
   Package,
   ScrollText,
+  TrendingDown,
   TrendingUp,
   Truck,
   Users,
@@ -43,92 +32,13 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
-const PERIODES = [
-  { value: "ce-mois", label: "Ce mois" },
-  { value: "3-derniers-mois", label: "3 mois" },
-  { value: "6-derniers-mois", label: "6 mois" },
-  { value: "trimestre-actuel", label: "Trimestre" },
-  { value: "trimestre-precedent", label: "Trim. préc." },
-  { value: "cette-annee", label: "Cette année" },
-  { value: "annee-derniere", label: "Année préc." },
-  { value: "personnalisee", label: "Perso." },
-];
-
 export default function Page() {
   const { user, isSignedIn, isLoaded } = useUser();
   const [startDate, setStartDate] = useState();
   const [endDate, setEndDate] = useState();
   const [periode, setPeriode] = useState("ce-mois");
 
-  function getDateRangeFromPeriode(periode) {
-    const now = new Date();
-
-    switch (periode) {
-      case "aujourd'hui":
-        return {
-          from: startOfDay(now),
-          to: endOfDay(now),
-        };
-      case "ce-mois":
-        return {
-          from: startOfMonth(now),
-          to: endOfMonth(now),
-        };
-      case "mois-dernier": {
-        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        return {
-          from: startOfMonth(lastMonth),
-          to: endOfMonth(lastMonth),
-        };
-      }
-      case "3-derniers-mois":
-        return {
-          from: subMonths(startOfMonth(now), 2),
-          to: endOfMonth(now),
-        };
-      case "6-derniers-mois":
-        return {
-          from: subMonths(startOfMonth(now), 5),
-          to: endOfMonth(now),
-        };
-      case "trimestre-actuel":
-        return {
-          from: startOfQuarter(now),
-          to: endOfQuarter(now),
-        };
-      case "trimestre-precedent": {
-        const prevQuarter = subQuarters(now, 1);
-        return {
-          from: startOfQuarter(prevQuarter),
-          to: endOfQuarter(prevQuarter),
-        };
-      }
-      case "cette-annee":
-        return {
-          from: startOfYear(now),
-          to: endOfYear(now),
-        };
-      case "annee-derniere": {
-        const lastYear = subYears(now, 1);
-        return {
-          from: startOfYear(lastYear),
-          to: endOfYear(lastYear),
-        };
-      }
-      case "personnalisee":
-        return {
-          from: startDate ? new Date(startDate) : null,
-          to: endDate ? new Date(endDate) : null,
-        };
-      default:
-        return {
-          from: null,
-          to: null,
-        };
-    }
-  }
-
-  const { from, to } = getDateRangeFromPeriode(periode);
+  const { from, to } = getDateRangeFromPeriode(periode, startDate, endDate);
   const periodeLabel =
     from && to && isValid(from) && isValid(to)
       ? `${format(from, "d MMM yyyy", { locale: fr })} → ${format(to, "d MMM yyyy", { locale: fr })}`
@@ -145,6 +55,7 @@ export default function Page() {
       // console.log("statistiques", response.data);
       return response.data;
     },
+    enabled: isLoaded && isSignedIn,
     refetchOnWindowFocus: false,
   });
 
@@ -194,6 +105,7 @@ export default function Page() {
           >
             <div className="w-full max-w-md">
               <SignIn
+                routing="hash"
                 appearance={{
                   elements: {
                     rootBox: "mx-auto",
@@ -361,178 +273,132 @@ export default function Page() {
           {/* Main content area */}
           <div className="flex-1 flex flex-col">
             {/* Page content */}
-            <div className="flex-1 overflow-auto">
-              <div className="h-full flex flex-col space-y-4 p-6">
-                <h1 className="text-3xl font-bold">Tableau de bord</h1>
+            <div className="flex-1 overflow-auto bg-white">
+              <div className="flex h-full flex-col gap-6 p-6 sm:p-8">
+                <div>
+                  <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+                    Tableau de bord
+                  </h1>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Vue d&apos;ensemble de votre activité
+                  </p>
+                </div>
 
-                {/* Filtre période */}
-                <div className="rounded-2xl border border-slate-200/80 bg-gradient-to-r from-slate-50 via-white to-violet-50/40 p-4 shadow-sm sm:p-5">
-                  <div className="flex flex-col gap-4">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-100 text-violet-700">
-                          <CalendarDays className="h-4.5 w-4.5 h-[18px] w-[18px]" />
+                <div className="grid grid-cols-1 items-stretch gap-5 md:grid-cols-3">
+                  <div className="rounded-3xl border-0 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.06)] md:col-span-2">
+                    <div className="flex flex-col gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-100 text-violet-600">
+                          <CalendarDays className="h-[18px] w-[18px]" />
                         </div>
                         <div>
                           <p className="text-sm font-semibold text-slate-800">
                             Période d&apos;analyse
                           </p>
                           {periodeLabel && (
-                            <p className="text-xs text-slate-500">
+                            <p className="text-xs text-slate-400">
                               {periodeLabel}
                             </p>
                           )}
                         </div>
                       </div>
-                    </div>
 
-                    <div className="flex flex-wrap gap-2">
-                      {PERIODES.map(option => {
-                        const isActive = periode === option.value;
-                        return (
-                          <button
-                            key={option.value}
-                            type="button"
-                            onClick={() => setPeriode(option.value)}
-                            className={cn(
-                              "rounded-full px-3.5 py-1.5 text-sm font-medium transition-all duration-200",
-                              isActive
-                                ? "bg-violet-600 text-white shadow-md shadow-violet-200 ring-2 ring-violet-600/20"
-                                : "bg-white text-slate-600 border border-slate-200 hover:border-violet-300 hover:text-violet-700 hover:bg-violet-50/60"
-                            )}
-                          >
-                            {option.label}
-                          </button>
-                        );
-                      })}
+                      <PeriodeFilter
+                        periode={periode}
+                        onPeriodeChange={setPeriode}
+                        startDate={startDate}
+                        setStartDate={setStartDate}
+                        endDate={endDate}
+                        setEndDate={setEndDate}
+                        label=""
+                        id="periode-dashboard"
+                      />
                     </div>
+                  </div>
 
-                    {periode === "personnalisee" && (
-                      <div className="flex flex-col gap-2 rounded-xl border border-dashed border-violet-200 bg-white/80 p-3 sm:flex-row sm:items-center sm:gap-4">
-                        <Label className="shrink-0 text-sm font-medium text-slate-600">
-                          Plage de dates
-                        </Label>
-                        <div className="min-w-0 flex-1">
-                          <CustomDateRangePicker
-                            startDate={startDate}
-                            setStartDate={setStartDate}
-                            endDate={endDate}
-                            setEndDate={setEndDate}
-                          />
-                        </div>
-                      </div>
-                    )}
+                  <div className="flex items-center justify-end">
+                    <DashboardRapportsDialog />
                   </div>
                 </div>
                 <div
-                  className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
+                  className="grid gap-5 md:grid-cols-2 lg:grid-cols-4"
                   id="header-cards"
                 >
-                  <Card className="bg-gradient-to-tr from-fuchsia-400 via-purple-500 to-violet-600 overflow-hidden shadow-md border-0 col-span-full lg:col-span-1 order-first transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pt-4">
-                      <CardTitle className="text-lg font-medium text-white">
-                        Bénéfice
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pb-3">
-                      {statistiques.isLoading || statistiques.isFetching ? (
-                        <Skeleton className="h-8 w-[200px] bg-purple-200" />
-                      ) : (
-                        <div className="text-3xl font-bold text-white mb-3">
-                          {formatCurrency(
-                            statistiques.data?.benefice ?? 0
-                          )}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-
-                  <Card className="bg-gradient-to-tr from-emerald-300 via-emerald-400 to-emerald-500 overflow-hidden shadow-md border-0 col-span-full lg:col-span-1 order-first transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pt-4">
-                      <CardTitle className="text-lg font-medium text-white ">
-                        Recettes
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pb-3">
-                      {statistiques.isLoading || statistiques.isFetching ? (
-                        <Skeleton className="h-8 w-[200px] bg-green-200" />
-                      ) : (
-                        <>
-                          <div className="text-3xl font-bold text-white mb-1">
-                            {formatCurrency(
-                              statistiques.data?.recettes ?? 0
-                            )}
-                          </div>
-                          <p className="text-sm text-white/90">
-                            {statistiques.data?.nbrRecettes ?? 0} recette
-                            {(statistiques.data?.nbrRecettes ?? 0) !== 1 ? "s" : ""}
-                          </p>
-                        </>
-                      )}
-                    </CardContent>
-                  </Card>
-
-                  <Card className="bg-gradient-to-tr from-amber-400 via-orange-500 to-orange-600 overflow-hidden shadow-md border-0 col-span-full lg:col-span-1 order-first transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pt-4">
-                      <CardTitle className="text-lg font-medium text-white ">
-                        Dépenses fixes
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pb-3">
-                      {statistiques.isLoading || statistiques.isFetching ? (
-                        <Skeleton className="h-8 w-[200px] bg-orange-200" />
-                      ) : (
-                        <>
-                          <div className="text-3xl font-bold text-white mb-1">
-                            {formatCurrency(
-                              statistiques.data?.depensesFixes ?? 0
-                            )}
-                          </div>
-                          <p className="text-sm text-white/90">
-                            {statistiques.data?.nbrDepensesFixes ?? 0} dépense
-                            {(statistiques.data?.nbrDepensesFixes ?? 0) !== 1 ? "s" : ""} fixe
-                            {(statistiques.data?.nbrDepensesFixes ?? 0) !== 1 ? "s" : ""}
-                          </p>
-                        </>
-                      )}
-                    </CardContent>
-                  </Card>
-
-                  <Card className="bg-gradient-to-tr from-red-300 via-red-400 to-red-500 overflow-hidden shadow-md border-0 col-span-full lg:col-span-1 order-first transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pt-4">
-                      <CardTitle className="text-lg font-medium text-white ">
-                        Dépenses variables
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pb-3">
-                      {statistiques.isLoading || statistiques.isFetching ? (
-                        <Skeleton className="h-8 w-[200px] bg-red-200" />
-                      ) : (
-                        <>
-                          <div className="text-3xl font-bold text-white mb-1">
-                            {formatCurrency(
-                              statistiques.data?.depensesVariantes ?? 0
-                            )}
-                          </div>
-                          <p className="text-sm text-white/90">
-                            {statistiques.data?.nbrDepensesVariantes ?? 0} dépense
-                            {(statistiques.data?.nbrDepensesVariantes ?? 0) !== 1 ? "s" : ""} variable
-                            {(statistiques.data?.nbrDepensesVariantes ?? 0) !== 1 ? "s" : ""}
-                          </p>
-                        </>
-                      )}
-                    </CardContent>
-                  </Card>
+                  <KpiCard
+                    title="Bénéfice"
+                    value={formatCurrency(statistiques.data?.benefice ?? 0)}
+                    Icon={TrendingUp}
+                    iconClassName="bg-violet-50 text-violet-600"
+                    valueClassName="text-violet-600"
+                    isLoading={
+                      statistiques.isLoading || statistiques.isFetching
+                    }
+                  />
+                  <KpiCard
+                    title="Recettes"
+                    value={formatCurrency(statistiques.data?.recettes ?? 0)}
+                    subtitle={`${statistiques.data?.nbrRecettes ?? 0} recette${
+                      (statistiques.data?.nbrRecettes ?? 0) !== 1 ? "s" : ""
+                    }`}
+                    Icon={Wallet}
+                    iconClassName="bg-emerald-50 text-emerald-600"
+                    valueClassName="text-emerald-600"
+                    isLoading={
+                      statistiques.isLoading || statistiques.isFetching
+                    }
+                  />
+                  <KpiCard
+                    title="Dépenses fixes"
+                    value={formatCurrency(
+                      statistiques.data?.depensesFixes ?? 0
+                    )}
+                    subtitle={`${statistiques.data?.nbrDepensesFixes ?? 0} dépense${
+                      (statistiques.data?.nbrDepensesFixes ?? 0) !== 1
+                        ? "s"
+                        : ""
+                    } fixe${
+                      (statistiques.data?.nbrDepensesFixes ?? 0) !== 1
+                        ? "s"
+                        : ""
+                    }`}
+                    Icon={Landmark}
+                    iconClassName="bg-amber-50 text-amber-600"
+                    valueClassName="text-amber-600"
+                    isLoading={
+                      statistiques.isLoading || statistiques.isFetching
+                    }
+                  />
+                  <KpiCard
+                    title="Dépenses variables"
+                    value={formatCurrency(
+                      statistiques.data?.depensesVariantes ?? 0
+                    )}
+                    subtitle={`${statistiques.data?.nbrDepensesVariantes ?? 0} dépense${
+                      (statistiques.data?.nbrDepensesVariantes ?? 0) !== 1
+                        ? "s"
+                        : ""
+                    } variable${
+                      (statistiques.data?.nbrDepensesVariantes ?? 0) !== 1
+                        ? "s"
+                        : ""
+                    }`}
+                    Icon={TrendingDown}
+                    iconClassName="bg-rose-50 text-rose-600"
+                    valueClassName="text-rose-600"
+                    isLoading={
+                      statistiques.isLoading || statistiques.isFetching
+                    }
+                  />
                 </div>
                 <div
-                  className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
+                  className="grid gap-5 md:grid-cols-2 lg:grid-cols-4"
                   id="Basic-cards"
                 >
                   <BasicCard
                     title="Caisse"
                     statistiques={formatCurrency(statistiques.data?.caisse)}
                     Icon={Wallet}
-                    iconClassName="bg-amber-100 text-amber-600"
+                    iconClassName="bg-amber-50 text-amber-600"
                     isLoading={
                       statistiques.isLoading || statistiques.isFetching
                     }
@@ -543,7 +409,7 @@ export default function Page() {
                       statistiques.data?.comptePersonnel
                     )}
                     Icon={Wallet}
-                    iconClassName="bg-slate-100 text-slate-600"
+                    iconClassName="bg-slate-50 text-slate-600"
                     isLoading={
                       statistiques.isLoading || statistiques.isFetching
                     }
@@ -554,7 +420,7 @@ export default function Page() {
                       statistiques.data?.compteProfessionnel
                     )}
                     Icon={Wallet}
-                    iconClassName="bg-violet-100 text-violet-600"
+                    iconClassName="bg-violet-50 text-violet-600"
                     isLoading={
                       statistiques.isLoading || statistiques.isFetching
                     }
@@ -565,43 +431,32 @@ export default function Page() {
                       statistiques.data?.sommeReglementsPrevus ?? 0
                     )}
                     Icon={Landmark}
-                    iconClassName="bg-blue-100 text-blue-600"
+                    iconClassName="bg-blue-50 text-blue-600"
                     isLoading={
                       statistiques.isLoading || statistiques.isFetching
                     }
                   />
-                  <Card className="relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 bg-white border border-gray-200 hover:border-gray-300">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                      <CardTitle className="text-lg font-medium">
-                        Solde restant après prélèvements
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      {statistiques.isLoading || statistiques.isFetching ? (
-                        <Skeleton className="h-4 w-[150px]" />
-                      ) : (
-                        <div
-                          className={`text-3xl font-bold ${
-                            (statistiques.data?.differenceBalance ?? 0) >= 0
-                              ? "text-green-600"
-                              : "text-red-600"
-                          }`}
-                        >
-                          {formatCurrency(
-                            statistiques.data?.differenceBalance ?? 0
-                          )}
-                        </div>
-                      )}
-                    </CardContent>
-                    <div className="absolute bottom-4 right-4 p-3 rounded-full bg-emerald-100">
-                      <TrendingUp className="h-8 w-8 text-emerald-600" />
-                    </div>
-                  </Card>
+                  <BasicCard
+                    title="Solde après prélèvements"
+                    statistiques={formatCurrency(
+                      statistiques.data?.differenceBalance ?? 0
+                    )}
+                    Icon={TrendingUp}
+                    iconClassName="bg-emerald-50 text-emerald-600"
+                    valueClassName={
+                      (statistiques.data?.differenceBalance ?? 0) >= 0
+                        ? "text-emerald-600"
+                        : "text-rose-600"
+                    }
+                    isLoading={
+                      statistiques.isLoading || statistiques.isFetching
+                    }
+                  />
                   <BasicCard
                     title="Devis"
                     statistiques={statistiques.data?.nbrDevis}
                     Icon={FileText}
-                    iconClassName="bg-fuchsia-100 text-fuchsia-600"
+                    iconClassName="bg-fuchsia-50 text-fuchsia-600"
                     isLoading={
                       statistiques.isLoading || statistiques.isFetching
                     }
@@ -610,7 +465,7 @@ export default function Page() {
                     title="Bon de livraison"
                     statistiques={statistiques.data?.nbrBonLivraison}
                     Icon={ScrollText}
-                    iconClassName="bg-teal-100 text-teal-600"
+                    iconClassName="bg-teal-50 text-teal-600"
                     isLoading={
                       statistiques.isLoading || statistiques.isFetching
                     }
@@ -619,7 +474,7 @@ export default function Page() {
                     title="Commandes de fournitures"
                     statistiques={statistiques.data?.nbrCommandes}
                     Icon={Truck}
-                    iconClassName="bg-orange-100 text-orange-600"
+                    iconClassName="bg-orange-50 text-orange-600"
                     isLoading={
                       statistiques.isLoading || statistiques.isFetching
                     }
@@ -628,7 +483,7 @@ export default function Page() {
                     title="Clients"
                     statistiques={statistiques.data?.nbrClients}
                     Icon={Users}
-                    iconClassName="bg-emerald-100 text-emerald-600"
+                    iconClassName="bg-emerald-50 text-emerald-600"
                     isLoading={
                       statistiques.isLoading || statistiques.isFetching
                     }
@@ -637,7 +492,7 @@ export default function Page() {
                     title="Fournisseurs"
                     statistiques={statistiques.data?.nbrFournisseurs}
                     Icon={Users}
-                    iconClassName="bg-sky-100 text-sky-600"
+                    iconClassName="bg-sky-50 text-sky-600"
                     isLoading={
                       statistiques.isLoading || statistiques.isFetching
                     }
@@ -646,7 +501,16 @@ export default function Page() {
                     title="Produits"
                     statistiques={statistiques.data?.nbrProduits}
                     Icon={Package}
-                    iconClassName="bg-indigo-100 text-indigo-600"
+                    iconClassName="bg-indigo-50 text-indigo-600"
+                    isLoading={
+                      statistiques.isLoading || statistiques.isFetching
+                    }
+                  />
+                  <BasicCard
+                    title="Articles"
+                    statistiques={statistiques.data?.nbrArticls}
+                    Icon={Grid2X2}
+                    iconClassName="bg-rose-50 text-rose-600"
                     isLoading={
                       statistiques.isLoading || statistiques.isFetching
                     }
@@ -654,7 +518,7 @@ export default function Page() {
 
                 </div>
                 {/* Cartes des produits et articles sur la même ligne */}
-                <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
+                <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
                   {/* Carte des produits les plus achetés */}
                   <TopProductsCard from={from} to={to} />
 

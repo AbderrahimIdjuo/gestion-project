@@ -31,6 +31,9 @@ export default function CompteBancairesSelectMenu({ compte, setCompte }) {
           <SelectValue placeholder="Séléctionner..." />
         </SelectTrigger>
         <SelectContent>
+          <SelectItem value="all">
+            <div className="flex items-center gap-2">Tous les comptes</div>
+          </SelectItem>
           {comptes.data?.map((element) => (
             <SelectItem key={element.id} value={element.compte}>
               <div className="flex items-center gap-2">{element.compte}</div>

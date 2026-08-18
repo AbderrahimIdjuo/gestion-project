@@ -1,10 +1,10 @@
 "use client";
 
-import AddBonLivraison from "@/components/add-bonLivraison-liee-commande";
 import AddCommandeFournisseur from "@/components/add-commande-fournisseur";
-import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
 import CustomPagination from "@/components/customUi/customPagination";
-import CustomTooltip from "@/components/customUi/customTooltip";
+import PeriodeFilter, {
+  usePeriodeFilter,
+} from "@/components/customUi/periode-filter";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import { LoadingDots } from "@/components/loading-dots";
 import { Navbar } from "@/components/navbar";
@@ -31,9 +31,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import UpdateCommandeFournisseur from "@/components/update-commande-fournisseur";
+import { TableRowActions } from "@/components/table-row-actions";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { Filter, Printer, Search, Trash2 } from "lucide-react";
+import { Eye, Filter, Pen, Printer, Search, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -44,32 +45,23 @@ export default function CommandesAchats() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false); // Delete dialog
   const [currCommande, setCurrCommande] = useState("");
+  const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [lastCommande, setLastCommande] = useState();
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [startDate, setStartDate] = useState();
-  const [endDate, setEndDate] = useState();
+  const {
+    periode,
+    setPeriode,
+    startDate,
+    setStartDate,
+    endDate,
+    setEndDate,
+    from: filterFrom,
+    to: filterTo,
+  } = usePeriodeFilter("all");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState();
-  const [lastBonLivraison, setLastBonLivraison] = useState();
   const queryClient = useQueryClient();
-
-  useEffect(() => {
-    // Get last BL number from API
-    const getLastBonLivraison = async () => {
-      try {
-        const response = await axios.get("/api/bonLivraison/lastBonLivraison");
-        const { lastBonLivraison } = response.data;
-        console.log("#### lastBonLivraison :", lastBonLivraison);
-        if (lastBonLivraison) {
-          setLastBonLivraison(lastBonLivraison);
-        }
-      } catch (error) {
-        console.error("Error fetching last devis:", error);
-      }
-    };
-
-    getLastBonLivraison();
-  }, []);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -83,14 +75,14 @@ export default function CommandesAchats() {
   }, [searchQuery]);
 
   const commandes = useQuery({
-    queryKey: ["commandeFournisseur", debouncedQuery, page, startDate, endDate],
+    queryKey: ["commandeFournisseur", debouncedQuery, page, periode, startDate, endDate],
     queryFn: async () => {
       const response = await axios.get("/api/achats-commandes", {
         params: {
           query: debouncedQuery,
           page,
-          from: startDate,
-          to: endDate,
+          from: filterFrom || undefined,
+          to: filterTo || undefined,
         },
       });
       console.log("##### response.data.commandes", response.data.commandes);
@@ -191,17 +183,21 @@ export default function CommandesAchats() {
                         <div className="grid gap-4 py-4">
                           <div className="grid grid-cols-4 items-center gap-4 my-2">
                             <Label
-                              htmlFor="statut"
+                              htmlFor="periode"
                               className="col-span-1 text-left text-black"
                             >
-                              Date :
+                              Période :
                             </Label>
                             <div className="col-span-3">
-                              <CustomDateRangePicker
+                              <PeriodeFilter
+                                periode={periode}
+                                onPeriodeChange={setPeriode}
                                 startDate={startDate}
                                 setStartDate={setStartDate}
                                 endDate={endDate}
                                 setEndDate={setEndDate}
+                                label=""
+                                id="periode-commandes"
                               />
                             </div>
                           </div>
@@ -245,9 +241,6 @@ export default function CommandesAchats() {
                               <TableCell className="!py-2">
                                 <div className="flex gap-2 justify-end">
                                   <Skeleton className="h-7 w-7 rounded-full" />
-                                  <Skeleton className="h-7 w-7 rounded-full" />
-                                  <Skeleton className="h-7 w-7 rounded-full" />
-                                  <Skeleton className="h-7 w-7 rounded-full" />
                                 </div>
                               </TableCell>
                             </TableRow>
@@ -266,59 +259,52 @@ export default function CommandesAchats() {
                                 {commande.fournisseur.nom}
                               </TableCell>
                               <TableCell className="text-right !py-2">
-                                <div className="flex justify-end gap-2">
-                                  <CustomTooltip message="Modifier">
-                                    <UpdateCommandeFournisseur
-                                      commande={commande}
-                                    />
-                                  </CustomTooltip>
-                                  <CustomTooltip message="Aperçu">
-                                    <PreviewCommandeFournitureDialog
-                                      commande={commande}
-                                    />
-                                  </CustomTooltip>
-                                  {/* <CustomTooltip message="Création de BL">
-                                    <AddBonLivraison
-                                      lastBonLivraison={lastBonLivraison}
-                                      commande={commande}
-                                    />
-                                  </CustomTooltip> */}
-                                  <CustomTooltip message="Imprimer">
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-8 w-8 rounded-full hover:bg-emerald-100 hover:text-emerald-600"
-                                      onClick={() => {
-                                        window.open(
-                                          `/achats/commandes/imprimer`,
-                                          "_blank"
-                                        );
+                                <TableRowActions
+                                  items={[
+                                    {
+                                      icon: Pen,
+                                      label: "Modifier",
+                                      color: "purple",
+                                      onClick: () => {
+                                        setCurrCommande(commande);
+                                        setIsUpdateDialogOpen(true);
+                                      },
+                                    },
+                                    {
+                                      icon: Eye,
+                                      label: "Aperçu",
+                                      color: "blue",
+                                      onClick: () => {
+                                        setCurrCommande(commande);
+                                        setIsPreviewOpen(true);
+                                      },
+                                    },
+                                    {
+                                      icon: Printer,
+                                      label: "Imprimer",
+                                      color: "amber",
+                                      onClick: () => {
                                         localStorage.setItem(
                                           "commandeFournitures",
                                           JSON.stringify(commande)
                                         );
-                                      }}
-                                    >
-                                      <Printer className="h-4 w-4" />
-                                      <span className="sr-only">Imprimer</span>
-                                    </Button>
-                                  </CustomTooltip>
-                                  <CustomTooltip message="Supprimer">
-                                    <Button
-                                      name="delete btn"
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
-                                      onClick={() => {
+                                        window.open(
+                                          `/achats/commandes/imprimer`,
+                                          "_blank"
+                                        );
+                                      },
+                                    },
+                                    {
+                                      icon: Trash2,
+                                      label: "Supprimer",
+                                      color: "red",
+                                      onClick: () => {
                                         setIsDialogOpen(true);
                                         setCurrCommande(commande);
-                                      }}
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                      <span className="sr-only">Supprimer</span>
-                                    </Button>
-                                  </CustomTooltip>
-                                </div>
+                                      },
+                                    },
+                                  ]}
+                                />
                               </TableCell>
                             </TableRow>
                           ))
@@ -373,6 +359,18 @@ export default function CommandesAchats() {
         }}
         itemType="commandeFourniture"
       ></DeleteConfirmationDialog>
+      <UpdateCommandeFournisseur
+        commande={currCommande}
+        open={isUpdateDialogOpen}
+        onOpenChange={setIsUpdateDialogOpen}
+        hideTrigger
+      />
+      <PreviewCommandeFournitureDialog
+        commande={currCommande}
+        open={isPreviewOpen}
+        onOpenChange={setIsPreviewOpen}
+        hideTrigger
+      />
     </>
   );
 }

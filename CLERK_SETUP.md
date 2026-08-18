@@ -35,6 +35,19 @@ CLERK_WEBHOOK_SECRET=your_webhook_secret_here
 2. Créez une nouvelle application
 3. Copiez vos clés API dans le fichier `.env.local`
 4. Configurez les URLs de redirection dans votre dashboard Clerk
+5. Personnalisez le **session token** (obligatoire pour le middleware) :
+   - Clerk Dashboard → **Sessions** → **Customize session token**
+   - Ajoutez les claims suivants :
+
+```json
+{
+  "metadata": {
+    "role": "{{user.public_metadata.role}}"
+  }
+}
+```
+
+   Sans ce claim, les mutations admin (`/api/admin`, `/api/users`, imports, `DELETE /api/devis`, …) sont refusées (fail closed). Après modification, les utilisateurs doivent se reconnecter pour renouveler le JWT.
 
 ## 🔐 Structure de l'authentification
 
@@ -194,9 +207,25 @@ Dans `components/navbar.tsx`, les liens s'affichent selon le rôle :
 
 ### Protection des routes
 
-- Middleware vérifie l'authentification et les rôles
+- Middleware vérifie l'authentification et les rôles via le JWT (`sessionClaims.metadata.role`)
+- Mutations admin : rôle manquant ou non-admin → **403** (fail closed)
+- `DELETE /api/devis` et `DELETE /api/devis/:id` : admin uniquement
 - Redirection automatique vers `/sign-in` si non authentifié
-- Redirection vers `/dashboard` si accès refusé
+- Redirection vers `/` si accès page admin refusé (rôle connu et non admin)
+
+### Session JWT (rôle)
+
+Le middleware ne peut pas appeler l'API Clerk. Le rôle **doit** être dans le token :
+
+```json
+{
+  "metadata": {
+    "role": "{{user.public_metadata.role}}"
+  }
+}
+```
+
+Voir « Configuration Clerk » ci-dessus. Les handlers appellent aussi `requireAdmin()` (defense in depth).
 
 ### Vérification côté serveur
 
@@ -210,6 +239,7 @@ Dans `components/navbar.tsx`, les liens s'affichent selon le rôle :
 
 ## 📋 Checklist de déploiement
 
+- [ ] Session token Clerk personnalisé (`metadata.role` = `user.public_metadata.role`)
 - [ ] Variables d'environnement configurées
 - [ ] Clés Clerk valides
 - [ ] Webhook configuré dans Clerk Dashboard

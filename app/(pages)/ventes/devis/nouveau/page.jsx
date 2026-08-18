@@ -220,8 +220,9 @@ export default function NouveauDevisPage() {
   };
   const calculateSubTotal = () => {
     const subtotal = items.reduce((sum, item) => {
-      const amount = item.quantite * item.prixUnite;
-      return sum + amount;
+      const quantity = Number(item.quantite) || 0;
+      const unitPrice = Number(item.prixUnite) || 0;
+      return sum + quantity * unitPrice;
     }, 0);
     const discountAmount =
       watch("typeReduction") === "%"
@@ -775,10 +776,6 @@ export default function NouveauDevisPage() {
                         );
                         setValue("total", parseFloat(calculateTotal()));
                         setValue("articls", items);
-                        console.log(
-                          "form data validation :",
-                          newDeviSchema.parse(watch())
-                        );
                       }}
                       type="submit"
                       className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 hover:scale-105 text-white hover:!text-white font-semibold transition-all duration-300 transform rounded-full"

@@ -225,7 +225,7 @@ export default function UsersManagement() {
                     Ajouter un utilisateur
                   </Button>
                 </div>
-                <div className="flex justify between gap-6 items-start">
+                <div className="flex justify-between gap-6 items-start">
                   <div className="hidden md:block">
                     <SittingsSideBar page={"users-management"} />
                   </div>

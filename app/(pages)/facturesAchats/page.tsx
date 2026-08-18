@@ -1,8 +1,10 @@
 "use client";
 import ComboBoxFournisseur from "@/components/comboBox-fournisseurs";
 import CreatefactureAchatsDialog from "@/components/create-facture-societe-dialog";
-import CustomDateRangePicker from "@/components/customUi/customDateRangePicker";
 import CustomPagination from "@/components/customUi/customPagination";
+import PeriodeFilter, {
+  usePeriodeFilter,
+} from "@/components/customUi/periode-filter";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import { LoadingDots } from "@/components/loading-dots";
 import { Navbar } from "@/components/navbar";
@@ -28,6 +30,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import ViewReglementDialog from "@/components/view-reglement-dialog";
+import { TableRowActions } from "@/components/table-row-actions";
 import { formatCurrency, formatDate } from "@/lib/functions";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
@@ -81,8 +84,16 @@ export default function FacturesAchatsPage() {
   const [page, setPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>();
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [startDate, setStartDate] = useState<Date>();
-  const [endDate, setEndDate] = useState<Date>();
+  const {
+    periode,
+    setPeriode,
+    startDate,
+    setStartDate,
+    endDate,
+    setEndDate,
+    from: filterFrom,
+    to: filterTo,
+  } = usePeriodeFilter("all");
   const [selectedFournisseur, setSelectedFournisseur] =
     useState<Fournisseur | null>();
   const [viewDialog, setViewDialog] = useState(false);
@@ -113,6 +124,7 @@ export default function FacturesAchatsPage() {
       "FacturesAchats",
       debouncedQuery,
       page,
+      periode,
       startDate,
       endDate,
       selectedFournisseur,
@@ -122,8 +134,8 @@ export default function FacturesAchatsPage() {
         params: {
           page,
           query: debouncedQuery,
-          from: startDate,
-          to: endDate,
+          from: filterFrom || undefined,
+          to: filterTo || undefined,
           fournisseurId: selectedFournisseur?.id,
         },
       });
@@ -212,20 +224,15 @@ export default function FacturesAchatsPage() {
                           </SheetDescription>
                         </SheetHeader>
                         <div className="grid gap-4 py-4">
-                          <div className="grid gap-2">
-                            <Label
-                              htmlFor="date"
-                              className="text-left text-black"
-                            >
-                              Date :
-                            </Label>
-                            <CustomDateRangePicker
-                              startDate={startDate}
-                              setStartDate={setStartDate}
-                              endDate={endDate}
-                              setEndDate={setEndDate}
-                            />
-                          </div>
+                          <PeriodeFilter
+                            periode={periode}
+                            onPeriodeChange={setPeriode}
+                            startDate={startDate}
+                            setStartDate={setStartDate}
+                            endDate={endDate}
+                            setEndDate={setEndDate}
+                            id="periode-factures-achats"
+                          />
                           <div className="w-full space-y-2">
                             <ComboBoxFournisseur
                               fournisseur={selectedFournisseur}
@@ -239,13 +246,17 @@ export default function FacturesAchatsPage() {
                       variant="outline"
                       onClick={() => {
                         const params = {
-                          from: startDate,
-                          to: endDate,
+                          query: debouncedQuery || undefined,
+                          from: filterFrom || undefined,
+                          to: filterTo || undefined,
                           fournisseurId: selectedFournisseur?.id,
+                          fournisseurNom: selectedFournisseur?.nom,
                         };
-                        localStorage.setItem("params", JSON.stringify(params));
-                        // window.open("/FacturesAchats/impression", "_blank");
-                        toast("Fonctionnalité d'impression à venir");
+                        localStorage.setItem(
+                          "facturesAchats-params",
+                          JSON.stringify(params)
+                        );
+                        window.open("/facturesAchats/impression", "_blank");
                       }}
                       className="border-purple-500 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900 rounded-full"
                     >
@@ -266,7 +277,7 @@ export default function FacturesAchatsPage() {
                     />
                   </div>
                 </div>
-                <div className="flex justify between gap-6 items-start">
+                <div className="flex justify-between gap-6 items-start">
                   <div className="w-full col-span-1 sm:col-span-2 md:col-span-3">
                     {/* Table */}
                     <div className="rounded-lg border overflow-x-auto mb-3">
@@ -313,7 +324,6 @@ export default function FacturesAchatsPage() {
                                 <TableCell className="!py-2">
                                   <div className="flex gap-2 justify-end">
                                     <Skeleton className="h-7 w-7 rounded-full" />
-                                    <Skeleton className="h-7 w-7 rounded-full" />
                                   </div>
                                 </TableCell>
                               </TableRow>
@@ -341,49 +351,39 @@ export default function FacturesAchatsPage() {
                                       {formatCurrency(facture.total || 0)}
                                     </TableCell>
                                     <TableCell className="text-right py-2">
-                                      <div className="flex justify-end gap-2">
-                                        <Button
-                                          onClick={e => {
-                                            e.stopPropagation();
-                                            if (
-                                              facture.reglements &&
-                                              facture.reglements.length > 0
-                                            ) {
-                                              setSelectedReglementId(
-                                                facture.reglements[0].id
-                                              );
-                                              setReglementDialogOpen(true);
-                                            } else {
-                                              toast(
-                                                "Cette facture n'a pas de règlements"
-                                              );
-                                            }
-                                          }}
-                                          variant="ghost"
-                                          size="icon"
-                                          className="h-8 w-8 rounded-full hover:bg-blue-100 hover:text-blue-600"
-                                          title="Voir les détails du règlement"
-                                        >
-                                          <Info className="h-4 w-4" />
-                                          <span className="sr-only">
-                                            Voir les détails
-                                          </span>
-                                        </Button>
-                                        <Button
-                                          onClick={() => {
-                                            setDeleteDialog(true);
-                                            setFactureForTable(facture);
-                                          }}
-                                          variant="ghost"
-                                          size="icon"
-                                          className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600"
-                                        >
-                                          <Trash2 className="h-4 w-4" />
-                                          <span className="sr-only">
-                                            Supprimer
-                                          </span>
-                                        </Button>
-                                      </div>
+                                      <TableRowActions
+                                        items={[
+                                          {
+                                            icon: Info,
+                                            label: "Détails règlement",
+                                            color: "blue",
+                                            onClick: () => {
+                                              if (
+                                                facture.reglements &&
+                                                facture.reglements.length > 0
+                                              ) {
+                                                setSelectedReglementId(
+                                                  facture.reglements[0].id
+                                                );
+                                                setReglementDialogOpen(true);
+                                              } else {
+                                                toast(
+                                                  "Cette facture n'a pas de règlements"
+                                                );
+                                              }
+                                            },
+                                          },
+                                          {
+                                            icon: Trash2,
+                                            label: "Supprimer",
+                                            color: "red",
+                                            onClick: () => {
+                                              setDeleteDialog(true);
+                                              setFactureForTable(facture);
+                                            },
+                                          },
+                                        ]}
+                                      />
                                     </TableCell>
                                   </TableRow>
                                 );
