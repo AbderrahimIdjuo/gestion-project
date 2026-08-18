@@ -72,8 +72,8 @@ export function TableRowActionItem({
 }
 
 export function TableRowActions({
-  items = [],
-  children,
+  items = /** @type {any[]} */ ([]),
+  children = undefined,
   className = "w-56 rounded-md",
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
