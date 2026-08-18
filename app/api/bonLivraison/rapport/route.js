@@ -1,11 +1,20 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../../lib/prisma";
 
+/** Fournisseur fictif pour sorties de stock interne — exclu du rapport « tous les fournisseurs » */
+const STOCK_SORTIE_FOURNISSEUR_NOM = "STOCK(sortie)";
+
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const statutPaiement = searchParams.get("statutPaiement");
   const type = searchParams.get("type");
-  const fournisseurId = searchParams.get("fournisseurId");
+  const fournisseurIdParam = searchParams.get("fournisseurId");
+  const fournisseurId =
+    fournisseurIdParam &&
+    fournisseurIdParam !== "null" &&
+    fournisseurIdParam !== "undefined"
+      ? fournisseurIdParam
+      : null;
   const from = searchParams.get("from");
   const to = searchParams.get("to");
   const filters = {};
@@ -27,9 +36,13 @@ export async function GET(req) {
     filters.type = type;
   }
 
-  // ✅ Filtrer par fournisseur
+  // ✅ Filtrer par fournisseur ; sans sélection : tous sauf STOCK(sortie)
   if (fournisseurId) {
     filters.fournisseurId = fournisseurId;
+  } else {
+    filters.fournisseur = {
+      nom: { not: STOCK_SORTIE_FOURNISSEUR_NOM },
+    };
   }
 
   // ✅ Filtrer par période : uniquement les BL dont la date est dans l'intervalle [from, to]

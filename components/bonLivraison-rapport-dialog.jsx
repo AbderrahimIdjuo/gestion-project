@@ -63,10 +63,28 @@ function descriptionReglement(item) {
   if (item.compte) parts.push(item.compte);
   return parts.join(" · ");
 }
+
+const STOCK_SORTIE_FOURNISSEUR_NOM = "STOCK(sortie)";
+
+function isStockSortieFournisseur(nom) {
+  return typeof nom === "string" && nom.trim() === STOCK_SORTIE_FOURNISSEUR_NOM;
+}
+
+function excludeStockSortie(items) {
+  return (items || []).filter(
+    item => !isStockSortieFournisseur(item?.fournisseur?.nom)
+  );
+}
+/**
+ * @param {object} [props]
+ * @param {boolean} [props.embedded]
+ * @param {() => void} [props.onBack]
+ * @param {() => void} [props.onClose]
+ */
 export default function BonLivraisonRapportDialog({
   embedded = false,
-  onBack = undefined,
-  onClose = undefined,
+  onBack,
+  onClose,
 }) {
   const [comboKey, setComboKey] = useState(0); // aide a remount de comboboxFournisseur
   const [open, setOpen] = useState(false);
@@ -162,7 +180,9 @@ export default function BonLivraisonRapportDialog({
           to: to?.toISOString() ?? null,
         },
       });
-      return response.data.bonLivraison;
+      const bls = response.data.bonLivraison || [];
+      if (selectedFournisseur) return bls;
+      return excludeStockSortie(bls);
     },
     enabled: currentStep === 2 && hasValidDateRange,
   });
@@ -184,7 +204,9 @@ export default function BonLivraisonRapportDialog({
           limit: 10000,
         },
       });
-      return response.data.reglements || [];
+      const regs = response.data.reglements || [];
+      if (selectedFournisseur) return regs;
+      return excludeStockSortie(regs);
     },
     enabled:
       currentStep === 2 &&
@@ -198,7 +220,9 @@ export default function BonLivraisonRapportDialog({
     queryKey: ["fournisseurs-list-dette", currentStep],
     queryFn: async () => {
       const { data } = await axios.get("/api/fournisseurs", { params: { page: 1, limit: 5000 } });
-      return data.fournisseurs || [];
+      return (data.fournisseurs || []).filter(
+        f => !isStockSortieFournisseur(f?.nom)
+      );
     },
     enabled: currentStep === 2 && !selectedFournisseur && formData.modeAffichage === "parBL",
   });
@@ -615,26 +639,9 @@ export default function BonLivraisonRapportDialog({
                   <TableRow key={`${item.itemType}-${item.reference}-${index}`} className="border-b hover:bg-purple-50/50">
                     <TableCell className="py-2">{formatDate(item.date)}</TableCell>
                     <TableCell className="py-2 font-medium">
-                      {item.itemType === "reglement" ? (
-                        <span className="flex flex-col gap-0.5 text-sm">
-                          <span>
-                            {descriptionReglement(item) || item.motif || item.reference}
-                          </span>
-                          {item.datePrelevement && (
-                            <span className="text-muted-foreground">
-                              Prélèvement : {formatDate(item.datePrelevement)}
-                            </span>
-                          )}
-                          {item.numeroCheque && (
-                            <span>N° chèque : {item.numeroCheque}</span>
-                          )}
-                          {item.motif && descriptionReglement(item) ? (
-                            <span className="text-muted-foreground">{item.motif}</span>
-                          ) : null}
-                        </span>
-                      ) : (
-                        item.reference
-                      )}
+                      {item.itemType === "reglement"
+                        ? descriptionReglement(item)
+                        : item.reference}
                     </TableCell>
                     {showFournisseurCol && (
                       <TableCell className="py-2 text-muted-foreground">{item.fournisseurNom ?? "—"}</TableCell>
