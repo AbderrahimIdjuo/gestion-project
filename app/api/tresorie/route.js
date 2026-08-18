@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "../../../lib/prisma";
 import { requireAdmin } from "@/lib/auth-utils";
 import { reverseViderTransaction } from "@/lib/deleteTransaction";
+import { statutPaiementFromTotals } from "@/lib/statut-paiement";
 
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
@@ -227,12 +228,6 @@ export async function DELETE(req) {
   }
 }
 
-function statutPaiementFromTotal(totalPaye, total) {
-  if (totalPaye <= 0) return "impaye";
-  if (totalPaye < total) return "enPartie";
-  return "paye";
-}
-
 async function reverseBonLivraisonPaiement(tx, blId, montant) {
   const bl = await tx.bonLivraison.findUnique({ where: { id: blId } });
   if (!bl) return;
@@ -242,7 +237,7 @@ async function reverseBonLivraisonPaiement(tx, blId, montant) {
     where: { id: blId },
     data: {
       totalPaye: nouveauTotalPaye,
-      statutPaiement: statutPaiementFromTotal(nouveauTotalPaye, bl.total),
+      statutPaiement: statutPaiementFromTotals(nouveauTotalPaye, bl.total),
     },
   });
 }
@@ -330,7 +325,7 @@ async function reversePaiementFournisseur(tx, transaction) {
         where: { id: bl.id },
         data: {
           totalPaye: nouveauTotalPaye,
-          statutPaiement: statutPaiementFromTotal(nouveauTotalPaye, bl.total),
+          statutPaiement: statutPaiementFromTotals(nouveauTotalPaye, bl.total),
         },
       });
       montantRestant = 0;
@@ -362,17 +357,14 @@ async function handleSpecialLabels(tx, transaction) {
 
       // Mettre à jour le statut de paiement
       const newTotalPaye = bonLivraison.totalPaye;
-      let newStatutPaiement = "enPartie";
-
-      if (newTotalPaye <= 0) {
-        newStatutPaiement = "impaye";
-      } else if (newTotalPaye >= bonLivraison.total) {
-        newStatutPaiement = "paye";
-      }
-
       await tx.bonLivraison.update({
         where: { numero: numeroBL },
-        data: { statutPaiement: newStatutPaiement },
+        data: {
+          statutPaiement: statutPaiementFromTotals(
+            newTotalPaye,
+            bonLivraison.total
+          ),
+        },
       });
     }
   }

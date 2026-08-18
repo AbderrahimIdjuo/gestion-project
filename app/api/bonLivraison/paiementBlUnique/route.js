@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../../lib/prisma";
+import { statutPaiementFromTotals } from "@/lib/statut-paiement";
 export const dynamic = "force-dynamic";
 
 export async function POST(req) {
@@ -16,19 +17,34 @@ export async function POST(req) {
       methodePaiement,
       numeroCheque,
       date,
-      statutPaiement,
       motif,
       datePrelevement,
       dateReglement,
     } = response;
 
+    const montantNum = Number(montant);
+    if (!bonLivraisonId || !Number.isFinite(montantNum) || montantNum <= 0) {
+      return NextResponse.json(
+        { message: "Montant ou bon de livraison invalide." },
+        { status: 400 }
+      );
+    }
+
     const result = await prisma.$transaction(async prisma => {
-      //Update the BL
-      await prisma.bonLivraison.update({
+      const bl = await prisma.bonLivraison.findUnique({
         where: { id: bonLivraisonId },
+        select: { id: true, total: true, totalPaye: true },
+      });
+      if (!bl) {
+        throw new Error("Bon de livraison introuvable");
+      }
+
+      const nouveauTotalPaye = (bl.totalPaye ?? 0) + montantNum;
+      await prisma.bonLivraison.update({
+        where: { id: bl.id },
         data: {
-          ...(statutPaiement !== undefined && { statutPaiement }),
-          totalPaye: { increment: montant },
+          totalPaye: nouveauTotalPaye,
+          statutPaiement: statutPaiementFromTotals(nouveauTotalPaye, bl.total),
         },
       });
 
@@ -39,7 +55,7 @@ export async function POST(req) {
         cheque = await prisma.cheques.create({
           data: {
             type: "EMIS",
-            montant,
+            montant: montantNum,
             compte,
             numero: numeroCheque, // ou une autre logique
             fournisseurId: fournisseurId || null,
@@ -55,7 +71,7 @@ export async function POST(req) {
             connect: { id: fournisseurId },
           },
           compte: compte,
-          montant: montant,
+          montant: montantNum,
           reference: bonLivraisonId,
           methodePaiement: methodePaiement,
           dateReglement: dateReglement ? new Date(dateReglement) : new Date(),
@@ -85,7 +101,7 @@ export async function POST(req) {
         data: {
           reglementId: reglement.id,
           bonLivraisonId: bonLivraisonId,
-          montant: montant,
+          montant: montantNum,
         },
       });
 
@@ -96,7 +112,7 @@ export async function POST(req) {
             ReglementId: reglement ? reglement.id : null,
             reference: reglement ? reglement.id : null,
             type,
-            montant,
+            montant: montantNum,
             compte,
             fournisseurId: fournisseurId,
             lable,
@@ -117,7 +133,7 @@ export async function POST(req) {
         await prisma.comptesBancaires.updateMany({
           where: { compte: compte },
           data: {
-            solde: { decrement: montant },
+            solde: { decrement: montantNum },
           },
         });
 
@@ -125,7 +141,7 @@ export async function POST(req) {
         await prisma.fournisseurs.update({
           where: { id: fournisseurId },
           data: {
-            dette: { decrement: montant },
+            dette: { decrement: montantNum },
           },
         });
       }

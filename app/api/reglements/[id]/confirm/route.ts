@@ -1,6 +1,10 @@
 import { PrismaClient } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { authErrorResponse, requireAuth } from "@/lib/auth-utils";
+import {
+  resteAPayer,
+  statutPaiementFromTotals,
+} from "@/lib/statut-paiement";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const prisma: PrismaClient = require("../../../../../lib/prisma").default;
 
@@ -309,8 +313,10 @@ export async function POST(
             });
             if (bl) {
               const nouveauTotalPaye = (bl.totalPaye ?? 0) + alloc.montant;
-              let nouveauStatutPaiement = "enPartie";
-              if (nouveauTotalPaye >= bl.total) nouveauStatutPaiement = "paye";
+              const nouveauStatutPaiement = statutPaiementFromTotals(
+                nouveauTotalPaye,
+                bl.total
+              );
               await tx.bonLivraison.update({
                 where: { id: alloc.bonLivraisonId },
                 data: {
@@ -326,8 +332,10 @@ export async function POST(
           });
           if (bonLivraison) {
             const nouveauTotalPaye = (bonLivraison.totalPaye ?? 0) + reglementLocked.montant;
-            let nouveauStatutPaiement = "enPartie";
-            if (nouveauTotalPaye >= bonLivraison.total) nouveauStatutPaiement = "paye";
+            const nouveauStatutPaiement = statutPaiementFromTotals(
+              nouveauTotalPaye,
+              bonLivraison.total
+            );
             await tx.bonLivraison.update({
               where: { id: reglementLocked.reference },
               data: {
@@ -348,23 +356,26 @@ export async function POST(
           let montantRestant = reglementLocked.montant;
           for (const bl of bonLivraisonList) {
             if (montantRestant <= 0) break;
-            const resteAPayer = bl.total - (bl.totalPaye ?? 0);
+            const totalPayeActuel = bl.totalPaye ?? 0;
+            const reste = resteAPayer(bl.total, totalPayeActuel);
             let montantAlloue = 0;
-            if (montantRestant >= resteAPayer) {
-              montantAlloue = resteAPayer;
-              montantRestant -= resteAPayer;
-              await tx.bonLivraison.update({
-                where: { id: bl.id },
-                data: { totalPaye: bl.total, statutPaiement: "paye" },
-              });
+            if (montantRestant >= reste) {
+              montantAlloue = reste;
+              montantRestant -= reste;
             } else {
               montantAlloue = montantRestant;
               montantRestant = 0;
+            }
+            if (montantAlloue > 0) {
+              const nouveauTotalPaye = totalPayeActuel + montantAlloue;
               await tx.bonLivraison.update({
                 where: { id: bl.id },
                 data: {
-                  totalPaye: { increment: montantAlloue },
-                  statutPaiement: "enPartie",
+                  totalPaye: nouveauTotalPaye,
+                  statutPaiement: statutPaiementFromTotals(
+                    nouveauTotalPaye,
+                    bl.total
+                  ),
                 },
               });
             }

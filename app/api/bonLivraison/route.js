@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../lib/prisma";
+import { statutPaiementFromTotals } from "@/lib/statut-paiement";
 
 /** Fournisseur fictif pour sorties de stock interne — pas d’achat fournisseur réel */
 const STOCK_SORTIE_FOURNISSEUR_NOM = "STOCK(sortie)";
@@ -71,12 +72,16 @@ export async function POST(req) {
       fournisseurNom,
     } = response;
     const isRetour = type === "retour";
+    const totalNum = parseFloat(total);
     const montant =
       isRetour
         ? 0
         : statutPaiement === "paye"
-          ? parseFloat(total)
+          ? totalNum
           : parseFloat(montantPaye) || 0;
+    const statutCalcule = isRetour
+      ? "impaye"
+      : statutPaiementFromTotals(montant, totalNum);
     const result = await prisma.$transaction(
       async prisma => {
         let stockSortieInterne = false;
@@ -96,10 +101,10 @@ export async function POST(req) {
           data: {
             date: date || new Date(),
             numero,
-            total: parseFloat(total),
+            total: totalNum,
             reference,
             type,
-            statutPaiement: isRetour ? "impaye" : (statutPaiement || "impaye"),
+            statutPaiement: statutCalcule,
             totalPaye: isRetour ? null : montant,
             fournisseur: {
               connect: { id: fournisseurId },
@@ -135,15 +140,12 @@ export async function POST(req) {
         }
 
         // creation de la transaction (pas pour les BL de type retour)
-        if (statutPaiement && statutPaiement !== "impaye" && !isRetour) {
+        if (!isRetour && montant > 0) {
           await prisma.transactions.create({
             data: {
               reference: bonLivraison.id,
               type: "depense",
-              montant:
-                statutPaiement === "enPartie"
-                  ? parseFloat(montantPaye)
-                  : parseFloat(total),
+              montant,
               compte,
               lable: "paiement de :" + numero,
               description: "bénéficiaire :" + fournisseurNom,
@@ -162,14 +164,8 @@ export async function POST(req) {
         }
 
         // Mettre à jour la dette du fournisseur : achats → + montant impayé, retour → - montant du BL
-        const totalNum = parseFloat(total);
         if (type === "achats") {
-          const montantImpaye =
-            statutPaiement === "paye"
-              ? 0
-              : statutPaiement === "enPartie"
-                ? totalNum - (parseFloat(montantPaye) || 0)
-                : totalNum;
+          const montantImpaye = Math.max(0, totalNum - (montant || 0));
           await prisma.fournisseurs.update({
             where: { id: fournisseurId },
             data: { dette: { increment: montantImpaye } },
@@ -261,7 +257,6 @@ export async function PUT(req) {
       total,
       type,
       reference,
-      statutPaiement,
       totalPaye,
     } = response;
 
@@ -325,7 +320,6 @@ export async function PUT(req) {
       total: newTotal,
       type,
       reference,
-      statutPaiement,
       fournisseur: {
         connect: { id: fournisseurId },
       },
@@ -381,6 +375,10 @@ export async function PUT(req) {
       updateData.statutPaiement = "impaye";
     } else if (type === "achats") {
       updateData.totalPaye = newTotalPaye ?? 0;
+      updateData.statutPaiement = statutPaiementFromTotals(
+        updateData.totalPaye,
+        newTotal
+      );
     }
     const result = await prisma.bonLivraison.update({
       where: { id },

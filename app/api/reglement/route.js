@@ -5,6 +5,10 @@ import {
   applyReglementMontantChangeToBonLivraisons,
   ReglementMontantInvalideError,
 } from "@/lib/reglement-montant-bl-sync";
+import {
+  resteAPayer,
+  statutPaiementFromTotals,
+} from "@/lib/statut-paiement";
 export const dynamic = "force-dynamic";
 
 export async function GET(req) {
@@ -488,10 +492,10 @@ export async function PATCH(req) {
               });
               if (bl) {
                 const nouveauTotalPaye = (bl.totalPaye ?? 0) + alloc.montant;
-                let nouveauStatutPaiement = "enPartie";
-                if (nouveauTotalPaye >= bl.total) {
-                  nouveauStatutPaiement = "paye";
-                }
+                const nouveauStatutPaiement = statutPaiementFromTotals(
+                  nouveauTotalPaye,
+                  bl.total
+                );
                 await tx.bonLivraison.update({
                   where: { id: alloc.bonLivraisonId },
                   data: {
@@ -507,10 +511,10 @@ export async function PATCH(req) {
             });
             if (bonLivraison) {
               const nouveauTotalPaye = (bonLivraison.totalPaye ?? 0) + reglementExistant.montant;
-              let nouveauStatutPaiement = "enPartie";
-              if (nouveauTotalPaye >= bonLivraison.total) {
-                nouveauStatutPaiement = "paye";
-              }
+              const nouveauStatutPaiement = statutPaiementFromTotals(
+                nouveauTotalPaye,
+                bonLivraison.total
+              );
               await tx.bonLivraison.update({
                 where: { id: reglementExistant.reference },
                 data: {
@@ -533,23 +537,34 @@ export async function PATCH(req) {
             for (const bl of bonLivraisonList) {
               if (montantRestant <= 0) break;
               const totalPayeActuel = bl.totalPaye ?? 0;
-              const resteAPayer = bl.total - totalPayeActuel;
+              const reste = resteAPayer(bl.total, totalPayeActuel);
               let montantAlloue = 0;
-              if (montantRestant >= resteAPayer) {
-                montantAlloue = resteAPayer;
-                montantRestant -= resteAPayer;
+              if (montantRestant >= reste) {
+                montantAlloue = reste;
+                montantRestant -= reste;
+                const nouveauTotalPaye = totalPayeActuel + montantAlloue;
                 await tx.bonLivraison.update({
                   where: { id: bl.id },
-                  data: { totalPaye: bl.total, statutPaiement: "paye" },
+                  data: {
+                    totalPaye: nouveauTotalPaye,
+                    statutPaiement: statutPaiementFromTotals(
+                      nouveauTotalPaye,
+                      bl.total
+                    ),
+                  },
                 });
               } else {
                 montantAlloue = montantRestant;
                 montantRestant = 0;
+                const nouveauTotalPaye = totalPayeActuel + montantAlloue;
                 await tx.bonLivraison.update({
                   where: { id: bl.id },
                   data: {
-                    totalPaye: { increment: montantAlloue },
-                    statutPaiement: "enPartie",
+                    totalPaye: nouveauTotalPaye,
+                    statutPaiement: statutPaiementFromTotals(
+                      nouveauTotalPaye,
+                      bl.total
+                    ),
                   },
                 });
               }
@@ -645,8 +660,10 @@ export async function PATCH(req) {
               });
               if (bl) {
                 const nouveauTotalPaye = (bl.totalPaye ?? 0) + alloc.montant;
-                let nouveauStatutPaiement = "enPartie";
-                if (nouveauTotalPaye >= bl.total) nouveauStatutPaiement = "paye";
+                const nouveauStatutPaiement = statutPaiementFromTotals(
+                  nouveauTotalPaye,
+                  bl.total
+                );
                 await tx.bonLivraison.update({
                   where: { id: alloc.bonLivraisonId },
                   data: { totalPaye: nouveauTotalPaye, statutPaiement: nouveauStatutPaiement },
@@ -659,8 +676,10 @@ export async function PATCH(req) {
             });
             if (bonLivraison) {
               const nouveauTotalPaye = (bonLivraison.totalPaye ?? 0) + reglementExistant.montant;
-              let nouveauStatutPaiement = "enPartie";
-              if (nouveauTotalPaye >= bonLivraison.total) nouveauStatutPaiement = "paye";
+              const nouveauStatutPaiement = statutPaiementFromTotals(
+                nouveauTotalPaye,
+                bonLivraison.total
+              );
               await tx.bonLivraison.update({
                 where: { id: reglementExistant.reference },
                 data: { totalPaye: nouveauTotalPaye, statutPaiement: nouveauStatutPaiement },
@@ -678,23 +697,35 @@ export async function PATCH(req) {
             let montantRestant = reglementExistant.montant;
             for (const bl of bonLivraisonList) {
               if (montantRestant <= 0) break;
-              const resteAPayer = bl.total - (bl.totalPaye ?? 0);
+              const totalPayeActuel = bl.totalPaye ?? 0;
+              const reste = resteAPayer(bl.total, totalPayeActuel);
               let montantAlloue = 0;
-              if (montantRestant >= resteAPayer) {
-                montantAlloue = resteAPayer;
-                montantRestant -= resteAPayer;
+              if (montantRestant >= reste) {
+                montantAlloue = reste;
+                montantRestant -= reste;
+                const nouveauTotalPaye = totalPayeActuel + montantAlloue;
                 await tx.bonLivraison.update({
                   where: { id: bl.id },
-                  data: { totalPaye: bl.total, statutPaiement: "paye" },
+                  data: {
+                    totalPaye: nouveauTotalPaye,
+                    statutPaiement: statutPaiementFromTotals(
+                      nouveauTotalPaye,
+                      bl.total
+                    ),
+                  },
                 });
               } else {
                 montantAlloue = montantRestant;
                 montantRestant = 0;
+                const nouveauTotalPaye = totalPayeActuel + montantAlloue;
                 await tx.bonLivraison.update({
                   where: { id: bl.id },
                   data: {
-                    totalPaye: { increment: montantAlloue },
-                    statutPaiement: "enPartie",
+                    totalPaye: nouveauTotalPaye,
+                    statutPaiement: statutPaiementFromTotals(
+                      nouveauTotalPaye,
+                      bl.total
+                    ),
                   },
                 });
               }

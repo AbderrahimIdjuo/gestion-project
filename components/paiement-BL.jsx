@@ -40,22 +40,16 @@ export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
   } = useForm();
   const queryClient = useQueryClient();
 
-  const statutPaiement = montant => {
-    const montantPaye = bonLivraison.totalPaye + montant;
-    if (
-      bonLivraison.total === montantPaye ||
-      bonLivraison.total < montantPaye
-    ) {
-      return "paye";
-    } else if (bonLivraison.total > montantPaye) {
-      return "enPartie";
-    }
-  };
-
   const onSubmit = async data => {
     if (loading) return;
     setLoading(true);
-    const { compte, montant, methodePaiement, numero, motif } = data;
+    const { compte, montant: montantRaw, methodePaiement, numero, motif } = data;
+    const montant = Number(montantRaw);
+    if (!Number.isFinite(montant) || montant <= 0) {
+      setLoading(false);
+      toast.error("Montant invalide");
+      return;
+    }
     const transData = {
       bonLivraisonId: bonLivraison.id,
       fournisseurId: bonLivraison.fournisseurId,
@@ -69,7 +63,7 @@ export default function PaiementBLDialog({ bonLivraison, isOpen, onClose }) {
       date,
       datePrelevement: datePrelevement,
       motif: motif,
-      statutPaiement: statutPaiement(montant),
+      dateReglement: date,
       reference: bonLivraison.numero,
     };
     console.log("Data", transData);

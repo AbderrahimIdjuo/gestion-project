@@ -149,14 +149,6 @@ export default function UpdateBonLivraison({ isOpen, onClose, bonLivraison }) {
       }, 0)
       .toFixed(2);
   };
-  const statutPaiement = () => {
-    if (
-      bonLivraison?.statutPaiement === "paye" &&
-      bonLivraison?.totalPaye < parseFloat(total())
-    ) {
-      return "enPartie";
-    } else bonLivraison?.statutPaiement;
-  };
   const handleUpdateBL = useMutation({
     mutationFn: async () => {
       const data = {
@@ -167,7 +159,6 @@ export default function UpdateBonLivraison({ isOpen, onClose, bonLivraison }) {
         total: totalBl || total().toFixed(2),
         type,
         bLGroups,
-        statutPaiement: statutPaiement(),
       };
       console.log("data", data);
 

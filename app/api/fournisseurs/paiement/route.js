@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { authErrorResponse, requireAuth } from "@/lib/auth-utils";
 import prisma from "../../../../lib/prisma";
+import {
+  resteAPayer,
+  statutPaiementFromTotals,
+} from "@/lib/statut-paiement";
 export const dynamic = "force-dynamic";
 
 export async function POST(req) {
@@ -127,36 +131,31 @@ export async function POST(req) {
 
         for (const bl of bonLivraisonList) {
           const totalPayeActuel = bl.totalPaye ?? 0;
-          const resteAPayer = bl.total - totalPayeActuel;
+          const reste = resteAPayer(bl.total, totalPayeActuel);
 
           if (montantRestant <= 0) break;
 
           let montantAlloue = 0;
-          if (montantRestant >= resteAPayer) {
-            montantAlloue = resteAPayer;
-            montantRestant -= resteAPayer;
-            await prisma.bonLivraison.update({
-              where: { id: bl.id },
-              data: {
-                totalPaye: bl.total,
-                statutPaiement: "paye",
-              },
-            });
+          if (montantRestant >= reste) {
+            montantAlloue = reste;
+            montantRestant -= reste;
           } else {
             montantAlloue = montantRestant;
-            await prisma.bonLivraison.update({
-              where: { id: bl.id },
-              data: {
-                totalPaye: {
-                  increment: montantRestant,
-                },
-                statutPaiement: "enPartie",
-              },
-            });
             montantRestant = 0;
           }
 
           if (montantAlloue > 0) {
+            const nouveauTotalPaye = totalPayeActuel + montantAlloue;
+            await prisma.bonLivraison.update({
+              where: { id: bl.id },
+              data: {
+                totalPaye: nouveauTotalPaye,
+                statutPaiement: statutPaiementFromTotals(
+                  nouveauTotalPaye,
+                  bl.total
+                ),
+              },
+            });
             await prisma.reglementBlAllocation.create({
               data: {
                 reglementId: reglement.id,
