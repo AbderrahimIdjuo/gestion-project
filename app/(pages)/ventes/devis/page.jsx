@@ -61,9 +61,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Calendar } from "@/components/ui/calendar";
 import { formatCurrency, methodePaiementLabel } from "@/lib/functions";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 import {
   CalendarDays,
   ChevronDown,
@@ -73,6 +76,7 @@ import {
   Landmark,
   OctagonAlert,
   OctagonMinus,
+  Pen,
   Printer,
   Search,
   Trash2,
@@ -128,6 +132,8 @@ export default function DevisPage() {
   const [deletedTrans, setDeletedTrans] = useState();
   const [statutChangeDialog, setStatutChangeDialog] = useState(false);
   const [pendingStatutChange, setPendingStatutChange] = useState(null);
+  const [dateEndDialogOpen, setDateEndDialogOpen] = useState(false);
+  const [pendingDateEndChange, setPendingDateEndChange] = useState(null);
 
   const { user } = useUser();
   const isAdmin = user?.publicMetadata?.role === "admin";
@@ -410,6 +416,54 @@ export default function DevisPage() {
         console.error("Erreur lors de la mise à jour du statut :", error);
         toast.error(
           error?.response?.data?.error || "Échec de la mise à jour du statut"
+        );
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["devis"]);
+    },
+  });
+
+  const toLocalDate = dateString => {
+    if (!dateString) return undefined;
+    const day = String(dateString).split("T")[0];
+    const [year, month, dayNum] = day.split("-").map(Number);
+    if (!year || !month || !dayNum) return undefined;
+    return new Date(year, month - 1, dayNum);
+  };
+
+  const toDateOnlyString = date => {
+    if (!date) return "";
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const openDateEndDialog = devisToEdit => {
+    setPendingDateEndChange({
+      id: devisToEdit.id,
+      numero: devisToEdit.numero,
+      dateEnd: toLocalDate(devisToEdit.dateEnd) || new Date(),
+      dateStart: toLocalDate(devisToEdit.dateStart),
+    });
+    setDateEndDialogOpen(true);
+  };
+
+  const updateDateEnd = useMutation({
+    mutationFn: async ({ id, dateEnd }) => {
+      try {
+        await axios.patch(`/api/devis/${id}`, { dateEnd });
+        toast.success("Date de fin mise à jour avec succès!");
+      } catch (error) {
+        console.error(
+          "Erreur lors de la mise à jour de la date de fin :",
+          error
+        );
+        toast.error(
+          error?.response?.data?.error ||
+            "Échec de la mise à jour de la date de fin"
         );
         throw error;
       }
@@ -1069,9 +1123,25 @@ export default function DevisPage() {
                                 )}
                                 {visibleColumns.dateEnd && (
                                   <TableCell className="!py-2">
-                                    {devis.dateEnd
-                                      ? formatDate(devis.dateEnd)
-                                      : "-"}
+                                    {devis.statut === "Terminer" ? (
+                                      <button
+                                        type="button"
+                                        className="inline-flex items-center gap-1.5 rounded-md px-1.5 py-0.5 -mx-1.5 text-left hover:bg-purple-50 hover:text-purple-700 transition-colors"
+                                        title="Modifier la date de fin"
+                                        onClick={() => openDateEndDialog(devis)}
+                                      >
+                                        <span>
+                                          {devis.dateEnd
+                                            ? formatDate(devis.dateEnd)
+                                            : "-"}
+                                        </span>
+                                        <Pen className="h-3 w-3 opacity-50" />
+                                      </button>
+                                    ) : devis.dateEnd ? (
+                                      formatDate(devis.dateEnd)
+                                    ) : (
+                                      "-"
+                                    )}
                                   </TableCell>
                                 )}
                                 {visibleColumns.numero && (
@@ -1305,6 +1375,7 @@ export default function DevisPage() {
                                       setPreviewDevis(devis);
                                       setPreviewDialogOpen(true);
                                     }}
+                                    onChangeDateEnd={openDateEndDialog}
                                   />
                                 </TableCell>
                               </TableRow>
@@ -1551,6 +1622,93 @@ export default function DevisPage() {
               disabled={updateStatut.isPending}
             >
               {updateStatut.isPending ? "Chargement..." : "Confirmer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={dateEndDialogOpen}
+        onOpenChange={open => {
+          setDateEndDialogOpen(open);
+          if (!open) setPendingDateEndChange(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-[360px]">
+          <DialogHeader>
+            <DialogTitle>Modifier la date de fin</DialogTitle>
+            <DialogDescription>
+              Choisissez la date de fin du devis{" "}
+              <b>{pendingDateEndChange?.numero?.toUpperCase()}</b>.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-3 py-1">
+            {pendingDateEndChange?.dateEnd && (
+              <p className="text-sm font-medium text-purple-700 capitalize">
+                {format(pendingDateEndChange.dateEnd, "PPP", { locale: fr })}
+              </p>
+            )}
+            <Calendar
+              mode="single"
+              locale={fr}
+              selected={pendingDateEndChange?.dateEnd}
+              onSelect={date => {
+                if (!date) return;
+                setPendingDateEndChange(prev =>
+                  prev ? { ...prev, dateEnd: date } : prev
+                );
+              }}
+              disabled={date => {
+                const start = pendingDateEndChange?.dateStart;
+                if (!start) return false;
+                return (
+                  date <
+                  new Date(
+                    start.getFullYear(),
+                    start.getMonth(),
+                    start.getDate()
+                  )
+                );
+              }}
+              initialFocus
+            />
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              className="rounded-full"
+              variant="outline"
+              onClick={() => {
+                setDateEndDialogOpen(false);
+                setPendingDateEndChange(null);
+              }}
+            >
+              Annuler
+            </Button>
+            <Button
+              className="rounded-full bg-purple-500 hover:bg-purple-600 text-white"
+              onClick={() => {
+                if (!pendingDateEndChange?.dateEnd) {
+                  toast.error("Veuillez choisir une date de fin.");
+                  return;
+                }
+                if (
+                  pendingDateEndChange.dateStart &&
+                  pendingDateEndChange.dateEnd < pendingDateEndChange.dateStart
+                ) {
+                  toast.error(
+                    "La date de fin ne peut pas être antérieure à la date de début."
+                  );
+                  return;
+                }
+                updateDateEnd.mutate({
+                  id: pendingDateEndChange.id,
+                  dateEnd: toDateOnlyString(pendingDateEndChange.dateEnd),
+                });
+                setDateEndDialogOpen(false);
+                setPendingDateEndChange(null);
+              }}
+              disabled={updateDateEnd.isPending}
+            >
+              {updateDateEnd.isPending ? "Chargement..." : "Enregistrer"}
             </Button>
           </DialogFooter>
         </DialogContent>

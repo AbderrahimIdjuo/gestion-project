@@ -99,6 +99,10 @@ const menuItems = [
         href: "/parametres/categories",
       },
       {
+        label: "Entrepôts",
+        href: "/parametres/entrepots",
+      },
+      {
         label: "Charges fixes",
         href: "/parametres/charges",
       },
@@ -142,6 +146,7 @@ export function Sidebar() {
     const isAdmin = role === "admin";
     const commercantSettingsHrefs = [
       "/parametres/categories",
+      "/parametres/entrepots",
       "/parametres/charges",
     ];
 

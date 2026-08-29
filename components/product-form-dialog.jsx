@@ -11,6 +11,7 @@ import {
 import toast from "react-hot-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { EntrepotSelect } from "@/components/entrepot-select";
 import { CategoriesSelectMenu } from "@/components/select-categories-produits";
 import { useForm } from "react-hook-form";
 import {
@@ -46,6 +47,10 @@ export function ProductFormDialog() {
         v === "" || v === null || v === undefined ? 0 : Number(v),
       z.number()
     ),
+    entrepotId: z.string().optional().nullable(),
+  }).refine(data => !(data.stock > 0 && !data.entrepotId), {
+    message: "Sélectionnez un entrepôt pour le stock initial",
+    path: ["entrepotId"],
   });
   const {
     register,
@@ -58,6 +63,7 @@ export function ProductFormDialog() {
     resolver: zodResolver(productSchema),
     defaultValues: {
       stock: 0,
+      entrepotId: "",
     },
   });
 
@@ -73,7 +79,9 @@ export function ProductFormDialog() {
         toast.success("Produit ajouté avec succès!");
         return response.data;
       } catch (error) {
-        toast.error("Échec de l'ajout du produit");
+        toast.error(
+          error?.response?.data?.message || "Échec de l'ajout du produit"
+        );
         throw error;
       } finally {
         toast.dismiss(loadingToast);
@@ -83,6 +91,7 @@ export function ProductFormDialog() {
       reset();
       setValue("unite", "");
       queryClient.invalidateQueries(["produits"]);
+      setOpen(false);
     },
   });
 
@@ -202,6 +211,19 @@ export function ProductFormDialog() {
                 <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
                   <CircleX className="h-4 w-4" />
                   {errors.stock.message}
+                </p>
+              )}
+            </div>
+            <div className="w-full grid grid-cols-1">
+              <EntrepotSelect
+                value={watch("entrepotId")}
+                onValueChange={value => setValue("entrepotId", value)}
+                placeholder="Sélectionner un entrepôt…"
+              />
+              {errors.entrepotId && (
+                <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
+                  <CircleX className="h-4 w-4" />
+                  {errors.entrepotId.message}
                 </p>
               )}
             </div>

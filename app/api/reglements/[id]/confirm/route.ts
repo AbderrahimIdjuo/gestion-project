@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "../../../../../generated/prisma";
 import { NextResponse } from "next/server";
 import { authErrorResponse, requireAuth } from "@/lib/auth-utils";
 import {

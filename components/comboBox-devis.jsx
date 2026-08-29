@@ -27,6 +27,7 @@ export default function ComboBoxDevis({
   Devisnumero,
   onSelect,
   setSelectedDevis,
+  includeTerminer = false,
 }) {
   const [openComboBox, setOpenComboBox] = useState(false);
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -49,13 +50,14 @@ export default function ComboBoxDevis({
   // infinite scrolling fournisseurs comboBox
   const { data, fetchNextPage, isLoading, isFetchingNextPage, hasNextPage } =
     useInfiniteQuery({
-      queryKey: ["devis", debouncedQuery],
+      queryKey: ["devis", debouncedQuery, includeTerminer],
       queryFn: async ({ pageParam = null }) => {
         const response = await axios.get("/api/devis/devisList", {
           params: {
             limit: 10,
             query: debouncedQuery,
             cursor: pageParam,
+            ...(includeTerminer ? { includeTerminer: true } : {}),
           },
         });
         //console.log("devis", response.data);
@@ -144,9 +146,16 @@ export default function ComboBoxDevis({
                             console.log(devis);
                           }}
                         >
-                          <div className="flex justify-between w-full">
-                            <div>{devis.numero}</div>
-                            <div>{devis.client.nom} </div>
+                          <div className="flex justify-between w-full items-center gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span>{devis.numero}</span>
+                              {devis.statut === "Terminer" && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 shrink-0">
+                                  Terminer
+                                </span>
+                              )}
+                            </div>
+                            <div className="truncate">{devis.client.nom}</div>
                           </div>
                         </CommandItem>
                       ))}

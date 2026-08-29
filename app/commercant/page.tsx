@@ -122,6 +122,9 @@ export default async function CommercantPage() {
             <Button asChild variant="outline" className="w-full">
               <Link href="/parametres/categories">Catégories</Link>
             </Button>
+            <Button asChild variant="outline" className="w-full">
+              <Link href="/parametres/entrepots">Entrepôts</Link>
+            </Button>
           </CardContent>
         </Card>
       </div>

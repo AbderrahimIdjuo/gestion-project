@@ -189,21 +189,79 @@ export async function GET(_, { params }) {
   return NextResponse.json({ devi });
 }
 
+function parseDateEnd(value) {
+  if (!value) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return new Date(`${value}T12:00:00.000Z`);
+  }
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
 export async function PATCH(req, { params }) {
   try {
     const id = params.id;
-    const { statut } = await req.json();
+    const { statut, dateEnd } = await req.json();
 
     // Récupérer le devis actuel pour connaître son statut
     const currentDevi = await prisma.devis.findUnique({
       where: { id },
-      select: { statut: true, statutPaiement: true },
+      select: { statut: true, statutPaiement: true, dateStart: true },
     });
 
     if (!currentDevi) {
       return NextResponse.json(
         { error: "Devis non trouvé" },
         { status: 404 }
+      );
+    }
+
+    // Mise à jour de la date de fin uniquement (devis déjà terminé)
+    if (dateEnd !== undefined && statut === undefined) {
+      if (currentDevi.statut !== "Terminer") {
+        return NextResponse.json(
+          {
+            error:
+              "La date de fin ne peut être modifiée que pour un devis terminé.",
+          },
+          { status: 403 }
+        );
+      }
+
+      const parsedDateEnd = parseDateEnd(dateEnd);
+      if (!parsedDateEnd) {
+        return NextResponse.json(
+          { error: "La date de fin est invalide." },
+          { status: 400 }
+        );
+      }
+
+      const startDay = currentDevi.dateStart
+        ? new Date(currentDevi.dateStart).toISOString().slice(0, 10)
+        : null;
+      const endDay = parsedDateEnd.toISOString().slice(0, 10);
+      if (startDay && endDay < startDay) {
+        return NextResponse.json(
+          {
+            error:
+              "La date de fin ne peut pas être antérieure à la date de début.",
+          },
+          { status: 400 }
+        );
+      }
+
+      const devi = await prisma.devis.update({
+        where: { id },
+        data: { dateEnd: parsedDateEnd },
+      });
+
+      return NextResponse.json({ devi });
+    }
+
+    if (!statut) {
+      return NextResponse.json(
+        { error: "Le statut est requis." },
+        { status: 400 }
       );
     }
 
@@ -226,9 +284,9 @@ export async function PATCH(req, { params }) {
     // Préparer les données à mettre à jour
     const updateData = { statut };
 
-    // Si le statut est "Terminer", définir dateEnd à la date actuelle
+    // Si le statut est "Terminer", définir dateEnd (date fournie ou aujourd'hui)
     if (statut === "Terminer") {
-      updateData.dateEnd = new Date();
+      updateData.dateEnd = parseDateEnd(dateEnd) || new Date();
     }
     // Si le statut actuel est "Terminer" et le nouveau statut n'est pas "Terminer", réinitialiser dateEnd à null
     else if (currentDevi?.statut === "Terminer" && statut !== "Terminer") {

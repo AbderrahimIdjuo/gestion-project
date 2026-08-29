@@ -29,12 +29,18 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import axios from "axios";
-import { Check, Minus, PackagePlus, Plus, Search } from "lucide-react";
+import { ArrowRightLeft, Check, Minus, Plus, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useInView } from "react-intersection-observer";
 
-export function AjouterStockProduitsDialog() {
+function stockInEntrepot(article, entrepotId) {
+  if (!entrepotId) return 0;
+  const row = article?.stocksEntrepot?.find(s => s.entrepotId === entrepotId);
+  return Number(row?.quantite ?? 0);
+}
+
+export function TransfertStockMultiDialog() {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedArticles, setSelectedArticles] = useState({});
@@ -45,9 +51,15 @@ export function AjouterStockProduitsDialog() {
   const [filters, setFilters] = useState({
     categorie: "all",
   });
-  const [entrepotId, setEntrepotId] = useState("");
+  const [sourceId, setSourceId] = useState("");
+  const [destId, setDestId] = useState("");
 
   const handleToggleArticle = article => {
+    const available = stockInEntrepot(article, sourceId);
+    if (available <= 0) {
+      toast.error("Aucun stock dans l'entrepôt source pour ce produit.");
+      return;
+    }
     setSelectedArticles(prev => {
       const next = { ...prev };
       if (next[article.id]) {
@@ -55,8 +67,8 @@ export function AjouterStockProduitsDialog() {
       } else {
         next[article.id] = {
           ...article,
-          quantite: 1,
-          categorie: article.categorieProduits?.categorie || article.categorie,
+          quantite: Math.min(1, available),
+          available,
         };
       }
       return next;
@@ -66,7 +78,8 @@ export function AjouterStockProduitsDialog() {
   const handleQuantityChange = (articleId, delta) => {
     setSelectedArticles(prev => {
       const currentQty = parseFloat(prev[articleId]?.quantite) || 0;
-      const newQty = Math.max(0, currentQty + delta);
+      const max = Number(prev[articleId]?.available) || 0;
+      const newQty = Math.min(max, Math.max(0, currentQty + delta));
       if (newQty === 0) {
         const { [articleId]: _, ...rest } = prev;
         return rest;
@@ -83,16 +96,33 @@ export function AjouterStockProduitsDialog() {
 
   const handleInputChange = (e, articleId) => {
     const value = e.target.value.replace(",", ".");
-    setSelectedArticles(prev => ({
-      ...prev,
-      [articleId]: {
-        ...prev[articleId],
-        quantite: value,
-      },
-    }));
+    const parsed = parseFloat(value);
+    setSelectedArticles(prev => {
+      const max = Number(prev[articleId]?.available) || 0;
+      const capped =
+        value === "" || Number.isNaN(parsed)
+          ? value
+          : Math.min(max, Math.max(0, parsed));
+      return {
+        ...prev,
+        [articleId]: {
+          ...prev[articleId],
+          quantite: capped,
+        },
+      };
+    });
   };
 
-  const handleApplyStock = async () => {
+  const handleTransfer = async () => {
+    if (!sourceId || !destId) {
+      toast.error("Sélectionnez l'entrepôt source et destination.");
+      return;
+    }
+    if (sourceId === destId) {
+      toast.error("La source et la destination doivent être différentes.");
+      return;
+    }
+
     const items = Object.values(selectedArticles)
       .map(a => ({
         produitId: a.id,
@@ -105,20 +135,21 @@ export function AjouterStockProduitsDialog() {
       return;
     }
 
-    if (!entrepotId) {
-      toast.error("Sélectionnez un entrepôt.");
-      return;
-    }
-
     setIsSubmitting(true);
     try {
-      await axios.post("/api/produits/stock", { items, entrepotId });
-      toast.success("Stock mis à jour.");
+      await axios.post("/api/produits/transfert", {
+        entrepotSourceId: sourceId,
+        entrepotDestId: destId,
+        items,
+      });
+      toast.success("Transfert effectué.");
       queryClient.invalidateQueries({ queryKey: ["produits"] });
       setSelectedArticles({});
       setOpen(false);
-    } catch {
-      toast.error("Échec de la mise à jour du stock.");
+    } catch (error) {
+      toast.error(
+        error?.response?.data?.message || "Échec du transfert."
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -141,7 +172,13 @@ export function AjouterStockProduitsDialog() {
 
   const { data, fetchNextPage, isLoading, isFetching, hasNextPage } =
     useInfiniteQuery({
-      queryKey: ["produits", "stock-dialog", debouncedQuery, filters.categorie],
+      queryKey: [
+        "produits",
+        "transfert-dialog",
+        debouncedQuery,
+        filters.categorie,
+        sourceId,
+      ],
       queryFn: async ({ pageParam = null }) => {
         const response = await axios.get("/api/produits/infinitPagination", {
           params: {
@@ -149,13 +186,14 @@ export function AjouterStockProduitsDialog() {
             query: debouncedQuery,
             cursor: pageParam,
             categorie: filters.categorie,
+            entrepotId: sourceId || undefined,
           },
         });
         return response.data;
       },
       getNextPageParam: lastPage => lastPage.nextCursor || null,
       keepPreviousData: true,
-      enabled: open,
+      enabled: open && !!sourceId,
     });
 
   const produits = data?.pages.flatMap(page => page.produits) || [];
@@ -181,32 +219,43 @@ export function AjouterStockProduitsDialog() {
         if (!next) {
           setSelectedArticles({});
           setSearchQuery("");
-          setEntrepotId("");
+          setSourceId("");
+          setDestId("");
         }
       }}
     >
       <DialogTrigger asChild>
         <Button
           variant="outline"
-          className="border-emerald-600/40 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 hover:text-emerald-900 rounded-full"
+          className="border-amber-600/40 bg-amber-50 text-amber-900 hover:bg-amber-100 hover:text-amber-950 rounded-full"
         >
-          <PackagePlus className="mr-2 h-4 w-4" />
-          Entrée en stock
+          <ArrowRightLeft className="mr-2 h-4 w-4" />
+          Transférer
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[1000px] p-0 gap-0 max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
-          <DialogTitle>Ajouter des produits en stock</DialogTitle>
+          <DialogTitle>Transférer du stock</DialogTitle>
           <DialogDescription>
-            Choisissez l&apos;entrepôt, puis les produits et les quantités à
-            ajouter au stock actuel.
+            Choisissez l&apos;entrepôt source et destination, puis les produits
+            et quantités à déplacer.
           </DialogDescription>
         </DialogHeader>
-        <div className="px-6 pb-3 shrink-0">
+        <div className="px-6 pb-3 shrink-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
           <EntrepotSelect
-            value={entrepotId}
-            onValueChange={setEntrepotId}
-            placeholder="Sélectionner un entrepôt…"
+            label="Entrepôt source"
+            value={sourceId}
+            onValueChange={value => {
+              setSourceId(value);
+              setSelectedArticles({});
+            }}
+            placeholder="Source…"
+          />
+          <EntrepotSelect
+            label="Entrepôt destination"
+            value={destId}
+            onValueChange={setDestId}
+            placeholder="Destination…"
           />
         </div>
         <div className="flex flex-col min-h-0 flex-1 border-t">
@@ -218,6 +267,7 @@ export function AjouterStockProduitsDialog() {
                   onValueChange={value =>
                     setFilters({ ...filters, categorie: value })
                   }
+                  disabled={!sourceId}
                 >
                   <SelectTrigger className="bg-white focus:ring-purple-500">
                     <SelectValue placeholder="Catégorie…" />
@@ -239,70 +289,75 @@ export function AjouterStockProduitsDialog() {
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   className="pl-9 rounded-lg focus-visible:ring-purple-500"
+                  disabled={!sourceId}
                 />
                 <div className="absolute right-3 top-1/2 -translate-y-1/2">
                   {isFetching && !isLoading && <LoadingDots />}
                 </div>
               </div>
               <ScrollArea className="flex-1 min-h-[280px] px-2">
-                {isLoading ? (
+                {!sourceId ? (
+                  <p className="text-center text-muted-foreground text-sm py-12">
+                    Sélectionnez d&apos;abord un entrepôt source.
+                  </p>
+                ) : isLoading ? (
                   <div className="flex justify-center py-10">
                     <LoadingDots size={8} />
                   </div>
                 ) : produits?.length > 0 ? (
                   <>
-                    {produits.map(article => (
-                      <button
-                        type="button"
-                        key={article.id}
-                        className={cn(
-                          "flex w-full items-center justify-between p-3 my-1 rounded-lg text-left transition-colors",
-                          selectedArticles[article.id]
-                            ? "bg-purple-50 text-violet-800"
-                            : "hover:bg-gray-50"
-                        )}
-                        onClick={() => handleToggleArticle(article)}
-                      >
-                        <div className="space-y-1 min-w-0 pr-2">
-                          <p className="text-sm font-medium truncate">
-                            {article.designation}
-                          </p>
-                          <div className="flex flex-wrap gap-x-3 text-xs text-muted-foreground">
-                            <span>
-                              Stock :{" "}
-                              <span className="font-medium text-foreground">
-                                {Number(article.stock ?? 0).toLocaleString(
-                                  "fr-FR",
-                                  {
+                    {produits.map(article => {
+                      const available = stockInEntrepot(article, sourceId);
+                      return (
+                        <button
+                          type="button"
+                          key={article.id}
+                          className={cn(
+                            "flex w-full items-center justify-between p-3 my-1 rounded-lg text-left transition-colors",
+                            selectedArticles[article.id]
+                              ? "bg-amber-50 text-amber-900"
+                              : "hover:bg-gray-50"
+                          )}
+                          onClick={() => handleToggleArticle(article)}
+                        >
+                          <div className="space-y-1 min-w-0 pr-2">
+                            <p className="text-sm font-medium truncate">
+                              {article.designation}
+                            </p>
+                            <div className="flex flex-wrap gap-x-3 text-xs text-muted-foreground">
+                              <span>
+                                Stock source :{" "}
+                                <span className="font-medium text-foreground">
+                                  {available.toLocaleString("fr-FR", {
                                     maximumFractionDigits: 2,
-                                  }
-                                )}
+                                  })}
+                                </span>
                               </span>
-                            </span>
-                            {article.reference && (
-                              <span>Réf. {article.reference}</span>
+                              {article.reference && (
+                                <span>Réf. {article.reference}</span>
+                              )}
+                            </div>
+                          </div>
+                          <div
+                            className={cn(
+                              "h-5 w-5 shrink-0 rounded-full border flex items-center justify-center",
+                              selectedArticles[article.id]
+                                ? "bg-amber-500 border-amber-500"
+                                : "border-muted-foreground/30"
+                            )}
+                          >
+                            {selectedArticles[article.id] && (
+                              <Check className="h-3 w-3 text-white" />
                             )}
                           </div>
-                        </div>
-                        <div
-                          className={cn(
-                            "h-5 w-5 shrink-0 rounded-full border flex items-center justify-center",
-                            selectedArticles[article.id]
-                              ? "bg-green-500 border-green-500"
-                              : "border-muted-foreground/30"
-                          )}
-                        >
-                          {selectedArticles[article.id] && (
-                            <Check className="h-3 w-3 text-white" />
-                          )}
-                        </div>
-                      </button>
-                    ))}
+                        </button>
+                      );
+                    })}
                     <div ref={ref} className="h-4" />
                   </>
                 ) : (
                   <p className="text-center text-muted-foreground text-sm py-12">
-                    Aucun produit trouvé.
+                    Aucun produit en stock dans cet entrepôt.
                   </p>
                 )}
               </ScrollArea>
@@ -310,15 +365,14 @@ export function AjouterStockProduitsDialog() {
 
             <div className="w-full md:w-1/2 flex flex-col min-h-0 px-4 pt-3">
               <div className="flex items-center gap-2 mb-3 shrink-0">
-                <h3 className="font-medium text-sm">Produits sélectionnés</h3>
+                <h3 className="font-medium text-sm">Produits à transférer</h3>
                 <Badge
                   variant="secondary"
-                  className="rounded-full bg-purple-50 text-violet-700"
+                  className="rounded-full bg-amber-50 text-amber-800"
                 >
                   {selectedCount}
                 </Badge>
                 <span className="text-xs text-muted-foreground ml-auto">
-                  +
                   {totalQuantity.toLocaleString("fr-FR", {
                     maximumFractionDigits: 2,
                   })}{" "}
@@ -332,12 +386,21 @@ export function AjouterStockProduitsDialog() {
                       key={article.id}
                       className="flex flex-col sm:flex-row sm:items-center gap-2 p-3 border rounded-lg"
                     >
-                      <span className="font-medium text-sm flex-1 min-w-0">
-                        {article.designation}
-                      </span>
+                      <div className="flex-1 min-w-0">
+                        <span className="font-medium text-sm">
+                          {article.designation}
+                        </span>
+                        <p className="text-xs text-muted-foreground">
+                          Dispo. :{" "}
+                          {Number(article.available ?? 0).toLocaleString(
+                            "fr-FR",
+                            { maximumFractionDigits: 2 }
+                          )}
+                        </p>
+                      </div>
                       <div className="flex items-center gap-2 shrink-0">
                         <span className="text-xs text-muted-foreground whitespace-nowrap">
-                          Qté à ajouter
+                          Qté
                         </span>
                         <Button
                           type="button"
@@ -367,7 +430,7 @@ export function AjouterStockProduitsDialog() {
                   ))}
                   {selectedCount === 0 && (
                     <p className="text-sm text-muted-foreground text-center py-8">
-                      Cliquez sur des produits à gauche pour les ajouter.
+                      Cliquez sur des produits à gauche pour les transférer.
                     </p>
                   )}
                 </div>
@@ -386,16 +449,18 @@ export function AjouterStockProduitsDialog() {
             </Button>
             <Button
               type="button"
-              className="rounded-full bg-green-500 hover:bg-green-600 text-white"
-              onClick={handleApplyStock}
+              className="rounded-full bg-amber-600 hover:bg-amber-700 text-white"
+              onClick={handleTransfer}
               disabled={
-                !entrepotId ||
+                !sourceId ||
+                !destId ||
+                sourceId === destId ||
                 selectedCount === 0 ||
                 totalQuantity <= 0 ||
                 isSubmitting
               }
             >
-              {isSubmitting ? "En cours…" : "Mettre à jour le stock"}
+              {isSubmitting ? "En cours…" : "Transférer"}
             </Button>
           </DialogFooter>
         </div>

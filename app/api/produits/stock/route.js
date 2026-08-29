@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { authErrorResponse, requireAdmin } from "@/lib/auth-utils";
 import prisma from "../../../../lib/prisma";
+import { applyStockDelta, isStockError } from "@/lib/stock";
 
 export const dynamic = "force-dynamic";
 
 /**
- * POST { items: [{ produitId: string, quantite: number }, ...] }
- * Augmente le stock de chaque produit (quantités positives uniquement).
+ * POST { entrepotId: string, items: [{ produitId: string, quantite: number }, ...] }
+ * Augmente le stock de chaque produit dans l'entrepôt indiqué.
  */
 export async function POST(req) {
   try {
@@ -14,6 +15,13 @@ export async function POST(req) {
 
     const body = await req.json();
     const items = body?.items;
+    const entrepotId = body?.entrepotId;
+    if (!entrepotId) {
+      return NextResponse.json(
+        { message: "Entrepôt requis." },
+        { status: 400 }
+      );
+    }
     if (!Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
         { message: "Liste d'articles requise." },
@@ -26,17 +34,7 @@ export async function POST(req) {
         const produitId = row.produitId ?? row.id;
         const q = parseFloat(row.quantite);
         if (!produitId || !Number.isFinite(q) || q <= 0) continue;
-
-        const p = await tx.produits.findUnique({
-          where: { id: produitId },
-          select: { stock: true },
-        });
-        if (!p) continue;
-
-        await tx.produits.update({
-          where: { id: produitId },
-          data: { stock: (p.stock ?? 0) + q },
-        });
+        await applyStockDelta(tx, { produitId, entrepotId, delta: q });
       }
     });
 
@@ -45,6 +43,12 @@ export async function POST(req) {
     console.error("POST /api/produits/stock:", error);
     const authRes = authErrorResponse(error);
     if (authRes) return authRes;
+    if (isStockError(error)) {
+      return NextResponse.json(
+        { message: error.message },
+        { status: error.status || 400 }
+      );
+    }
     return NextResponse.json({ message: "Erreur serveur." }, { status: 500 });
   }
 }

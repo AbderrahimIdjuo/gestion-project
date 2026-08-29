@@ -3,7 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useUser } from "@clerk/nextjs";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { Landmark, List, Tags, TrendingDown, Users } from "lucide-react";
+import { Landmark, List, Tags, TrendingDown, Users, Warehouse } from "lucide-react";
 import Link from "next/link";
 
 function SittingsSideBar({ page }) {
@@ -48,6 +48,13 @@ function SittingsSideBar({ page }) {
               icon={<Tags className="h-4 w-4" />}
               label="Catégorie des produits"
               isActive={page === "categories"}
+            />
+          </Link>
+          <Link href="/parametres/entrepots">
+            <NavItem
+              icon={<Warehouse className="h-4 w-4" />}
+              label="Entrepôts"
+              isActive={page === "entrepots"}
             />
           </Link>
           {isAdmin && (

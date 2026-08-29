@@ -21,6 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { entrepotBadgeClass } from "@/lib/entrepot-badge";
 import { formatCurrency, formatDate, formatMontant } from "@/lib/functions";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
@@ -198,6 +199,11 @@ export default function HistoriqueProduitDialog({ product, isOpen, onClose }) {
   const lignes = data?.lignes || [];
   const parFournisseur = data?.parFournisseur || [];
   const unite = produit?.Unite;
+  const stocksEntrepot = (
+    data?.produit?.stocksEntrepot ||
+    product?.stocksEntrepot ||
+    []
+  ).filter(s => Number(s.quantite) !== 0);
 
   return (
     <Dialog open={isOpen} onOpenChange={open => !open && onClose?.()}>
@@ -227,11 +233,31 @@ export default function HistoriqueProduitDialog({ product, isOpen, onClose }) {
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-purple-200 mb-1">Stock</p>
+                  <p className="text-xs text-purple-200 mb-1">Stock total</p>
                   <p className="text-sm sm:text-base font-semibold text-white">
                     {formatQty(produit?.stock ?? 0, unite)}
                   </p>
                 </div>
+              </div>
+              <div className="mt-3 sm:mt-4">
+                <p className="text-xs text-purple-200 mb-2">Stock par entrepôt</p>
+                {stocksEntrepot.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {stocksEntrepot.map(s => (
+                      <Badge
+                        key={s.id || s.entrepotId}
+                        variant="outline"
+                        className={`rounded-full font-medium border ${entrepotBadgeClass(
+                          s.entrepotId
+                        )}`}
+                      >
+                        {s.entrepot?.nom || "—"} : {formatQty(s.quantite, unite)}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-white/80">Aucun stock réparti</p>
+                )}
               </div>
             </div>
           </div>

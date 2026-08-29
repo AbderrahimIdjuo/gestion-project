@@ -22,12 +22,33 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { entrepotBadgeClass } from "@/lib/entrepot-badge";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Check, Minus, Plus, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useInView } from "react-intersection-observer";
-export function ProduitsSelection({ onArticlesAdd }) {
+function stockInEntrepot(article, entrepotId) {
+  if (!entrepotId) {
+    return article?.stock != null ? Number(article.stock) : 0;
+  }
+  const row = (article?.stocksEntrepot || []).find(
+    s => s.entrepotId === entrepotId
+  );
+  return Number(row?.quantite) || 0;
+}
+
+function formatStockQty(value) {
+  return Number(value || 0).toLocaleString("fr-FR", {
+    maximumFractionDigits: 2,
+  });
+}
+
+export function ProduitsSelection({
+  onArticlesAdd,
+  stockSortieMode = false,
+  entrepotId = "",
+}) {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedArticles, setSelectedArticles] = useState({});
@@ -97,6 +118,7 @@ export function ProduitsSelection({ onArticlesAdd }) {
           fournisseurId,
           categorie,
           description,
+          stocksEntrepot,
         }) => ({
           id,
           designation: designation,
@@ -106,6 +128,7 @@ export function ProduitsSelection({ onArticlesAdd }) {
           fournisseurId,
           categorie,
           description,
+          stocksEntrepot: stocksEntrepot || [],
         })
       );
 
@@ -127,6 +150,16 @@ export function ProduitsSelection({ onArticlesAdd }) {
       return response.data.categories;
     },
   });
+  const entrepots = useQuery({
+    queryKey: ["entrepots"],
+    queryFn: async () => {
+      const response = await axios.get("/api/entrepots");
+      return response.data.entrepots || [];
+    },
+    enabled: Boolean(entrepotId),
+  });
+  const selectedEntrepotNom =
+    entrepots.data?.find(e => e.id === entrepotId)?.nom || "";
   // infinite scrolling produits comboBox
   const { data, fetchNextPage, isLoading, isFetching, hasNextPage } =
     useInfiniteQuery({
@@ -176,7 +209,19 @@ export function ProduitsSelection({ onArticlesAdd }) {
           </DialogHeader>
           <div className="flex flex-col rounded-lg">
             <div className="p-4 border-b">
-              <span className="font-semibold">Ajouter les produits </span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-semibold">Ajouter les produits </span>
+                {entrepotId && selectedEntrepotNom && (
+                  <Badge
+                    variant="outline"
+                    className={`rounded-full font-medium border ${entrepotBadgeClass(
+                      entrepotId
+                    )}`}
+                  >
+                    {selectedEntrepotNom}
+                  </Badge>
+                )}
+              </div>
             </div>
             <div className="h-[600px] flex gap-2 px-4 ">
               <div className="w-full h-full">
@@ -247,8 +292,14 @@ export function ProduitsSelection({ onArticlesAdd }) {
                                 </p>
 
                                 <p className="text-xs text-muted-foreground text-center">
-                                  Stock :{" "}
-                                  {article.stock != null ? article.stock : "0"}
+                                  Stock
+                                  {entrepotId && selectedEntrepotNom
+                                    ? ` (${selectedEntrepotNom})`
+                                    : ""}{" "}
+                                  :{" "}
+                                  {formatStockQty(
+                                    stockInEntrepot(article, entrepotId)
+                                  )}
                                 </p>
 
                                 <p className="text-xs text-muted-foreground text-right">
@@ -257,6 +308,28 @@ export function ProduitsSelection({ onArticlesAdd }) {
                                     : "\u00A0"}
                                 </p>
                               </div>
+                              {stockSortieMode &&
+                                !entrepotId &&
+                                (article.stocksEntrepot || []).some(
+                                  s => Number(s.quantite) > 0
+                                ) && (
+                                  <div className="flex flex-wrap gap-1 pt-1">
+                                    {(article.stocksEntrepot || [])
+                                      .filter(s => Number(s.quantite) > 0)
+                                      .map(s => (
+                                        <Badge
+                                          key={s.id || s.entrepotId}
+                                          variant="outline"
+                                          className={`rounded-full font-normal border text-[10px] ${entrepotBadgeClass(
+                                            s.entrepotId
+                                          )}`}
+                                        >
+                                          {s.entrepot?.nom || "—"} :{" "}
+                                          {formatStockQty(s.quantite)}
+                                        </Badge>
+                                      ))}
+                                  </div>
+                                )}
                             </div>
                             <div
                               className={cn(
@@ -312,9 +385,23 @@ export function ProduitsSelection({ onArticlesAdd }) {
                           key={article.id}
                           className="flex items-center justify-between p-3 border rounded-lg w-full"
                         >
-                          <span className="font-medium">
-                            {article.designation}
-                          </span>
+                          <div className="min-w-0 pr-2">
+                            <span className="font-medium">
+                              {article.designation}
+                            </span>
+                            {entrepotId && (
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                Stock
+                                {selectedEntrepotNom
+                                  ? ` (${selectedEntrepotNom})`
+                                  : ""}{" "}
+                                :{" "}
+                                {formatStockQty(
+                                  stockInEntrepot(article, entrepotId)
+                                )}
+                              </p>
+                            )}
+                          </div>
                           <div className="flex items-center gap-2 ">
                             <Button
                               variant="outline"

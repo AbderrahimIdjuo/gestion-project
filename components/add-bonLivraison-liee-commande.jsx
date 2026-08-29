@@ -4,6 +4,7 @@ import ComboBoxDevis from "@/components/comboBox-devis";
 import { CustomDatePicker } from "@/components/customUi/customDatePicker";
 import CustomTooltip from "@/components/customUi/customTooltip";
 import { AddButton } from "@/components/customUi/styledButton";
+import { EntrepotSelect } from "@/components/entrepot-select";
 import { ProduitsSelection } from "@/components/produits-selection-CMDF";
 import { ArticleSelectionDialog } from "@/components/produits-selection-NouveauBL";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,7 @@ import axios from "axios";
 import { Copy, Package, ScrollText, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { isStockEntreeCharge } from "@/lib/stock";
 
 export default function AddBonLivraison({ lastBonLivraison, commande }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -81,6 +83,7 @@ export default function AddBonLivraison({ lastBonLivraison, commande }) {
       charge: null,
       numero: group.devisNumero ?? null,
       totalDevi: group.totalDevi ?? null,
+      entrepotId: "",
       items: (group.produits || []).map(p => ({
         id: p.produitId,
         designation: p.produit?.designation ?? "",
@@ -160,16 +163,33 @@ export default function AddBonLivraison({ lastBonLivraison, commande }) {
           : statutPaiement === "enPartie"
             ? montantPaye
             : 0;
+      const bLGroupsToSave = bLGroups.map(group => {
+        if (!isStockEntreeCharge(group.charge) || !group.entrepotId) {
+          return group;
+        }
+        return {
+          ...group,
+          items: (group.items || []).map(item => ({
+            ...item,
+            entrepotId: group.entrepotId,
+          })),
+        };
+      });
+      const entrepotId =
+        bLGroupsToSave.find(
+          g => isStockEntreeCharge(g.charge) && g.entrepotId
+        )?.entrepotId || null;
       const data = {
         numero: generateBLNumber(),
         date,
         reference,
         fournisseurId: selectedFournisseur.id,
         fournisseurNom: selectedFournisseur.nom,
+        entrepotId,
         total: blTotal,
         type,
         totalPaye: resolvedMontantPaye,
-        bLGroups,
+        bLGroups: bLGroupsToSave,
         statutPaiement,
         compte,
         montantPaye: resolvedMontantPaye,
@@ -180,7 +200,9 @@ export default function AddBonLivraison({ lastBonLivraison, commande }) {
         await axios.post("/api/bonLivraison", data);
         toast.success("bon ajouter avec succès");
       } catch (error) {
-        toast.error("Échec de l'ajout!");
+        toast.error(
+          error?.response?.data?.message || "Échec de l'ajout!"
+        );
         throw error;
       } finally {
         toast.dismiss(loadingToast);
@@ -214,6 +236,7 @@ export default function AddBonLivraison({ lastBonLivraison, commande }) {
       clientName: null,
       clientId: null,
       charge: null,
+      entrepotId: "",
     };
     setBLGroups(prev => [...prev, newGroup]);
     // Initialize group mode as devis by default
@@ -249,6 +272,7 @@ export default function AddBonLivraison({ lastBonLivraison, commande }) {
           ? {
               ...group,
               charge,
+              entrepotId: isStockEntreeCharge(charge) ? group.entrepotId : "",
               // Clear devis-related fields when charge is selected
               devisNumber: null,
               clientName: null,
@@ -276,7 +300,9 @@ export default function AddBonLivraison({ lastBonLivraison, commande }) {
       // Switching to devis mode - clear charge
       setBLGroups(prevGroups =>
         prevGroups.map(group =>
-          group.id === groupId ? { ...group, charge: null } : group
+          group.id === groupId
+            ? { ...group, charge: null, entrepotId: "" }
+            : group
         )
       );
     } else {
@@ -287,6 +313,7 @@ export default function AddBonLivraison({ lastBonLivraison, commande }) {
             ? {
                 ...group,
                 charge: null, // Also clear charge to reset
+                entrepotId: "",
                 devisNumber: null,
                 clientName: null,
                 clientId: null,
@@ -332,12 +359,26 @@ export default function AddBonLivraison({ lastBonLivraison, commande }) {
               ...group.items,
               ...newArticles.map(article => ({
                 ...article,
-                uniqueKey: `${article.id}-${crypto.randomUUID()}`, // Clé vraiment unique
+                uniqueKey: `${article.id}-${crypto.randomUUID()}`,
+                entrepotId: group.entrepotId || article.entrepotId || "",
               })),
             ],
           };
         }
         return group;
+      })
+    );
+  }, []);
+
+  const handleGroupEntrepotChange = useCallback((groupId, entrepotId) => {
+    setBLGroups(prev =>
+      prev.map(group => {
+        if (group.id !== groupId) return group;
+        return {
+          ...group,
+          entrepotId,
+          items: (group.items || []).map(item => ({ ...item, entrepotId })),
+        };
       })
     );
   }, []);
@@ -688,6 +729,7 @@ export default function AddBonLivraison({ lastBonLivraison, commande }) {
                         <div className="flex justify-between items-center mt-2">
                           <div className="w-1/2 pr-2">
                             <ComboBoxDevis
+                              includeTerminer
                               onSelect={devis => {
                                 handleDevisSelect(group.id, devis);
                                 updateDevisNumberOfGroup(
@@ -720,37 +762,52 @@ export default function AddBonLivraison({ lastBonLivraison, commande }) {
                           </div>
                         </div>
                       ) : (
-                        <div className="grid w-[50%] items-center gap-2 mt-2">
-                          <Label htmlFor="label">Label</Label>
-                          <Select
-                            value={group.charge || ""}
-                            name="charge"
-                            onValueChange={value => {
-                              updateChargeOfGroup(group.id, value);
-                            }}
-                          >
-                            <SelectTrigger className="col-span-3  bg-white focus:ring-purple-500">
-                              <SelectValue placeholder="Séléctionner..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {charges.data?.map(element => (
-                                <SelectItem
-                                  key={element.id}
-                                  value={element.charge}
-                                >
-                                  <div className="flex items-center gap-2">
-                                    {element.charge}
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                        <div className="flex flex-col sm:flex-row gap-4 items-end mt-2">
+                          <div className="grid w-full sm:w-[50%] items-center gap-2">
+                            <Label htmlFor="label">Label</Label>
+                            <Select
+                              value={group.charge || ""}
+                              name="charge"
+                              onValueChange={value => {
+                                updateChargeOfGroup(group.id, value);
+                              }}
+                            >
+                              <SelectTrigger className="col-span-3  bg-white focus:ring-purple-500">
+                                <SelectValue placeholder="Séléctionner..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {charges.data?.map(element => (
+                                  <SelectItem
+                                    key={element.id}
+                                    value={element.charge}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      {element.charge}
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          {isStockEntreeCharge(group.charge) && (
+                              <div className="w-full sm:w-[50%]">
+                                <EntrepotSelect
+                                  value={group.entrepotId || ""}
+                                  onValueChange={value =>
+                                    handleGroupEntrepotChange(group.id, value)
+                                  }
+                                  placeholder="Sélectionner un entrepôt…"
+                                  label="Entrepôt"
+                                />
+                              </div>
+                            )}
                         </div>
                       )}
                     </CardHeader>
                     <CardContent className="p-4 pt-2">
                       <div className="flex justify-end items-center gap-3 mb-4">
                         <ProduitsSelection
+                          entrepotId={group.entrepotId || ""}
                           onArticlesAdd={articles =>
                             handleAddArticles(group.id, articles)
                           }
@@ -900,7 +957,18 @@ export default function AddBonLivraison({ lastBonLivraison, commande }) {
                   <Button
                     className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full"
                     variant="outline"
-                    onClick={() => handleCreateBL.mutate()}
+                    onClick={() => {
+                      const missingGroupEntrepot = bLGroups.some(
+                        g => isStockEntreeCharge(g.charge) && !g.entrepotId
+                      );
+                      if (missingGroupEntrepot) {
+                        toast.error(
+                          "Sélectionnez un entrepôt pour chaque groupe STOCK(entrée)."
+                        );
+                        return;
+                      }
+                      handleCreateBL.mutate();
+                    }}
                   >
                     Créer le BL
                   </Button>

@@ -59,6 +59,8 @@ export function ChargesRapportContent({ typeDepense, onBack, onClose }) {
     typeDepense === "fixe"
       ? "Rapport des charges fixes"
       : "Rapport des charges variantes";
+  const includeSource = typeDepense === "fixe";
+  const columnCount = includeSource ? 7 : 6;
 
   const { data: Data, isLoading } = useQuery({
     queryKey: [
@@ -204,6 +206,9 @@ export function ChargesRapportContent({ typeDepense, onBack, onClose }) {
               <TableHeader>
                 <TableRow className="border-b">
                   <TableHead className="border-r border-b">Date</TableHead>
+                  {includeSource && (
+                    <TableHead className="border-r border-b">Source</TableHead>
+                  )}
                   <TableHead className="border-r border-b">Label</TableHead>
                   <TableHead className="border-r border-b">
                     Description
@@ -217,7 +222,7 @@ export function ChargesRapportContent({ typeDepense, onBack, onClose }) {
                 {isLoading ? (
                   [...Array(8)].map((_, index) => (
                     <TableRow key={index}>
-                      {[...Array(6)].map((__, i) => (
+                      {[...Array(columnCount)].map((__, i) => (
                         <TableCell key={i} className="!py-2">
                           <Skeleton className="h-4 w-[80px]" />
                         </TableCell>
@@ -230,6 +235,11 @@ export function ChargesRapportContent({ typeDepense, onBack, onClose }) {
                       <TableCell className="px-1 py-2 border-r">
                         {formatDate(t.date) || formatDate(t.createdAt)}
                       </TableCell>
+                      {includeSource && (
+                        <TableCell className="px-1 py-2 border-r">
+                          {t.source === "bl" ? "BL" : "Transaction"}
+                        </TableCell>
+                      )}
                       <TableCell className="px-1 py-2 border-r">
                         {t.lable || "—"}
                       </TableCell>
@@ -249,7 +259,7 @@ export function ChargesRapportContent({ typeDepense, onBack, onClose }) {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-6">
+                    <TableCell colSpan={columnCount} className="text-center py-6">
                       Aucune charge trouvée
                     </TableCell>
                   </TableRow>
@@ -258,7 +268,7 @@ export function ChargesRapportContent({ typeDepense, onBack, onClose }) {
               <TableFooter className="bg-gray-50">
                 <TableRow className="border-b">
                   <TableCell
-                    colSpan={5}
+                    colSpan={columnCount - 1}
                     className="text-lg font-semibold p-2 border-r"
                   >
                     Total :

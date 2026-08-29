@@ -57,21 +57,43 @@ export function DataTable<TData, TValue>({
     getCoreRowModel: getCoreRowModel(),
   });
 
+  function extractHeaderText(node: unknown): string | null {
+    if (node == null || node === false) return null;
+    if (typeof node === "string" || typeof node === "number") {
+      return String(node).trim() || null;
+    }
+    if (Array.isArray(node)) {
+      const parts = node.map(extractHeaderText).filter(Boolean);
+      return parts.length ? parts.join(" ") : null;
+    }
+    if (React.isValidElement(node)) {
+      return extractHeaderText(
+        (node as React.ReactElement<{ children?: React.ReactNode }>).props
+          .children
+      );
+    }
+    return null;
+  }
+
   function getHeaderLabel(column: any) {
     const header = column.columnDef.header;
 
-    // Si header est une string → OK
     if (typeof header === "string") return header;
 
-    // Si header est un élément React, on essaie de lire son contenu
-    if (React.isValidElement(header)) {
-      const element = header as React.ReactElement;
-      return typeof element.props.children === "string"
-        ? element.props.children
-        : column.id;
+    if (typeof header === "function") {
+      try {
+        const text = extractHeaderText(header());
+        if (text) return text;
+      } catch {
+        // header functions that need table context
+      }
     }
 
-    // Sinon on retourne l'ID comme fallback
+    if (React.isValidElement(header)) {
+      const text = extractHeaderText(header);
+      if (text) return text;
+    }
+
     return column.id;
   }
   const columnCount = 7;
@@ -93,7 +115,6 @@ export function DataTable<TData, TValue>({
                 return (
                   <DropdownMenuCheckboxItem
                     key={column.id}
-                    className="capitalize"
                     checked={column.getIsVisible()}
                     onCheckedChange={value => column.toggleVisibility(!!value)}
                   >

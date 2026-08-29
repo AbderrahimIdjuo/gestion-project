@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../../../lib/prisma";
+import { isStockEntreeCharge } from "@/lib/stock";
 
 export const dynamic = "force-dynamic";
 
 const STOCK_SORTIE_FOURNISSEUR_NOM = "STOCK(sortie)";
-const STOCK_ENTREE_CHARGE_NOM = "STOCK(entrée)";
 
 function round2(n) {
   return Math.round((Number(n) + Number.EPSILON) * 100) / 100;
@@ -12,10 +12,6 @@ function round2(n) {
 
 function isStockSortieFournisseur(nom) {
   return typeof nom === "string" && nom.trim() === STOCK_SORTIE_FOURNISSEUR_NOM;
-}
-
-function isStockEntreeCharge(charge) {
-  return typeof charge === "string" && charge.trim() === STOCK_ENTREE_CHARGE_NOM;
 }
 
 function compareDatesAsc(a, b) {
@@ -41,6 +37,15 @@ export async function GET(req, { params }) {
         prixAchat: true,
         Unite: true,
         stock: true,
+        stocksEntrepot: {
+          select: {
+            id: true,
+            entrepotId: true,
+            quantite: true,
+            entrepot: { select: { id: true, nom: true } },
+          },
+          orderBy: { entrepot: { nom: "asc" } },
+        },
       },
     });
 

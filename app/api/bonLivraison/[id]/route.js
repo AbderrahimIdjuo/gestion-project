@@ -1,21 +1,20 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../../lib/prisma";
 import { requireAdmin } from "@/lib/auth-utils";
+import {
+  applyStockDelta,
+  isStockEntreeCharge,
+  isStockError,
+  resolveEntrepotIdOrPrincipal,
+  StockError,
+} from "@/lib/stock";
 
 /** Fournisseur fictif pour sorties de stock interne */
 const STOCK_SORTIE_FOURNISSEUR_NOM = "STOCK(sortie)";
-/** Charge « entrée stock » sur un groupe de BL */
-const STOCK_ENTREE_CHARGE_NOM = "STOCK(entrée)";
 
 function isStockSortieFournisseur(nom) {
   return (
     typeof nom === "string" && nom.trim() === STOCK_SORTIE_FOURNISSEUR_NOM
-  );
-}
-
-function isStockEntreeCharge(charge) {
-  return (
-    typeof charge === "string" && charge.trim() === STOCK_ENTREE_CHARGE_NOM
   );
 }
 
@@ -28,33 +27,57 @@ async function reverseStockEffectsOnDelete(tx, bonLivraison) {
   const groups = bonLivraison.groups || [];
   const type = bonLivraison.type;
   const fournisseurNom = bonLivraison.fournisseur?.nom;
+  const blEntrepotId = bonLivraison.entrepotId;
+  const hasEntree =
+    type === "achats" && groups.some(g => isStockEntreeCharge(g.charge));
+  const isSortie =
+    type === "achats" && isStockSortieFournisseur(fournisseurNom);
 
-  // Inverse STOCK(entrée) : création avait augmenté le stock
-  if (type === "achats") {
+  // Inverse STOCK(entrée) : création avait augmenté le stock (entrepôt du groupe / ligne)
+  if (hasEntree) {
     for (const group of groups) {
       if (!isStockEntreeCharge(group.charge)) continue;
       for (const line of group.produits || []) {
         const produitId = line.produitId;
         const q = parseFloat(line.quantite);
         if (!produitId || !Number.isFinite(q) || q <= 0) continue;
-        await tx.produits.update({
-          where: { id: produitId },
-          data: { stock: { decrement: q } },
+        const entrepotId = await resolveEntrepotIdOrPrincipal(
+          tx,
+          line.entrepotId || blEntrepotId
+        );
+        if (!entrepotId) {
+          throw new StockError(
+            "Impossible d'inverser le stock : aucun entrepôt associé à ce groupe."
+          );
+        }
+        await applyStockDelta(tx, {
+          produitId,
+          entrepotId,
+          delta: -q,
         });
       }
     }
   }
 
-  // Inverse STOCK(sortie) : création avait diminué le stock
-  if (type === "achats" && isStockSortieFournisseur(fournisseurNom)) {
+  // Inverse STOCK(sortie) : création avait diminué le stock (entrepôt de la ligne)
+  if (isSortie) {
     for (const group of groups) {
       for (const line of group.produits || []) {
         const produitId = line.produitId;
         const q = parseFloat(line.quantite);
         if (!produitId || !Number.isFinite(q) || q <= 0) continue;
-        await tx.produits.update({
-          where: { id: produitId },
-          data: { stock: { increment: q } },
+        const entrepotId =
+          line.entrepotId ||
+          (await resolveEntrepotIdOrPrincipal(tx, blEntrepotId));
+        if (!entrepotId) {
+          throw new StockError(
+            "Impossible d'inverser le stock : aucun entrepôt associé à cette ligne."
+          );
+        }
+        await applyStockDelta(tx, {
+          produitId,
+          entrepotId,
+          delta: q,
         });
       }
     }
@@ -246,7 +269,11 @@ export async function DELETE(request, { params }) {
             groups: {
               include: {
                 produits: {
-                  select: { produitId: true, quantite: true },
+                  select: {
+                    produitId: true,
+                    quantite: true,
+                    entrepotId: true,
+                  },
                 },
               },
             },
@@ -346,6 +373,12 @@ export async function DELETE(request, { params }) {
             "Seuls les bons de livraison impayés peuvent être supprimés",
         },
         { status: 409 }
+      );
+    }
+    if (isStockError(error)) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status || 400 }
       );
     }
     return NextResponse.json(

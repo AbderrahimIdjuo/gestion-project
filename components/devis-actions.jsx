@@ -16,6 +16,7 @@ import {
   TruckIcon,
   Files,
   Eye,
+  CalendarDays,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -29,6 +30,7 @@ export function DevisActions({
   bLGroups,
   isAdmin = false,
   onPreview,
+  onChangeDateEnd,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isBankDialogOpen, setIsBankDialogOpen] = useState(false);
@@ -57,6 +59,20 @@ export function DevisActions({
               <Pen className="h-4 w-4 text-purple-600 group-hover:text-purple-600" />
               <span className="transition-colors duration-200 group-hover:text-purple-600 group-hover:bg-purple-100">
                 Modifier
+              </span>
+            </DropdownMenuItem>
+          )}
+          {devis.statut === "Terminer" && onChangeDateEnd && (
+            <DropdownMenuItem
+              onClick={() => {
+                onChangeDateEnd(devis);
+                setMenuOpen(false);
+              }}
+              className="flex items-center gap-2 cursor-pointer group hover:!bg-purple-100"
+            >
+              <CalendarDays className="h-4 w-4 text-purple-600" />
+              <span className="transition-colors duration-200 group-hover:text-purple-600 group-hover:bg-purple-100">
+                Modifier la date de fin
               </span>
             </DropdownMenuItem>
           )}

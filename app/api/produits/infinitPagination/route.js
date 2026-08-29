@@ -28,6 +28,12 @@ export async function GET(req) {
         categorie: { equals: categorie },
       };
     }
+    const entrepotId = searchParams.get("entrepotId");
+    if (entrepotId && entrepotId !== "all") {
+      filters.stocksEntrepot = {
+        some: { entrepotId, quantite: { gt: 0 } },
+      };
+    }
     const produits = await prisma.produits.findMany({
       where: filters,
       orderBy: { id: "asc" },
@@ -36,6 +42,10 @@ export async function GET(req) {
       cursor: cursor ? { id: cursor } : undefined,
       include: {
         categorieProduits: true,
+        stocksEntrepot: {
+          include: { entrepot: true },
+          orderBy: { entrepot: { nom: "asc" } },
+        },
       },
     });
 

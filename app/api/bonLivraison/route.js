@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../lib/prisma";
 import { statutPaiementFromTotals } from "@/lib/statut-paiement";
+import {
+  applyStockDelta,
+  isStockEntreeCharge,
+  isStockError,
+  StockError,
+} from "@/lib/stock";
 
 /** Fournisseur fictif pour sorties de stock interne — pas d’achat fournisseur réel */
 const STOCK_SORTIE_FOURNISSEUR_NOM = "STOCK(sortie)";
-/** Charge « entrée stock » sur un groupe de BL : réception en magasin */
-const STOCK_ENTREE_CHARGE_NOM = "STOCK(entrée)";
 
 function isStockSortieFournisseur(nom) {
   return (
@@ -13,43 +17,53 @@ function isStockSortieFournisseur(nom) {
   );
 }
 
-function isStockEntreeCharge(charge) {
-  return (
-    typeof charge === "string" && charge.trim() === STOCK_ENTREE_CHARGE_NOM
-  );
+function connectLineEntrepot(produit) {
+  if (!produit?.entrepotId) return {};
+  return { entrepot: { connect: { id: produit.entrepotId } } };
 }
 
-/** Diminuer le stock de chaque ligne produit du BL (quantité du BL) */
+/** Diminuer le stock de chaque ligne depuis son entrepôt d'origine */
 async function decrementProduitStocksFromBlGroups(prismaTx, bLGroups) {
   for (const group of bLGroups || []) {
     for (const item of group.items || []) {
       const produitId = item.id ?? item.produitId;
       const q = parseFloat(item.quantite);
       if (!produitId || !Number.isFinite(q) || q <= 0) continue;
-      await prismaTx.produits.update({
-        where: { id: produitId },
-        data: { stock: { decrement: q } },
+      if (!item.entrepotId) {
+        throw new StockError(
+          "Sélectionnez un entrepôt pour chaque produit."
+        );
+      }
+      await applyStockDelta(prismaTx, {
+        produitId,
+        entrepotId: item.entrepotId,
+        delta: -q,
       });
     }
   }
 }
 
 /** Augmenter le stock pour les lignes des groupes dont la charge est STOCK(entrée) */
-async function incrementProduitStocksForEntreeCharge(prismaTx, bLGroups) {
+async function incrementProduitStocksForEntreeCharge(
+  prismaTx,
+  bLGroups,
+  fallbackEntrepotId
+) {
   for (const group of bLGroups || []) {
     if (!isStockEntreeCharge(group.charge)) continue;
+    const groupEntrepotId = group.entrepotId || fallbackEntrepotId;
     for (const item of group.items || []) {
       const produitId = item.id ?? item.produitId;
       const q = parseFloat(item.quantite);
       if (!produitId || !Number.isFinite(q) || q <= 0) continue;
-      const p = await prismaTx.produits.findUnique({
-        where: { id: produitId },
-        select: { stock: true },
-      });
-      if (!p) continue;
-      await prismaTx.produits.update({
-        where: { id: produitId },
-        data: { stock: (p.stock ?? 0) + q },
+      const entrepotId = item.entrepotId || groupEntrepotId;
+      if (!entrepotId) {
+        throw new StockError("Entrepôt requis pour l'entrée de stock.");
+      }
+      await applyStockDelta(prismaTx, {
+        produitId,
+        entrepotId,
+        delta: q,
       });
     }
   }
@@ -70,6 +84,7 @@ export async function POST(req) {
       montantPaye,
       compte,
       fournisseurNom,
+      entrepotId,
     } = response;
     const isRetour = type === "retour";
     const totalNum = parseFloat(total);
@@ -109,6 +124,9 @@ export async function POST(req) {
             fournisseur: {
               connect: { id: fournisseurId },
             },
+            ...(entrepotId
+              ? { entrepot: { connect: { id: entrepotId } } }
+              : {}),
             groups: {
               create: bLGroups.map(group => ({
                 id: group.id,
@@ -122,6 +140,7 @@ export async function POST(req) {
                     },
                     quantite: parseFloat(produit.quantite),
                     prixUnite: parseFloat(produit.prixUnite),
+                    ...connectLineEntrepot(produit),
                   })),
                 },
               })),
@@ -136,7 +155,11 @@ export async function POST(req) {
 
         // Entrée stock (charge sur le groupe) : augmenter le stock des produits du groupe
         if (type === "achats") {
-          await incrementProduitStocksForEntreeCharge(prisma, bLGroups);
+          await incrementProduitStocksForEntreeCharge(
+            prisma,
+            bLGroups,
+            entrepotId
+          );
         }
 
         // creation de la transaction (pas pour les BL de type retour)
@@ -239,6 +262,12 @@ export async function POST(req) {
     return NextResponse.json({ result });
   } catch (error) {
     console.error("Error creating BL:", error);
+    if (isStockError(error)) {
+      return NextResponse.json(
+        { message: error.message },
+        { status: error.status || 400 }
+      );
+    }
     return NextResponse.json(
       { message: "An unexpected error occurred." },
       { status: 500 }
@@ -258,6 +287,7 @@ export async function PUT(req) {
       type,
       reference,
       totalPaye,
+      entrepotId,
     } = response;
 
     // 1. Récupérer le BL existant (total, totalPaye, type, fournisseurId pour le calcul dette)
@@ -323,6 +353,9 @@ export async function PUT(req) {
       fournisseur: {
         connect: { id: fournisseurId },
       },
+      ...(entrepotId
+        ? { entrepot: { connect: { id: entrepotId } } }
+        : {}),
       groups: {
           upsert: bLGroups.map(group => ({
             where: { id: group.id },
@@ -341,6 +374,7 @@ export async function PUT(req) {
                     produit: {
                       connect: { id: produit.produitId },
                     },
+                    ...connectLineEntrepot(produit),
                   },
                   create: {
                     quantite: parseFloat(produit.quantite),
@@ -348,6 +382,7 @@ export async function PUT(req) {
                     produit: {
                       connect: { id: produit.produitId },
                     },
+                    ...connectLineEntrepot(produit),
                   },
                 })),
               },
@@ -364,6 +399,7 @@ export async function PUT(req) {
                   produit: {
                     connect: { id: produit.produitId },
                   },
+                  ...connectLineEntrepot(produit),
                 })),
               },
             },
@@ -516,6 +552,9 @@ export async function GET(req) {
               id: true,
             },
           },
+          entrepot: {
+            select: { id: true, nom: true },
+          },
           reglementBlAllocations: {
             include: {
               reglement: {
@@ -538,6 +577,9 @@ export async function GET(req) {
             include: {
               produits: {
                 include: {
+                  entrepot: {
+                    select: { id: true, nom: true },
+                  },
                   produit: {
                     select: {
                       designation: true,
@@ -546,6 +588,10 @@ export async function GET(req) {
                         select: {
                           categorie: true,
                         },
+                      },
+                      stocksEntrepot: {
+                        include: { entrepot: true },
+                        orderBy: { entrepot: { nom: "asc" } },
                       },
                     },
                   },

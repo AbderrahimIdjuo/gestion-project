@@ -24,6 +24,9 @@ export default function ImpressionRapportCharges() {
     }
   }, []);
 
+  const includeSource = data?.typeDepense === "fixe";
+  const columnCount = includeSource ? 7 : 6;
+
   const methodeLabel = methode => {
     if (methode === "espece") return "Espèce";
     if (methode === "cheque") return "Chèque";
@@ -84,6 +87,9 @@ export default function ImpressionRapportCharges() {
                 <TableHeader>
                   <TableRow className="border-b">
                     <TableHead className="border-r border-b">Date</TableHead>
+                    {includeSource && (
+                      <TableHead className="border-r border-b">Source</TableHead>
+                    )}
                     <TableHead className="border-r border-b">Label</TableHead>
                     <TableHead className="border-r border-b">
                       Description
@@ -100,6 +106,11 @@ export default function ImpressionRapportCharges() {
                         <TableCell className="px-1 py-2 border-r">
                           {formatDate(t.date) || formatDate(t.createdAt)}
                         </TableCell>
+                        {includeSource && (
+                          <TableCell className="px-1 py-2 border-r">
+                            {t.source === "bl" ? "BL" : "Transaction"}
+                          </TableCell>
+                        )}
                         <TableCell className="px-1 py-2 border-r">
                           {t.lable || "—"}
                         </TableCell>
@@ -119,7 +130,7 @@ export default function ImpressionRapportCharges() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center">
+                      <TableCell colSpan={columnCount} className="text-center">
                         Aucune charge trouvée
                       </TableCell>
                     </TableRow>
@@ -128,7 +139,7 @@ export default function ImpressionRapportCharges() {
                 <TableFooter className="bg-gray-50 table-footer-print">
                   <TableRow className="border-b">
                     <TableCell
-                      colSpan={5}
+                      colSpan={columnCount - 1}
                       className="text-lg font-semibold p-2 border-r"
                     >
                       Total :

@@ -51,9 +51,13 @@ export function TableRowActionItem({
 }) {
   return (
     <DropdownMenuItem
-      onClick={e => {
+      onSelect={e => {
+        e.preventDefault();
         e.stopPropagation();
         onClick?.(e);
+      }}
+      onClick={e => {
+        e.stopPropagation();
       }}
       className={`flex items-center gap-2 cursor-pointer group ${hoverClasses[color] || hoverClasses.purple}`}
     >
@@ -101,8 +105,10 @@ export function TableRowActions({
                 label={item.label}
                 color={item.color}
                 onClick={() => {
-                  item.onClick?.();
                   setMenuOpen(false);
+                  setTimeout(() => {
+                    item.onClick?.();
+                  }, 50);
                 }}
               />
             ))}

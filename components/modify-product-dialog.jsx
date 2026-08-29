@@ -26,8 +26,9 @@ import axios from "axios";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { CircleX } from "lucide-react";
-import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CategoriesSelectMenu } from "@/components/select-categories-produits";
+import { entrepotBadgeClass } from "@/lib/entrepot-badge";
 
 export function ModifyProductDialog({
   currProduct,
@@ -40,6 +41,16 @@ export function ModifyProductDialog({
   const open = isControlled ? controlledOpen : uncontrolledOpen;
   const setOpen = isControlled ? onOpenChange : setUncontrolledOpen;
   const queryClient = useQueryClient();
+  const [stocksByEntrepot, setStocksByEntrepot] = useState({});
+
+  const entrepots = useQuery({
+    queryKey: ["entrepots"],
+    queryFn: async () => {
+      const response = await axios.get("/api/entrepots");
+      return response.data.entrepots || [];
+    },
+    enabled: open,
+  });
   const productSchema = z.object({
     id: z.string(),
     designation: z.string().min(1, "Champ obligatoire"),
@@ -50,11 +61,6 @@ export function ModifyProductDialog({
     }, z.number({ invalid_type_error: "Le prix d'achat doit être un nombre" }).optional()),
     reference: z.string().optional(),
     unite: z.string().optional(),
-    stock: z.preprocess(
-      v =>
-        v === "" || v === null || v === undefined ? 0 : Number(v),
-      z.number()
-    ),
   });
   const {
     register,
@@ -71,7 +77,6 @@ export function ModifyProductDialog({
       prixAchat: currProduct?.prixAchat,
       unite: currProduct?.Unite,
       reference: currProduct?.reference,
-      stock: currProduct?.stock ?? 0,
     },
     resolver: zodResolver(productSchema),
   });
@@ -86,8 +91,14 @@ export function ModifyProductDialog({
         prixAchat: currProduct.prixAchat,
         unite: currProduct.Unite,
         reference: currProduct.reference,
-        stock: currProduct.stock ?? 0,
       });
+      const next = {};
+      for (const s of currProduct.stocksEntrepot || []) {
+        if (s.entrepotId) {
+          next[s.entrepotId] = String(s.quantite ?? 0);
+        }
+      }
+      setStocksByEntrepot(next);
     }
   }, [open, currProduct, reset]);
   
@@ -97,10 +108,12 @@ export function ModifyProductDialog({
       const loadingToast = toast.loading("Modification du produit...");
       try {
         const response = await axios.put("/api/produits", data);
-        toast.success("Produit modifier avec succès!");
+        toast.success("Produit modifié avec succès!");
         return response.data;
       } catch (error) {
-        toast.error("Échec de la modification du produit");
+        toast.error(
+          error?.response?.data?.message || "Échec de la modification du produit"
+        );
         throw error;
       } finally {
         toast.dismiss(loadingToast);
@@ -108,13 +121,32 @@ export function ModifyProductDialog({
     },
     onSuccess: () => {
       setOpen(false);
-      queryClient.invalidateQueries(["produits"]);
+      queryClient.invalidateQueries({ queryKey: ["produits"] });
     },
   });
 
   const onSubmit = async (data) => {
-    modifierProduit.mutate(data);
+    if (!entrepots.data) {
+      toast.error("Chargement des entrepôts…");
+      return;
+    }
+    const stocksEntrepot = entrepots.data.map(entrepot => ({
+      entrepotId: entrepot.id,
+      quantite:
+        parseFloat(
+          String(stocksByEntrepot[entrepot.id] ?? "0").replace(",", ".")
+        ) || 0,
+    }));
+    await modifierProduit.mutateAsync({ ...data, stocksEntrepot });
   };
+
+  const stockTotal = (entrepots.data || []).reduce((sum, entrepot) => {
+    const q =
+      parseFloat(
+        String(stocksByEntrepot[entrepot.id] ?? "0").replace(",", ".")
+      ) || 0;
+    return sum + q;
+  }, 0);
 
   return (
     <>
@@ -131,7 +163,7 @@ export function ModifyProductDialog({
             </Button>
           </DialogTrigger>
         )}
-        <DialogContent className="sm:max-w-[400px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[440px] max-h-[90vh] overflow-y-auto">
           <form onSubmit={handleSubmit(onSubmit)}>
             <DialogHeader>
               <DialogTitle>Modifier produit</DialogTitle>
@@ -217,24 +249,50 @@ export function ModifyProductDialog({
                 )}
               </div>
               <div className="w-full grid grid-cols-1">
-                <Label htmlFor="stock" className="text-left mb-2 mb-2">
-                  Stock
-                </Label>
-                <Input
-                  id="stock"
-                  name="stock"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  {...register("stock")}
-                  className={`col-span-3 focus-visible:ring-purple-300 focus-visible:ring-purple-500 ${
-                    errors.stock && "border-red-500 border-2"
-                  }`}
-                />
-                {errors.stock && (
-                  <p className="text-red-500 text-sm mt-1 flex gap-1 items-center">
-                    <CircleX className="h-4 w-4" />
-                    {errors.stock.message}
+                <Label className="text-left mb-2">Stock par entrepôt</Label>
+                {entrepots.isLoading ? (
+                  <p className="text-sm text-muted-foreground">Chargement…</p>
+                ) : (entrepots.data || []).length > 0 ? (
+                  <div className="space-y-2 rounded-md border px-3 py-3">
+                    {(entrepots.data || []).map(entrepot => (
+                      <div
+                        key={entrepot.id}
+                        className="flex items-center gap-3"
+                      >
+                        <span
+                          className={`inline-flex min-w-0 flex-1 items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${entrepotBadgeClass(
+                            entrepot.id
+                          )}`}
+                        >
+                          <span className="truncate">{entrepot.nom}</span>
+                        </span>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={stocksByEntrepot[entrepot.id] ?? "0"}
+                          onChange={e =>
+                            setStocksByEntrepot(prev => ({
+                              ...prev,
+                              [entrepot.id]: e.target.value,
+                            }))
+                          }
+                          className="w-24 h-8 text-right tabular-nums focus-visible:ring-purple-500"
+                        />
+                      </div>
+                    ))}
+                    <div className="flex justify-between gap-2 border-t pt-2 mt-1 text-sm font-medium">
+                      <span>Total</span>
+                      <span className="tabular-nums">
+                        {stockTotal.toLocaleString("fr-FR", {
+                          maximumFractionDigits: 2,
+                        })}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Aucun entrepôt. Créez-en un dans Paramètres.
                   </p>
                 )}
               </div>
@@ -265,9 +323,15 @@ export function ModifyProductDialog({
               <Button
                 className="bg-[#00e701] hover:bg-[#00e701] shadow-lg hover:scale-105 text-white text-md rounded-full font-bold transition-all duration-300 transform"
                 type="submit"
-                disabled={isSubmitting}
+                disabled={
+                  isSubmitting ||
+                  modifierProduit.isPending ||
+                  entrepots.isLoading
+                }
               >
-                {isSubmitting ? "En cours..." : "Enregistrer"}
+                {isSubmitting || modifierProduit.isPending
+                  ? "En cours..."
+                  : "Enregistrer"}
               </Button>
             </DialogFooter>
           </form>

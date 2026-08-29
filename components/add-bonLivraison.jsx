@@ -5,6 +5,11 @@ import ComboBoxFournisseur from "@/components/comboBox-fournisseurs";
 import { CustomDatePicker } from "@/components/customUi/customDatePicker";
 import CustomTooltip from "@/components/customUi/customTooltip";
 import { AddButton } from "@/components/customUi/styledButton";
+import {
+  BlLigneEntrepotSelect,
+  defaultEntrepotIdFromStocks,
+} from "@/components/bl-ligne-entrepot-select";
+import { EntrepotSelect } from "@/components/entrepot-select";
 import { ProduitsSelection } from "@/components/produits-selection-CMDF";
 import { ArticleSelectionDialog } from "@/components/produits-selection-NouveauBL";
 import { Button } from "@/components/ui/button";
@@ -41,6 +46,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Copy, Package, Plus, Trash2, X } from "lucide-react";
+import { isStockEntreeCharge } from "@/lib/stock";
 import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
@@ -61,6 +67,11 @@ export default function AddBonLivraison({ lastBonLivraison }) {
   const [groupModes, setGroupModes] = useState({}); // Track mode for each group (devis/charge)
 
   const queryClient = useQueryClient();
+
+  const isStockSortie =
+    type === "achats" &&
+    typeof selectedFournisseur?.nom === "string" &&
+    selectedFournisseur.nom.trim() === "STOCK(sortie)";
 
   function formatDate(date) {
     const d = new Date(date);
@@ -111,6 +122,20 @@ export default function AddBonLivraison({ lastBonLivraison }) {
       .toFixed(2);
   };
 
+  const groupsWithEntrepot = groups =>
+    (groups || []).map(group => {
+      if (!isStockEntreeCharge(group.charge) || !group.entrepotId) {
+        return group;
+      }
+      return {
+        ...group,
+        items: (group.items || []).map(item => ({
+          ...item,
+          entrepotId: group.entrepotId,
+        })),
+      };
+    });
+
   const handleCreateBL = useMutation({
     mutationFn: async () => {
       const blTotal = montantTotal || total().toFixed(2);
@@ -122,16 +147,22 @@ export default function AddBonLivraison({ lastBonLivraison }) {
             : statutPaiement === "enPartie"
               ? montantPaye
               : 0;
+      const bLGroupsToSave = groupsWithEntrepot(bLGroups);
+      const entrepotId =
+        bLGroupsToSave.find(
+          g => isStockEntreeCharge(g.charge) && g.entrepotId
+        )?.entrepotId || null;
       const data = {
         numero: generateBLNumber(),
         date,
         reference,
         fournisseurId: selectedFournisseur.id,
         fournisseurNom: selectedFournisseur.nom,
+        entrepotId,
         total: blTotal,
         type,
         totalPaye: resolvedMontantPaye,
-        bLGroups,
+        bLGroups: bLGroupsToSave,
         statutPaiement: type === "retour" ? "impaye" : statutPaiement,
         compte: type === "retour" ? "" : compte,
         montantPaye: resolvedMontantPaye,
@@ -142,7 +173,9 @@ export default function AddBonLivraison({ lastBonLivraison }) {
         await axios.post("/api/bonLivraison", data);
         toast.success("bon ajouter avec succès");
       } catch (error) {
-        toast.error("Échec de l'ajout!");
+        toast.error(
+          error?.response?.data?.message || "Échec de l'ajout!"
+        );
         throw error;
       } finally {
         toast.dismiss(loadingToast);
@@ -177,6 +210,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
       clientName: null,
       clientId: null,
       charge: null,
+      entrepotId: "",
     };
     setBLGroups(prev => [...prev, newGroup]);
     // Initialize group mode as devis by default
@@ -212,6 +246,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
           ? {
               ...group,
               charge,
+              entrepotId: isStockEntreeCharge(charge) ? group.entrepotId : "",
               // Clear devis-related fields when charge is selected
               devisNumber: null,
               clientName: null,
@@ -239,7 +274,9 @@ export default function AddBonLivraison({ lastBonLivraison }) {
       // Switching to devis mode - clear charge
       setBLGroups(prevGroups =>
         prevGroups.map(group =>
-          group.id === groupId ? { ...group, charge: null } : group
+          group.id === groupId
+            ? { ...group, charge: null, entrepotId: "" }
+            : group
         )
       );
     } else {
@@ -250,6 +287,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
             ? {
                 ...group,
                 charge: null, // Also clear charge to reset
+                entrepotId: "",
                 devisNumber: null,
                 clientName: null,
                 clientId: null,
@@ -295,7 +333,11 @@ export default function AddBonLivraison({ lastBonLivraison }) {
               ...group.items,
               ...newArticles.map(article => ({
                 ...article,
-                uniqueKey: `${article.id}-${crypto.randomUUID()}`, // Clé vraiment unique
+                uniqueKey: `${article.id}-${crypto.randomUUID()}`,
+                entrepotId:
+                  group.entrepotId ||
+                  article.entrepotId ||
+                  defaultEntrepotIdFromStocks(article.stocksEntrepot),
               })),
             ],
           };
@@ -335,6 +377,35 @@ export default function AddBonLivraison({ lastBonLivraison }) {
           };
         }
         return group;
+      })
+    );
+  }, []);
+
+  const handleItemEntrepotChange = useCallback((groupId, itemId, entrepotId) => {
+    setBLGroups(prev =>
+      prev.map(group => {
+        if (group.id === groupId) {
+          return {
+            ...group,
+            items: group.items.map(item =>
+              item.uniqueKey === itemId ? { ...item, entrepotId } : item
+            ),
+          };
+        }
+        return group;
+      })
+    );
+  }, []);
+
+  const handleGroupEntrepotChange = useCallback((groupId, entrepotId) => {
+    setBLGroups(prev =>
+      prev.map(group => {
+        if (group.id !== groupId) return group;
+        return {
+          ...group,
+          entrepotId,
+          items: (group.items || []).map(item => ({ ...item, entrepotId })),
+        };
       })
     );
   }, []);
@@ -647,6 +718,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                         <div className="flex justify-between items-center mt-2">
                           <div className="w-1/2 pr-2">
                             <ComboBoxDevis
+                              includeTerminer
                               onSelect={devis => {
                                 handleDevisSelect(group.id, devis);
                                 updateDevisNumberOfGroup(
@@ -679,37 +751,53 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                           </div>
                         </div>
                       ) : (
-                        <div className="grid w-[50%] items-center gap-2 mt-2">
-                          <Label htmlFor="label">Label</Label>
-                          <Select
-                            value={group.charge || ""}
-                            name="charge"
-                            onValueChange={value => {
-                              updateChargeOfGroup(group.id, value);
-                            }}
-                          >
-                            <SelectTrigger className="col-span-3  bg-white focus:ring-purple-500">
-                              <SelectValue placeholder="Séléctionner..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {charges.data?.map(element => (
-                                <SelectItem
-                                  key={element.id}
-                                  value={element.charge}
-                                >
-                                  <div className="flex items-center gap-2">
-                                    {element.charge}
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                        <div className="flex flex-col sm:flex-row gap-4 items-end mt-2">
+                          <div className="grid w-full sm:w-[50%] items-center gap-2">
+                            <Label htmlFor="label">Label</Label>
+                            <Select
+                              value={group.charge || ""}
+                              name="charge"
+                              onValueChange={value => {
+                                updateChargeOfGroup(group.id, value);
+                              }}
+                            >
+                              <SelectTrigger className="col-span-3  bg-white focus:ring-purple-500">
+                                <SelectValue placeholder="Séléctionner..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {charges.data?.map(element => (
+                                  <SelectItem
+                                    key={element.id}
+                                    value={element.charge}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      {element.charge}
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          {isStockEntreeCharge(group.charge) && (
+                              <div className="w-full sm:w-[50%]">
+                                <EntrepotSelect
+                                  value={group.entrepotId || ""}
+                                  onValueChange={value =>
+                                    handleGroupEntrepotChange(group.id, value)
+                                  }
+                                  placeholder="Sélectionner un entrepôt…"
+                                  label="Entrepôt"
+                                />
+                              </div>
+                            )}
                         </div>
                       )}
                     </CardHeader>
                     <CardContent className="p-4 pt-2">
                       <div className="flex justify-end items-center gap-3 mb-4">
                         <ProduitsSelection
+                          stockSortieMode={isStockSortie}
+                          entrepotId={group.entrepotId || ""}
                           onArticlesAdd={articles =>
                             handleAddArticles(group.id, articles)
                           }
@@ -717,13 +805,16 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                       </div>
 
                       {group.items?.length > 0 && (
-                        <div className="overflow-hidden border rounded-lg">
+                        <div className="overflow-x-auto border rounded-lg">
                           <Table>
                             <TableHeader>
                               <TableRow>
-                                <TableHead className="w-[60%]">
+                                <TableHead className={isStockSortie ? "w-[40%]" : "w-[60%]"}>
                                   Produits
                                 </TableHead>
+                                {isStockSortie && (
+                                  <TableHead>Entrepôt</TableHead>
+                                )}
                                 <TableHead>Quantité</TableHead>
                                 <TableHead>Prix unitaire</TableHead>
                                 <TableHead>Montant</TableHead>
@@ -740,6 +831,20 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                                       {item.designation}
                                     </span>
                                   </TableCell>
+                                  {isStockSortie && (
+                                    <TableCell>
+                                      <BlLigneEntrepotSelect
+                                        item={item}
+                                        onEntrepotChange={value =>
+                                          handleItemEntrepotChange(
+                                            group.id,
+                                            item.uniqueKey,
+                                            value
+                                          )
+                                        }
+                                      />
+                                    </TableCell>
+                                  )}
                                   <TableCell>
                                     <Input
                                       defaultValue={item.quantite}
@@ -806,7 +911,7 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                             <TableFooter>
                               <TableRow>
                                 <TableCell
-                                  colSpan={3}
+                                  colSpan={isStockSortie ? 4 : 3}
                                   className="text-right text-xl font-semibold"
                                 >
                                   Total :
@@ -859,7 +964,35 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                   <Button
                     className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full"
                     variant="outline"
-                    onClick={() => handleCreateBL.mutate()}
+                    onClick={() => {
+                      const missingGroupEntrepot = bLGroups.some(
+                        g =>
+                          isStockEntreeCharge(g.charge) && !g.entrepotId
+                      );
+                      if (missingGroupEntrepot) {
+                        toast.error(
+                          "Sélectionnez un entrepôt pour chaque groupe STOCK(entrée)."
+                        );
+                        return;
+                      }
+                      if (isStockSortie) {
+                        const missingEntrepot = bLGroups.some(g =>
+                          (g.items || []).some(item => {
+                            const q = parseFloat(item.quantite);
+                            return (
+                              Number.isFinite(q) && q > 0 && !item.entrepotId
+                            );
+                          })
+                        );
+                        if (missingEntrepot) {
+                          toast.error(
+                            "Sélectionnez un entrepôt pour chaque produit."
+                          );
+                          return;
+                        }
+                      }
+                      handleCreateBL.mutate();
+                    }}
                   >
                     Créer le BL
                   </Button>

@@ -1,6 +1,7 @@
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["driverAdapters"]
+  output          = "../generated/prisma"
 }
 
 datasource db {
@@ -56,6 +57,8 @@ model Produits {
   bonLivraisonGroups BlGroupsProduits[]
   CommandesProduits  CommandesProduits[]
   groupProduits      ListProduits[]
+  stocksEntrepot     ProduitEntrepot[]
+  transfertsStock    TransfertsStock[]
 }
 
 // hada howa lmodel dyal les articls 
@@ -184,13 +187,15 @@ model ListProduits {
 }
 
 model BlGroupsProduits {
-  id        String   @id @default(uuid())
-  groupId   String
-  produitId String
-  quantite  Float
-  prixUnite Float    @default(0)
-  group     BLGroups @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  produit   Produits @relation(fields: [produitId], references: [id], onDelete: Cascade)
+  id         String     @id @default(uuid())
+  groupId    String
+  produitId  String
+  quantite   Float
+  prixUnite  Float      @default(0)
+  entrepotId String?
+  group      BLGroups   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  produit    Produits   @relation(fields: [produitId], references: [id], onDelete: Cascade)
+  entrepot   Entrepots? @relation(fields: [entrepotId], references: [id], onDelete: Restrict)
 }
 
 //had lmodel fih les articls dyal les devis 
@@ -294,6 +299,8 @@ model BonLivraison {
   groups                 BLGroups[]
   fournisseur            Fournisseurs            @relation(fields: [fournisseurId], references: [id], onDelete: Cascade)
   reglementBlAllocations ReglementBlAllocation[]
+  entrepotId             String?
+  entrepot               Entrepots?              @relation(fields: [entrepotId], references: [id], onDelete: SetNull)
 }
 
 model DepensesVariantes {
@@ -406,6 +413,41 @@ model CategoriesProduits {
   categorie String
   items     Items[]
   produits  Produits[]
+}
+
+model Entrepots {
+  id               String             @id @default(uuid())
+  nom              String             @unique
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  stocks           ProduitEntrepot[]
+  bonsLivraison    BonLivraison[]
+  lignesBl         BlGroupsProduits[]
+  transfertsSource TransfertsStock[]  @relation("TransfertSource")
+  transfertsDest   TransfertsStock[]  @relation("TransfertDest")
+}
+
+model ProduitEntrepot {
+  id         String    @id @default(uuid())
+  produitId  String
+  entrepotId String
+  quantite   Float     @default(0)
+  produit    Produits  @relation(fields: [produitId], references: [id], onDelete: Cascade)
+  entrepot   Entrepots @relation(fields: [entrepotId], references: [id], onDelete: Restrict)
+
+  @@unique([produitId, entrepotId])
+}
+
+model TransfertsStock {
+  id               String    @id @default(uuid())
+  produitId        String
+  entrepotSourceId String
+  entrepotDestId   String
+  quantite         Float
+  createdAt        DateTime  @default(now())
+  produit          Produits  @relation(fields: [produitId], references: [id], onDelete: Cascade)
+  entrepotSource   Entrepots @relation("TransfertSource", fields: [entrepotSourceId], references: [id], onDelete: Restrict)
+  entrepotDest     Entrepots @relation("TransfertDest", fields: [entrepotDestId], references: [id], onDelete: Restrict)
 }
 
 model ComptesBancaires {

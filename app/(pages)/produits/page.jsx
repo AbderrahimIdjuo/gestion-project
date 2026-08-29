@@ -1,17 +1,22 @@
 "use client";
 
 import { AjouterStockProduitsDialog } from "@/components/ajouter-stock-produits-dialog";
+import { TransfertStockMultiDialog } from "@/components/transfert-stock-multi-dialog";
 import CustomPagination from "@/components/customUi/customPagination";
 import { PriceRangeSlider } from "@/components/customUi/customSlider";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import HistoriqueProduitDialog from "@/components/historique-produit-dialog";
 import ImportProduits from "@/components/importer-produits";
 import { LoadingDots } from "@/components/loading-dots";
+import { EntrepotSelect } from "@/components/entrepot-select";
 import { ModifyProductDialog } from "@/components/modify-product-dialog";
 import { Navbar } from "@/components/navbar";
 import { ProductFormDialog } from "@/components/product-form-dialog";
 import { Sidebar } from "@/components/sidebar";
 import { TableRowActions } from "@/components/table-row-actions";
+import { TransfertStockDialog } from "@/components/transfert-stock-dialog";
+import { EntreeStockDialog } from "@/components/entree-stock-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,9 +44,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { entrepotBadgeClass } from "@/lib/entrepot-badge";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { Filter, Pen, Search, Trash2, Upload } from "lucide-react";
+import { ArrowRightLeft, Filter, PackagePlus, Pen, Search, Trash2, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -58,9 +64,12 @@ export default function ProduitsPage() {
   const [currProduct, setCurrProduct] = useState(null);
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
   const [historiqueProduct, setHistoriqueProduct] = useState(null);
+  const [transfertProduct, setTransfertProduct] = useState(null);
+  const [entreeStockProduct, setEntreeStockProduct] = useState(null);
   const [filters, setFilters] = useState({
     categorie: "all",
     statut: "all",
+    entrepotId: "all",
     prixAchat: [0, maxPrixAchat],
     stock: [minStock, maxStock],
   });
@@ -79,7 +88,7 @@ export default function ProduitsPage() {
   // Réinitialiser la page à 1 lorsque les filtres changent
   useEffect(() => {
     setPage(1);
-  }, [filters.categorie, filters.statut, filters.prixAchat, filters.stock]);
+  }, [filters.categorie, filters.statut, filters.prixAchat, filters.stock, filters.entrepotId]);
 
   const queryClient = useQueryClient();
   const produits = useQuery({
@@ -93,6 +102,7 @@ export default function ProduitsPage() {
       filters.prixAchat[1],
       filters.stock[0],
       filters.stock[1],
+      filters.entrepotId,
     ],
     queryFn: async () => {
       const response = await axios.get("/api/produits", {
@@ -101,6 +111,10 @@ export default function ProduitsPage() {
           page,
           statut: filters.statut,
           categorie: filters.categorie,
+          entrepotId:
+            filters.entrepotId && filters.entrepotId !== "all"
+              ? filters.entrepotId
+              : undefined,
           minPrixAchats: filters.prixAchat[0],
           maxPrixAchats: filters.prixAchat[1],
           ...(filters.stock[0] != null &&
@@ -256,6 +270,26 @@ export default function ProduitsPage() {
                               </SelectContent>
                             </Select>
                           </div>
+                          <div className="grid grid-cols-4 grid-rows-2 items-center gap-0">
+                            <Label
+                              htmlFor="entrepot"
+                              className="text-left text-black col-span-4"
+                            >
+                              Entrepôt :
+                            </Label>
+                            <div className="col-span-4">
+                              <EntrepotSelect
+                                showLabel={false}
+                                allowEmpty
+                                emptyLabel="Tous les entrepôts"
+                                value={filters.entrepotId}
+                                onValueChange={value =>
+                                  setFilters({ ...filters, entrepotId: value })
+                                }
+                                placeholder="Tous les entrepôts"
+                              />
+                            </div>
+                          </div>
                           <div className="grid grid-cols-4 items-center gap-4 my-2">
                             <Label
                               htmlFor="montant"
@@ -329,7 +363,8 @@ export default function ProduitsPage() {
                       </SheetContent>
                     </Sheet>
                     <AjouterStockProduitsDialog />
-                    <ImportProduits>
+                    <TransfertStockMultiDialog />
+                    {/* <ImportProduits>
                       <Button
                         variant="outline"
                         className="border-purple-500 bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900 rounded-full"
@@ -337,7 +372,7 @@ export default function ProduitsPage() {
                         <Upload className="mr-2 h-4 w-4" />
                         Importer
                       </Button>
-                    </ImportProduits>
+                    </ImportProduits> */}
                     <ProductFormDialog />
                   </div>
                 </div>
@@ -352,6 +387,7 @@ export default function ProduitsPage() {
                           <TableHead>Catégorie</TableHead>
                           <TableHead>Prix</TableHead>
                           <TableHead>Unite</TableHead>
+                          <TableHead>Entrepôt</TableHead>
                           <TableHead className="text-right tabular-nums">
                             Stock
                           </TableHead>
@@ -385,6 +421,9 @@ export default function ProduitsPage() {
                               <TableCell className="!py-2" align="left">
                                 <Skeleton className="h-4 w-[90px]" />
                               </TableCell>
+                              <TableCell className="!py-2" align="left">
+                                <Skeleton className="h-4 w-[140px]" />
+                              </TableCell>
                               <TableCell className="!py-2 text-right">
                                 <Skeleton className="h-4 w-[56px] ml-auto" />
                               </TableCell>
@@ -417,14 +456,47 @@ export default function ProduitsPage() {
                               <TableCell className="!py-2">
                                 {product.Unite}
                               </TableCell>
+                              <TableCell className="!py-2">
+                                <div className="flex flex-wrap gap-1">
+                                  {(product.stocksEntrepot || [])
+                                    .filter(s => Number(s.quantite) !== 0)
+                                    .map(s => (
+                                      <Badge
+                                        key={s.id || s.entrepotId}
+                                        variant="outline"
+                                        className={`rounded-full font-normal border ${entrepotBadgeClass(
+                                          s.entrepotId
+                                        )}`}
+                                      >
+                                        {s.entrepot?.nom || "—"} :{" "}
+                                        {Number(s.quantite).toLocaleString(
+                                          "fr-FR",
+                                          { maximumFractionDigits: 2 }
+                                        )}
+                                      </Badge>
+                                    ))}
+                                  {!(product.stocksEntrepot || []).some(
+                                    s => Number(s.quantite) !== 0
+                                  ) && (
+                                    <span className="text-muted-foreground">
+                                      —
+                                    </span>
+                                  )}
+                                </div>
+                              </TableCell>
                               <TableCell className="text-right !py-2 tabular-nums font-medium">
-                                {Number(product.stock ?? 0).toLocaleString(
-                                  "fr-FR",
-                                  {
-                                    minimumFractionDigits: 0,
-                                    maximumFractionDigits: 2,
-                                  }
-                                )}
+                                {Number(
+                                  filters.entrepotId &&
+                                    filters.entrepotId !== "all"
+                                    ? product.stocksEntrepot?.find(
+                                        s =>
+                                          s.entrepotId === filters.entrepotId
+                                      )?.quantite ?? 0
+                                    : product.stock ?? 0
+                                ).toLocaleString("fr-FR", {
+                                  minimumFractionDigits: 0,
+                                  maximumFractionDigits: 2,
+                                })}
                               </TableCell>
                               <TableCell
                                 className="text-right !py-2"
@@ -439,6 +511,22 @@ export default function ProduitsPage() {
                                       onClick: () => {
                                         setCurrProduct(product);
                                         setIsUpdateDialogOpen(true);
+                                      },
+                                    },
+                                    {
+                                      icon: PackagePlus,
+                                      label: "Entrée en stock",
+                                      color: "emerald",
+                                      onClick: () => {
+                                        setEntreeStockProduct(product);
+                                      },
+                                    },
+                                    {
+                                      icon: ArrowRightLeft,
+                                      label: "Transférer",
+                                      color: "amber",
+                                      onClick: () => {
+                                        setTransfertProduct(product);
                                       },
                                     },
                                     {
@@ -457,7 +545,7 @@ export default function ProduitsPage() {
                           ))
                         ) : (
                           <TableRow>
-                            <TableCell colSpan={7} align="center">
+                            <TableCell colSpan={8} align="center">
                               <div className="text-center py-10 text-muted-foreground">
                                 <svg
                                   xmlns="http://www.w3.org/2000/svg"
@@ -509,6 +597,20 @@ export default function ProduitsPage() {
                   product={historiqueProduct}
                   isOpen={!!historiqueProduct}
                   onClose={() => setHistoriqueProduct(null)}
+                />
+                <TransfertStockDialog
+                  product={transfertProduct}
+                  open={!!transfertProduct}
+                  onOpenChange={open => {
+                    if (!open) setTransfertProduct(null);
+                  }}
+                />
+                <EntreeStockDialog
+                  product={entreeStockProduct}
+                  open={!!entreeStockProduct}
+                  onOpenChange={open => {
+                    if (!open) setEntreeStockProduct(null);
+                  }}
                 />
               </div>
             </div>

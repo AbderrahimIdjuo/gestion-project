@@ -76,7 +76,9 @@ export function useBonLivraisonColumns({
         const bonLivraison = row.original;
         const historiquePaiements = bonLivraison.historiquePaiements ?? [];
         const hasHistorique =
-          bonLivraison.type !== "retour" && historiquePaiements.length > 0;
+          bonLivraison.type !== "retour" &&
+          bonLivraison.fournisseur !== "STOCK(sortie)" &&
+          historiquePaiements.length > 0;
         const isExpanded = expandedBLId === bonLivraison.id;
         if (!hasHistorique) return <span className="w-6 inline-block" />;
         return (
@@ -189,8 +191,11 @@ export function useBonLivraisonColumns({
       header: () => <div className="text-right">Montant payé</div>,
       cell: ({ row }) => {
         const bonLivraison = row.original;
-        // BL de type retour : pas de montant payé, afficher un tiret
-        if (bonLivraison.type === "retour") {
+        // BL retour ou STOCK(sortie) : pas de montant payé
+        if (
+          bonLivraison.type === "retour" ||
+          bonLivraison.fournisseur === "STOCK(sortie)"
+        ) {
           return null;
         }
         const amount = parseFloat(row.getValue("totalPaye"));
@@ -204,6 +209,7 @@ export function useBonLivraisonColumns({
 
     {
       id: "actions",
+      enableHiding: false,
       cell: ({ row }) => {
         const bonLivraison = row.original;
 

@@ -273,6 +273,8 @@ export default function BonLivraison() {
         reference: bon.reference,
         fournisseur: bon.fournisseur.nom,
         fournisseurId: bon.fournisseur.id,
+        entrepotId: bon.entrepotId || bon.entrepot?.id || null,
+        entrepot: bon.entrepot?.nom || null,
         total: bon.total,
         groups: bon.groups,
         statutPaiement: bon.statutPaiement,
