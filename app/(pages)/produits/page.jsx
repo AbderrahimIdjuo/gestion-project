@@ -1,21 +1,21 @@
 "use client";
 
 import { AjouterStockProduitsDialog } from "@/components/ajouter-stock-produits-dialog";
-import { TransfertStockMultiDialog } from "@/components/transfert-stock-multi-dialog";
 import CustomPagination from "@/components/customUi/customPagination";
 import { PriceRangeSlider } from "@/components/customUi/customSlider";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
-import HistoriqueProduitDialog from "@/components/historique-produit-dialog";
-import ImportProduits from "@/components/importer-produits";
-import { LoadingDots } from "@/components/loading-dots";
+import { EntreeStockDialog } from "@/components/entree-stock-dialog";
 import { EntrepotSelect } from "@/components/entrepot-select";
+import HistoriqueProduitDialog from "@/components/historique-produit-dialog";
+import { LoadingDots } from "@/components/loading-dots";
 import { ModifyProductDialog } from "@/components/modify-product-dialog";
 import { Navbar } from "@/components/navbar";
 import { ProductFormDialog } from "@/components/product-form-dialog";
+import ProduitsRapportDialog from "@/components/produits-rapport-dialog";
 import { Sidebar } from "@/components/sidebar";
 import { TableRowActions } from "@/components/table-row-actions";
 import { TransfertStockDialog } from "@/components/transfert-stock-dialog";
-import { EntreeStockDialog } from "@/components/entree-stock-dialog";
+import { TransfertStockMultiDialog } from "@/components/transfert-stock-multi-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,7 +47,14 @@ import {
 import { entrepotBadgeClass } from "@/lib/entrepot-badge";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { ArrowRightLeft, Filter, PackagePlus, Pen, Search, Trash2, Upload } from "lucide-react";
+import {
+  ArrowRightLeft,
+  Filter,
+  PackagePlus,
+  Pen,
+  Search,
+  Trash2,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -88,7 +95,13 @@ export default function ProduitsPage() {
   // Réinitialiser la page à 1 lorsque les filtres changent
   useEffect(() => {
     setPage(1);
-  }, [filters.categorie, filters.statut, filters.prixAchat, filters.stock, filters.entrepotId]);
+  }, [
+    filters.categorie,
+    filters.statut,
+    filters.prixAchat,
+    filters.stock,
+    filters.entrepotId,
+  ]);
 
   const queryClient = useQueryClient();
   const produits = useQuery({
@@ -362,6 +375,7 @@ export default function ProduitsPage() {
                         </div>
                       </SheetContent>
                     </Sheet>
+
                     <AjouterStockProduitsDialog />
                     <TransfertStockMultiDialog />
                     {/* <ImportProduits>
@@ -374,6 +388,7 @@ export default function ProduitsPage() {
                       </Button>
                     </ImportProduits> */}
                     <ProductFormDialog />
+                    <ProduitsRapportDialog />
                   </div>
                 </div>
 
@@ -435,114 +450,124 @@ export default function ProduitsPage() {
                             </TableRow>
                           ))
                         ) : produits.data?.produits.length > 0 ? (
-                          produits.data?.produits.map(product => (
-                            <TableRow
-                              key={product.id}
-                              className="cursor-pointer hover:bg-purple-50/60"
-                              onClick={() => setHistoriqueProduct(product)}
-                            >
-                              <TableCell className="font-medium !py-2">
-                                {product.reference}
-                              </TableCell>
-                              <TableCell className="font-medium !py-2">
-                                {product.designation}
-                              </TableCell>
-                              <TableCell className="!py-2">
-                                {product.categorieProduits?.categorie || "-"}
-                              </TableCell>
-                              <TableCell className="!py-2">
-                                {product.prixAchat.toFixed(2)} DH
-                              </TableCell>
-                              <TableCell className="!py-2">
-                                {product.Unite}
-                              </TableCell>
-                              <TableCell className="!py-2">
-                                <div className="flex flex-wrap gap-1">
-                                  {(product.stocksEntrepot || [])
-                                    .filter(s => Number(s.quantite) !== 0)
-                                    .map(s => (
-                                      <Badge
-                                        key={s.id || s.entrepotId}
-                                        variant="outline"
-                                        className={`rounded-full font-normal border ${entrepotBadgeClass(
-                                          s.entrepotId
-                                        )}`}
-                                      >
-                                        {s.entrepot?.nom || "—"} :{" "}
-                                        {Number(s.quantite).toLocaleString(
-                                          "fr-FR",
-                                          { maximumFractionDigits: 2 }
-                                        )}
-                                      </Badge>
-                                    ))}
-                                  {!(product.stocksEntrepot || []).some(
-                                    s => Number(s.quantite) !== 0
-                                  ) && (
-                                    <span className="text-muted-foreground">
-                                      —
-                                    </span>
-                                  )}
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-right !py-2 tabular-nums font-medium">
-                                {Number(
-                                  filters.entrepotId &&
-                                    filters.entrepotId !== "all"
-                                    ? product.stocksEntrepot?.find(
-                                        s =>
-                                          s.entrepotId === filters.entrepotId
-                                      )?.quantite ?? 0
-                                    : product.stock ?? 0
-                                ).toLocaleString("fr-FR", {
-                                  minimumFractionDigits: 0,
-                                  maximumFractionDigits: 2,
-                                })}
-                              </TableCell>
-                              <TableCell
-                                className="text-right !py-2"
-                                onClick={e => e.stopPropagation()}
+                          produits.data?.produits.map(product => {
+                            const stockQty = Number(
+                              filters.entrepotId && filters.entrepotId !== "all"
+                                ? (product.stocksEntrepot?.find(
+                                    s => s.entrepotId === filters.entrepotId
+                                  )?.quantite ?? 0)
+                                : (product.stock ?? 0)
+                            );
+                            return (
+                              <TableRow
+                                key={product.id}
+                                className="cursor-pointer hover:bg-purple-50/60"
+                                onClick={() => setHistoriqueProduct(product)}
                               >
-                                <TableRowActions
-                                  items={[
-                                    {
-                                      icon: Pen,
-                                      label: "Modifier",
-                                      color: "purple",
-                                      onClick: () => {
-                                        setCurrProduct(product);
-                                        setIsUpdateDialogOpen(true);
+                                <TableCell className="font-medium !py-2">
+                                  {product.reference}
+                                </TableCell>
+                                <TableCell className="font-medium !py-2">
+                                  {product.designation}
+                                </TableCell>
+                                <TableCell className="!py-2">
+                                  {product.categorieProduits?.categorie || "-"}
+                                </TableCell>
+                                <TableCell className="!py-2">
+                                  {product.prixAchat.toFixed(2)} DH
+                                </TableCell>
+                                <TableCell className="!py-2">
+                                  {product.Unite}
+                                </TableCell>
+                                <TableCell className="!py-2">
+                                  <div className="flex flex-wrap gap-1">
+                                    {(product.stocksEntrepot || [])
+                                      .filter(s => Number(s.quantite) !== 0)
+                                      .map(s => (
+                                        <Badge
+                                          key={s.id || s.entrepotId}
+                                          variant="outline"
+                                          className={`rounded-full font-normal border ${entrepotBadgeClass(
+                                            s.entrepotId
+                                          )}`}
+                                        >
+                                          {s.entrepot?.nom || "—"} :{" "}
+                                          {Number(s.quantite).toLocaleString(
+                                            "fr-FR",
+                                            { maximumFractionDigits: 2 }
+                                          )}
+                                        </Badge>
+                                      ))}
+                                    {!(product.stocksEntrepot || []).some(
+                                      s => Number(s.quantite) !== 0
+                                    ) && (
+                                      <span className="text-muted-foreground">
+                                        —
+                                      </span>
+                                    )}
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-right !py-2 tabular-nums font-medium">
+                                  {stockQty <= 0 ? (
+                                    <Badge
+                                      variant="outline"
+                                      className="rounded-full font-medium bg-rose-50 text-rose-600 border-rose-200"
+                                    >
+                                      En rupture
+                                    </Badge>
+                                  ) : (
+                                    stockQty.toLocaleString("fr-FR", {
+                                      minimumFractionDigits: 0,
+                                      maximumFractionDigits: 2,
+                                    })
+                                  )}
+                                </TableCell>
+                                <TableCell
+                                  className="text-right !py-2"
+                                  onClick={e => e.stopPropagation()}
+                                >
+                                  <TableRowActions
+                                    items={[
+                                      {
+                                        icon: Pen,
+                                        label: "Modifier",
+                                        color: "purple",
+                                        onClick: () => {
+                                          setCurrProduct(product);
+                                          setIsUpdateDialogOpen(true);
+                                        },
                                       },
-                                    },
-                                    {
-                                      icon: PackagePlus,
-                                      label: "Entrée en stock",
-                                      color: "emerald",
-                                      onClick: () => {
-                                        setEntreeStockProduct(product);
+                                      {
+                                        icon: PackagePlus,
+                                        label: "Entrée en stock",
+                                        color: "emerald",
+                                        onClick: () => {
+                                          setEntreeStockProduct(product);
+                                        },
                                       },
-                                    },
-                                    {
-                                      icon: ArrowRightLeft,
-                                      label: "Transférer",
-                                      color: "amber",
-                                      onClick: () => {
-                                        setTransfertProduct(product);
+                                      {
+                                        icon: ArrowRightLeft,
+                                        label: "Transférer",
+                                        color: "amber",
+                                        onClick: () => {
+                                          setTransfertProduct(product);
+                                        },
                                       },
-                                    },
-                                    {
-                                      icon: Trash2,
-                                      label: "Supprimer",
-                                      color: "red",
-                                      onClick: () => {
-                                        setDeleteDialogOpen(true);
-                                        setCurrProduct(product);
+                                      {
+                                        icon: Trash2,
+                                        label: "Supprimer",
+                                        color: "red",
+                                        onClick: () => {
+                                          setDeleteDialogOpen(true);
+                                          setCurrProduct(product);
+                                        },
                                       },
-                                    },
-                                  ]}
-                                />
-                              </TableCell>
-                            </TableRow>
-                          ))
+                                    ]}
+                                  />
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })
                         ) : (
                           <TableRow>
                             <TableCell colSpan={8} align="center">

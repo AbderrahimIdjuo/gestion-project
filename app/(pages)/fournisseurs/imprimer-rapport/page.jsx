@@ -130,9 +130,18 @@ export default function ImprimerRapportFournisseur() {
                       </TableCell>
                     </TableRow>
                   ))}
-                  <TableRow className="bg-gray-50 font-semibold border-b">
-                    <TableCell className="py-2 border-r">DETTE FINALE</TableCell>
-                    <TableCell className="py-2 border-r" colSpan={4}></TableCell>
+                  <TableRow className="bg-gray-100 font-semibold border-b">
+                    <TableCell className="py-2 border-r">Total</TableCell>
+                    <TableCell className="py-2 border-r"></TableCell>
+                    <TableCell className="py-2 text-right border-r">
+                      {formatCurrency(rapportTotaux.sumAchats ?? 0)}
+                    </TableCell>
+                    <TableCell className="py-2 text-right border-r">
+                      {formatCurrency(rapportTotaux.sumReglements ?? 0)}
+                    </TableCell>
+                    <TableCell className="py-2 text-right border-r">
+                      {formatCurrency(rapportTotaux.sumRetours ?? 0)}
+                    </TableCell>
                     <TableCell className="py-2 text-right">
                       {formatCurrency(rapportTotaux.detteFinale ?? 0)}
                     </TableCell>

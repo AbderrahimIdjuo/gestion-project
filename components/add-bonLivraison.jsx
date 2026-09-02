@@ -1,5 +1,6 @@
 "use client";
 
+import ComboBoxCharges from "@/components/comboBox-charges";
 import ComboBoxDevis from "@/components/comboBox-devis";
 import ComboBoxFournisseur from "@/components/comboBox-fournisseurs";
 import { CustomDatePicker } from "@/components/customUi/customDatePicker";
@@ -466,14 +467,6 @@ export default function AddBonLivraison({ lastBonLivraison }) {
     },
   });
 
-  const charges = useQuery({
-    queryKey: ["charges"],
-    queryFn: async () => {
-      const response = await axios.get("/api/charges");
-      return response.data.charges;
-    },
-  });
-
   return (
     <div className="">
       <div className="flex items-center justify-between">
@@ -753,30 +746,12 @@ export default function AddBonLivraison({ lastBonLivraison }) {
                       ) : (
                         <div className="flex flex-col sm:flex-row gap-4 items-end mt-2">
                           <div className="grid w-full sm:w-[50%] items-center gap-2">
-                            <Label htmlFor="label">Label</Label>
-                            <Select
+                            <ComboBoxCharges
                               value={group.charge || ""}
-                              name="charge"
                               onValueChange={value => {
                                 updateChargeOfGroup(group.id, value);
                               }}
-                            >
-                              <SelectTrigger className="col-span-3  bg-white focus:ring-purple-500">
-                                <SelectValue placeholder="Séléctionner..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {charges.data?.map(element => (
-                                  <SelectItem
-                                    key={element.id}
-                                    value={element.charge}
-                                  >
-                                    <div className="flex items-center gap-2">
-                                      {element.charge}
-                                    </div>
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                            />
                           </div>
                           {isStockEntreeCharge(group.charge) && (
                               <div className="w-full sm:w-[50%]">

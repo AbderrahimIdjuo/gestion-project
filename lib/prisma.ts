@@ -9,7 +9,7 @@ declare global {
 }
 
 /** Bump after `prisma generate` so the cached dev client picks up schema changes. */
-const PRISMA_SCHEMA_VERSION = 3;
+const PRISMA_SCHEMA_VERSION = 4;
 
 let prisma: PrismaClient;
 

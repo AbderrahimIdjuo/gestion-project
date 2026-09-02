@@ -32,6 +32,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import {
+  BarChart3,
   Building2,
   Calendar,
   CreditCard,
@@ -40,10 +41,140 @@ import {
   Package,
   Printer,
   Receipt,
+  Table2,
   TrendingUp,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { getDateRangeFromPeriode } from "@/lib/periode";
+import {
+  Area,
+  Bar,
+  CartesianGrid,
+  ComposedChart,
+  Legend,
+  Line,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+
+function formatAxisAmount(value) {
+  return new Intl.NumberFormat("fr-FR", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(value ?? 0);
+}
+
+function RapportBLTooltip({ active, payload, formatCurrency }) {
+  if (!active || !payload?.length) return null;
+  const row = payload[0]?.payload;
+  if (!row) return null;
+  return (
+    <div className="rounded-lg border bg-white p-3 shadow-md text-sm space-y-1 min-w-[190px]">
+      <p className="font-semibold text-gray-800">{row.label}</p>
+      {row.fourniture > 0 && (
+        <p className="text-green-600">
+          Fourniture : {formatCurrency(row.fourniture)}
+        </p>
+      )}
+      {row.reglement > 0 && (
+        <p className="text-blue-600">
+          Règlement : {formatCurrency(row.reglement)}
+        </p>
+      )}
+      {row.retour > 0 && (
+        <p className="text-red-600">Retour : {formatCurrency(row.retour)}</p>
+      )}
+      <p className="font-medium text-fuchsia-700">
+        Dette : {formatCurrency(row.dette)}
+      </p>
+    </div>
+  );
+}
+
+function RapportBLGraph({ data, formatCurrency }) {
+  if (!data?.length) {
+    return (
+      <p className="text-center text-muted-foreground py-8">
+        Aucune donnée à afficher.
+      </p>
+    );
+  }
+
+  const crowded = data.length > 8;
+
+  return (
+    <div className="h-[360px] w-full min-w-0 px-2 py-3">
+      <ResponsiveContainer width="100%" height="100%">
+        <ComposedChart
+          data={data}
+          margin={{ top: 8, right: 12, left: 4, bottom: crowded ? 28 : 8 }}
+        >
+          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+          <XAxis
+            dataKey="label"
+            fontSize={11}
+            tickLine={false}
+            interval={data.length > 12 ? Math.ceil(data.length / 8) - 1 : 0}
+            angle={crowded ? -35 : 0}
+            textAnchor={crowded ? "end" : "middle"}
+            height={crowded ? 56 : 30}
+          />
+          <YAxis
+            fontSize={11}
+            tickLine={false}
+            width={48}
+            tickFormatter={formatAxisAmount}
+          />
+          <Tooltip
+            content={<RapportBLTooltip formatCurrency={formatCurrency} />}
+          />
+          <Legend />
+          <Area
+            type="monotone"
+            dataKey="dette"
+            name="Dette"
+            fill="#f5d0fe"
+            stroke="none"
+            legendType="none"
+            tooltipType="none"
+          />
+          <Bar
+            dataKey="fourniture"
+            name="Fourniture"
+            fill="#16a34a"
+            radius={[4, 4, 0, 0]}
+            barSize={18}
+          />
+          <Bar
+            dataKey="reglement"
+            name="Règlement"
+            fill="#2563eb"
+            radius={[4, 4, 0, 0]}
+            barSize={18}
+          />
+          <Bar
+            dataKey="retour"
+            name="Retour"
+            fill="#dc2626"
+            radius={[4, 4, 0, 0]}
+            barSize={18}
+          />
+          <Line
+            type="monotone"
+            dataKey="dette"
+            name="Dette"
+            stroke="#c026d3"
+            strokeWidth={2.5}
+            dot={{ r: 3.5, fill: "#c026d3" }}
+            activeDot={{ r: 5 }}
+          />
+        </ComposedChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
 
 export default function InfosFournisseurDialog({
   fournisseur,
@@ -72,6 +203,7 @@ export default function InfosFournisseurDialog({
 
   // Affichage du rapport à la demande uniquement (produits et règlements se chargent à l'ouverture)
   const [rapportRequested, setRapportRequested] = useState(false);
+  const [rapportView, setRapportView] = useState("graph");
 
   // Mettre à jour les dates quand la période des produits change
   useEffect(() => {
@@ -211,7 +343,10 @@ export default function InfosFournisseurDialog({
   });
 
   useEffect(() => {
-    if (!isOpen) setRapportRequested(false);
+    if (!isOpen) {
+      setRapportRequested(false);
+      setRapportView("graph");
+    }
   }, [isOpen]);
   const chiffreAffaires =
     bonLivraisons?.reduce((acc, bon) => {
@@ -273,20 +408,6 @@ export default function InfosFournisseurDialog({
     console.log("topProduits", produits);
     return produits;
   }, [bonLivraisons, sortKey, startDateProduits, endDateProduits]);
-
-  const montantRestantBL = useMemo(() => {
-    return (
-      bonLivraisons?.reduce((acc, bl) => {
-        if (
-          bl.statutPaiement === "enPartie" ||
-          bl.statutPaiement === "impaye"
-        ) {
-          return acc + (bl.total - (bl.totalPaye || 0));
-        }
-        return acc;
-      }, 0) || 0
-    );
-  }, [bonLivraisons]);
 
   // Filtrer les règlements par période
   const reglementsFiltres = useMemo(() => {
@@ -369,29 +490,40 @@ export default function InfosFournisseurDialog({
     endDateRapport,
   ]);
 
-  // Totaux et dette pour le rapport (ordre chronologique : ancien → récent)
-  // Dette augmente avec chaque BL achats, diminue avec chaque BL retour ou règlement
+  // Totaux et dette pour le rapport — même logique que le rapport achats par BL :
+  // dette finale = fournisseur.dette, puis remontée pour dette initiale et solde courant
   const rapportTotaux = useMemo(() => {
-    const sumAchats = rapportItems
+    const items = rapportItems;
+    const n = items.length;
+    const sumAchats = items
       .filter(i => i.itemType === "bl" && i.blType === "achats")
       .reduce((acc, i) => acc + (i.montant || 0), 0);
-    const sumRetours = rapportItems
+    const sumRetours = items
       .filter(i => i.itemType === "bl" && i.blType === "retour")
       .reduce((acc, i) => acc + Math.abs(i.montant || 0), 0);
-    const sumReglements = rapportItems
+    const sumReglements = items
       .filter(i => i.itemType === "reglement")
       .reduce((acc, i) => acc + Math.abs(i.montant || 0), 0);
-    const detteFinale = montantRestantBL;
-    const detteInitiale =
-      detteFinale - sumAchats + sumReglements + sumRetours;
-    const runningDette = [];
-    for (let i = 0; i < rapportItems.length; i++) {
-      runningDette.push(
-        i === 0
-          ? detteInitiale + rapportItems[0].montant
-          : runningDette[i - 1] + rapportItems[i].montant
-      );
+
+    const detteFinale = Number(fournisseur?.dette) || 0;
+    if (n === 0) {
+      return {
+        sumAchats,
+        sumRetours,
+        sumReglements,
+        detteInitiale: detteFinale,
+        detteFinale,
+        runningDette: [],
+      };
     }
+
+    const runningDette = new Array(n);
+    runningDette[n - 1] = detteFinale;
+    for (let i = n - 2; i >= 0; i--) {
+      runningDette[i] = runningDette[i + 1] - (items[i + 1].montant || 0);
+    }
+    const detteInitiale = runningDette[0] - (items[0].montant || 0);
+
     return {
       sumAchats,
       sumRetours,
@@ -400,7 +532,51 @@ export default function InfosFournisseurDialog({
       detteFinale,
       runningDette,
     };
-  }, [rapportItems, montantRestantBL]);
+  }, [rapportItems, fournisseur?.dette]);
+
+  const rapportChartData = useMemo(() => {
+    const items = rapportItems;
+    const totaux = rapportTotaux;
+    const points = [
+      {
+        label: "Initiale",
+        fourniture: 0,
+        reglement: 0,
+        retour: 0,
+        dette: totaux.detteInitiale ?? 0,
+      },
+    ];
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const label = formatDate(item.date);
+      const fourniture =
+        item.itemType === "bl" && item.blType === "achats" ? item.montant || 0 : 0;
+      const reglement =
+        item.itemType === "reglement" ? Math.abs(item.montant || 0) : 0;
+      const retour =
+        item.itemType === "bl" && item.blType === "retour"
+          ? Math.abs(item.montant || 0)
+          : 0;
+      const last = points[points.length - 1];
+      if (last && last.label === label) {
+        last.fourniture += fourniture;
+        last.reglement += reglement;
+        last.retour += retour;
+        last.dette = totaux.runningDette[i] ?? last.dette;
+      } else {
+        points.push({
+          label,
+          fourniture,
+          reglement,
+          retour,
+          dette: totaux.runningDette[i] ?? 0,
+        });
+      }
+    }
+
+    return points;
+  }, [rapportItems, rapportTotaux]);
 
   const getStatusPrelevementLabel = statusPrelevement => {
     if (!statusPrelevement) return "—";
@@ -565,7 +741,7 @@ export default function InfosFournisseurDialog({
                   variant="destructive"
                   className="text-base sm:text-lg px-3 sm:px-4 py-1.5 sm:py-2 font-bold shadow-md w-full sm:w-auto text-center"
                 >
-                  {data.isLoading || !data?.data ? "—" : formatCurrency(montantRestantBL)}
+                  {formatCurrency(Number(fournisseur?.dette) || 0)}
                 </Badge>
               </div>
             </div>
@@ -888,27 +1064,45 @@ export default function InfosFournisseurDialog({
                   Rapport BL & Règlements
                 </CardTitle>
                 {rapportRequested && rapportItems.length > 0 && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="bg-fuchsia-500 hover:bg-fuchsia-600 text-white hover:text-white border-0 rounded-full"
-                    onClick={() => {
-                      const payload = {
-                        fournisseur,
-                        rapportItems,
-                        rapportTotaux,
-                        periodeRapport,
-                        startDateRapport,
-                        endDateRapport,
-                      };
-                      localStorage.setItem("fournisseur-rapport-bl-reglements", JSON.stringify(payload));
-                      window.open("/fournisseurs/imprimer-rapport", "_blank");
-                    }}
-                  >
-                    <Printer className="mr-2 h-4 w-4" />
-                    Imprimer le rapport
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 rounded-full border-fuchsia-500 bg-fuchsia-100 text-fuchsia-700 hover:bg-fuchsia-200 hover:text-fuchsia-900"
+                      onClick={() =>
+                        setRapportView(rapportView === "graph" ? "table" : "graph")
+                      }
+                    >
+                      {rapportView === "graph" ? (
+                        <Table2 className="mr-1.5 h-4 w-4" />
+                      ) : (
+                        <BarChart3 className="mr-1.5 h-4 w-4" />
+                      )}
+                      {rapportView === "graph" ? "Tableau" : "Graph"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="bg-fuchsia-500 hover:bg-fuchsia-600 text-white hover:text-white border-0 rounded-full"
+                      onClick={() => {
+                        const payload = {
+                          fournisseur,
+                          rapportItems,
+                          rapportTotaux,
+                          periodeRapport,
+                          startDateRapport,
+                          endDateRapport,
+                        };
+                        localStorage.setItem("fournisseur-rapport-bl-reglements", JSON.stringify(payload));
+                        window.open("/fournisseurs/imprimer-rapport", "_blank");
+                      }}
+                    >
+                      <Printer className="mr-2 h-4 w-4" />
+                      Imprimer le rapport
+                    </Button>
+                  </div>
                 )}
               </div>
             </CardHeader>
@@ -938,8 +1132,48 @@ export default function InfosFournisseurDialog({
                     id="periode-rapport"
                   />
                 </div>
+              {rapportItems.length > 0 ? (
+                rapportView === "graph" ? (
+                  <div className="px-2 pb-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 px-2 mb-2">
+                      <div className="rounded-lg bg-gray-50 border px-3 py-2">
+                        <p className="text-[11px] text-muted-foreground">Dette initiale</p>
+                        <p className="text-sm font-semibold">
+                          {formatCurrency(rapportTotaux.detteInitiale)}
+                        </p>
+                      </div>
+                      <div className="rounded-lg bg-green-50 border border-green-100 px-3 py-2">
+                        <p className="text-[11px] text-green-700">Fournitures</p>
+                        <p className="text-sm font-semibold text-green-700">
+                          {formatCurrency(rapportTotaux.sumAchats)}
+                        </p>
+                      </div>
+                      <div className="rounded-lg bg-blue-50 border border-blue-100 px-3 py-2">
+                        <p className="text-[11px] text-blue-700">Règlements</p>
+                        <p className="text-sm font-semibold text-blue-700">
+                          {formatCurrency(rapportTotaux.sumReglements)}
+                        </p>
+                      </div>
+                      <div className="rounded-lg bg-red-50 border border-red-100 px-3 py-2">
+                        <p className="text-[11px] text-red-700">Retours</p>
+                        <p className="text-sm font-semibold text-red-700">
+                          {formatCurrency(rapportTotaux.sumRetours)}
+                        </p>
+                      </div>
+                      <div className="rounded-lg bg-fuchsia-50 border border-fuchsia-100 px-3 py-2 col-span-2 sm:col-span-1">
+                        <p className="text-[11px] text-fuchsia-700">Dette finale</p>
+                        <p className="text-sm font-semibold text-fuchsia-700">
+                          {formatCurrency(rapportTotaux.detteFinale)}
+                        </p>
+                      </div>
+                    </div>
+                    <RapportBLGraph
+                      data={rapportChartData}
+                      formatCurrency={formatCurrency}
+                    />
+                  </div>
+                ) : (
               <div className="rounded-xl overflow-x-auto max-h-[500px] overflow-y-auto mt-4">
-                {rapportItems.length > 0 ? (
                   <Table>
                     <TableHeader className="sticky top-0 bg-gradient-to-r from-zinc-50 to-zinc-100 border-b z-10">
                       <TableRow>
@@ -1000,26 +1234,32 @@ export default function InfosFournisseurDialog({
                           </TableCell>
                         </TableRow>
                       ))}
-                      {/* <TableRow className="bg-gray-50 border-b font-semibold">
-                        <TableCell className="py-2">DETTE FINALE</TableCell>
-                        <TableCell className="py-2" colSpan={4}></TableCell>
-                        <TableCell
-                          className={`py-2 text-right font-semibold ${
-                            rapportTotaux.detteFinale >= 0 ? "text-green-600" : "text-red-600"
-                          }`}
-                        >
+                      <TableRow className="bg-gray-700 hover:bg-gray-700 text-white border-b font-semibold">
+                        <TableCell className="py-2">Total</TableCell>
+                        <TableCell className="py-2"></TableCell>
+                        <TableCell className="py-2 text-right font-semibold text-white">
+                          {formatCurrency(rapportTotaux.sumAchats)}
+                        </TableCell>
+                        <TableCell className="py-2 text-right font-semibold text-white">
+                          {formatCurrency(rapportTotaux.sumReglements)}
+                        </TableCell>
+                        <TableCell className="py-2 text-right font-semibold text-white">
+                          {formatCurrency(rapportTotaux.sumRetours)}
+                        </TableCell>
+                        <TableCell className="py-2 text-right font-semibold">
                           {formatCurrency(rapportTotaux.detteFinale)}
                         </TableCell>
-                      </TableRow> */}
+                      </TableRow>
                     </TableBody>
                   </Table>
-                ) : (
+              </div>
+                )
+              ) : (
                   <div className="text-center py-12 text-muted-foreground">
                     <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
                     <p className="font-medium">Aucune donnée pour cette période</p>
                   </div>
-                )}
-              </div>
+              )}
                 </div>
               )}
             </CardContent>

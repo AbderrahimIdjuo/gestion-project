@@ -13,6 +13,7 @@
     "migrate:articles-categories": "node scripts/migrateArticlesCategories.mjs",
     "migrate:items-categories": "node scripts/migrateArticlesCategories.mjs",
     "update-fournisseurs-dette": "node scripts/update-fournisseurs-dette.mjs",
+    "migrate:stock-el-houda": "node scripts/migrate-stock-el-houda.mjs",
     "clear-vider-compte": "node scripts/clear-vider-compte.mjs",
     "postinstall": "prisma generate"
   },

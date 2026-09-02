@@ -407,7 +407,11 @@ export default function TransactionDialog() {
                         <SelectValue placeholder="Séléctionner..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {charges.data?.map(element => (
+                        {charges.data
+                          ?.filter(
+                            element => (element.type || "fixe") === "fixe"
+                          )
+                          .map(element => (
                           <SelectItem key={element.id} value={element.charge}>
                             <div className="flex items-center gap-2">
                               {element.charge}

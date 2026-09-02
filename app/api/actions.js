@@ -31,11 +31,12 @@ export async function addCategorieProduits(categorie) {
   }
 }
 
-export async function addCharge(charge) {
+export async function addCharge(charge, type = "fixe") {
   if (charge !== "") {
     const result = await prisma.charges.create({
       data: {
         charge,
+        type: type === "variante" ? "variante" : "fixe",
       },
     });
     return result;

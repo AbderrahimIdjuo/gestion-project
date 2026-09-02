@@ -59,7 +59,8 @@ export function ChargesRapportContent({ typeDepense, onBack, onClose }) {
     typeDepense === "fixe"
       ? "Rapport des charges fixes"
       : "Rapport des charges variantes";
-  const includeSource = typeDepense === "fixe";
+  const includeSource =
+    typeDepense === "fixe" || typeDepense === "variante";
   const columnCount = includeSource ? 7 : 6;
 
   const { data: Data, isLoading } = useQuery({

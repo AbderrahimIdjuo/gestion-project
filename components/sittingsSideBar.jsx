@@ -85,7 +85,7 @@ function SittingsSideBar({ page }) {
           <Link href="/parametres/charges">
             <NavItem
               icon={<TrendingDown className="h-4 w-4" />}
-              label="Charges fixes"
+              label="Charges"
               isActive={page === "charges"}
             />
           </Link>

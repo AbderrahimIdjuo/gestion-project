@@ -350,31 +350,33 @@ export async function GET(req) {
   }
 
   // Date de début filter
-  if (dateStartFrom && dateStartTo) {
-    const startDateStart = new Date(dateStartFrom);
-    startDateStart.setHours(0, 0, 0, 0); // Set to beginning of the day
-
-    const endDateStart = new Date(dateStartTo);
-    endDateStart.setHours(23, 59, 59, 999); // Set to end of the day
-
-    filters.dateStart = {
-      gte: startDateStart, // Greater than or equal to start of "dateStartFrom" day
-      lte: endDateStart, // Less than or equal to end of "dateStartTo" day
-    };
+  if (dateStartFrom || dateStartTo) {
+    filters.dateStart = {};
+    if (dateStartFrom) {
+      const startDateStart = new Date(dateStartFrom);
+      startDateStart.setHours(0, 0, 0, 0);
+      filters.dateStart.gte = startDateStart;
+    }
+    if (dateStartTo) {
+      const endDateStart = new Date(dateStartTo);
+      endDateStart.setHours(23, 59, 59, 999);
+      filters.dateStart.lte = endDateStart;
+    }
   }
 
   // Date de fin filter
-  if (dateEndFrom && dateEndTo) {
-    const startDateEnd = new Date(dateEndFrom);
-    startDateEnd.setHours(0, 0, 0, 0); // Set to beginning of the day
-
-    const endDateEnd = new Date(dateEndTo);
-    endDateEnd.setHours(23, 59, 59, 999); // Set to end of the day
-
-    filters.dateEnd = {
-      gte: startDateEnd, // Greater than or equal to start of "dateEndFrom" day
-      lte: endDateEnd, // Less than or equal to end of "dateEndTo" day
-    };
+  if (dateEndFrom || dateEndTo) {
+    filters.dateEnd = {};
+    if (dateEndFrom) {
+      const startDateEnd = new Date(dateEndFrom);
+      startDateEnd.setHours(0, 0, 0, 0);
+      filters.dateEnd.gte = startDateEnd;
+    }
+    if (dateEndTo) {
+      const endDateEnd = new Date(dateEndTo);
+      endDateEnd.setHours(23, 59, 59, 999);
+      filters.dateEnd.lte = endDateEnd;
+    }
   }
 
   // total range filter

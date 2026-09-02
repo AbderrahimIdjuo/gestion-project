@@ -124,6 +124,8 @@ export default function DevisPage() {
     from,
     to,
   } = usePeriodeFilter("all");
+  const dateStartPeriode = usePeriodeFilter("all");
+  const dateEndPeriode = usePeriodeFilter("all");
   const [transactions, setTransactions] = useState();
   const [BlGroups, setBlGroups] = useState();
   const [expandedDevis, setExpandedDevis] = useState(null);
@@ -227,8 +229,6 @@ export default function DevisPage() {
     setExpandedDevis(expandedDevis === devisId ? null : devisId);
   };
   const [filters, setFilters] = useState({
-    dateStart: "",
-    dateEnd: "",
     montant: [0, maxMontant],
     statut: [],
     statutPaiement: [],
@@ -290,6 +290,12 @@ export default function DevisPage() {
     periode,
     startDate,
     endDate,
+    dateStartPeriode.periode,
+    dateStartPeriode.startDate,
+    dateStartPeriode.endDate,
+    dateEndPeriode.periode,
+    dateEndPeriode.startDate,
+    dateEndPeriode.endDate,
   ]);
   const devis = useQuery({
     queryKey: [
@@ -300,6 +306,12 @@ export default function DevisPage() {
       periode,
       startDate,
       endDate,
+      dateStartPeriode.periode,
+      dateStartPeriode.startDate,
+      dateStartPeriode.endDate,
+      dateEndPeriode.periode,
+      dateEndPeriode.startDate,
+      dateEndPeriode.endDate,
       filters.montant,
       filters.statutPaiement,
       filters.commercant,
@@ -312,6 +324,10 @@ export default function DevisPage() {
           statut: filters.statut.length > 0 ? filters.statut.join("-") : "all",
           from: from || undefined,
           to: to || undefined,
+          dateStartFrom: dateStartPeriode.from || undefined,
+          dateStartTo: dateStartPeriode.to || undefined,
+          dateEndFrom: dateEndPeriode.from || undefined,
+          dateEndTo: dateEndPeriode.to || undefined,
           minTotal: filters.montant[0],
           maxTotal: filters.montant[1],
           statutPaiement:
@@ -652,7 +668,7 @@ export default function DevisPage() {
                           Filtres
                         </Button>
                       </SheetTrigger>
-                      <SheetContent className="border-l-purple-200 bg-white">
+                      <SheetContent className="border-l-purple-200 bg-white overflow-y-auto">
                         <SheetHeader>
                           <SheetTitle className="text-black">
                             Filtres
@@ -885,6 +901,26 @@ export default function DevisPage() {
                             label="Période :"
                             id="periode-devis"
                           />
+                          <PeriodeFilter
+                            periode={dateStartPeriode.periode}
+                            onPeriodeChange={dateStartPeriode.setPeriode}
+                            startDate={dateStartPeriode.startDate}
+                            setStartDate={dateStartPeriode.setStartDate}
+                            endDate={dateStartPeriode.endDate}
+                            setEndDate={dateStartPeriode.setEndDate}
+                            label="Date de début :"
+                            id="periode-date-debut"
+                          />
+                          <PeriodeFilter
+                            periode={dateEndPeriode.periode}
+                            onPeriodeChange={dateEndPeriode.setPeriode}
+                            startDate={dateEndPeriode.startDate}
+                            setStartDate={dateEndPeriode.setStartDate}
+                            endDate={dateEndPeriode.endDate}
+                            setEndDate={dateEndPeriode.setEndDate}
+                            label="Date de fin :"
+                            id="periode-date-fin"
+                          />
                           <div className="grid grid-cols-4 grid-rows-2 items-start">
                             <Label
                               htmlFor="montant"
@@ -926,6 +962,10 @@ export default function DevisPage() {
                               : "all",
                           from: from || undefined,
                           to: to || undefined,
+                          dateStartFrom: dateStartPeriode.from || undefined,
+                          dateStartTo: dateStartPeriode.to || undefined,
+                          dateEndFrom: dateEndPeriode.from || undefined,
+                          dateEndTo: dateEndPeriode.to || undefined,
                           minTotal: filters.montant[0],
                           maxTotal: filters.montant[1],
                           commercant: filters.commercant,

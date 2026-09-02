@@ -4,6 +4,7 @@ import BonLivraisonRapportDialog from "@/components/bonLivraison-rapport-dialog"
 import ClientsRapportDialog from "@/components/clients-rapport-dialog";
 import ComptesRapportContent from "@/components/comptes-rapport-dialog";
 import DevisRapportDialog from "@/components/devis-rapport-dialog";
+import ProduitsRapportDialog from "@/components/produits-rapport-dialog";
 import { ChargesRapportContent } from "@/components/transactions-rapport-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,6 +20,7 @@ import {
   Building2,
   FileText,
   Landmark,
+  Package,
   ScrollText,
   Users,
   Wallet,
@@ -31,6 +33,13 @@ const REPORT_TYPES = [
     title: "Crédits clients",
     description: "Reste d'avances et paiements par client",
     icon: Users,
+    adminOnly: false,
+  },
+  {
+    id: "stock",
+    title: "Rapport de stock",
+    description: "Quantités positives et valeur du stock par entrepôt",
+    icon: Package,
     adminOnly: false,
   },
   {
@@ -151,6 +160,14 @@ export default function DashboardRapportsDialog() {
 
         {reportType === "clients" && (
           <ClientsRapportDialog
+            embedded
+            onBack={handleBack}
+            onClose={handleClose}
+          />
+        )}
+
+        {reportType === "stock" && (
+          <ProduitsRapportDialog
             embedded
             onBack={handleBack}
             onClose={handleClose}

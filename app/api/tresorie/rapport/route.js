@@ -24,7 +24,19 @@ function mapBlGroupToChargeRow(group) {
   };
 }
 
-async function fetchBlChargesFixes(from, to) {
+async function fetchBlChargesByType(from, to, chargeType) {
+  const catalog = await prisma.charges.findMany({
+    where: { type: chargeType },
+    select: { charge: true },
+  });
+  const chargeNames = catalog
+    .map(c => c.charge)
+    .filter(name => typeof name === "string" && name.trim() !== "");
+
+  if (chargeNames.length === 0) {
+    return [];
+  }
+
   const blDateFilter =
     from && to
       ? {
@@ -37,7 +49,7 @@ async function fetchBlChargesFixes(from, to) {
 
   const blGroups = await prisma.bLGroups.findMany({
     where: {
-      AND: [{ charge: { not: null } }, { NOT: { charge: "" } }],
+      charge: { in: chargeNames },
       bonLivraison: {
         ...blDateFilter,
         NOT: { type: "retour" },
@@ -96,8 +108,11 @@ export async function GET(req) {
     };
   }
 
-  const blChargesPromise =
-    typeDepense === "fixe" ? fetchBlChargesFixes(from, to) : Promise.resolve([]);
+  const includeBlCharges =
+    typeDepense === "fixe" || typeDepense === "variante";
+  const blChargesPromise = includeBlCharges
+    ? fetchBlChargesByType(from, to, typeDepense)
+    : Promise.resolve([]);
 
   let transactions;
 
@@ -151,7 +166,7 @@ export async function GET(req) {
     });
   }
 
-  if (typeDepense === "fixe") {
+  if (includeBlCharges) {
     const blCharges = await blChargesPromise;
     transactions = [...transactions, ...blCharges].sort((a, b) => {
       const dateA = new Date(a.date || a.createdAt || 0).getTime();

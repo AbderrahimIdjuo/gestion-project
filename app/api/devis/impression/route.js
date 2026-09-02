@@ -7,9 +7,14 @@ export async function GET(req) {
   const statut = searchParams.get("statut");
   const from = searchParams.get("from"); // Start date
   const to = searchParams.get("to"); // End date
+  const dateStartFrom = searchParams.get("dateStartFrom");
+  const dateStartTo = searchParams.get("dateStartTo");
+  const dateEndFrom = searchParams.get("dateEndFrom");
+  const dateEndTo = searchParams.get("dateEndTo");
   const minTotal = searchParams.get("minTotal");
   const maxTotal = searchParams.get("maxTotal");
   const statutPaiement = searchParams.get("statutPaiement");
+  const commercant = searchParams.get("commercant");
 
   const filters = {};
 
@@ -39,6 +44,40 @@ export async function GET(req) {
     filters.date = {
       gte: startDate, // Greater than or equal to start of "from" day
       lte: endDate, // Less than or equal to end of "to" day
+    };
+  }
+
+  if (dateStartFrom || dateStartTo) {
+    filters.dateStart = {};
+    if (dateStartFrom) {
+      const start = new Date(dateStartFrom);
+      start.setHours(0, 0, 0, 0);
+      filters.dateStart.gte = start;
+    }
+    if (dateStartTo) {
+      const end = new Date(dateStartTo);
+      end.setHours(23, 59, 59, 999);
+      filters.dateStart.lte = end;
+    }
+  }
+
+  if (dateEndFrom || dateEndTo) {
+    filters.dateEnd = {};
+    if (dateEndFrom) {
+      const start = new Date(dateEndFrom);
+      start.setHours(0, 0, 0, 0);
+      filters.dateEnd.gte = start;
+    }
+    if (dateEndTo) {
+      const end = new Date(dateEndTo);
+      end.setHours(23, 59, 59, 999);
+      filters.dateEnd.lte = end;
+    }
+  }
+
+  if (commercant && commercant !== "all") {
+    filters.commercant = {
+      nom: commercant,
     };
   }
 

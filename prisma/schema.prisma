@@ -406,6 +406,7 @@ model TachesEmployes {
 model Charges {
   id     String @id @default(uuid())
   charge String
+  type   String @default("fixe")
 }
 
 model CategoriesProduits {

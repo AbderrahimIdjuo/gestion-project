@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Package, Trash2, X, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import ComboBoxCharges from "@/components/comboBox-charges";
 import ComboBoxDevis from "@/components/comboBox-devis";
 import {
   Dialog,
@@ -44,7 +45,7 @@ import {
 import axios from "axios";
 import { AddButton } from "@/components/customUi/styledButton";
 import { CustomDatePicker } from "@/components/customUi/customDatePicker";
-import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { formatCurrency } from "@/lib/functions";
 import { isStockEntreeCharge } from "@/lib/stock";
@@ -441,14 +442,6 @@ export default function UpdateBonLivraison({ isOpen, onClose, bonLivraison }) {
     }
     return parsed;
   };
-  const charges = useQuery({
-    queryKey: ["charges"],
-    queryFn: async () => {
-      const response = await axios.get("/api/charges");
-      return response.data.charges;
-    },
-  });
-
   useEffect(() => {
     setTotalBl(total());
   }, [total()]);
@@ -606,31 +599,12 @@ export default function UpdateBonLivraison({ isOpen, onClose, bonLivraison }) {
                     ) : (
                       <div className="flex flex-col sm:flex-row gap-4 items-end mt-2">
                         <div className="grid w-full sm:w-[50%] items-center gap-2">
-                          <Label htmlFor="label">Label</Label>
-                          <Select
-                            defaultValue={group.charge}
+                          <ComboBoxCharges
                             value={group.charge || ""}
-                            name="charge"
-                            onValueChange={(value) => {
+                            onValueChange={value => {
                               updateChargeOfGroup(group.id, value);
                             }}
-                          >
-                            <SelectTrigger className="col-span-3  bg-white focus:ring-purple-500">
-                              <SelectValue placeholder="Séléctionner..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {charges.data?.map((element) => (
-                                <SelectItem
-                                  key={element.id}
-                                  value={element.charge}
-                                >
-                                  <div className="flex items-center gap-2">
-                                    {element.charge}
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          />
                         </div>
                         {isStockEntreeCharge(group.charge) && (
                             <div className="w-full sm:w-[50%]">

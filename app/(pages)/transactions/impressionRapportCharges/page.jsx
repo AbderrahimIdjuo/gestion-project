@@ -24,7 +24,8 @@ export default function ImpressionRapportCharges() {
     }
   }, []);
 
-  const includeSource = data?.typeDepense === "fixe";
+  const includeSource =
+    data?.typeDepense === "fixe" || data?.typeDepense === "variante";
   const columnCount = includeSource ? 7 : 6;
 
   const methodeLabel = methode => {

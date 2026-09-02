@@ -154,6 +154,32 @@ export default function ImpressionTransactions() {
                     <p className="text-sm text-gray-600">Indéterminer</p>
                   )}
                 </div>
+                {(params?.dateStartFrom || params?.dateStartTo) && (
+                  <div className="flex gap-2 items-center">
+                    <h3 className="mb-1 font-semibold text-gray-900">
+                      Date de début :
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      {[params?.dateStartFrom, params?.dateStartTo]
+                        .filter(Boolean)
+                        .map(d => formatDate(d))
+                        .join(" • ")}
+                    </p>
+                  </div>
+                )}
+                {(params?.dateEndFrom || params?.dateEndTo) && (
+                  <div className="flex gap-2 items-center">
+                    <h3 className="mb-1 font-semibold text-gray-900">
+                      Date de fin :
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      {[params?.dateEndFrom, params?.dateEndTo]
+                        .filter(Boolean)
+                        .map(d => formatDate(d))
+                        .join(" • ")}
+                    </p>
+                  </div>
+                )}
                 <div className="flex gap-2 items-center">
                   <h3 className="mb-1 font-semibold text-gray-900">
                     Statut de paiement :

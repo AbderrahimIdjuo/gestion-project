@@ -103,7 +103,7 @@ const menuItems = [
         href: "/parametres/entrepots",
       },
       {
-        label: "Charges fixes",
+        label: "Charges",
         href: "/parametres/charges",
       },
       { label: "Comptes bancaires", href: "/parametres/banques" },
