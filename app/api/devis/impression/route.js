@@ -24,14 +24,20 @@ export async function GET(req) {
     { client: { nom: { contains: searchQuery, mode: "insensitive" } } },
   ];
 
-  // Statut filter
-  if (statut !== "all") {
-    filters.statut = statut;
+  // Statut filter (supports multiple values separated by "-")
+  if (statut && statut !== "all") {
+    const statutArray = statut.split("-");
+    if (statutArray.length > 0) {
+      filters.statut = { in: statutArray };
+    }
   }
 
-  // StatutPaiement filter
-  if (statutPaiement !== "all") {
-    filters.statutPaiement = statutPaiement;
+  // StatutPaiement filter (supports multiple values separated by "-")
+  if (statutPaiement && statutPaiement !== "all") {
+    const statutPaiementArray = statutPaiement.split("-");
+    if (statutPaiementArray.length > 0) {
+      filters.statutPaiement = { in: statutPaiementArray };
+    }
   }
 
   if (from && to) {

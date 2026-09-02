@@ -73,17 +73,21 @@ export default function ImpressionTransactions() {
 
       return response.data.devis;
     },
+    enabled: !!params,
   });
   function statutPiementLabel(statut) {
-    if (statut === "all") {
+    if (!statut || statut === "all") {
       return "Tous";
-    } else if (statut === "paye") {
-      return "Payé";
-    } else if (statut === "impaye") {
-      return "Impayé";
-    } else if (statut === "enPartie") {
-      return "En partie";
     }
+    const labels = {
+      paye: "Payé",
+      impaye: "Impayé",
+      enPartie: "En partie",
+    };
+    return statut
+      .split("-")
+      .map(s => labels[s] || s)
+      .join(", ");
   }
 
   const fromDay = new Date(params?.from);
@@ -193,7 +197,9 @@ export default function ImpressionTransactions() {
                     Statut de devis:
                   </h3>
                   <p className="text-sm text-gray-600">
-                    {params?.statut === "all" ? "Tous" : params?.statut}
+                    {!params?.statut || params?.statut === "all"
+                      ? "Tous"
+                      : params.statut.split("-").join(", ")}
                   </p>
                 </div>
                 <div className="flex gap-2 items-center">
