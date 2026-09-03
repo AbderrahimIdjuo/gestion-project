@@ -1,6 +1,7 @@
 "use client";
 
 import { EnteteDevis } from "@/components/Entete-devis";
+import { RapportEntete } from "@/components/rapport-entete";
 import { DirectPrintButton } from "@/components/ui/print-button";
 import {
   Table,
@@ -43,39 +44,30 @@ export default function ImprimerRapportStock() {
           <div className="print-block">
             <EnteteDevis />
           </div>
-          <div className="space-y-2 print-block">
-            <h3 className="font-semibold text-center text-lg text-gray-900 mb-2">
-              RAPPORT DE STOCK
-            </h3>
-            <div className="flex justify-between items-start mb-4 gap-4">
-              <div className="space-y-1">
-                <div className="flex gap-2 items-start">
-                  <h3 className="mb-1 font-semibold text-gray-900">
-                    Entrepôts :
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    {formatList(data?.entrepots)}
-                  </p>
-                </div>
-                <div className="flex gap-2 items-start">
-                  <h3 className="mb-1 font-semibold text-gray-900">
-                    Catégories :
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    {formatList(data?.categories)}
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-2 items-center">
-                <h3 className="mb-1 font-semibold text-gray-900">
-                  Date de création :
-                </h3>
-                <p className="text-sm text-gray-600">
-                  {formatDate(new Date().toISOString())}
-                </p>
-              </div>
-            </div>
-          </div>
+          <RapportEntete
+            title="Rapport de stock"
+            rightLabel="Date de création"
+            rightValue={formatDate(new Date().toISOString())}
+            stats={[
+              {
+                label: "Entrepôts",
+                value: formatList(data?.entrepots),
+              },
+              {
+                label: "Catégories",
+                value: formatList(data?.categories),
+              },
+              {
+                label: "Nombre de produits",
+                value: data?.produits?.length || 0,
+              },
+              {
+                label: "Valeur du stock",
+                value: formatCurrency(data?.valeurGlobale),
+                valueClassName: "text-emerald-700",
+              },
+            ]}
+          />
           <div className="rounded-xl border shadow-sm overflow-x-auto main-table-container print-block">
             <Table className="border-collapse">
               <TableHeader>

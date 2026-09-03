@@ -1,5 +1,6 @@
 "use client";
 import { EnteteDevis } from "@/components/Entete-devis";
+import { RapportEntete } from "@/components/rapport-entete";
 import { DirectPrintButton } from "@/components/ui/print-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -90,8 +91,6 @@ export default function ImpressionTransactions() {
       .join(", ");
   }
 
-  const fromDay = new Date(params?.from);
-
   // Calcul des totaux
   const calculateTotals = () => {
     if (!devis?.data || devis.data.length === 0) {
@@ -103,7 +102,7 @@ export default function ImpressionTransactions() {
       };
     }
 
-    const totals = devis.data.reduce(
+    return devis.data.reduce(
       (acc, devis) => {
         const fourniture = totalFourniture(filteredOrders(devis.numero));
         const marge =
@@ -120,11 +119,54 @@ export default function ImpressionTransactions() {
       },
       { totalMontant: 0, totalFournitures: 0, totalMarge: 0, totalPaye: 0 }
     );
-
-    return totals;
   };
 
   const totals = calculateTotals();
+
+  const extraItems = [
+    ...(params?.dateStartFrom || params?.dateStartTo
+      ? [
+          {
+            label: "Date de début",
+            value: [params?.dateStartFrom, params?.dateStartTo]
+              .filter(Boolean)
+              .map(d => formatDate(d))
+              .join(" • "),
+          },
+        ]
+      : []),
+    ...(params?.dateEndFrom || params?.dateEndTo
+      ? [
+          {
+            label: "Date de fin",
+            value: [params?.dateEndFrom, params?.dateEndTo]
+              .filter(Boolean)
+              .map(d => formatDate(d))
+              .join(" • "),
+          },
+        ]
+      : []),
+    {
+      label: "Statut de paiement",
+      value: statutPiementLabel(params?.statutPaiement),
+    },
+    {
+      label: "Statut de devis",
+      value:
+        !params?.statut || params?.statut === "all"
+          ? "Tous"
+          : params.statut.split("-").join(", "),
+    },
+    {
+      label: "Montant total",
+      value: `${formatCurrency(params?.minTotal)} • ${formatCurrency(
+        params?.maxTotal
+      )}`,
+    },
+    ...(params?.query
+      ? [{ label: "Requête de recherche", value: params.query }]
+      : []),
+  ];
 
   return (
     <>
@@ -136,91 +178,35 @@ export default function ImpressionTransactions() {
             <EnteteDevis />
           </div>
 
-          <div className="flex justify-between gap-8"></div>
+          <RapportEntete
+            title="Devis"
+            rightValue={
+              params?.from && params?.to
+                ? `${formatDate(params.from)} • ${formatDate(params.to)}`
+                : "Indéterminer"
+            }
+            extraItems={extraItems}
+            stats={[
+              {
+                label: "Montant total",
+                value: formatMontant(totals.totalMontant),
+              },
+              {
+                label: "Fournitures",
+                value: formatMontant(totals.totalFournitures),
+              },
+              {
+                label: "Marge",
+                value: formatMontant(totals.totalMarge),
+              },
+              {
+                label: "Payé",
+                value: formatMontant(totals.totalPaye),
+              },
+            ]}
+          />
+
           <div className="space-y-6">
-            <div className="space-y-2 print-block">
-              <h3 className="font-semibold text-lg text-gray-900 mb-2">
-                Devis
-              </h3>
-              <div className="grid grid-cols-3 items-center mb-4">
-                <div className="flex gap-2 items-center">
-                  <h3 className="mb-1 font-semibold text-gray-900">
-                    Période :
-                  </h3>
-                  {params?.form && params?.to ? (
-                    <p className="text-sm text-gray-600">
-                      {`${fromDay.getDate()}-${
-                        fromDay.getMonth() + 1
-                      }-${fromDay.getFullYear()}`}{" "}
-                      • {formatDate(params?.to)}
-                    </p>
-                  ) : (
-                    <p className="text-sm text-gray-600">Indéterminer</p>
-                  )}
-                </div>
-                {(params?.dateStartFrom || params?.dateStartTo) && (
-                  <div className="flex gap-2 items-center">
-                    <h3 className="mb-1 font-semibold text-gray-900">
-                      Date de début :
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      {[params?.dateStartFrom, params?.dateStartTo]
-                        .filter(Boolean)
-                        .map(d => formatDate(d))
-                        .join(" • ")}
-                    </p>
-                  </div>
-                )}
-                {(params?.dateEndFrom || params?.dateEndTo) && (
-                  <div className="flex gap-2 items-center">
-                    <h3 className="mb-1 font-semibold text-gray-900">
-                      Date de fin :
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      {[params?.dateEndFrom, params?.dateEndTo]
-                        .filter(Boolean)
-                        .map(d => formatDate(d))
-                        .join(" • ")}
-                    </p>
-                  </div>
-                )}
-                <div className="flex gap-2 items-center">
-                  <h3 className="mb-1 font-semibold text-gray-900">
-                    Statut de paiement :
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    {statutPiementLabel(params?.statutPaiement)}
-                  </p>
-                </div>
-                <div className="flex gap-2 items-center">
-                  <h3 className="mb-1 font-semibold text-gray-900">
-                    Statut de devis:
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    {!params?.statut || params?.statut === "all"
-                      ? "Tous"
-                      : params.statut.split("-").join(", ")}
-                  </p>
-                </div>
-                <div className="flex gap-2 items-center">
-                  <h3 className="mb-1 font-semibold text-gray-900">
-                    Montant total:
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    {formatCurrency(params?.minTotal)} •{" "}
-                    {formatCurrency(params?.maxTotal)}
-                  </p>
-                </div>
-                {params?.query && (
-                  <div className="flex gap-2 items-center">
-                    <h3 className="mb-1 font-semibold text-gray-900">
-                      Requête de recherche :
-                    </h3>
-                    <p className="text-sm text-gray-600">{params?.query}</p>
-                  </div>
-                )}
-              </div>
-            </div>
             <div className="rounded-xl border shadow-sm overflow-x-auto main-table-container print-block">
               <Table className="border-collapse">
                 <TableHeader>

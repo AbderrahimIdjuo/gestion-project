@@ -18,8 +18,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatCurrency } from "@/lib/functions";
-import { getDateRangeFromPeriode } from "@/lib/periode";
+import { RapportEntete } from "@/components/rapport-entete";
+import { formatCurrency, formatDate } from "@/lib/functions";
+import { getDateRangeFromPeriode, getPeriodeLabel } from "@/lib/periode";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { format } from "date-fns";
@@ -226,6 +227,32 @@ export default function ClientsRapportDialog({
         )}
         {currentStep === 2 && (
           <div>
+            <RapportEntete
+              rightValue={
+                from && to
+                  ? `${formatDate(from?.toISOString?.() ?? from)} • ${formatDate(
+                      to?.toISOString?.() ?? to
+                    )}`
+                  : getPeriodeLabel(periode)
+              }
+              stats={[
+                {
+                  label: "Total général",
+                  value: formatCurrency(totaux.totalGeneral),
+                  valueClassName: "text-sky-600",
+                },
+                {
+                  label: "Total payé",
+                  value: formatCurrency(totaux.totalMontantPaye),
+                  valueClassName: "text-emerald-600",
+                },
+                {
+                  label: "Total des crédits",
+                  value: formatCurrency(totaux.totalResteAPayer),
+                  valueClassName: "text-rose-600",
+                },
+              ]}
+            />
             <div className="rounded-xl border shadow-sm overflow-x-auto">
               <Table>
                 <TableHeader>

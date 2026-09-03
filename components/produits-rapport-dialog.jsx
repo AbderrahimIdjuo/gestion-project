@@ -27,6 +27,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { RapportEntete } from "@/components/rapport-entete";
 import { entrepotBadgeClass } from "@/lib/entrepot-badge";
 import { formatCurrency } from "@/lib/functions";
 import { useQuery } from "@tanstack/react-query";
@@ -37,10 +38,7 @@ import {
   ArrowUpDown,
   ChevronDown,
   FileText,
-  Package,
   Printer,
-  Tags,
-  Warehouse,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -398,49 +396,33 @@ export default function ProduitsRapportDialog({
 
       {currentStep === 2 && (
         <div className="space-y-4">
-          <div className="rounded-xl border-2 border-purple-100 bg-gradient-to-br from-purple-50/80 via-fuchsia-50/50 to-violet-50/80 shadow-sm overflow-hidden">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 px-4 py-4">
-              <div className="flex items-center gap-2 min-w-0 rounded-lg bg-white/70 px-3 py-2 shadow-sm border border-purple-100/80">
-                <Warehouse className="h-4 w-4 shrink-0 text-purple-500" />
-                <div className="min-w-0">
-                  <p className="text-[10px] uppercase tracking-wider font-semibold text-purple-600/90">
-                    Entrepôts
-                  </p>
-                  <p className="text-md font-semibold text-violet-700 truncate">
-                    {allEntrepotsSelected
-                      ? "Tous les entrepôts"
-                      : selectedEntrepotNames.join(", ") || "—"}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 min-w-0 rounded-lg bg-white/70 px-3 py-2 shadow-sm border border-purple-100/80">
-                <Tags className="h-4 w-4 shrink-0 text-purple-500" />
-                <div className="min-w-0">
-                  <p className="text-[10px] uppercase tracking-wider font-semibold text-purple-600/90">
-                    Catégories
-                  </p>
-                  <p className="text-md font-semibold text-violet-700 truncate">
-                    {allCategoriesSelected
-                      ? "Toutes les catégories"
-                      : selectedCategorieNames.join(", ") || "—"}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 min-w-0 rounded-lg bg-white/70 px-3 py-2 shadow-sm border border-purple-100/80">
-                <Package className="h-4 w-4 shrink-0 text-purple-500" />
-                <div className="min-w-0">
-                  <p className="text-[10px] uppercase tracking-wider font-semibold text-purple-600/90">
-                    Valeur du stock
-                  </p>
-                  <p className="text-md font-semibold text-violet-700">
-                    {rapportQuery.isLoading
-                      ? "…"
-                      : formatCurrency(valeurGlobale)}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
+          <RapportEntete
+            stats={[
+              {
+                label: "Entrepôts",
+                value: allEntrepotsSelected
+                  ? "Tous les entrepôts"
+                  : selectedEntrepotNames.join(", ") || "—",
+              },
+              {
+                label: "Catégories",
+                value: allCategoriesSelected
+                  ? "Toutes les catégories"
+                  : selectedCategorieNames.join(", ") || "—",
+              },
+              {
+                label: "Nombre de produits",
+                value: rapportQuery.isLoading ? "…" : sortedProduits.length,
+              },
+              {
+                label: "Valeur du stock",
+                value: rapportQuery.isLoading
+                  ? "…"
+                  : formatCurrency(valeurGlobale),
+                valueClassName: "text-emerald-700",
+              },
+            ]}
+          />
 
           <div className="rounded-xl border shadow-sm overflow-x-auto">
             {rapportQuery.isLoading ? (

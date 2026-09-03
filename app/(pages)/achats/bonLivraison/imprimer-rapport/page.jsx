@@ -1,6 +1,7 @@
 "use client";
 
 import { EnteteDevis } from "@/components/Entete-devis";
+import { RapportEntete } from "@/components/rapport-entete";
 import { DirectPrintButton } from "@/components/ui/print-button";
 import {
   Table,
@@ -71,14 +72,30 @@ export default function ImprimerRapport() {
       <Table className="border-collapse">
         <TableHeader>
           <TableRow className="border-b">
-            <TableHead className="border-r border-b">Date</TableHead>
-            <TableHead className="text-left border-r border-b">N° BL</TableHead>
-            <TableHead className="col-fournisseur border-r border-b">Fournisseur</TableHead>
-            <TableHead className="border-r border-b">Type</TableHead>
-            <TableHead className="text-right border-r border-b">Montant</TableHead>
-            <TableHead className="text-right border-r border-b">Montant payé</TableHead>
-            <TableHead className="border-r border-b">Statut paiement</TableHead>
-            <TableHead className="text-right border-b">Reste à payé</TableHead>
+            <TableHead className="text-center border-r border-b text-black font-semibold">
+              Date
+            </TableHead>
+            <TableHead className="text-center border-r border-b text-black font-semibold">
+              N° BL
+            </TableHead>
+            <TableHead className="text-center col-fournisseur border-r border-b text-black font-semibold">
+              Fournisseur
+            </TableHead>
+            <TableHead className="text-center border-r border-b text-black font-semibold">
+              Type
+            </TableHead>
+            <TableHead className="text-center border-r border-b text-black font-semibold">
+              Montant
+            </TableHead>
+            <TableHead className="text-center border-r border-b text-black font-semibold">
+              Montant payé
+            </TableHead>
+            <TableHead className="text-center border-r border-b text-black font-semibold">
+              Statut paiement
+            </TableHead>
+            <TableHead className="text-center border-b text-black font-semibold">
+              Reste à payer
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -185,17 +202,31 @@ export default function ImprimerRapport() {
 
       return (
         <Table className="border-collapse">
-          <TableHeader className="bg-gradient-to-r from-zinc-50 to-zinc-100 border-b">
+          <TableHeader>
             <TableRow className="border-b">
-              <TableHead className="font-semibold border-r border-b">Date</TableHead>
-              <TableHead className="font-semibold col-description border-r border-b">Description</TableHead>
+              <TableHead className="text-center border-r border-b text-black font-semibold">
+                Date
+              </TableHead>
+              <TableHead className="text-center col-description border-r border-b text-black font-semibold">
+                Description
+              </TableHead>
               {showFournisseurCol && (
-                <TableHead className="font-semibold col-fournisseur border-r border-b">Fournisseur</TableHead>
+                <TableHead className="text-center col-fournisseur border-r border-b text-black font-semibold">
+                  Fournisseur
+                </TableHead>
               )}
-              <TableHead className="font-semibold text-right border-r border-b">Fourniture</TableHead>
-              <TableHead className="font-semibold text-right border-r border-b">Règlement</TableHead>
-              <TableHead className="font-semibold text-right border-r border-b">Retour</TableHead>
-              <TableHead className="font-semibold text-right border-b">Dette</TableHead>
+              <TableHead className="text-center border-r border-b text-black font-semibold">
+                Fourniture
+              </TableHead>
+              <TableHead className="text-center border-r border-b text-black font-semibold">
+                Règlement
+              </TableHead>
+              <TableHead className="text-center border-r border-b text-black font-semibold">
+                Retour
+              </TableHead>
+              <TableHead className="text-center border-b text-black font-semibold">
+                Dette
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -265,24 +296,29 @@ export default function ImprimerRapport() {
                 </TableCell>
               </TableRow>
             ))}
-            <TableRow className="bg-gray-100 border-b font-semibold">
-              <TableCell className="py-2 border-r">Total</TableCell>
-              <TableCell className="py-2 border-r" colSpan={showFournisseurCol ? 1 : 0} />
-              {showFournisseurCol && <TableCell className="py-2 border-r" />}
-              <TableCell className="py-2 text-right font-semibold text-foreground border-r">
+          </TableBody>
+          <TableFooter className="bg-gray-50 table-footer-print">
+            <TableRow className="border-b">
+              <TableCell
+                className="text-right text-xl font-bold border-r"
+                colSpan={showFournisseurCol ? 3 : 2}
+              >
+                Total :
+              </TableCell>
+              <TableCell className="text-right text-xl font-bold border-r">
                 {formatCurrency(totalFourniture)}
               </TableCell>
-              <TableCell className="py-2 text-right font-semibold text-foreground border-r">
+              <TableCell className="text-right text-xl font-bold border-r">
                 {formatCurrency(totalReglement)}
               </TableCell>
-              <TableCell className="py-2 text-right font-semibold text-foreground border-r">
+              <TableCell className="text-right text-xl font-bold border-r">
                 {formatCurrency(totalRetour)}
               </TableCell>
-              <TableCell className="py-2 text-right font-semibold text-foreground">
+              <TableCell className="text-right text-xl font-bold">
                 {formatCurrency(totaux.detteFinale ?? 0)}
               </TableCell>
             </TableRow>
-          </TableBody>
+          </TableFooter>
         </Table>
       );
     }
@@ -301,10 +337,18 @@ export default function ImprimerRapport() {
         <Table className="border-collapse">
           <TableHeader>
             <TableRow className="border-b">
-              <TableHead className="border-r border-b">#</TableHead>
-              <TableHead className="col-fournisseur border-r border-b">Fournisseur</TableHead>
-              <TableHead className="text-right border-r border-b">Montant des BL</TableHead>
-              <TableHead className="text-right border-b">Reste à payé</TableHead>
+              <TableHead className="text-center border-r border-b text-black font-semibold">
+                #
+              </TableHead>
+              <TableHead className="text-center col-fournisseur border-r border-b text-black font-semibold">
+                Fournisseur
+              </TableHead>
+              <TableHead className="text-center border-r border-b text-black font-semibold">
+                Montant des BL
+              </TableHead>
+              <TableHead className="text-center border-b text-black font-semibold">
+                Reste à payer
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -326,27 +370,36 @@ export default function ImprimerRapport() {
             ))}
           </TableBody>
           <TableFooter className="bg-gray-50 table-footer-print">
-            <TableRow className="border-b font-semibold">
-              <TableCell className="p-2 text-right text-xl text-foreground border-r" colSpan={3}>
-                Montant total
+            <TableRow className="border-b">
+              <TableCell
+                className="text-right text-xl font-bold border-r"
+                colSpan={3}
+              >
+                Montant total :
               </TableCell>
-              <TableCell className="p-2 text-right pr-4 text-xl text-foreground">
+              <TableCell className="text-right text-xl font-bold">
                 {formatCurrency(bonLivraison?.montantTotal || 0)}
               </TableCell>
             </TableRow>
-            <TableRow className="border-b font-semibold">
-              <TableCell className="p-2 text-right text-xl text-foreground border-r" colSpan={3}>
-                Montant payé
+            <TableRow className="border-b">
+              <TableCell
+                className="text-right text-xl font-bold border-r"
+                colSpan={3}
+              >
+                Montant payé :
               </TableCell>
-              <TableCell className="p-2 text-right pr-4 text-xl text-foreground">
+              <TableCell className="text-right text-xl font-bold">
                 {formatCurrency(bonLivraison?.montantPaye || 0)}
               </TableCell>
             </TableRow>
-            <TableRow className="border-b font-semibold">
-              <TableCell className="p-2 text-right text-xl text-foreground border-r" colSpan={3}>
-                Reste à payé
+            <TableRow className="border-b">
+              <TableCell
+                className="text-right text-xl font-bold border-r"
+                colSpan={3}
+              >
+                Reste à payer :
               </TableCell>
-              <TableCell className="p-2 text-right pr-4 text-xl text-foreground">
+              <TableCell className="text-right text-xl font-bold">
                 {formatCurrency(bonLivraison?.restAPaye || 0)}
               </TableCell>
             </TableRow>
@@ -360,12 +413,24 @@ export default function ImprimerRapport() {
       <Table className="border-collapse">
         <TableHeader>
           <TableRow className="border-b">
-            <TableHead className="border-r border-b">Date</TableHead>
-            <TableHead className="col-fournisseur border-r border-b">Fournisseur</TableHead>
-            <TableHead className="text-right border-r border-b">Fourniture</TableHead>
-            <TableHead className="text-right border-r border-b">Retour</TableHead>
-            <TableHead className="text-right border-r border-b">Règlement</TableHead>
-            <TableHead className="text-right border-b">Dette</TableHead>
+            <TableHead className="text-center border-r border-b text-black font-semibold">
+              Date
+            </TableHead>
+            <TableHead className="text-center col-fournisseur border-r border-b text-black font-semibold">
+              Fournisseur
+            </TableHead>
+            <TableHead className="text-center border-r border-b text-black font-semibold">
+              Fourniture
+            </TableHead>
+            <TableHead className="text-center border-r border-b text-black font-semibold">
+              Retour
+            </TableHead>
+            <TableHead className="text-center border-r border-b text-black font-semibold">
+              Règlement
+            </TableHead>
+            <TableHead className="text-center border-b text-black font-semibold">
+              Dette
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -416,11 +481,11 @@ export default function ImprimerRapport() {
           <TableRow className="border-b">
             <TableCell
               colSpan={5}
-              className="text-right text-lg font-semibold p-2 border-r"
+              className="text-right text-xl font-bold border-r"
             >
               Dette finale :
             </TableCell>
-            <TableCell className="text-right text-lg font-semibold p-2 text-foreground">
+            <TableCell className="text-right text-xl font-bold">
               {formatCurrency(bonLivraison?.detteFinale || 0)}
             </TableCell>
           </TableRow>
@@ -437,44 +502,82 @@ export default function ImprimerRapport() {
             <EnteteDevis />
           </div>
 
-          <div className="space-y-3">
-            <div className="space-y-2 print-block">
-              <h3 className="font-semibold text-lg text-gray-900 mb-2">
-                Rapport des achats
-              </h3>
-              <div className="flex items-center justify-between gap-2 px-4 py-2 rounded-lg bg-muted/50 text-sm">
-                {bonLivraison?.fournisseurNom ? (
-                  <div className="flex gap-2 items-center">
-                    <h3 className="font-semibold text-gray-900">
-                      Fournisseur :
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      {bonLivraison?.fournisseurNom}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="flex gap-2 items-center">
-                    <h3 className="font-semibold text-gray-900">
-                      Fournisseur :
-                    </h3>
-                    <p className="text-sm text-gray-600">Tous</p>
-                  </div>
-                )}
-                <div className="flex gap-2 items-center">
-                  <h3 className="font-semibold text-gray-900">Période :</h3>
-                  <p className="text-sm text-gray-600">
-                    {bonLivraison?.from && bonLivraison?.to
-                      ? `${formatDateString(bonLivraison.from)} • ${formatDateString(bonLivraison.to)}`
-                      : "—"}
-                  </p>
-                </div>
-              </div>
-            </div>
+          <RapportEntete
+            title="Rapport des achats"
+            rightLabel="Date de création"
+            rightValue={formatDate(new Date().toISOString())}
+            stats={[
+              {
+                label: "Fournisseur",
+                value: bonLivraison?.fournisseurNom || "Tous",
+              },
+              {
+                label: "Période",
+                value:
+                  bonLivraison?.from && bonLivraison?.to
+                    ? `${formatDateString(bonLivraison.from)} • ${formatDateString(
+                        bonLivraison.to
+                      )}`
+                    : "—",
+              },
+              ...(bonLivraison?.typeLabel
+                ? [{ label: "Type", value: bonLivraison.typeLabel }]
+                : []),
+              ...(bonLivraison?.statutPaiementLabel
+                ? [
+                    {
+                      label: "Statut paiement",
+                      value: bonLivraison.statutPaiementLabel,
+                    },
+                  ]
+                : []),
+              ...(bonLivraison?.modeAffichageLabel
+                ? [
+                    {
+                      label: "Affichage",
+                      value: bonLivraison.modeAffichageLabel,
+                    },
+                  ]
+                : []),
+              ...(bonLivraison?.modeAffichage === "parBL"
+                ? [
+                    {
+                      label: "Fourniture",
+                      value: formatCurrency(bonLivraison?.totalFourniture || 0),
+                    },
+                    {
+                      label: "Règlement",
+                      value: formatCurrency(bonLivraison?.totalReglement || 0),
+                      valueClassName: "text-green-600",
+                    },
+                    {
+                      label: "Retour",
+                      value: formatCurrency(bonLivraison?.totalRetour || 0),
+                      valueClassName: "text-red-600",
+                    },
+                  ]
+                : [
+                    {
+                      label: "Montant total",
+                      value: formatCurrency(bonLivraison?.montantTotal || 0),
+                    },
+                    {
+                      label: "Montant payé",
+                      value: formatCurrency(bonLivraison?.montantPaye || 0),
+                      valueClassName: "text-green-600",
+                    },
+                    {
+                      label: "Reste à payer",
+                      value: formatCurrency(bonLivraison?.restAPaye || 0),
+                      valueClassName: "text-amber-600",
+                    },
+                  ]),
+            ]}
+          />
 
             <div className="rounded-xl border shadow-sm overflow-x-auto main-table-container print-block">
               {bonLivraison ? renderTable() : null}
             </div>
-          </div>
         </div>
         <div className="fixed bottom-4 right-4 z-50 print:hidden">
           <DirectPrintButton className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full shadow-lg">

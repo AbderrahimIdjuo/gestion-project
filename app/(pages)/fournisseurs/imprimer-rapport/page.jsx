@@ -1,6 +1,7 @@
 "use client";
 
 import { EnteteDevis } from "@/components/Entete-devis";
+import { RapportEntete } from "@/components/rapport-entete";
 import { DirectPrintButton } from "@/components/ui/print-button";
 import {
   Table,
@@ -66,22 +67,33 @@ export default function ImprimerRapportFournisseur() {
           <div className="print-block">
             <EnteteDevis />
           </div>
-          <div className="space-y-3">
-            <div className="print-block">
-              <h3 className="font-semibold text-lg text-gray-900">
-                Rapport BL & Règlements
-              </h3>
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div className="flex gap-2 items-center">
-                  <h4 className="font-semibold text-gray-900">Fournisseur :</h4>
-                  <p className="text-sm text-gray-600">{fournisseur?.nom ?? "—"}</p>
-                </div>
-                <div className="flex gap-2 items-center">
-                  <h4 className="font-semibold text-gray-900">Période :</h4>
-                  <p className="text-sm text-gray-600">{formatPeriode()}</p>
-                </div>
-              </div>
-            </div>
+          <RapportEntete
+            title="Rapport BL & Règlements"
+            rightValue={formatPeriode()}
+            extraItems={[
+              { label: "Fournisseur", value: fournisseur?.nom ?? "—" },
+            ]}
+            stats={[
+              {
+                label: "Fourniture",
+                value: formatCurrency(rapportTotaux.sumAchats ?? 0),
+              },
+              {
+                label: "Règlement",
+                value: formatCurrency(rapportTotaux.sumReglements ?? 0),
+                valueClassName: "text-green-600",
+              },
+              {
+                label: "Retour",
+                value: formatCurrency(rapportTotaux.sumRetours ?? 0),
+                valueClassName: "text-red-600",
+              },
+              {
+                label: "Dette finale",
+                value: formatCurrency(rapportTotaux.detteFinale ?? 0),
+              },
+            ]}
+          />
             <div className="rounded-xl border shadow-sm overflow-x-auto main-table-container print-block">
               <Table className="border-collapse">
                 <TableHeader>
@@ -149,7 +161,6 @@ export default function ImprimerRapportFournisseur() {
                 </TableBody>
               </Table>
             </div>
-          </div>
         </div>
         <div className="fixed bottom-4 right-4 z-50 print:hidden">
           <DirectPrintButton className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full shadow-lg">

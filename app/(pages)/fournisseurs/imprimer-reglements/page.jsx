@@ -1,6 +1,7 @@
 "use client";
 
 import { EnteteDevis } from "@/components/Entete-devis";
+import { RapportEntete } from "@/components/rapport-entete";
 import { DirectPrintButton } from "@/components/ui/print-button";
 import {
   Table,
@@ -75,42 +76,30 @@ export default function ImprimerReglements() {
             <EnteteDevis />
           </div>
 
-          <div className="space-y-3">
-            <div className="space-y-2 print-block">
-              <h3 className="font-semibold text-lg text-gray-900 mb-3">
-                Règlements du Fournisseur
-              </h3>
-
-              {/* Informations du fournisseur */}
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div className="flex gap-2 items-center">
-                  <h4 className="font-semibold text-gray-900">Fournisseur :</h4>
-                  <p className="text-sm text-gray-600">{fournisseur?.nom}</p>
-                </div>
-                {fournisseur?.ice && (
-                  <div className="flex gap-2 items-center">
-                    <h4 className="font-semibold text-gray-900">ICE :</h4>
-                    <p className="text-sm text-gray-600">{fournisseur.ice}</p>
-                  </div>
-                )}
-                {fournisseur?.telephone && (
-                  <div className="flex gap-2 items-center">
-                    <h4 className="font-semibold text-gray-900">Téléphone :</h4>
-                    <p className="text-sm text-gray-600">
-                      {fournisseur.telephone}
-                    </p>
-                  </div>
-                )}
-                {periode && (
-                  <div className="flex gap-2 items-center">
-                    <h4 className="font-semibold text-gray-900">Période :</h4>
-                    <p className="text-sm text-gray-600">{formatPeriode()}</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Section des cartes d'information financière supprimée */}
-            </div>
+          <RapportEntete
+            title="Règlements du Fournisseur"
+            leftLabel="Fournisseur"
+            leftValue={fournisseur?.nom || "—"}
+            rightValue={periode ? formatPeriode() : undefined}
+            extraItems={[
+              ...(fournisseur?.ice
+                ? [{ label: "ICE", value: fournisseur.ice }]
+                : []),
+              ...(fournisseur?.telephone
+                ? [{ label: "Téléphone", value: fournisseur.telephone }]
+                : []),
+            ]}
+            stats={[
+              {
+                label: "Nombre de règlements",
+                value: reglements?.length || 0,
+              },
+              {
+                label: "Total des règlements",
+                value: formatCurrency(totalReglements),
+              },
+            ]}
+          />
 
             {/* Tableau des règlements */}
             <div className="rounded-xl border shadow-sm overflow-x-auto main-table-container print-block">
@@ -181,7 +170,6 @@ export default function ImprimerReglements() {
                 </TableFooter>
               </Table>
             </div>
-          </div>
         </div>
 
         {/* Bouton d'impression (caché à l'impression) */}

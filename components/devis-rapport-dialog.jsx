@@ -37,8 +37,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { RapportEntete } from "@/components/rapport-entete";
 import { formatCurrency } from "@/lib/functions";
-import { getDateRangeFromPeriode } from "@/lib/periode";
+import { getDateRangeFromPeriode, getPeriodeLabel } from "@/lib/periode";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { ChevronDown, FileText, Printer, Search, X } from "lucide-react";
@@ -732,74 +733,56 @@ export default function DevisRapportDialog({
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-8 gap-3 p-4 bg-muted/50 rounded-lg">
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground">
-                      Commerçant
-                    </p>
-                    <p className="text-lg font-semibold text-foreground">
-                      {commercant === "all" ? "Tous" : commercant}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground">
-                      Clients
-                    </p>
-                    <p className="text-sm font-semibold text-foreground line-clamp-2">
-                      {selectedClients.length === 0
-                        ? "Tous"
-                        : selectedClients.map(c => c.nom).join(", ")}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground">
-                      Total devis
-                    </p>
-                    <p className="text-lg font-semibold text-fuchsia-600">
-                      {formatCurrency(t?.montantTotalDevis ?? 0)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground">
-                      Total payé
-                    </p>
-                    <p className="text-lg font-semibold text-green-600">
-                      {formatCurrency(t?.montantTotalPaye ?? 0)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground">
-                      Restant à payer
-                    </p>
-                    <p className="text-lg font-semibold text-amber-600">
-                      {formatCurrency(t?.montantTotalRestant ?? 0)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground">
-                      Total marge
-                    </p>
-                    <p className="text-lg font-semibold text-blue-600">
-                      {formatCurrency(t?.totalMarge ?? 0)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground">
-                      % bénéfice (saisi)
-                    </p>
-                    <p className="text-lg font-semibold">
-                      {t?.pctBenefice != null ? `${t.pctBenefice}%` : "—"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground">
-                      Bénéfice (marge × %)
-                    </p>
-                    <p className="text-lg font-semibold text-purple-600">
-                      {formatCurrency(t?.beneficeFromMarge ?? 0)}
-                    </p>
-                  </div>
-                </div>
+                <RapportEntete
+                  leftLabel="Commerçant"
+                  leftValue={commercant === "all" ? "Tous" : commercant}
+                  rightValue={
+                    from && to
+                      ? `${formatDate(from)} • ${formatDate(to)}`
+                      : getPeriodeLabel(periode)
+                  }
+                  extraItems={[
+                    {
+                      label: "Clients",
+                      value:
+                        selectedClients.length === 0
+                          ? "Tous"
+                          : selectedClients.map(c => c.nom).join(", "),
+                    },
+                  ]}
+                  stats={[
+                    {
+                      label: "Total devis",
+                      value: formatCurrency(t?.montantTotalDevis ?? 0),
+                      valueClassName: "text-fuchsia-600",
+                    },
+                    {
+                      label: "Total payé",
+                      value: formatCurrency(t?.montantTotalPaye ?? 0),
+                      valueClassName: "text-green-600",
+                    },
+                    {
+                      label: "Restant à payer",
+                      value: formatCurrency(t?.montantTotalRestant ?? 0),
+                      valueClassName: "text-amber-600",
+                    },
+                    {
+                      label: "Total marge",
+                      value: formatCurrency(t?.totalMarge ?? 0),
+                      valueClassName: "text-blue-600",
+                    },
+                    {
+                      label: "% bénéfice (saisi)",
+                      value:
+                        t?.pctBenefice != null ? `${t.pctBenefice}%` : "—",
+                    },
+                    {
+                      label: "Bénéfice (marge × %)",
+                      value: formatCurrency(t?.beneficeFromMarge ?? 0),
+                      valueClassName: "text-purple-600",
+                    },
+                  ]}
+                />
 
                 <div className="rounded-md border overflow-x-auto max-h-[50vh] overflow-y-auto">
                   <Table>

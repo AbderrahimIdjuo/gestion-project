@@ -1,6 +1,7 @@
 "use client";
 
 import { EnteteDevis } from "@/components/Entete-devis";
+import { RapportEntete } from "@/components/rapport-entete";
 import { DirectPrintButton } from "@/components/ui/print-button";
 import {
   Table,
@@ -51,24 +52,15 @@ const totalFourniture = (group) =>
 function RapportSkeleton() {
   return (
     <div className="space-y-4 py-4">
-      {/* Barre Commerçant + Période */}
-      <div className="flex items-center justify-between gap-2 px-4 py-2 rounded-lg bg-gray-50 border">
-        <div className="flex items-center gap-2">
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-4 w-28" />
-        </div>
-        <div className="flex items-center gap-2">
-          <Skeleton className="h-4 w-16" />
-          <Skeleton className="h-4 w-36" />
-        </div>
+      <div className="grid grid-cols-2 items-center mb-4">
+        <Skeleton className="h-5 w-40" />
+        <Skeleton className="h-5 w-48" />
       </div>
-
-      {/* Grille 6 stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 p-4 bg-gray-50 rounded-lg">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 p-4 bg-gray-50 rounded-lg">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="space-y-2">
-            <Skeleton className="h-3 w-20" />
-            <Skeleton className="h-6 w-24" />
+          <div key={i} className="space-y-2 text-center">
+            <Skeleton className="h-3 w-20 mx-auto" />
+            <Skeleton className="h-6 w-24 mx-auto" />
           </div>
         ))}
       </div>
@@ -175,68 +167,50 @@ export default function ImpressionRapportDevis() {
             <EnteteDevis />
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2 rounded-lg bg-gray-50 text-sm print-block">
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-              <div>
-                <span className="font-medium text-muted-foreground">Commerçant : </span>
-                <span className="font-semibold text-foreground">
-                  {commercant === "all" ? "Tous" : commercant ?? "—"}
-                </span>
-              </div>
-              <div>
-                <span className="font-medium text-muted-foreground">Clients : </span>
-                <span className="font-semibold text-foreground">{clientsLabel}</span>
-              </div>
-            </div>
-
-            {from && to && (
-              <div>
-                <span className="font-medium text-muted-foreground">Période : </span>
-                <span className="font-semibold text-foreground">
-                  {formatDate(from)} → {formatDate(to)}
-                </span>
-              </div>
-            )}
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 p-4 bg-gray-50 rounded-lg print-block">
-
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">Total devis</p>
-              <p className="text-lg font-semibold text-fuchsia-600">
-                {formatCurrency(t?.montantTotalDevis ?? 0)}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">Total payé</p>
-              <p className="text-lg font-semibold text-green-600">
-                {formatCurrency(t?.montantTotalPaye ?? 0)}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">Restant à payer</p>
-              <p className="text-lg font-semibold text-amber-600">
-                {formatCurrency(t?.montantTotalRestant ?? 0)}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">Total marge</p>
-              <p className="text-lg font-semibold text-blue-600">
-                {formatCurrency(t?.totalMarge ?? 0)}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">% bénéfice (saisi)</p>
-              <p className="text-lg font-semibold">
-                {t?.pctBenefice != null ? `${t.pctBenefice}%` : "—"}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">Bénéfice (marge × %)</p>
-              <p className="text-lg font-semibold text-purple-600">
-                {formatCurrency(t?.beneficeFromMarge ?? 0)}
-              </p>
-            </div>
-          </div>
+          <RapportEntete
+            title="Rapport des devis"
+            rightValue={
+              from && to ? `${formatDate(from)} • ${formatDate(to)}` : "—"
+            }
+            extraItems={[
+              {
+                label: "Commerçant",
+                value: commercant === "all" ? "Tous" : commercant ?? "—",
+              },
+              { label: "Clients", value: clientsLabel },
+            ]}
+            stats={[
+              {
+                label: "Total devis",
+                value: formatCurrency(t?.montantTotalDevis ?? 0),
+                valueClassName: "text-fuchsia-600",
+              },
+              {
+                label: "Total payé",
+                value: formatCurrency(t?.montantTotalPaye ?? 0),
+                valueClassName: "text-green-600",
+              },
+              {
+                label: "Restant à payer",
+                value: formatCurrency(t?.montantTotalRestant ?? 0),
+                valueClassName: "text-amber-600",
+              },
+              {
+                label: "Total marge",
+                value: formatCurrency(t?.totalMarge ?? 0),
+                valueClassName: "text-blue-600",
+              },
+              {
+                label: "% bénéfice (saisi)",
+                value: t?.pctBenefice != null ? `${t.pctBenefice}%` : "—",
+              },
+              {
+                label: "Bénéfice (marge × %)",
+                value: formatCurrency(t?.beneficeFromMarge ?? 0),
+                valueClassName: "text-purple-600",
+              },
+            ]}
+          />
 
           <div className="rounded-xl border shadow-sm overflow-x-auto main-table-container print-block">
             <Table className="border-collapse">

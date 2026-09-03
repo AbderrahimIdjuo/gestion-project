@@ -20,8 +20,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { RapportEntete } from "@/components/rapport-entete";
 import { formatCurrency, formatDate } from "@/lib/functions";
-import { getDateRangeFromPeriode } from "@/lib/periode";
+import { getDateRangeFromPeriode, getPeriodeLabel } from "@/lib/periode";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Building2, FileText, Landmark, Wallet } from "lucide-react";
@@ -162,45 +163,24 @@ export function ChargesRapportContent({ typeDepense, onBack, onClose }) {
 
       {currentStep === 2 && (
         <div>
-          <div className="grid grid-cols-2 items-center mb-4 print-block">
-            <div className="flex flex-row gap-2 items-center">
-              <h3 className="font-semibold text-gray-900">
-                Type :{" "}
-                <span className="text-sm text-gray-600">
-                  {typeDepense === "fixe"
-                    ? "Charges fixes"
-                    : "Charges variantes"}
-                </span>
-              </h3>
-            </div>
-            <div className="flex flex-row gap-2 items-center">
-              <h3 className="font-semibold text-gray-900">
-                Période :{" "}
-                <span className="text-sm text-gray-600">{periode}</span>
-              </h3>
-            </div>
-          </div>
-
-          <div className="bg-gray-50 p-4 rounded-lg mb-6 print-block">
-            <div className="grid grid-cols-2 gap-4 text-center">
-              <div>
-                <h3 className="text-sm font-semibold text-gray-600 mb-1">
-                  Nombre de charges
-                </h3>
-                <p className="text-lg font-bold text-gray-900">
-                  {transactions.length}
-                </p>
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-gray-600 mb-1">
-                  Montant total
-                </h3>
-                <p className="text-lg font-bold text-red-600">
-                  {formatCurrency(totalMontant)}
-                </p>
-              </div>
-            </div>
-          </div>
+          <RapportEntete
+            leftLabel="Type"
+            leftValue={
+              typeDepense === "fixe" ? "Charges fixes" : "Charges variantes"
+            }
+            rightValue={getPeriodeLabel(periode)}
+            stats={[
+              {
+                label: "Nombre de charges",
+                value: transactions.length,
+              },
+              {
+                label: "Montant total",
+                value: formatCurrency(totalMontant),
+                valueClassName: "text-red-600",
+              },
+            ]}
+          />
 
           <div className="rounded-lg border overflow-x-auto mb-3">
             <Table className="border-collapse">

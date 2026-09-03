@@ -1,8 +1,8 @@
 "use client";
 import CompteBancairesSelectMenu from "@/components/compteBancairesSelectMenu";
 import PeriodeFilter from "@/components/customUi/periode-filter";
+import { RapportEntete } from "@/components/rapport-entete";
 import TransactionsChronologicalTable from "@/components/transactions-chronological-table";
-import TransactionsTypeTotalsHeader from "@/components/transactions-type-totals-header";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -34,7 +34,7 @@ import {
   periodNetChange,
   sortCompteRapportTransactions,
 } from "@/lib/functions";
-import { getDateRangeFromPeriode } from "@/lib/periode";
+import { getDateRangeFromPeriode, getPeriodeLabel } from "@/lib/periode";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { FileText } from "lucide-react";
@@ -190,25 +190,80 @@ export default function ComptesRapportContent({
       )}
       {currentStep === 2 && (
         <div>
-          <div className="grid grid-cols-2 items-center mb-4 print-block">
-            <div className="flex flex-row gap-2 items-center">
-              <h3 className="font-semibold text-gray-900">
-                Compte :{" "}
-                <span className="text-sm text-gray-600">
-                  {isAllComptes ? "Tous les comptes" : compte}
-                </span>
-              </h3>
-            </div>
-            <div className="flex flex-row gap-2 items-center">
-              <h3 className="font-semibold text-gray-900">
-                Période :{" "}
-                <span className="text-sm text-gray-600">{periode} </span>
-              </h3>
-            </div>
-          </div>
+          <RapportEntete
+            leftLabel="Compte"
+            leftValue={isAllComptes ? "Tous les comptes" : compte}
+            rightValue={getPeriodeLabel(periode)}
+            stats={
+              isAllComptes
+                ? [
+                    {
+                      label: "Total Des Recettes",
+                      value: formatCurrency(typeTotals.totalRecettes),
+                      valueClassName: "text-green-600",
+                    },
+                    {
+                      label: "Total Des Dépenses",
+                      value: formatCurrency(typeTotals.totalDepenses),
+                      valueClassName: "text-red-600",
+                    },
+                    {
+                      label: "Total Vider la caisse",
+                      value: formatCurrency(typeTotals.totalVider),
+                      valueClassName: "text-blue-600",
+                    },
+                    {
+                      label: "Total Des Transferts",
+                      value: formatCurrency(typeTotals.totalTransferts),
+                      valueClassName: "text-blue-600",
+                    },
+                    {
+                      label: "Total",
+                      value: formatCurrency(typeTotals.total),
+                      valueClassName: soldeColor(typeTotals.total),
+                    },
+                  ]
+                : [
+                    {
+                      label: "Total Des Recettes",
+                      value: formatCurrency(totals.totalRecettes),
+                      valueClassName: "text-green-600",
+                    },
+                    {
+                      label: "Total Des Transferts",
+                      value: isCompteCaisse(compte) ? (
+                        formatCurrency(totals.totalTransferts)
+                      ) : (
+                        <div className="space-y-0.5">
+                          <p className="text-sm font-bold text-green-600">
+                            Entrant :{" "}
+                            {formatCurrency(totals.totalTransfertsEntrants)}
+                          </p>
+                          <p className="text-sm font-bold text-red-600">
+                            Sortant :{" "}
+                            {formatCurrency(totals.totalTransfertsSortants)}
+                          </p>
+                        </div>
+                      ),
+                      valueClassName: isCompteCaisse(compte)
+                        ? "text-blue-600"
+                        : undefined,
+                    },
+                    {
+                      label: "Total Des Dépenses",
+                      value: formatCurrency(totals.totalDepenses),
+                      valueClassName: "text-red-600",
+                    },
+                    {
+                      label: "Solde",
+                      value: formatCurrency(soldeActuel()),
+                      valueClassName: soldeColor(soldeActuel()),
+                    },
+                  ]
+            }
+          />
           {isAllComptes ? (
             <>
-              <TransactionsTypeTotalsHeader totals={typeTotals} />
               <TransactionsChronologicalTable
                 transactions={Data?.transactions}
                 isLoading={isLoading}
@@ -217,55 +272,6 @@ export default function ComptesRapportContent({
             </>
           ) : (
             <>
-          <div className="bg-gray-50 p-4 rounded-lg mb-6 print-block">
-            <div className="grid grid-cols-4 gap-4 text-center">
-              <div>
-                <h3 className="text-sm font-semibold text-gray-600 mb-1">
-                  Total Des Recettes
-                </h3>
-                <p className="text-lg font-bold text-green-600">
-                  {formatCurrency(totals.totalRecettes)}
-                </p>
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-gray-600 mb-1">
-                  Total Des Transferts
-                </h3>
-                {isCompteCaisse(compte) ? (
-                  <p className="text-lg font-bold text-blue-600">
-                    {formatCurrency(totals.totalTransferts)}
-                  </p>
-                ) : (
-                  <div className="space-y-0.5">
-                    <p className="text-sm font-bold text-green-600">
-                      Entrant : {formatCurrency(totals.totalTransfertsEntrants)}
-                    </p>
-                    <p className="text-sm font-bold text-red-600">
-                      Sortant : {formatCurrency(totals.totalTransfertsSortants)}
-                    </p>
-                  </div>
-                )}
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-gray-600 mb-1">
-                  Total Des Dépenses
-                </h3>
-                <p className="text-lg font-bold text-red-600">
-                  {formatCurrency(totals.totalDepenses)}
-                </p>
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-gray-600 mb-1">
-                  Solde
-                </h3>
-                <p
-                  className={`text-lg font-bold ${soldeColor(soldeActuel())}`}
-                >
-                  {formatCurrency(soldeActuel())}
-                </p>
-              </div>
-            </div>
-          </div>
           <div className="rounded-lg border overflow-x-auto mb-3">
             <Table className="border-collapse">
               <TableHeader>

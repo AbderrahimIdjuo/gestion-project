@@ -1,7 +1,7 @@
 "use client";
 import { EnteteDevis } from "@/components/Entete-devis";
+import { RapportEntete } from "@/components/rapport-entete";
 import TransactionsChronologicalTable from "@/components/transactions-chronological-table";
-import TransactionsTypeTotalsHeader from "@/components/transactions-type-totals-header";
 import { DirectPrintButton } from "@/components/ui/print-button";
 import {
   Table,
@@ -63,30 +63,86 @@ export default function ImpressionRapport() {
             <EnteteDevis />
           </div>
 
-          <div className="flex justify-between gap-8"></div>
-          <div className="space-y-6">
-            <div className="grid grid-cols-2 items-center mb-4 print-block">
-              <div className="flex flex-row gap-2 items-center">
-                <h3 className="font-semibold text-gray-900">
-                  Compte :{" "}
-                  <span className="text-sm text-gray-600">
-                    {isAllComptes ? "Tous les comptes" : data?.compte}
-                  </span>
-                </h3>
-              </div>
-              <div className="flex flex-row gap-2 items-center">
-                <h3 className="font-semibold text-gray-900">
-                  Période :{" "}
-                  <span className="text-sm text-gray-600">
-                    {data?.from ? formatDate(ajouterUneHeure(data.from)) : "—"}{" "}
-                    • {data?.to ? formatDate(data.to) : "—"}
-                  </span>
-                </h3>
-              </div>
-            </div>
+          <RapportEntete
+            leftLabel="Compte"
+            leftValue={isAllComptes ? "Tous les comptes" : data?.compte}
+            rightValue={
+              data?.from && data?.to
+                ? `${formatDate(ajouterUneHeure(data.from))} • ${formatDate(
+                    data.to
+                  )}`
+                : "—"
+            }
+            stats={
+              isAllComptes
+                ? [
+                    {
+                      label: "Total Des Recettes",
+                      value: formatCurrency(typeTotals.totalRecettes),
+                      valueClassName: "text-green-600",
+                    },
+                    {
+                      label: "Total Des Dépenses",
+                      value: formatCurrency(typeTotals.totalDepenses),
+                      valueClassName: "text-red-600",
+                    },
+                    {
+                      label: "Total Vider la caisse",
+                      value: formatCurrency(typeTotals.totalVider),
+                      valueClassName: "text-blue-600",
+                    },
+                    {
+                      label: "Total Des Transferts",
+                      value: formatCurrency(typeTotals.totalTransferts),
+                      valueClassName: "text-blue-600",
+                    },
+                    {
+                      label: "Total",
+                      value: formatCurrency(typeTotals.total),
+                      valueClassName: soldeColor(typeTotals.total),
+                    },
+                  ]
+                : [
+                    {
+                      label: "Total Des Recettes",
+                      value: formatCurrency(totals.totalRecettes),
+                      valueClassName: "text-green-600",
+                    },
+                    {
+                      label: "Total Des Transferts",
+                      value: isCompteCaisse(data?.compte) ? (
+                        formatCurrency(totals.totalTransferts)
+                      ) : (
+                        <div className="space-y-0.5">
+                          <p className="text-sm font-bold text-green-600">
+                            Entrant :{" "}
+                            {formatCurrency(totals.totalTransfertsEntrants)}
+                          </p>
+                          <p className="text-sm font-bold text-red-600">
+                            Sortant :{" "}
+                            {formatCurrency(totals.totalTransfertsSortants)}
+                          </p>
+                        </div>
+                      ),
+                      valueClassName: isCompteCaisse(data?.compte)
+                        ? "text-blue-600"
+                        : undefined,
+                    },
+                    {
+                      label: "Total Des Dépenses",
+                      value: formatCurrency(totals.totalDepenses),
+                      valueClassName: "text-red-600",
+                    },
+                    {
+                      label: "Solde",
+                      value: formatCurrency(data?.soldeActuel),
+                      valueClassName: soldeColor(data?.soldeActuel),
+                    },
+                  ]
+            }
+          />
             {isAllComptes ? (
               <>
-                <TransactionsTypeTotalsHeader totals={typeTotals} />
                 <div className="main-table-container print-block">
                   <TransactionsChronologicalTable
                     transactions={data?.transactions}
@@ -97,58 +153,6 @@ export default function ImpressionRapport() {
               </>
             ) : (
               <>
-            {/* Section de résumé */}
-            <div className="bg-gray-50 p-4 rounded-lg mb-6 print-block">
-              <div className="grid grid-cols-4 gap-4 text-center">
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-600 mb-1">
-                    Total Des Recettes
-                  </h3>
-                  <p className="text-lg font-bold text-green-600">
-                    {formatCurrency(totals.totalRecettes)}
-                  </p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-600 mb-1">
-                    Total Des Transferts
-                  </h3>
-                  {isCompteCaisse(data?.compte) ? (
-                    <p className="text-lg font-bold text-blue-600">
-                      {formatCurrency(totals.totalTransferts)}
-                    </p>
-                  ) : (
-                    <div className="space-y-0.5">
-                      <p className="text-sm font-bold text-green-600">
-                        Entrant : {formatCurrency(totals.totalTransfertsEntrants)}
-                      </p>
-                      <p className="text-sm font-bold text-red-600">
-                        Sortant : {formatCurrency(totals.totalTransfertsSortants)}
-                      </p>
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-600 mb-1">
-                    Total Des Dépenses
-                  </h3>
-                  <p className="text-lg font-bold text-red-600">
-                    {formatCurrency(totals.totalDepenses)}
-                  </p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-600 mb-1">
-                    Solde
-                  </h3>
-                  <p
-                    className={`text-lg font-bold ${soldeColor(
-                      data?.soldeActuel
-                    )}`}
-                  >
-                    {formatCurrency(data?.soldeActuel)}
-                  </p>
-                </div>
-              </div>
-            </div>
             <div className="rounded-xl border shadow-sm overflow-x-auto main-table-container print-block">
               <Table className="border-collapse">
                 <TableHeader>
@@ -283,7 +287,6 @@ export default function ImpressionRapport() {
             </div>
               </>
             )}
-          </div>
         </div>
         {/* Bouton d'impression fixé en bas de la page */}
         <div className="fixed  bottom-4 right-4 z-50 print:hidden">

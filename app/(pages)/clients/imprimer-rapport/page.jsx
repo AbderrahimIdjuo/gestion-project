@@ -1,6 +1,7 @@
 "use client";
 
 import { EnteteDevis } from "@/components/Entete-devis";
+import { RapportEntete } from "@/components/rapport-entete";
 import { DirectPrintButton } from "@/components/ui/print-button";
 import {
   Table,
@@ -60,7 +61,6 @@ export default function ImprimerRapport() {
       console.log("Data:", JSON.parse(storedData));
     }
   }, []);
-  const fromDay = new Date(data?.from);
 
   return (
     <>
@@ -71,30 +71,37 @@ export default function ImprimerRapport() {
           <div className="print-block">
             <EnteteDevis />
           </div>
-          <div className="space-y-2 print-block">
-            <h3 className="font-semibold text-center text-lg text-gray-900 mb-2">
-              CALCUL DU RESTE D&apos;AVANCES DES CLIENTS
-            </h3>
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex gap-2 items-center">
-                <h3 className="mb-1 font-semibold text-gray-900">Période :</h3>
-                <p className="text-sm text-gray-600">
-                  {`${fromDay.getDate()}-${
-                    fromDay.getMonth() + 1
-                  }-${fromDay.getFullYear()}`}{" "}
-                  • {formatDate(data?.to)}
-                </p>
-              </div>
-              <div className="flex gap-2 items-center">
-                <h3 className="mb-1 font-semibold text-gray-900">
-                  Date de création :
-                </h3>
-                <p className="text-sm text-gray-600">
-                  {formatDate(new Date().toISOString())}
-                </p>
-              </div>
-            </div>
-          </div>
+          <RapportEntete
+            title="Crédits des clients"
+            rightValue={
+              data?.from && data?.to
+                ? `${formatDate(data.from)} • ${formatDate(data.to)}`
+                : "—"
+            }
+            extraItems={[
+              {
+                label: "Date de création",
+                value: formatDate(new Date().toISOString()),
+              },
+            ]}
+            stats={[
+              {
+                label: "Total général",
+                value: formatCurrency(data?.totalGeneral),
+                valueClassName: "text-sky-600",
+              },
+              {
+                label: "Total payé",
+                value: formatCurrency(data?.totalMontantPaye),
+                valueClassName: "text-emerald-600",
+              },
+              {
+                label: "Total des crédits",
+                value: formatCurrency(data?.totalResteAPayer),
+                valueClassName: "text-rose-600",
+              },
+            ]}
+          />
           <div className="rounded-xl border shadow-sm overflow-x-auto main-table-container print-block">
             <Table className="border-collapse">
               <TableHeader>

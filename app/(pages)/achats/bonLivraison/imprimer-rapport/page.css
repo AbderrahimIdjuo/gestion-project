@@ -16,24 +16,4 @@
     word-break: break-word !important;
     overflow-wrap: break-word !important;
   }
-
-  th:not(.col-description):not(.col-fournisseur),
-  td:not(.col-description):not(.col-fournisseur) {
-    white-space: nowrap !important;
-    min-width: auto !important;
-  }
-
-  .grid {
-    align-items: center !important;
-  }
-
-  .grid > div {
-    display: flex !important;
-    align-items: center !important;
-  }
-
-  .grid > div > h3,
-  .grid > div > p {
-    margin: 0 !important;
-  }
 }

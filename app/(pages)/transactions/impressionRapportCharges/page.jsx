@@ -1,5 +1,6 @@
 "use client";
 import { EnteteDevis } from "@/components/Entete-devis";
+import { RapportEntete } from "@/components/rapport-entete";
 import { DirectPrintButton } from "@/components/ui/print-button";
 import {
   Table,
@@ -44,44 +45,27 @@ export default function ImpressionRapportCharges() {
             <EnteteDevis />
           </div>
 
-          <div className="space-y-6">
-            <div className="grid grid-cols-2 items-center mb-4 print-block">
-              <div className="flex flex-row gap-2 items-center">
-                <h3 className="font-semibold text-gray-900">
-                  {data?.titre || "Rapport des charges"}
-                </h3>
-              </div>
-              <div className="flex flex-row gap-2 items-center">
-                <h3 className="font-semibold text-gray-900">
-                  Période :{" "}
-                  <span className="text-sm text-gray-600">
-                    {data?.from ? formatDate(ajouterUneHeure(data.from)) : "—"}{" "}
-                    • {data?.to ? formatDate(data.to) : "—"}
-                  </span>
-                </h3>
-              </div>
-            </div>
-
-            <div className="bg-gray-50 p-4 rounded-lg mb-6 print-block">
-              <div className="grid grid-cols-2 gap-4 text-center">
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-600 mb-1">
-                    Nombre de charges
-                  </h3>
-                  <p className="text-lg font-bold text-gray-900">
-                    {data?.transactions?.length || 0}
-                  </p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-600 mb-1">
-                    Montant total
-                  </h3>
-                  <p className="text-lg font-bold text-red-600">
-                    {formatCurrency(data?.totalMontant || 0)}
-                  </p>
-                </div>
-              </div>
-            </div>
+          <RapportEntete
+            title={data?.titre || "Rapport des charges"}
+            rightValue={
+              data?.from && data?.to
+                ? `${formatDate(ajouterUneHeure(data.from))} • ${formatDate(
+                    data.to
+                  )}`
+                : "—"
+            }
+            stats={[
+              {
+                label: "Nombre de charges",
+                value: data?.transactions?.length || 0,
+              },
+              {
+                label: "Montant total",
+                value: formatCurrency(data?.totalMontant || 0),
+                valueClassName: "text-red-600",
+              },
+            ]}
+          />
 
             <div className="rounded-xl border shadow-sm overflow-x-auto main-table-container print-block">
               <Table className="border-collapse">
@@ -152,7 +136,6 @@ export default function ImpressionRapportCharges() {
                 </TableFooter>
               </Table>
             </div>
-          </div>
         </div>
         <div className="fixed bottom-4 right-4 z-50 print:hidden">
           <DirectPrintButton className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full shadow-lg">

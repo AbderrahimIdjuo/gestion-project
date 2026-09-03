@@ -1,6 +1,7 @@
 "use client";
 
 import { EnteteDevis } from "@/components/Entete-devis";
+import { RapportEntete } from "@/components/rapport-entete";
 import { DirectPrintButton } from "@/components/ui/print-button";
 import {
   Table,
@@ -73,46 +74,31 @@ export default function ImprimerProduits() {
             <EnteteDevis />
           </div>
 
-          <div className="space-y-3">
-            <div className="space-y-2 print-block">
-              <h3 className="font-semibold text-lg text-gray-900 mb-3">
-                Liste des Produits Achetés
-              </h3>
-
-              {/* Informations du fournisseur */}
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div className="flex gap-2 items-center">
-                  <h4 className="font-semibold text-gray-900">Fournisseur :</h4>
-                  <p className="text-sm text-gray-600">{fournisseur?.nom}</p>
-                </div>
-                {fournisseur?.ice && (
-                  <div className="flex gap-2 items-center">
-                    <h4 className="font-semibold text-gray-900">ICE :</h4>
-                    <p className="text-sm text-gray-600">{fournisseur.ice}</p>
-                  </div>
-                )}
-                {fournisseur?.telephone && (
-                  <div className="flex gap-2 items-center">
-                    <h4 className="font-semibold text-gray-900">Téléphone :</h4>
-                    <p className="text-sm text-gray-600">
-                      {fournisseur.telephone}
-                    </p>
-                  </div>
-                )}
-                {periode && (
-                  <div className="flex gap-2 items-center">
-                    <h4 className="font-semibold text-gray-900">Période :</h4>
-                    <p className="text-sm text-gray-600">{formatPeriode()}</p>
-                  </div>
-                )}
-                <div className="flex gap-2 items-center">
-                  <h4 className="font-semibold text-gray-900">Tri par :</h4>
-                  <p className="text-sm text-gray-600">
-                    {sortKey === "montant" ? "Montant" : "Quantité"}
-                  </p>
-                </div>
-              </div>
-            </div>
+          <RapportEntete
+            title="Liste des Produits Achetés"
+            leftLabel="Fournisseur"
+            leftValue={fournisseur?.nom || "—"}
+            rightValue={periode ? formatPeriode() : undefined}
+            extraItems={[
+              ...(fournisseur?.ice
+                ? [{ label: "ICE", value: fournisseur.ice }]
+                : []),
+              ...(fournisseur?.telephone
+                ? [{ label: "Téléphone", value: fournisseur.telephone }]
+                : []),
+              {
+                label: "Tri par",
+                value: sortKey === "montant" ? "Montant" : "Quantité",
+              },
+            ]}
+            stats={[
+              { label: "Quantité", value: totalQuantite },
+              {
+                label: "Montant",
+                value: formatCurrency(totalMontant),
+              },
+            ]}
+          />
 
             {/* Tableau des produits */}
             <div className="rounded-xl border shadow-sm overflow-x-auto main-table-container print-block">
@@ -170,7 +156,6 @@ export default function ImprimerProduits() {
                 </TableFooter>
               </Table>
             </div>
-          </div>
         </div>
 
         {/* Bouton d'impression (caché à l'impression) */}

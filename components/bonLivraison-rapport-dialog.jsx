@@ -35,12 +35,13 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+import { RapportEntete } from "@/components/rapport-entete";
 import Spinner from "@/components/customUi/Spinner";
 import { formatCurrency } from "@/lib/functions";
 import { getDateRangeFromPeriode, getPeriodeLabel } from "@/lib/periode";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { Calendar, ChevronDown, Filter, LayoutList, FileText, Printer, Tag, User, X } from "lucide-react";
+import { ChevronDown, FileText, Printer, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 function formatDate(dateString) {
@@ -1071,53 +1072,39 @@ export default function BonLivraisonRapportDialog({
         {currentStep === 2 && (
             <div className="space-y-4">
               {/* Informations du filtre */}
-              <div className="rounded-xl border-2 border-purple-100 bg-gradient-to-br from-purple-50/80 via-fuchsia-50/50 to-violet-50/80 shadow-sm overflow-hidden">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 px-4 py-4">
-                  <div className="flex items-center gap-2 min-w-0 rounded-lg bg-white/70 px-3 py-2 shadow-sm border border-purple-100/80">
-                    <User className="h-4 w-4 shrink-0 text-purple-500" />
-                    <div className="min-w-0">
-                      <p className="text-[10px] uppercase tracking-wider font-semibold text-purple-600/90">Fournisseur</p>
-                      <p className="text-sm font-medium text-gray-800 truncate">{selectedFournisseur?.nom ?? "Tous"}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 min-w-0 rounded-lg bg-white/70 px-3 py-2 shadow-sm border border-purple-100/80">
-                    <Calendar className="h-4 w-4 shrink-0 text-purple-500" />
-                    <div className="min-w-0">
-                      <p className="text-[10px] uppercase tracking-wider font-semibold text-purple-600/90">Période</p>
-                      <p className="text-sm font-medium text-gray-800 truncate">
-                        {formData.periode === "personnalisee" && startDate && endDate
-                          ? `${formatDate(startDate?.toISOString?.() ?? startDate)} — ${formatDate(endDate?.toISOString?.() ?? endDate)}`
-                          : getPeriodeLabel(formData.periode)}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 min-w-0 rounded-lg bg-white/70 px-3 py-2 shadow-sm border border-purple-100/80">
-                    <Tag className="h-4 w-4 shrink-0 text-purple-500" />
-                    <div className="min-w-0">
-                      <p className="text-[10px] uppercase tracking-wider font-semibold text-purple-600/90">Type</p>
-                      <p className="text-sm font-medium text-gray-800">{Types.find(t => t.Value === formData.type)?.Label ?? formData.type}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 min-w-0 rounded-lg bg-white/70 px-3 py-2 shadow-sm border border-purple-100/80">
-                    <FileText className="h-4 w-4 shrink-0 text-purple-500" />
-                    <div className="min-w-0">
-                      <p className="text-[10px] uppercase tracking-wider font-semibold text-purple-600/90">Statut paiement</p>
-                      <p className="text-sm font-medium text-gray-800">
-                        {formData.statutPaiement?.length
-                          ? formData.statutPaiement.map(s => statutLabels[s] ?? s).join(", ")
-                          : "—"}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 min-w-0 rounded-lg bg-white/70 px-3 py-2 shadow-sm border border-purple-100/80">
-                    <LayoutList className="h-4 w-4 shrink-0 text-purple-500" />
-                    <div className="min-w-0">
-                      <p className="text-[10px] uppercase tracking-wider font-semibold text-purple-600/90">Affichage</p>
-                      <p className="text-sm font-medium text-gray-800">{modeAffichageLabels[formData.modeAffichage] ?? formData.modeAffichage}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <RapportEntete
+                leftLabel="Fournisseur"
+                leftValue={selectedFournisseur?.nom ?? "Tous"}
+                rightValue={
+                  formData.periode === "personnalisee" && startDate && endDate
+                    ? `${formatDate(
+                        startDate?.toISOString?.() ?? startDate
+                      )} • ${formatDate(endDate?.toISOString?.() ?? endDate)}`
+                    : getPeriodeLabel(formData.periode)
+                }
+                extraItems={[
+                  {
+                    label: "Type",
+                    value:
+                      Types.find(t => t.Value === formData.type)?.Label ??
+                      formData.type,
+                  },
+                  {
+                    label: "Statut paiement",
+                    value: formData.statutPaiement?.length
+                      ? formData.statutPaiement
+                          .map(s => statutLabels[s] ?? s)
+                          .join(", ")
+                      : "—",
+                  },
+                  {
+                    label: "Affichage",
+                    value:
+                      modeAffichageLabels[formData.modeAffichage] ??
+                      formData.modeAffichage,
+                  },
+                ]}
+              />
 
               <div className="rounded-xl border shadow-sm overflow-x-auto">
                 {renderRapportTableContent()}
@@ -1143,7 +1130,18 @@ export default function BonLivraisonRapportDialog({
                         from: from?.toISOString(),
                         to: to?.toISOString(),
                         modeAffichage: formData.modeAffichage,
+                        modeAffichageLabel:
+                          modeAffichageLabels[formData.modeAffichage] ??
+                          formData.modeAffichage,
                         fournisseurNom: selectedFournisseur?.nom || null,
+                        typeLabel:
+                          Types.find(t => t.Value === formData.type)?.Label ??
+                          formData.type,
+                        statutPaiementLabel: formData.statutPaiement?.length
+                          ? formData.statutPaiement
+                              .map(s => statutLabels[s] ?? s)
+                              .join(", ")
+                          : "—",
                       };
                       if (formData.modeAffichage === "parBL") {
                         const items = rapportItemsBLReglements;
