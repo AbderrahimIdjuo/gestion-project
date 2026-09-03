@@ -471,9 +471,11 @@ export default function UpdateTransactionDialog({
                     <div className="grid w-full items-center gap-1.5">
                       <Label htmlFor="label">Label</Label>
                       <Select
-                        value={watch("label")}
-                        name="label"
-                        onValueChange={value => setValue("lable", value)}
+                      value={watch("lable") || undefined}
+                      name="lable"
+                      onValueChange={value =>
+                        setValue("lable", value, { shouldValidate: true })
+                      }
                       >
                         <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
                           <SelectValue placeholder="Séléctionner..." />
@@ -481,7 +483,9 @@ export default function UpdateTransactionDialog({
                         <SelectContent>
                           {charges.data
                             ?.filter(
-                              element => (element.type || "fixe") === "fixe"
+                              element =>
+                                (element.type || "fixe") === "fixe" &&
+                                element.charge
                             )
                             .map(element => (
                             <SelectItem key={element.id} value={element.charge}>

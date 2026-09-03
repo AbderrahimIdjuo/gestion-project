@@ -26,29 +26,37 @@ export async function POST(req) {
 }
 
 export async function GET(req) {
-  const { searchParams } = new URL(req.url);
-  const page = parseInt(searchParams.get("page") || "1");
-  const type = searchParams.get("type");
-  const chargesPerPage = 100;
-  const filters = {};
-  if (type && type !== "all" && CHARGE_TYPES.includes(type)) {
-    filters.type = type;
+  try {
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get("page") || "1");
+    const type = searchParams.get("type");
+    const chargesPerPage = 100;
+    const filters = {};
+    if (type && type !== "all" && CHARGE_TYPES.includes(type)) {
+      filters.type = type;
+    }
+    const [charges, totalcharges] = await Promise.all([
+      prisma.charges.findMany({
+        where: filters,
+        skip: (page - 1) * chargesPerPage,
+        take: chargesPerPage,
+      }),
+      prisma.charges.count({ where: filters }),
+    ]);
+
+    const totalPages = Math.ceil(totalcharges / chargesPerPage);
+
+    return NextResponse.json({
+      charges,
+      totalPages,
+    });
+  } catch (error) {
+    console.error("Error fetching charges", error);
+    return NextResponse.json(
+      { message: "An unexpected error occurred.", charges: [], totalPages: 0 },
+      { status: 500 }
+    );
   }
-  const [charges, totalcharges] = await Promise.all([
-    prisma.charges.findMany({
-      where: filters,
-      skip: (page - 1) * chargesPerPage,
-      take: chargesPerPage,
-    }),
-    prisma.charges.count({ where: filters }),
-  ]);
-
-  const totalPages = Math.ceil(totalcharges / chargesPerPage);
-
-  return NextResponse.json({
-    charges,
-    totalPages,
-  });
 }
 
 export async function PUT(req) {

@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../lib/prisma";
 import { requireAdmin } from "@/lib/auth-utils";
+import {
+  createTresorieTransaction,
+  getCreateTransactionErrorMessage,
+} from "@/lib/createTransaction";
 import { reverseViderTransaction } from "@/lib/deleteTransaction";
 import { statutPaiementFromTotals } from "@/lib/statut-paiement";
 
@@ -132,6 +136,20 @@ export async function GET(req) {
     transactions,
     totalPages,
   });
+}
+
+export async function POST(req) {
+  try {
+    const data = await req.json();
+    const result = await createTresorieTransaction(data);
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error("Erreur lors de la création de la transaction:", error);
+    return NextResponse.json(
+      { error: getCreateTransactionErrorMessage(error) },
+      { status: 400 }
+    );
+  }
 }
 
 export async function DELETE(req) {

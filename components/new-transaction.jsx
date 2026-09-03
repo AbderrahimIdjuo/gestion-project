@@ -1,6 +1,5 @@
 "use client";
 
-import { addCharge, addtransaction } from "@/app/api/actions";
 import { CustomDatePicker } from "@/components/customUi/customDatePicker";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -129,41 +128,29 @@ export default function TransactionDialog() {
       return response.data.charges;
     },
   });
-  const addCharges = useMutation({
-    mutationFn: async charge => {
-      const loadingToast = toast.loading("Opération en cours...");
-      try {
-        await addCharge(charge);
-        toast.success("Opération efféctué avec succès");
-      } catch (error) {
-        toast.error("Échec de l'opération!");
-        throw error;
-      } finally {
-        toast.dismiss(loadingToast);
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["charges"] });
-    },
-  });
   const createTransaction = useMutation({
     mutationFn: async data => {
       const loadingToast = toast.loading("Paiement en cours...");
       try {
-        await addtransaction(data);
+        await axios.post("/api/tresorie", data);
         toast.success("Paiement éffectué avec succès");
       } catch (error) {
-        toast.error(error?.message || "Échec de l'opération!");
+        toast.error(
+          error?.response?.data?.error ||
+            error?.message ||
+            "Échec de l'opération!"
+        );
         throw error;
       } finally {
         toast.dismiss(loadingToast);
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(["transactions"]);
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
       queryClient.invalidateQueries({ queryKey: ["factures"] });
       queryClient.invalidateQueries({ queryKey: ["statistiques"] });
       queryClient.invalidateQueries({ queryKey: ["comptes"] });
+      queryClient.invalidateQueries({ queryKey: ["charges"] });
     },
   });
   const typeDepense = type => {
@@ -177,16 +164,31 @@ export default function TransactionDialog() {
     const Data = {
       ...data,
       date,
-      typeDepense: typeDepense(watch("type")),
+      typeDepense: typeDepense(data.type),
     };
-    console.log("## Data ###", Data);
-    if (isChecked && !isCharge) {
-      console.log("enrgistrer la charge");
-      addCharges.mutate(watch("lable"));
+    try {
+      if (isChecked && !isCharge && data.lable) {
+        try {
+          await axios.post("/api/charges", {
+            charge: data.lable,
+            type: "fixe",
+          });
+        } catch (error) {
+          toast.error(
+            error?.response?.data?.message ||
+              "La charge n'a pas été ajoutée à la liste."
+          );
+        }
+      }
+      await createTransaction.mutateAsync(Data);
+      setOpen(false);
+      reset();
+      setIsCharge(false);
+      setIsChecked(false);
+      setDate(null);
+    } catch {
+      // toast déjà affiché dans la mutation
     }
-    createTransaction.mutate(Data);
-    setOpen(false);
-    reset();
   };
   const comptes = useQuery({
     queryKey: ["comptes"],
@@ -388,7 +390,10 @@ export default function TransactionDialog() {
                   <Switch
                     id="switch"
                     checked={isCharge}
-                    onCheckedChange={setIsCharge}
+                    onCheckedChange={checked => {
+                      setIsCharge(checked);
+                      setValue("lable", "");
+                    }}
                   />
                   <Label htmlFor="switch">
                     {isCharge ? "Charges fixes" : "Charges variantes"}
@@ -399,9 +404,11 @@ export default function TransactionDialog() {
                   <div className="grid w-full items-center gap-1.5">
                     <Label htmlFor="label">Label</Label>
                     <Select
-                      value={watch("label")}
-                      name="label"
-                      onValueChange={value => setValue("lable", value)}
+                      value={watch("lable") || undefined}
+                      name="lable"
+                      onValueChange={value =>
+                        setValue("lable", value, { shouldValidate: true })
+                      }
                     >
                       <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500">
                         <SelectValue placeholder="Séléctionner..." />
@@ -409,7 +416,9 @@ export default function TransactionDialog() {
                       <SelectContent>
                         {charges.data
                           ?.filter(
-                            element => (element.type || "fixe") === "fixe"
+                            element =>
+                              (element.type || "fixe") === "fixe" &&
+                              element.charge
                           )
                           .map(element => (
                           <SelectItem key={element.id} value={element.charge}>
@@ -420,6 +429,11 @@ export default function TransactionDialog() {
                         ))}
                       </SelectContent>
                     </Select>
+                    {errors.lable && (
+                      <p className="text-red-500 text-sm">
+                        {errors.lable.message}
+                      </p>
+                    )}
                   </div>
                 ) : (
                   <div className="grid w-full items-center gap-1.5">

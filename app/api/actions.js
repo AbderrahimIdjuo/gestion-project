@@ -1,5 +1,9 @@
 "use server";
 import prisma from "../../lib/prisma";
+import {
+  createTresorieTransaction,
+  getCreateTransactionErrorMessage,
+} from "../../lib/createTransaction";
 
 export async function deleteManyFactures(selectedFactures) {
   const result = await prisma.factures.deleteMany({
@@ -33,13 +37,21 @@ export async function addCategorieProduits(categorie) {
 
 export async function addCharge(charge, type = "fixe") {
   if (charge !== "") {
-    const result = await prisma.charges.create({
-      data: {
-        charge,
-        type: type === "variante" ? "variante" : "fixe",
-      },
-    });
-    return result;
+    try {
+      const result = await prisma.charges.create({
+        data: {
+          charge,
+          type: type === "variante" ? "variante" : "fixe",
+        },
+      });
+      return result;
+    } catch (error) {
+      console.error("addCharge error:", error);
+      throw new Error(
+        getCreateTransactionErrorMessage(error) ||
+          "Échec de l'ajout de la charge"
+      );
+    }
   }
 }
 
@@ -128,171 +140,10 @@ export async function addInfoEntreprise(info) {
 }
 
 export async function addtransaction(data) {
-  const {
-    numero,
-    type,
-    montant,
-    compte,
-    lable,
-    description,
-    date,
-    methodePaiement,
-    numeroCheque,
-    clientId,
-    typeDepense,
-  } = data;
-  const result = await prisma.$transaction(async prisma => {
-    if (type === "vider") {
-      const caisseAccount = await prisma.comptesBancaires.findFirst({
-        where: { compte: "caisse" },
-      });
-      const soldeCaisse = Number(caisseAccount?.solde ?? 0);
-      if (montant > soldeCaisse) {
-        throw new Error(
-          `Le montant ne peut pas dépasser le solde de la caisse (${soldeCaisse} DH).`
-        );
-      }
-    }
-    if (lable === "paiement devis") {
-      const devis = await prisma.devis.findUnique({
-        where: { numero: numero },
-      });
-      const diff = devis.total - (devis.totalPaye + montant);
-      const statutPaiement =
-        diff === 0 ? "paye" : diff > 0 ? "enPartie" : "impaye";
-      // Modifier le statut de devis en cas de paiement d'un client
-      await prisma.devis.update({
-        where: { numero: numero },
-        data: {
-          ...(devis.dateStart === null && { dateStart: date || new Date() }),
-          ...(devis.statut !== "Terminer" && { statut: "Accepté" }),
-          totalPaye: {
-            increment: montant, //augmente le montant paye
-          },
-          statutPaiement,
-        },
-      });
-
-      // La dette du client sera décrémentée
-      //   await prisma.clients.update({
-      //     where: { id: clientId },
-      //     data: {
-      //       dette: {
-      //         decrement: montant, // Decrement la dette du client
-      //       },
-      //     },
-      //   });
-    }
-    //Creation du chèque
-    let cheque = null;
-
-    if (methodePaiement === "cheque") {
-      cheque = await prisma.cheques.create({
-        data: {
-          type:
-            type === "depense" ? "EMIS" : type === "recette" ? "RECU" : null,
-          montant,
-          compte,
-          numero: numeroCheque,
-          dateReglement: date || null,
-        },
-      });
-    }
-    await prisma.transactions.create({
-      data: {
-        reference: numero,
-        type,
-        montant,
-        compte,
-        lable:
-          type === "vider"
-            ? lable && String(lable).trim()
-              ? lable
-              : "Vider la caisse"
-            : lable,
-        description,
-        methodePaiement,
-        clientId,
-        date: date || new Date(),
-        typeDepense,
-        cheque: cheque
-          ? {
-              connect: { id: cheque.id }, // ✅ association one-to-one
-            }
-          : undefined,
-      },
-    });
-
-    if (type === "vider") {
-      await prisma.comptesBancaires.updateMany({
-        where: { compte: "caisse" },
-        data: {
-          solde: { decrement: montant },
-        },
-      });
-      await prisma.comptesBancaires.updateMany({
-        where: { compte: compte },
-        data: {
-          solde: { increment: montant },
-        },
-      });
-      // Si la destination est le compte professionnel, créer un versement (source = caisse)
-      const compteDest = (compte || "").toLowerCase();
-      if (
-        compteDest === "compte professionnel" ||
-        compteDest === "compte professionel"
-      ) {
-        const caisseAccount = await prisma.comptesBancaires.findFirst({
-          where: { compte: "caisse" },
-        });
-        const compteProAccount = await prisma.comptesBancaires.findFirst({
-          where: {
-            OR: [
-              { compte: { equals: "compte professionnel", mode: "insensitive" } },
-              { compte: "compte professionel" },
-            ],
-          },
-        });
-        if (caisseAccount && compteProAccount) {
-          await prisma.versement.create({
-            data: {
-              montant,
-              sourceCompteId: caisseAccount.id,
-              compteProId: compteProAccount.id,
-              note: "Vider la caisse vers compte pro",
-            },
-          });
-        }
-      }
-    } else if (type === "depense" || type === "recette") {
-      // Mise à jour d'un compte bancaire
-      await prisma.comptesBancaires.updateMany({
-        where: { compte: compte },
-        data: {
-          solde:
-            type === "recette"
-              ? { increment: montant }
-              : { decrement: montant },
-        },
-      });
-    }
-
-    if (numero && numero.slice(0, 3) === "CMD") {
-      await prisma.commandes.update({
-        where: { numero: numero },
-        data: {
-          totalPaye: { increment: montant },
-        },
-      });
-    } else if (numero && numero.slice(0, 2) === "BL") {
-      await prisma.bonLivraison.update({
-        where: { numero: numero },
-        data: {
-          totalPaye: { increment: montant },
-        },
-      });
-    }
-  });
-
-  return { result };
+  try {
+    return await createTresorieTransaction(data);
+  } catch (error) {
+    console.error("addtransaction error:", error);
+    return { error: getCreateTransactionErrorMessage(error) };
+  }
 }
