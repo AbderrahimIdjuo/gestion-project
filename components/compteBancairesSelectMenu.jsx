@@ -20,14 +20,19 @@ export default function CompteBancairesSelectMenu({ compte, setCompte }) {
     },
   });
   return (
-    <div className="space-y-2">
-      <Label htmlFor="orderNumber">Compte :</Label>
+    <div className="flex flex-col gap-2">
+      <Label htmlFor="compte-rapport" className="text-sm font-medium leading-none">
+        Compte :
+      </Label>
       <Select
         value={compte}
         name="compte"
-        onValueChange={(value) => setCompte(value)}
+        onValueChange={value => setCompte(value)}
       >
-        <SelectTrigger className="col-span-3 bg-white focus:ring-purple-500 mt-2">
+        <SelectTrigger
+          id="compte-rapport"
+          className="w-full bg-white focus:ring-2 focus:ring-purple-500"
+        >
           <SelectValue placeholder="Séléctionner..." />
         </SelectTrigger>
         <SelectContent>

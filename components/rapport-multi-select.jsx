@@ -10,7 +10,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { ChevronDown, Search } from "lucide-react";
+import { ChevronDown, Loader2, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 
 export function RapportMultiSelect({
@@ -24,6 +24,7 @@ export function RapportMultiSelect({
   nameKey,
   getLabel,
   searchable = false,
+  isLoading = false,
 }) {
   const [search, setSearch] = useState("");
 
@@ -62,10 +63,16 @@ export function RapportMultiSelect({
         <PopoverTrigger asChild>
           <Button
             variant="outline"
+            disabled={isLoading}
             className="w-full justify-between text-left font-normal focus:ring-2 focus:ring-purple-500 bg-white h-10 min-h-10 py-0"
           >
             <div className="flex flex-wrap gap-1">
-              {selectedIds.length === 0 ? (
+              {isLoading ? (
+                <span className="inline-flex items-center gap-2 text-muted-foreground">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Chargement...
+                </span>
+              ) : selectedIds.length === 0 ? (
                 <span className="text-muted-foreground">{placeholder}</span>
               ) : allSelected ? (
                 <Badge

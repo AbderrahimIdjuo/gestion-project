@@ -11,8 +11,7 @@ import { LoadingDots } from "@/components/loading-dots";
 import { ModifyProductDialog } from "@/components/modify-product-dialog";
 import { Navbar } from "@/components/navbar";
 import { ProductFormDialog } from "@/components/product-form-dialog";
-import ProduitsRapportDialog from "@/components/produits-rapport-dialog";
-import ProduitsRapportSortieDialog from "@/components/produits-rapport-sortie-dialog";
+import ProduitsRapportsHubDialog from "@/components/produits-rapports-hub-dialog";
 import { Sidebar } from "@/components/sidebar";
 import { TableRowActions } from "@/components/table-row-actions";
 import { TransfertStockDialog } from "@/components/transfert-stock-dialog";
@@ -388,9 +387,8 @@ export default function ProduitsPage() {
                         Importer
                       </Button>
                     </ImportProduits> */}
+                    <ProduitsRapportsHubDialog />
                     <ProductFormDialog />
-                    <ProduitsRapportDialog />
-                    <ProduitsRapportSortieDialog />
                   </div>
                 </div>
 

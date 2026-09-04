@@ -290,6 +290,7 @@ export default function ProduitsRapportDialog({
               allLabel="Tous les entrepôts"
               placeholder="Sélectionner les entrepôts"
               nameKey="nom"
+              isLoading={entrepotsQuery.isLoading}
             />
             <RapportMultiSelect
               label="Catégories"
@@ -299,6 +300,7 @@ export default function ProduitsRapportDialog({
               allLabel="Toutes les catégories"
               placeholder="Sélectionner les catégories"
               nameKey="categorie"
+              isLoading={categoriesQuery.isLoading}
             />
             <div className="md:col-span-2">
               <RapportMultiSelect
@@ -310,6 +312,9 @@ export default function ProduitsRapportDialog({
                 placeholder="Sélectionner les produits"
                 getLabel={produitRapportLabel}
                 searchable
+                isLoading={
+                  produitsListeQuery.isLoading || categoriesQuery.isLoading
+                }
               />
             </div>
           </div>

@@ -136,13 +136,11 @@ export default function ComptesRapportContent({
       </DialogHeader>
       {currentStep === 1 && (
         <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <CompteBancairesSelectMenu
-                compte={compte}
-                setCompte={setCompte}
-              />
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+            <CompteBancairesSelectMenu
+              compte={compte}
+              setCompte={setCompte}
+            />
             <PeriodeFilter
               periode={periode}
               onPeriodeChange={setPeriode}

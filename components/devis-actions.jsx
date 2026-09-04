@@ -119,20 +119,21 @@ export function DevisActions({
               </span>
             </DropdownMenuItem>
           )}
-          <DropdownMenuItem
-            onClick={() => {
-              localStorage.setItem("devi", JSON.stringify(devis));
-              localStorage.setItem("bLGroups", JSON.stringify(bLGroups));
-              window.open(`/ventes/devis/imprimerFournitures`, "_blank");
-            }}
-            className="flex items-center gap-2 cursor-pointer group hover:!bg-fuchsia-100"
-          >
-            <TruckIcon className="h-4 w-4 text-fuchsia-600" />
+          {bLGroups?.length > 0 && (
+            <DropdownMenuItem
+              onClick={() => {
+                setIsFournitureOpen(true);
+                setMenuOpen(false);
+              }}
+              className="flex items-center gap-2 cursor-pointer group hover:!bg-fuchsia-100"
+            >
+              <TruckIcon className="h-4 w-4 text-fuchsia-600" />
 
-            <span className="transition-colors duration-200 group-hover:text-fuchsia-600 group-hover:bg-fuchsia-100">
-              Fourniture
-            </span>
-          </DropdownMenuItem>
+              <span className="transition-colors duration-200 group-hover:text-fuchsia-600 group-hover:bg-fuchsia-100">
+                Fourniture
+              </span>
+            </DropdownMenuItem>
+          )}
 
           <DropdownMenuItem
             onClick={() => {
@@ -167,12 +168,14 @@ export function DevisActions({
         isOpen={isBankDialogOpen}
         onClose={() => setIsBankDialogOpen(false)}
       />
-      {/* <FournitureDialog
-        devis={devis}
-        isOpen={isFournitureOpen}
-        onClose={() => setIsFournitureOpen(false)}
-        bLGroups={bLGroups}
-      /> */}
+      {bLGroups?.length > 0 && (
+        <FournitureDialog
+          devis={devis}
+          isOpen={isFournitureOpen}
+          onClose={() => setIsFournitureOpen(false)}
+          bLGroups={bLGroups}
+        />
+      )}
       <FactureDialog
         devis={devis}
         isOpen={isFactureOpen}

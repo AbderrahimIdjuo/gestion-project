@@ -394,6 +394,7 @@ export default function ProduitsRapportSortieDialog({
               allLabel="Tous les entrepôts"
               placeholder="Sélectionner les entrepôts"
               nameKey="nom"
+              isLoading={entrepotsQuery.isLoading}
             />
             <RapportMultiSelect
               label="Catégories"
@@ -403,6 +404,7 @@ export default function ProduitsRapportSortieDialog({
               allLabel="Toutes les catégories"
               placeholder="Sélectionner les catégories"
               nameKey="categorie"
+              isLoading={categoriesQuery.isLoading}
             />
             <RapportMultiSelect
               label="Produits"
@@ -413,6 +415,9 @@ export default function ProduitsRapportSortieDialog({
               placeholder="Sélectionner les produits"
               getLabel={produitRapportLabel}
               searchable
+              isLoading={
+                produitsListeQuery.isLoading || categoriesQuery.isLoading
+              }
             />
           </div>
           <div className="flex justify-end gap-3 mt-6 print:hidden">

@@ -1,6 +1,6 @@
 "use client";
 
-import { Printer } from "lucide-react";
+import { EnteteDevis } from "@/components/Entete-devis";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -12,155 +12,181 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
-  TableFooter,
 } from "@/components/ui/table";
-import { EnteteDevis } from "@/components/Entete-devis";
-import { formatCurrency} from "@/lib/functions";
+import { formatCurrency, formatDate } from "@/lib/functions";
+import { Printer } from "lucide-react";
 
-
-export default function FournitureDialog({
-  devis,
-  isOpen,
-  onClose,
-  orderGroups,
-}) {
-  const handlePrint = () => {
-    window.print();
-  };
-  const totalBlFourniture = (produits) => {
-    return produits?.reduce((acc, produit) => {
-      return acc + produit.quantite * produit.prixUnite;
-    }, 0);
-  };
-  const totalFourniture = (group) => {
-    return group?.reduce((acc, order) => {
-      return acc + totalBlFourniture(order.produits);
-    }, 0);
-  };
+function totalBlFourniture(produits) {
   return (
-    <>
-      <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto print:shadow-none print:max-h-none print:overflow-visible">
-          <DialogHeader>
-            <DialogTitle></DialogTitle>
-          </DialogHeader>
-          <div className="container mx-auto p-8 max-w-4xl bg-white print:min-h-screen print:p-0 print:max-w-none mb-10">
-            {/* Document Content */}
-            <div id="print-area" className="space-y-6 print:mt-10">
-              {/* Header */}
+    produits?.reduce((acc, produit) => {
+      return acc + (produit.quantite || 0) * (produit.prixUnite || 0);
+    }, 0) ?? 0
+  );
+}
+
+function totalFourniture(groups) {
+  return (
+    groups?.reduce((acc, item) => {
+      const type = item?.bonLivraison?.type;
+      if (type === "achats") return acc + totalBlFourniture(item.produits);
+      if (type === "retour") return acc - totalBlFourniture(item.produits);
+      return acc;
+    }, 0) ?? 0
+  );
+}
+
+function calculateMargePercent(devis, fourniture) {
+  if (!devis?.total || !fourniture) return 0;
+  return ((devis.total - fourniture) / devis.total) * 100;
+}
+
+export default function FournitureDialog({ devis, isOpen, onClose, bLGroups }) {
+  const fournitureTotal = totalFourniture(bLGroups);
+  const marge = (devis?.total || 0) - fournitureTotal;
+
+  const handlePrint = () => {
+    localStorage.setItem("devi", JSON.stringify(devis));
+    localStorage.setItem("bLGroups", JSON.stringify(bLGroups));
+    window.open("/ventes/devis/imprimerFournitures", "_blank");
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={open => !open && onClose?.()}>
+      <DialogContent className="max-w-6xl max-h-[90vh] flex flex-col overflow-hidden print:shadow-none print:max-h-none print:overflow-visible">
+        <DialogHeader className="shrink-0">
+          <DialogTitle></DialogTitle>
+        </DialogHeader>
+        <div className="flex-1 min-h-0 overflow-y-auto print:overflow-visible">
+          <div className="container mx-auto px-4 py-2 max-w-6xl bg-white print:p-0 print:max-w-none">
+            <div id="print-area" className="space-y-3">
               <EnteteDevis />
-              {/* Company and Client Info */}
-              <div className="flex justify-between gap-8 mb-4">
-                <div className="space-y-1 col-span-1">
-                  <h3 className="font-medium text-sm text-muted-foreground">
-                    Devis N° :
-                  </h3>
-                  <p className="font-semibold">{devis.numero} </p>
-                </div>
-                <div className="space-y-1 col-span-1">
-                  <h3 className="font-medium text-sm text-muted-foreground">
-                    Client :
-                  </h3>
-                  <p className="font-semibold">{devis.client.nom} </p>
-                </div>
-                {orderGroups?.length > 0 && (
-                  <div className="space-y-1 col-span-1">
-                    <h3 className="font-medium text-sm text-muted-foreground">
-                      Total :
-                    </h3>
-                    <p className="font-semibold">
-                      {totalFourniture(orderGroups)} DH
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">Client:</h3>
+                  <div className="text-sm text-gray-600">
+                    <p>
+                      {devis?.client?.titre ? `${devis.client.titre}. ` : ""}
+                      {devis?.client?.nom?.toUpperCase()}
                     </p>
                   </div>
-                )}
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">
+                    Devis N° : {devis?.numero}
+                  </h3>
+                  <div className="text-sm text-gray-600">
+                    <p>
+                      Date :{" "}
+                      {formatDate(devis?.date) || formatDate(devis?.createdAt)}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-sm space-y-1">
+                  <p>
+                    <span className="font-semibold text-gray-900">
+                      Total de Devis :{" "}
+                    </span>
+                    {formatCurrency(devis?.total)}
+                  </p>
+                  <p>
+                    <span className="font-semibold text-gray-900">
+                      Total de fournitures :{" "}
+                    </span>
+                    {formatCurrency(fournitureTotal)}
+                  </p>
+                  <p>
+                    <span className="font-semibold text-gray-900">Marge : </span>
+                    {formatCurrency(marge)} (
+                    {calculateMargePercent(devis, fournitureTotal).toFixed(2)}%)
+                  </p>
+                </div>
               </div>
-              {orderGroups?.length > 0 ? (
-                <div className="space-y-6">
-                  {orderGroups?.map((groupe, index) => (
-                    <div
-                      key={groupe.id || index}
-                      className="border border-zinc-300 print:bg-none rounded-xl shadow-sm p-4"
-                    >
-                      <div className="flex justify-between gap-8 mb-4">
-                        {/* commande Info */}
 
-                        <div className="space-y-1 col-span-1">
-                          <h3 className="font-medium text-sm text-muted-foreground">
-                            Fournisseur
-                          </h3>
-                          <p className="font-semibold">
-                            {" "}
-                            {groupe?.bonLivraison?.fournisseur.nom}
-                          </p>
+              {bLGroups?.length > 0 ? (
+                <div className="space-y-4">
+                  {bLGroups.map((groupe, index) => (
+                    <div key={groupe.id || index}>
+                      <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+                        <div className="flex items-center gap-2 font-semibold">
+                          <span>
+                            {formatDate(groupe?.bonLivraison?.date)}
+                          </span>
+                          <span>•</span>
+                          <span>
+                            {groupe?.bonLivraison?.fournisseur?.nom || "—"}
+                          </span>
                         </div>
-                        <div className="col-span-1">
-                          <h3 className="font-medium text-sm text-muted-foreground">
-                            bon de livraison N°
-                          </h3>
-                          <p className="font-semibold">
-                            {groupe?.bonLivraison?.numero}
-                          </p>
+                        <div className="flex items-center gap-2 font-semibold">
+                          <span>{groupe?.bonLivraison?.numero}</span>
+                          <span>•</span>
+                          <span>
+                            {(groupe?.bonLivraison?.type || "").toUpperCase()}
+                          </span>
                         </div>
                       </div>
-                      {groupe.produits.length > 0 && (
-                        <div className="overflow-hidden rounded-md border border-zinc-500 mt-0">
+                      {groupe.produits?.length > 0 && (
+                        <div className="overflow-hidden rounded-md border border-black mt-0">
                           <Table className="w-full border-collapse">
-                            <TableHeader className="text-[1rem] border-none">
-                              <TableRow className="!py-0">
-                                <TableHead className="text-sm  border-b border-zinc-500 text-black font-medium text-left !py-0">
+                            <TableHeader className="text-[1rem]">
+                              <TableRow>
+                                <TableHead className="text-black font-bold text-left border-b border-black p-1 pl-3">
                                   #
                                 </TableHead>
-                                <TableHead className="text-sm  border-b border-zinc-500 text-black font-medium text-left !py-0">
+                                <TableHead className="text-black font-bold text-left border-b border-l border-black p-1">
                                   Produit
                                 </TableHead>
-                                <TableHead className="text-sm  border-b border-zinc-500 text-black font-medium  text-center !py-0">
+                                <TableHead className="text-black font-bold text-center border-b border-l border-black p-1">
                                   Qté
                                 </TableHead>
-                                <TableHead className="text-sm  border-b border-zinc-500 text-black font-medium  text-center !py-0">
+                                <TableHead className="text-black font-bold text-right border-b border-l border-black p-1">
                                   Prix unitaire
                                 </TableHead>
-                                <TableHead className="text-sm  border-b border-zinc-500 text-black font-medium  text-center !py-0">
+                                <TableHead className="text-black font-bold text-right border-b border-l border-black p-1">
                                   Montant
                                 </TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {groupe.produits.map((produit, index) => (
-                                <TableRow
-                                  key={produit.id || index}
-                                  className="border-none"
-                                >
-                                  <TableCell className="p-1 text-left  border-t border-zinc-500 text-md font-semibold pl-4">
-                                    {index + 1}
+                              {groupe.produits.map((produit, i) => (
+                                <TableRow key={produit.id || i}>
+                                  <TableCell className="p-1 pl-3 text-left border-b border-black font-semibold">
+                                    {i + 1}
                                   </TableCell>
-                                  <TableCell className="p-1 text-left  border-t border-zinc-500 text-md font-semibold p-0">
-                                    {produit.produit.designation}
+                                  <TableCell className="p-1 text-left border-b border-l border-black font-semibold">
+                                    {produit.produit?.designation}
                                   </TableCell>
-                                  <TableCell className=" p-1  border-t border-zinc-500 text-center p-0">
+                                  <TableCell className="p-1 text-center border-b border-l border-black">
                                     {produit.quantite}
                                   </TableCell>
-                                  <TableCell className="  border-t border-zinc-500  p-1 text-center p-0">
-                                    {produit.prixUnite} DH{" "}
+                                  <TableCell className="p-1 pr-2 text-right border-b border-l border-black">
+                                    {formatCurrency(produit.prixUnite)}
                                   </TableCell>
-                                  <TableCell className="  border-t border-zinc-500  p-1 text-center p-0">
-                                    {produit.quantite * produit.prixUnite} DH{" "}
+                                  <TableCell className="p-1 pr-2 text-right border-b border-l border-black font-bold">
+                                    {formatCurrency(
+                                      (produit.quantite || 0) *
+                                        (produit.prixUnite || 0)
+                                    )}
                                   </TableCell>
                                 </TableRow>
                               ))}
                             </TableBody>
-                            <TableFooter className="font-medium border-zinc-500  ">
+                            <TableFooter className="font-medium">
                               <TableRow>
                                 <TableCell
                                   colSpan={4}
-                                  className=" p-2 text-right font-bold"
+                                  className="p-2 text-right text-lg font-extrabold border-black"
                                 >
-                                  sousTotal :
+                                  Total :
                                 </TableCell>
-                                <TableCell className=" border-zinc-500  p-2 text-left font-bold">
-                                  {formatCurrency(totalBlFourniture(groupe.produits))} DH
+                                <TableCell className="border-l border-black p-2 text-left text-lg font-extrabold">
+                                  {formatCurrency(
+                                    totalBlFourniture(groupe.produits)
+                                  )}
                                 </TableCell>
                               </TableRow>
                             </TableFooter>
@@ -169,34 +195,37 @@ export default function FournitureDialog({
                       )}
                     </div>
                   ))}
+                  <div className="w-full border rounded-xl font-semibold text-center text-xl text-gray-900 p-4">
+                    Total de fournitures : {formatCurrency(fournitureTotal)}
+                  </div>
                 </div>
               ) : (
-                <div className="text-center text-gray-500 mt-6">
-                  aucune commande trouvé
+                <div className="text-center text-gray-500 py-10">
+                  Aucun BL de fourniture trouvé
                 </div>
               )}
             </div>
           </div>
-          <div className="flex justify-end gap-3 mt-6 print:hidden">
-            <Button
-              className="rounded-full"
-              variant="outline"
-              onClick={() => onClose()}
-            >
-              Fermer
-            </Button>
+        </div>
+        <div className="flex justify-end gap-3 pt-4 shrink-0 print:hidden">
+          <Button
+            className="rounded-full"
+            variant="outline"
+            onClick={() => onClose?.()}
+          >
+            Fermer
+          </Button>
+          {bLGroups?.length > 0 && (
             <Button
               className="bg-purple-500 hover:bg-purple-600 !text-white rounded-full"
               variant="outline"
-              onClick={() => {
-                handlePrint();
-              }}
+              onClick={handlePrint}
             >
               <Printer className="mr-2 h-4 w-4" /> Imprimer
             </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
