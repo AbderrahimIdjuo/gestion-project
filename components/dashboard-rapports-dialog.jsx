@@ -5,6 +5,7 @@ import ClientsRapportDialog from "@/components/clients-rapport-dialog";
 import ComptesRapportContent from "@/components/comptes-rapport-dialog";
 import DevisRapportDialog from "@/components/devis-rapport-dialog";
 import ProduitsRapportDialog from "@/components/produits-rapport-dialog";
+import ProduitsRapportSortieDialog from "@/components/produits-rapport-sortie-dialog";
 import { ChargesRapportContent } from "@/components/transactions-rapport-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,7 +21,8 @@ import {
   Building2,
   FileText,
   Landmark,
-  Package,
+  PackageMinus,
+  PackagePlus,
   ScrollText,
   Users,
   Wallet,
@@ -36,10 +38,17 @@ const REPORT_TYPES = [
     adminOnly: false,
   },
   {
-    id: "stock",
-    title: "Rapport de stock",
+    id: "stock-entree",
+    title: "Rapport du stock (Entrée)",
     description: "Quantités positives et valeur du stock par entrepôt",
-    icon: Package,
+    icon: PackagePlus,
+    adminOnly: false,
+  },
+  {
+    id: "stock-sortie",
+    title: "Rapport du stock (Sortie)",
+    description: "BL STOCK(sortie) et bilan des devis liés",
+    icon: PackageMinus,
     adminOnly: false,
   },
   {
@@ -166,8 +175,16 @@ export default function DashboardRapportsDialog() {
           />
         )}
 
-        {reportType === "stock" && (
+        {reportType === "stock-entree" && (
           <ProduitsRapportDialog
+            embedded
+            onBack={handleBack}
+            onClose={handleClose}
+          />
+        )}
+
+        {reportType === "stock-sortie" && (
+          <ProduitsRapportSortieDialog
             embedded
             onBack={handleBack}
             onClose={handleClose}

@@ -45,7 +45,7 @@ export default function ImprimerRapportStock() {
             <EnteteDevis />
           </div>
           <RapportEntete
-            title="Rapport de stock"
+            title="Rapport du stock (Entrée)"
             rightLabel="Date de création"
             rightValue={formatDate(new Date().toISOString())}
             stats={[
@@ -56,6 +56,10 @@ export default function ImprimerRapportStock() {
               {
                 label: "Catégories",
                 value: formatList(data?.categories),
+              },
+              {
+                label: "Produits",
+                value: formatList(data?.produitsFiltres),
               },
               {
                 label: "Nombre de produits",

@@ -327,13 +327,13 @@ export default function DevisRapportDialog({
               />
 
               {/* 2. Statut */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Statut</Label>
+              <div className="flex flex-col gap-2">
+                <Label className="text-sm font-medium leading-none">Statut</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
-                      className="w-full justify-between text-left font-normal focus:ring-2 focus:ring-purple-500 bg-white"
+                      className="w-full justify-between text-left font-normal focus:ring-2 focus:ring-purple-500 bg-white h-10 min-h-10 py-0"
                     >
                       <div className="flex flex-wrap gap-1">
                         {statut.length === 0 ? (
@@ -432,15 +432,15 @@ export default function DevisRapportDialog({
               </div>
 
               {/* 3. Statut de paiement */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">
+              <div className="flex flex-col gap-2">
+                <Label className="text-sm font-medium leading-none">
                   Statut de paiement
                 </Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
-                      className="w-full justify-between text-left font-normal focus:ring-2 focus:ring-purple-500 bg-white"
+                      className="w-full justify-between text-left font-normal focus:ring-2 focus:ring-purple-500 bg-white h-10 min-h-10 py-0"
                     >
                       <div className="flex flex-wrap gap-1">
                         {statutPaiement.length === 0 ? (
@@ -545,13 +545,13 @@ export default function DevisRapportDialog({
               </div>
 
               {/* 4. Clients */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Clients</Label>
+              <div className="flex flex-col gap-2">
+                <Label className="text-sm font-medium leading-none">Clients</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
-                      className="w-full justify-between text-left font-normal focus:ring-2 focus:ring-purple-500 bg-white min-h-10 h-auto"
+                      className="w-full justify-between text-left font-normal focus:ring-2 focus:ring-purple-500 bg-white h-10 min-h-10 py-0"
                     >
                       <div className="flex flex-wrap gap-1">
                         {selectedClients.length === 0 ? (
@@ -655,8 +655,8 @@ export default function DevisRapportDialog({
               </div>
 
               {/* 5. Commerçant */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Commerçant</Label>
+              <div className="flex flex-col gap-2">
+                <Label className="text-sm font-medium leading-none">Commerçant</Label>
                 <Select value={commercant} onValueChange={setCommercant}>
                   <SelectTrigger className="h-10 w-full bg-white focus:ring-2 focus:ring-purple-500">
                     <SelectValue placeholder="Tous" />
@@ -673,8 +673,8 @@ export default function DevisRapportDialog({
               </div>
 
               {/* 6. Pourcentage */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">
+              <div className="flex flex-col gap-2">
+                <Label className="text-sm font-medium leading-none">
                   Pourcentage de bénéfice (%)
                 </Label>
                 <Input

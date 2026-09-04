@@ -853,17 +853,15 @@ export default function BonLivraisonRapportDialog({
         </DialogHeader>
         {currentStep === 1 && (
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="w-full space-y-2">
-                <ComboBoxFournisseur
-                  key={comboKey}
-                  fournisseur={selectedFournisseur}
-                  setFournisseur={setSelectedFournisseur}
-                />
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+              <ComboBoxFournisseur
+                key={comboKey}
+                fournisseur={selectedFournisseur}
+                setFournisseur={setSelectedFournisseur}
+              />
 
-              <div className="space-y-2">
-                <Label htmlFor="type" className="text-sm font-medium">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="type" className="text-sm font-medium leading-none">
                   Type
                 </Label>
                 <Select
@@ -888,15 +886,15 @@ export default function BonLivraisonRapportDialog({
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">
+              <div className="flex flex-col gap-2">
+                <Label className="text-sm font-medium leading-none">
                   Statut de paiement
                 </Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
-                      className="w-full justify-between text-left font-normal focus:ring-2 focus:ring-purple-500 bg-transparent"
+                      className="w-full justify-between text-left font-normal focus:ring-2 focus:ring-purple-500 bg-white h-10 min-h-10 py-0"
                     >
                       <div className="flex flex-wrap gap-1">
                         {formData?.statutPaiement?.length === 0 ? (
@@ -993,9 +991,9 @@ export default function BonLivraisonRapportDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="modeAffichage" className="text-sm font-medium">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="modeAffichage" className="text-sm font-medium leading-none">
                   Mode d&apos;affichage
                 </Label>
                 <Select

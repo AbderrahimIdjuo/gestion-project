@@ -3,7 +3,6 @@
 import Spinner from "@/components/customUi/Spinner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -12,12 +11,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import {
   Table,
   TableBody,
@@ -28,6 +21,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { RapportEntete } from "@/components/rapport-entete";
+import {
+  RapportMultiSelect,
+  produitRapportLabel,
+} from "@/components/rapport-multi-select";
 import { entrepotBadgeClass } from "@/lib/entrepot-badge";
 import { formatCurrency } from "@/lib/functions";
 import { useQuery } from "@tanstack/react-query";
@@ -36,7 +33,6 @@ import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
-  ChevronDown,
   FileText,
   Printer,
 } from "lucide-react";
@@ -46,117 +42,6 @@ function formatQty(value) {
   return Number(value || 0).toLocaleString("fr-FR", {
     maximumFractionDigits: 2,
   });
-}
-
-function MultiSelect({
-  label,
-  items,
-  selectedIds,
-  onChange,
-  allLabel,
-  placeholder,
-  idKey = "id",
-  nameKey,
-}) {
-  const allIds = items.map(item => item[idKey]);
-  const allSelected =
-    allIds.length > 0 && allIds.every(id => selectedIds.includes(id));
-
-  const toggleAll = checked => {
-    onChange(checked ? allIds : []);
-  };
-
-  const toggleOne = (id, checked) => {
-    if (checked) {
-      onChange([...new Set([...selectedIds, id])]);
-    } else {
-      onChange(selectedIds.filter(selected => selected !== id));
-    }
-  };
-
-  const selectedNames = items
-    .filter(item => selectedIds.includes(item[idKey]))
-    .map(item => item[nameKey]);
-
-  return (
-    <div className="space-y-2">
-      <Label className="text-sm font-medium">{label}</Label>
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            className="w-full justify-between text-left font-normal focus:ring-2 focus:ring-purple-500 bg-transparent min-h-10 h-auto"
-          >
-            <div className="flex flex-wrap gap-1">
-              {selectedIds.length === 0 ? (
-                <span className="text-muted-foreground">{placeholder}</span>
-              ) : allSelected ? (
-                <Badge
-                  variant="secondary"
-                  className="text-xs bg-purple-100 text-purple-800 hover:bg-purple-200"
-                >
-                  {allLabel}
-                </Badge>
-              ) : (
-                selectedNames.slice(0, 3).map(name => (
-                  <Badge
-                    key={name}
-                    variant="secondary"
-                    className="text-xs bg-purple-100 text-purple-800 hover:bg-purple-200"
-                  >
-                    {name}
-                  </Badge>
-                ))
-              )}
-              {!allSelected && selectedNames.length > 3 && (
-                <Badge variant="secondary" className="text-xs">
-                  +{selectedNames.length - 3}
-                </Badge>
-              )}
-            </div>
-            <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-3" align="start">
-          <div className="space-y-3 max-h-56 overflow-y-auto pr-1">
-            <div className="flex items-center space-x-2 pb-2 border-b">
-                <Checkbox
-                  id={`${label}-all`}
-                  checked={allSelected}
-                  onCheckedChange={checked => toggleAll(!!checked)}
-                />
-                <Label
-                  htmlFor={`${label}-all`}
-                  className="text-sm font-semibold cursor-pointer"
-                >
-                  {allLabel}
-                </Label>
-              </div>
-              {items.map(item => {
-                const id = item[idKey];
-                const name = item[nameKey];
-                const checkboxId = `${label}-${id}`;
-                return (
-                  <div key={id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={checkboxId}
-                      checked={selectedIds.includes(id)}
-                      onCheckedChange={checked => toggleOne(id, !!checked)}
-                    />
-                    <Label
-                      htmlFor={checkboxId}
-                      className="text-sm font-medium cursor-pointer"
-                    >
-                      {name}
-                    </Label>
-                  </div>
-                );
-              })}
-            </div>
-        </PopoverContent>
-      </Popover>
-    </div>
-  );
 }
 
 function SortableHead({ column, sortKey, sortDir, onSort, children, className }) {
@@ -188,6 +73,7 @@ export default function ProduitsRapportDialog({
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedEntrepotIds, setSelectedEntrepotIds] = useState([]);
   const [selectedCategorieIds, setSelectedCategorieIds] = useState([]);
+  const [selectedProduitIds, setSelectedProduitIds] = useState([]);
   const [sortKey, setSortKey] = useState("valeurStock");
   const [sortDir, setSortDir] = useState("desc");
   const [initialized, setInitialized] = useState(false);
@@ -208,39 +94,81 @@ export default function ProduitsRapportDialog({
     },
   });
 
+  const produitsListeQuery = useQuery({
+    queryKey: ["produits-liste-rapport"],
+    queryFn: async () => {
+      const response = await axios.get("/api/produits/liste");
+      return response.data.produits || [];
+    },
+  });
+
   const entrepots = entrepotsQuery.data || [];
   const categories = categoriesQuery.data || [];
+  const produitsListe = produitsListeQuery.data || [];
 
-  useEffect(() => {
-    if (initialized) return;
-    if (entrepotsQuery.isLoading || categoriesQuery.isLoading) return;
-    setSelectedEntrepotIds(entrepots.map(e => e.id));
-    setSelectedCategorieIds(categories.map(c => c.id));
-    setInitialized(true);
-  }, [
-    entrepots,
-    categories,
-    initialized,
-    entrepotsQuery.isLoading,
-    categoriesQuery.isLoading,
-  ]);
-
-  const allEntrepotsSelected =
-    entrepots.length > 0 &&
-    entrepots.every(e => selectedEntrepotIds.includes(e.id));
   const allCategoriesSelected =
     categories.length > 0 &&
     categories.every(c => selectedCategorieIds.includes(c.id));
 
+  const produitsFiltres = useMemo(() => {
+    if (allCategoriesSelected || selectedCategorieIds.length === 0) {
+      return produitsListe;
+    }
+    return produitsListe.filter(p =>
+      selectedCategorieIds.includes(p.categorieId)
+    );
+  }, [produitsListe, selectedCategorieIds, allCategoriesSelected]);
+
+  useEffect(() => {
+    if (initialized) return;
+    if (
+      entrepotsQuery.isLoading ||
+      categoriesQuery.isLoading ||
+      produitsListeQuery.isLoading
+    ) {
+      return;
+    }
+    setSelectedEntrepotIds(entrepots.map(e => e.id));
+    setSelectedCategorieIds(categories.map(c => c.id));
+    setSelectedProduitIds(produitsListe.map(p => p.id));
+    setInitialized(true);
+  }, [
+    entrepots,
+    categories,
+    produitsListe,
+    initialized,
+    entrepotsQuery.isLoading,
+    categoriesQuery.isLoading,
+    produitsListeQuery.isLoading,
+  ]);
+
+  useEffect(() => {
+    if (!initialized) return;
+    const validIds = new Set(produitsFiltres.map(p => p.id));
+    setSelectedProduitIds(prev => {
+      const next = prev.filter(id => validIds.has(id));
+      return next.length === prev.length ? prev : next;
+    });
+  }, [produitsFiltres, initialized]);
+
+  const allEntrepotsSelected =
+    entrepots.length > 0 &&
+    entrepots.every(e => selectedEntrepotIds.includes(e.id));
+  const allProduitsSelected =
+    produitsFiltres.length > 0 &&
+    produitsFiltres.every(p => selectedProduitIds.includes(p.id));
+
   const canSubmit =
     selectedEntrepotIds.length > 0 &&
-    (selectedCategorieIds.length > 0 || categories.length === 0);
+    (selectedCategorieIds.length > 0 || categories.length === 0) &&
+    (selectedProduitIds.length > 0 || produitsListe.length === 0);
 
   const rapportQuery = useQuery({
     queryKey: [
       "produits-rapport",
       selectedEntrepotIds,
       selectedCategorieIds,
+      selectedProduitIds,
     ],
     queryFn: async () => {
       const response = await axios.get("/api/produits/rapport", {
@@ -251,6 +179,9 @@ export default function ProduitsRapportDialog({
           categorieIds: allCategoriesSelected
             ? "all"
             : selectedCategorieIds.join(","),
+          produitIds: allProduitsSelected
+            ? "all"
+            : selectedProduitIds.join(","),
         },
       });
       return response.data;
@@ -276,6 +207,9 @@ export default function ProduitsRapportDialog({
   const selectedCategorieNames = categories
     .filter(c => selectedCategorieIds.includes(c.id))
     .map(c => c.categorie);
+  const selectedProduitNames = produitsFiltres
+    .filter(p => selectedProduitIds.includes(p.id))
+    .map(p => produitRapportLabel(p));
   const showEntrepotColumn = selectedEntrepotIds.length > 1;
 
   const handleSort = column => {
@@ -293,6 +227,7 @@ export default function ProduitsRapportDialog({
     setSortDir("desc");
     setSelectedEntrepotIds(entrepots.map(e => e.id));
     setSelectedCategorieIds(categories.map(c => c.id));
+    setSelectedProduitIds(produitsListe.map(p => p.id));
   };
 
   useEffect(() => {
@@ -319,6 +254,9 @@ export default function ProduitsRapportDialog({
       categories: allCategoriesSelected
         ? "Toutes les catégories"
         : selectedCategorieNames,
+      produitsFiltres: allProduitsSelected
+        ? "Tous les produits"
+        : selectedProduitNames,
       showEntrepotColumn,
       sortKey,
       sortDir,
@@ -332,11 +270,11 @@ export default function ProduitsRapportDialog({
       <DialogHeader>
         <DialogTitle className="flex items-center gap-2 text-xl font-bold bg-gradient-to-r from-fuchsia-600 to-violet-600 bg-clip-text text-transparent">
           <FileText className="h-5 w-5 text-purple-600" />
-          Rapport de stock
+          Rapport du stock (Entrée)
         </DialogTitle>
         <DialogDescription>
           {currentStep === 1
-            ? "Sélectionnez les entrepôts et les catégories à inclure dans le rapport."
+            ? "Sélectionnez les entrepôts, les catégories et les produits à inclure dans le rapport."
             : ""}
         </DialogDescription>
       </DialogHeader>
@@ -344,7 +282,7 @@ export default function ProduitsRapportDialog({
       {currentStep === 1 && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <MultiSelect
+            <RapportMultiSelect
               label="Entrepôts"
               items={entrepots}
               selectedIds={selectedEntrepotIds}
@@ -353,7 +291,7 @@ export default function ProduitsRapportDialog({
               placeholder="Sélectionner les entrepôts"
               nameKey="nom"
             />
-            <MultiSelect
+            <RapportMultiSelect
               label="Catégories"
               items={categories}
               selectedIds={selectedCategorieIds}
@@ -362,6 +300,18 @@ export default function ProduitsRapportDialog({
               placeholder="Sélectionner les catégories"
               nameKey="categorie"
             />
+            <div className="md:col-span-2">
+              <RapportMultiSelect
+                label="Produits"
+                items={produitsFiltres}
+                selectedIds={selectedProduitIds}
+                onChange={setSelectedProduitIds}
+                allLabel="Tous les produits"
+                placeholder="Sélectionner les produits"
+                getLabel={produitRapportLabel}
+                searchable
+              />
+            </div>
           </div>
           <div className="flex justify-end gap-3 mt-6 print:hidden">
             {embedded && (
@@ -409,6 +359,14 @@ export default function ProduitsRapportDialog({
                 value: allCategoriesSelected
                   ? "Toutes les catégories"
                   : selectedCategorieNames.join(", ") || "—",
+              },
+              {
+                label: "Produits",
+                value: allProduitsSelected
+                  ? "Tous les produits"
+                  : selectedProduitNames.length > 3
+                    ? `${selectedProduitNames.length} produits`
+                    : selectedProduitNames.join(", ") || "—",
               },
               {
                 label: "Nombre de produits",
@@ -582,7 +540,7 @@ export default function ProduitsRapportDialog({
       <DialogTrigger asChild>
         <Button className="bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500 hover:bg-purple-600 text-white font-semibold transition-all duration-300 transform hover:scale-105 rounded-full">
           <FileText className="mr-2 h-4 w-4" />
-          Rapport
+          Rapport (Entrée)
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[80vw] max-h-[80vh] overflow-y-auto">

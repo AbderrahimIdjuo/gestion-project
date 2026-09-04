@@ -16,6 +16,7 @@ export async function GET(req) {
     const { searchParams } = new URL(req.url);
     const entrepotIds = parseIds(searchParams.get("entrepotIds"));
     const categorieIds = parseIds(searchParams.get("categorieIds"));
+    const produitIds = parseIds(searchParams.get("produitIds"));
 
     const stockWhere = {
       quantite: { gt: 0 },
@@ -27,6 +28,9 @@ export async function GET(req) {
     const produitFilter = {};
     if (categorieIds.length > 0) {
       produitFilter.categorieId = { in: categorieIds };
+    }
+    if (produitIds.length > 0) {
+      produitFilter.id = { in: produitIds };
     }
 
     const stocks = await prisma.produitEntrepot.findMany({

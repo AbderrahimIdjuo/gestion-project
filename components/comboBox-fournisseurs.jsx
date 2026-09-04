@@ -78,8 +78,8 @@ export default function ComboBoxFournisseur({ fournisseur, setFournisseur }) {
   }, [searchQuery]);
 
   return (
-    <div className="w-full">
-      <Label className="text-sm font-medium block pt-1">Fournisseur :</Label>
+    <div className="flex w-full flex-col gap-2">
+      <Label className="text-sm font-medium leading-none">Fournisseur :</Label>
       <Popover open={openComboBox} onOpenChange={setOpenComboBox}>
         <PopoverTrigger asChild>
           <Button
@@ -87,7 +87,7 @@ export default function ComboBoxFournisseur({ fournisseur, setFournisseur }) {
             variant="outline"
             role="combobox"
             aria-expanded={openComboBox}
-            className="w-full justify-between mt-2"
+            className="w-full justify-between h-10 min-h-10 py-0"
           >
             {watch("fournisseur")
               ? watch("fournisseur").nom.toUpperCase()

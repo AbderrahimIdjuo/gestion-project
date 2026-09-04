@@ -48,9 +48,9 @@ export default function PeriodeFilter({
   const options = includeToutes ? PERIODES : PERIODES_SANS_TOUTES;
 
   return (
-    <div className="grid gap-2">
+    <div className="flex flex-col gap-2">
       {label ? (
-        <Label htmlFor={id} className="text-left text-black">
+        <Label htmlFor={id} className="text-sm font-medium leading-none text-left text-black">
           {label}
         </Label>
       ) : null}
